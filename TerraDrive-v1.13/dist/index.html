@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171d1b">
+  <meta name="description" content="Explore an interactive 3D off-road proving ground. Compare real vehicle specifications, drivetrain settings and tire pressures on pavement, rock, mud, wetlands and dunes.">
+  <title>Terra Drive — Off-road Proving Ground</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="stylesheet" href="./style.css?v=1.15.0">
+</head>
+<body>
+  <svg class="svg-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-mountain" viewBox="0 0 24 24"><path d="m2 19 7-13 4 7 3-5 6 11H2Z"/><path d="m6.3 11.1 2.7 2.4 2.2-2.1M14.3 10.8l2 2.2 2-1.3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 5l7 7-7 7"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-rain" viewBox="0 0 24 24"><path d="M5 15a4 4 0 0 1-1-7 6 6 0 0 1 11-2 5 5 0 1 1 3 9M7 18l-1 3m7-3-1 3m7-3-1 3"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 6h4l2-3h4l2 3h4a1 1 0 0 1 1 1v13H3V7a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 9a8.5 8.5 0 1 1 0 7M4 3v6h6"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="m4 9 5 0 5-5v16l-5-5H4V9Zm13-2a7 7 0 0 1 0 10m3-13a11 11 0 0 1 0 16"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="m3 9 5 0 5-5v16l-5-5H3V9Zm14 0 5 6m0-6-5 6"/></symbol>
+    <symbol id="i-fullscreen" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke-width="3"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8V4Z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-11v2"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="m4 10 2-6h12l2 6M3 10h18v9H3V10Zm3 9v2m12-2v2M6 14h2m8 0h2"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 20a10 10 0 1 1 16 0M12 3v3M4 7l3 2m13-2-3 2M2 14h3m14 0h3m-10 0 4-5"/><circle cx="12" cy="15" r="2"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 8a3 3 0 0 1 6 1c0 2-3 2-3 5m0 3v.5"/></symbol>
+    <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M14 5v14c-9 0-9-14 0-14ZM18 6h4m-4 4h4m-4 4h4m-4 4h4"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M19 9c0 6-7 12-7 12S5 15 5 9a7 7 0 1 1 14 0Z"/><circle cx="12" cy="9" r="2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-winch" viewBox="0 0 24 24"><path d="M3 8h11v9H3V8Zm3 0v9m3-9v9m3-9v9M7 5h4v3m3 4h6m0 0v5a2 2 0 0 1-4 0"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></symbol>
+  </defs></svg>
+
+  <main id="simulator" aria-label="3D off-road driving simulator">
+    <canvas id="world" tabindex="0" aria-label="3D driving view. W accelerates, S brakes and reverses after stopping, A and D steer. R selects manual reverse. Space holds the emergency brake. G opens the winch; hold E to reel in or Q to pay out. C changes camera. Press question mark for all controls."></canvas>
+    <div class="view-vignette" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Terra Drive home"><span class="brand-mark"><svg><use href="#i-mountain"/></svg></span><span>TERRA<span class="brand-light">DRIVE</span><small>OFF-ROAD PROVING GROUND</small></span></a>
+      <nav class="main-nav" aria-label="Main navigation"><button class="nav-active" id="drive-nav">Drive</button><button data-dialog="garage">Garage <span>04</span></button><button data-workshop="">Workshop</button><button data-dialog="guide">Field guide</button></nav>
+      <div class="top-actions">
+        <span class="live-badge"><i></i><span id="sim-status">LIVE</span></span>
+        <button class="icon-button" id="sound-toggle" aria-label="Enable vehicle sound" title="Sound"><svg><use href="#i-mute"/></svg></button>
+        <button class="icon-button" id="fullscreen-toggle" aria-label="Toggle fullscreen" title="Fullscreen"><svg><use href="#i-fullscreen"/></svg></button>
+        <button class="icon-button" id="settings-toggle" data-dialog="settings" aria-label="Open display settings" title="Settings"><svg><use href="#i-settings"/></svg></button>
+        <button class="pause-button" id="pause-toggle" aria-label="Pause simulation" title="Pause · Esc"><svg><use href="#i-pause"/></svg></button>
+      </div>
+    </header>
+
+    <aside class="terrain-panel glass" id="terrain-panel" aria-label="Terrain destinations">
+      <button class="panel-heading" id="terrain-collapse" aria-expanded="true"><span><span class="eyebrow">EXPLORE THE MAP</span><strong>Six ways off the beaten path.</strong></span><svg><use href="#i-chevron"/></svg></button>
+      <div id="terrain-panel-body"><div class="zone-list" id="zone-list"></div><div class="environment-row"><svg id="weather-icon"><use href="#i-sun"/></svg><label class="sr-only" for="weather-select">Weather</label><select id="weather-select"><option value="dry">Dry conditions</option><option value="rain">Rain &amp; wet ground</option></select></div></div>
+    </aside>
+
+    <div class="location-marker" id="location-marker"><span class="eyebrow">YOU ARE EXPLORING</span><span id="location-name">The proving ground</span></div>
+
+    <aside class="vehicle-panel glass" id="vehicle-panel" aria-label="Vehicle setup and instrumentation">
+      <div class="vehicle-heading"><div><span class="eyebrow" id="vehicle-year">2024 · JEEP</span><h1 id="vehicle-title">Wrangler Rubicon</h1></div><button class="icon-button" data-dialog="garage" title="Change vehicle" aria-label="Change vehicle"><svg><use href="#i-car"/></svg></button></div>
+      <div class="vehicle-specs"><span><b id="spec-power">285</b> HP</span><span><b id="spec-torque">260</b> <span id="spec-torque-unit">LB-FT</span></span><span id="spec-drive">4×4</span></div>
+      <button class="condition-chip" data-open-condition title="Inspect vehicle condition"><span>VEHICLE CONDITION</span><strong id="condition-chip-value">100%</strong><i id="condition-chip-light"></i></button>
+      <div class="console-tabs" role="tablist" aria-label="Vehicle console"><button id="tab-drivetrain" class="active" role="tab" aria-selected="true" aria-controls="panel-drivetrain" data-tab="drivetrain">Drivetrain</button><button id="tab-tires" role="tab" aria-selected="false" aria-controls="panel-tires" data-tab="tires">Tires</button><button id="tab-telemetry" role="tab" aria-selected="false" aria-controls="panel-telemetry" data-tab="telemetry">Live data</button><button id="tab-damage" data-tab="damage" role="tab" aria-controls="panel-damage" aria-selected="false">Condition</button><button id="tab-recovery" data-tab="recovery" role="tab" aria-controls="panel-recovery" aria-selected="false">Winch</button></div>
+
+      <section class="console-body" id="panel-drivetrain" role="tabpanel" aria-labelledby="tab-drivetrain">
+        <button class="vehicle-build-button" data-workshop=""><span id="installed-build-label">Factory build</span><span>Upgrades <svg><use href="#i-arrow"/></svg></span></button>
+        <div id="drive-program-wrap" hidden></div>
+        <div class="label-row"><span class="eyebrow" id="drive-mode-label">TRANSFER CASE</span><span id="range-ratio">HIGH · 1.00:1</span></div>
+        <div class="mode-buttons" id="drive-modes"></div>
+        <p class="control-help" id="range-help">Select N and stop before shifting into low range.</p>
+        <div class="driveline-display" aria-label="Live axle and differential state">
+          <svg viewBox="0 0 220 128" id="driveline-svg" role="img" aria-label="Front and rear axle power and lock state">
+            <path class="car-outline" d="M65 22q0-13 13-13h64q13 0 13 13v84q0 13-13 13H78q-13 0-13-13Z"/>
+            <g id="driveline-mechanical"><path class="shaft" id="front-shaft" d="M110 33v31"/><path class="shaft" id="rear-shaft" d="M110 64v32"/><rect class="transfer" x="103" y="55" width="14" height="18" rx="3"/></g>
+            <path class="axle" id="front-axle" d="M57 33h106"/><path class="axle" id="rear-axle" d="M57 96h106"/>
+            <rect class="tire-outline" x="48" y="21" width="16" height="26" rx="4"/><rect class="tire-outline" x="156" y="21" width="16" height="26" rx="4"/><rect class="tire-outline" x="48" y="83" width="16" height="26" rx="4"/><rect class="tire-outline" x="156" y="83" width="16" height="26" rx="4"/>
+            <g id="driveline-electric" style="display:none"><path class="shaft powered" d="M110 21v12"/><rect class="diff" x="98" y="12" width="24" height="11" rx="3"/><text x="110" y="20" text-anchor="middle">M</text><rect class="diff" id="rear-motor-left" x="82" y="88" width="16" height="16" rx="3"/><rect class="diff" id="rear-motor-right" x="122" y="88" width="16" height="16" rx="3"/><text x="90" y="99" text-anchor="middle">M</text><text x="130" y="99" text-anchor="middle">M</text><text x="110" y="63" text-anchor="middle">3 MOTORS</text></g>
+            <circle class="diff" id="front-diff" cx="110" cy="33" r="9"/><circle class="diff" id="rear-diff" cx="110" cy="96" r="9"/>
+            <path class="lock-cross" id="front-lock-cross" d="m106 29 8 8m-8 0 8-8"/><path class="lock-cross" id="rear-lock-cross" d="m106 92 8 8m-8 0 8-8"/>
+            <text x="9" y="37">F</text><text x="9" y="100">R</text><text x="183" y="37" id="front-diff-label">OPEN</text><text x="183" y="100" id="rear-diff-label">OPEN</text>
+          </svg>
+          <div class="driveline-caption"><span><i class="key-dot powered"></i>Powered</span><span><i class="key-dot locked"></i>Locked</span></div>
+        </div>
+        <div class="feature-controls" id="feature-controls"></div>
+        <div id="electric-controls" hidden></div>
+        <button class="engine-button" id="engine-toggle"><span class="engine-led"></span><span>ENGINE RUNNING</span><kbd>I</kbd></button>
+      </section>
+
+      <section class="console-body" id="panel-tires" role="tabpanel" aria-labelledby="tab-tires" hidden>
+        <div class="label-row"><span class="eyebrow">TIRE PRESSURE</span><span>PSI</span></div>
+        <p class="tire-description" id="tire-size">LT285/70R17 · all-terrain</p>
+        <div class="pressure-presets"><button data-pressure="road">Road</button><button data-pressure="trail">Trail</button><button data-pressure="soft">Soft ground</button></div>
+        <div class="pressure-control"><label for="front-pressure">Front axle <output id="front-pressure-value" for="front-pressure">37 <small>PSI</small></output></label><input id="front-pressure" type="range" min="8" max="80" step="1" value="37"><div class="range-labels"><span>8 PSI</span><span>80 PSI</span></div></div>
+        <div class="pressure-control"><label for="rear-pressure">Rear axle <output id="rear-pressure-value" for="rear-pressure">37 <small>PSI</small></output></label><input id="rear-pressure" type="range" min="8" max="80" step="1" value="37"><div class="range-labels"><span>8 PSI</span><span>80 PSI</span></div></div>
+        <label class="check-row"><input id="link-pressure" type="checkbox" checked><span>Link front &amp; rear</span></label>
+        <div class="ground-feedback"><div><span>Ground rut</span><strong><b id="ground-rut">0.0</b> <small>mm</small></strong></div><div><span>Tire flex</span><strong><b id="tire-flex">0.0</b> <small>mm</small></strong></div><p id="ground-response">Firm ground · shallow tread impressions</p></div>
+        <div class="footprint-display"><div class="footprint-tire"><div id="contact-patch"></div></div><div><span class="eyebrow">FRONT LEFT FOOTPRINT</span><strong id="patch-area">— <small>cm²</small></strong><span id="pressure-effect">Estimated from load and inflation</span></div></div>
+        <div class="tire-warning" id="tire-warning" hidden></div>
+        <p class="small-note">Pressure changes tire compliance, footprint, rolling resistance, and soft-ground sinkage. These presets are simulation setups, not on-vehicle pressure recommendations.</p>
+      </section>
+
+      <section class="console-body" id="panel-telemetry" role="tabpanel" aria-labelledby="tab-telemetry" hidden>
+        <div class="label-row"><span class="eyebrow">CONTACT &amp; SUSPENSION</span><span>FL / FR / RL / RR</span></div>
+        <div class="wheel-telemetry" id="wheel-telemetry"></div>
+        <div class="telemetry-grid"><div><span id="live-torque-label">Engine torque</span><b id="live-torque">0 <small>Nm</small></b></div><div><span id="live-power-label">Engine power</span><b id="live-power">0 <small>HP</small></b></div><div><span>Ground rut</span><b id="live-sink">0.0 <small>mm</small></b></div><div><span>Water depth</span><b id="live-water">0.00 <small>m</small></b></div><div><span>Distance</span><b id="live-distance">0 <small>m</small></b></div><div><span>Contact</span><b id="live-contact">4 <small>/ 4</small></b></div><div title="Highest current friction use among loaded tires; braking and cornering share that tire's available grip."><span>Peak tire grip use</span><b id="live-grip-used">0 <small>%</small></b></div><div title="Reduction from requested drive torque while traction control limits wheelspin."><span>TC torque reduction</span><b id="live-traction-reduction">0 <small>%</small></b></div></div>
+        <div class="label-row chart-label"><span class="eyebrow">SPEED · LAST 30 SECONDS</span><span id="chart-scale">0–50 MPH</span></div><canvas id="telemetry-chart" width="500" height="120" aria-label="Speed history chart"></canvas>
+        <button class="text-link" data-dialog="guide">How the physics works <svg><use href="#i-arrow"/></svg></button>
+      </section>
+      <section class="console-body" id="panel-damage" role="tabpanel" aria-labelledby="tab-damage" hidden>
+        <div class="label-row"><span class="eyebrow">VEHICLE CONDITION</span><span id="damage-status">READY TO DRIVE</span></div>
+        <div class="condition-total"><strong id="damage-condition">100<small>%</small></strong><progress id="damage-condition-bar" max="100" value="100" aria-label="Overall vehicle condition"></progress></div>
+        <p id="damage-summary" class="damage-summary">Vehicle ready. Impacts can damage bodywork and mechanical components.</p>
+        <div class="damage-system"><span>Bodywork</span><strong id="damage-body">100%</strong></div>
+        <div class="damage-system"><span id="drive-unit-health-label">Engine</span><strong id="damage-engine">100%</strong></div>
+        <div class="damage-wheel-heading"><span>WHEEL</span><span>SUSPENSION</span><span>TIRE</span></div>
+        <div id="damage-wheel-health"></div>
+        <button class="primary-button repair-button" data-repair>Repair vehicle <svg><use href="#i-settings"/></svg></button>
+        <p class="small-note" id="repair-help">Stop the vehicle to repair bodywork and mechanical damage.</p>
+        <button class="secondary-button restart-button" data-restart><svg><use href="#i-reset"/></svg> Restart run</button>
+        <p class="small-note">Recover puts the vehicle upright and keeps its damage. Restart repairs this vehicle and restores the terrain and scenery.</p>
+      </section>
+      <section class="console-body" id="panel-recovery" role="tabpanel" aria-labelledby="tab-recovery" hidden>
+        <div class="label-row"><span class="eyebrow">TREE-ANCHORED RECOVERY</span><kbd>G</kbd></div>
+        <button class="feature-row winch-equip" id="winch-equip" aria-pressed="false"><span><span class="feature-name" id="winch-equip-label">Fit recovery winch</span><span class="feature-sub">OPTIONAL AFTERMARKET KIT · 12,000 LB</span></span><span class="toggle" aria-hidden="true"></span></button>
+        <label for="winch-anchor" class="winch-anchor-label">Choose a tree ahead</label>
+        <select id="winch-anchor" class="winch-anchor-select" aria-describedby="winch-help"><option value="">Fit a winch to select a tree</option></select>
+        <div class="winch-attachment-actions"><button class="primary-button" id="winch-attach">Attach cable</button><button class="secondary-button" id="winch-detach">Detach</button></div>
+        <div class="winch-remote" aria-label="Hold the winch remote buttons"><button data-touch="winch-in" aria-label="Hold to reel winch cable in" aria-pressed="false"><svg><use href="#i-winch"/></svg><span>Reel in<small>HOLD <kbd>E</kbd></small></span></button><button data-touch="winch-out" aria-label="Hold to pay winch cable out" aria-pressed="false"><span>Pay out<small>HOLD <kbd>Q</kbd></small></span></button></div>
+        <p class="winch-state" id="winch-state" role="status">Kit not fitted</p>
+        <div class="winch-readouts"><div><span>CABLE OUT</span><strong id="winch-length">0.0 m</strong></div><div><span>LINE TENSION</span><strong id="winch-tension">0.0 kN</strong></div><div><span>LINE SPEED</span><strong id="winch-line-speed">0.0 m/min</strong></div><div><span>DRUM-LAYER PULL</span><strong id="winch-capacity">53.4 kN</strong></div></div>
+        <progress id="winch-load" max="1" value="0" aria-label="Line tension relative to estimated current drum-layer pull"></progress>
+        <p class="small-note" id="winch-help">Fit the kit while stopped. Select a tree ahead, attach the cable, then hold E to pull.</p>
+        <p class="control-help">9.5 mm steel rope · 24.5 m usable reach. A strap protects the anchor trunk. The selected tree is marked on the ground.</p>
+      </section>
+      <div class="console-footer"><span class="surface-dot" id="surface-dot"></span><span id="surface-name">DIRT</span><span class="console-footer-right" id="traction-state">CONTACT READY</span></div>
+    </aside>
+
+    <section class="welcome-card glass" id="welcome-card" aria-label="Quick start">
+      <button class="welcome-dismiss icon-button" id="welcome-dismiss" title="Dismiss driving tips" aria-label="Dismiss driving tips"><svg><use href="#i-close"/></svg></button>
+      <span class="eyebrow">YOUR NEXT TRAIL STARTS HERE</span><h2>Take the long way.</h2><p>A vehicle. Six environments. Find out what gets you through.</p>
+      <div class="welcome-controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive</span><span><kbd>C</kbd> Camera</span><span><kbd>S</kbd> Hold to reverse</span></div>
+      <button id="begin-drive" class="primary-button">Start exploring <svg><use href="#i-arrow"/></svg></button>
+    </section>
+
+    <aside class="minimap-panel glass" aria-label="Proving ground minimap"><div class="minimap-heading"><span class="eyebrow">FIELD MAP</span><span id="heading-value">000° N</span></div><canvas id="minimap" width="360" height="270" aria-label="Map of terrain zones and current vehicle location"></canvas><div class="map-footer"><span id="position-value">0 E · 0 N</span><button id="map-expand" data-dialog="map" title="Open full map">Expand ↗</button></div></aside>
+
+    <div class="driving-hud" aria-label="Driving instruments">
+      <div class="attitude-instrument"><div class="attitude-gauge"><div class="attitude-horizon" id="attitude-horizon"></div><div class="attitude-center"></div><div class="attitude-ticks"></div></div><div><span class="eyebrow">PITCH / ROLL</span><strong><span id="pitch-value">0°</span><i>/</i><span id="roll-value">0°</span></strong></div></div>
+      <div class="speed-instrument"><div class="speed-topline"><span id="gear-range">2H</span><span id="gear-display">D1</span></div><div class="speed-number"><b id="speed-value">0</b><button id="unit-toggle" title="Change speed units">MPH</button></div><div class="rpm-bar"><div id="rpm-fill"></div></div><div class="rpm-label"><span id="rpm-value">750</span> RPM <span id="redline-label">6.6K</span></div></div>
+      <div class="input-instrument"><div class="input-meter"><span>THR</span><div><i id="throttle-meter"></i></div></div><div class="input-meter brake"><span>BRK</span><div><i id="brake-meter"></i></div></div><div class="parking-brake-state" id="parking-brake-state">SPACE · E-BRAKE</div><div class="selector-buttons" id="selector-buttons" aria-label="Transmission selector"><button data-selector="P" title="Park">P</button><button data-selector="R" title="Reverse · R">R</button><button data-selector="N" title="Neutral · N">N</button><button data-selector="D" class="active" title="Drive · F">D</button></div></div>
+    </div>
+
+    <div class="bottom-toolbar"><div class="camera-picker" aria-label="Camera modes"><button class="active" data-camera="chase" title="Chase camera · C"><svg><use href="#i-camera"/></svg><span>Chase</span></button><button data-camera="hood" title="Hood camera"><span>Hood</span></button><button data-camera="orbit" title="Orbit camera · drag to rotate"><span>Orbit</span></button><button data-camera="free" title="Free camera · IJKL move, U/O altitude"><span>Free</span></button></div><div class="bottom-actions"><button id="winch-shortcut" title="Winch recovery · G"><svg><use href="#i-winch"/></svg><span>Winch</span><kbd>G</kbd></button><button id="headlights-toggle" title="Headlights · H" aria-label="Toggle headlights"><svg><use href="#i-lamp"/></svg></button><button id="recover-vehicle" title="Recover vehicle · X"><svg><use href="#i-reset"/></svg><span>Recover</span><kbd>X</kbd></button><button data-dialog="guide" class="help-button" title="Controls · ?"><svg><use href="#i-help"/></svg></button></div></div>
+    <div class="model-disclosure"><button data-dialog="guide">Experimental physics · model notes</button><span id="fps-value">— FPS</span></div>
+    <div id="notice-stack" role="status" aria-live="polite"></div>
+    <div class="driving-alert" id="driving-alert" hidden></div>
+    <button id="mobile-console-toggle" class="mobile-console-toggle glass" aria-expanded="false" aria-controls="vehicle-panel" aria-label="Toggle vehicle setup"><svg><use href="#i-settings"/></svg> Setup</button>
+    <div class="touch-controls" aria-label="Touch driving controls"><div class="touch-steering"><button data-touch="left" aria-label="Steer left">←</button><button data-touch="right" aria-label="Steer right">→</button></div><div class="touch-pedals"><button data-touch="handbrake" aria-label="Hold emergency brake" aria-pressed="false">E-BRAKE</button><button data-touch="brake" aria-label="Brake; hold after stopping to reverse">BRAKE / REV</button><button data-touch="throttle" aria-label="Accelerator">GAS</button></div></div>
+
+    <section id="damage-overlay" class="damage-overlay glass" hidden aria-label="Vehicle disabled">
+      <span class="eyebrow">REPAIR REQUIRED</span><h2>This vehicle is disabled.</h2><p id="disabled-help">Stop, then repair to get moving again, or restart the run.</p>
+      <div><button class="primary-button" data-repair>Repair vehicle</button><button class="secondary-button" data-restart>Restart run</button></div>
+    </section>
+
+    <div id="loading" class="loading-screen"><div class="loader-mark"><svg><use href="#i-mountain"/></svg></div><span class="eyebrow">TERRA DRIVE</span><h2>Preparing the proving ground</h2><div class="loader-line"></div><p id="loading-detail">Loading vehicle dynamics and terrain…</p></div>
+    <div id="paused-overlay" class="paused-overlay" hidden><span class="eyebrow">TAKE A BREATHER</span><h2>Paused.</h2><button class="primary-button" id="resume-button">Back to the trail <svg><use href="#i-play"/></svg></button></div>
+    <div id="rendering-notice" class="rendering-notice glass" role="status" hidden><span id="rendering-notice-text"></span><button id="reload-terrain-button">Reload</button></div>
+    <div class="fatal-error glass" id="fatal-error" hidden><svg><use href="#i-info"/></svg><h2 id="fatal-title">The 3D view could not start</h2><p id="fatal-message">This simulator needs WebGL 2 and hardware acceleration in your browser.</p><button class="primary-button" id="reload-button">Try again</button><details><summary>Technical details</summary><pre id="fatal-detail"></pre></details></div>
+  </main>
+
+  <dialog id="garage-dialog" class="wide-dialog"><div class="dialog-top"><div><span class="eyebrow">PICK YOUR STARTING POINT</span><h2>The garage.</h2></div><button class="icon-button" data-close aria-label="Close garage"><svg><use href="#i-close"/></svg></button></div><p class="dialog-intro">Your vehicles, your colors. Rotate a model, choose its paint, then head back to the trail.</p><div id="garage-grid" class="garage-grid"></div><div class="garage-footer"><svg><use href="#i-info"/></svg><p>The garage uses the same vehicle models as the driving view. Paint is saved for each vehicle. Drag to rotate, or focus a model and use the arrow keys. <button class="text-link" data-guide="art">Model &amp; texture credits ↗</button></p></div></dialog>
+
+  <dialog id="workshop-dialog" class="wide-dialog workshop-dialog"><div class="dialog-top"><div><span class="eyebrow">BUILD FOR THE TERRAIN</span><h2>The workshop.</h2></div><button class="icon-button" data-close aria-label="Close workshop"><svg><use href="#i-close"/></svg></button></div><div class="workshop-intro"><p>Choose parts, inspect the changes, then take your build to the trail.</p><label for="workshop-vehicle">Vehicle <select id="workshop-vehicle"></select></label></div><div id="workshop-content"></div></dialog>
+
+  <dialog id="guide-dialog" class="wide-dialog guide-dialog"><div class="dialog-top"><div><span class="eyebrow">KNOW YOUR MACHINE</span><h2>Field guide.</h2></div><button class="icon-button" data-close aria-label="Close field guide"><svg><use href="#i-close"/></svg></button></div><div class="guide-tabs" role="tablist" aria-label="Field guide topics"><button class="active" data-guide="controls" role="tab" aria-selected="true">Controls</button><button data-guide="technique" role="tab" aria-selected="false">Driving &amp; setup</button><button data-guide="physics" role="tab" aria-selected="false">Physics model</button><button data-guide="sources" role="tab" aria-selected="false">Vehicle sources</button><button data-guide="art" role="tab" aria-selected="false">Art &amp; credits</button></div><div id="guide-content"></div></dialog>
+
+  <dialog id="settings-dialog" class="settings-dialog"><div class="dialog-top"><div><span class="eyebrow">MAKE YOURSELF COMFORTABLE</span><h2>Display &amp; session.</h2></div><button class="icon-button" data-close aria-label="Close settings"><svg><use href="#i-close"/></svg></button></div><label class="setting-row">Graphics quality<select id="quality-select"><option value="high">High</option><option value="medium" selected>Balanced</option><option value="low">Performance</option></select></label><label class="setting-row">Time of day<select id="time-select"><option value="day">Daylight</option><option value="sunset" selected>Golden hour</option></select></label><label class="setting-row">Speed units<select id="units-select"><option value="mph">Miles per hour</option><option value="kmh">Kilometers per hour</option></select></label><label class="setting-row">Gamepad steering<select id="gamepad-select"><option value="on">Enabled</option><option value="off">Disabled</option></select></label><p class="small-note">Keyboard, touch, and standard gamepads are supported. Graphics quality changes rendering; the vehicle model always runs at a fixed 120 Hz.</p><div class="setting-section"><span class="eyebrow">START FRESH</span><button class="secondary-button" id="reset-terrain"><svg><use href="#i-reset"/></svg> Restore undisturbed terrain</button><p class="small-note">Clears tire tracks and restores the ground. Vehicle damage and setup are preserved.</p></div><div class="setting-section"><span class="eyebrow">VEHICLE &amp; SCENERY</span><button class="secondary-button" data-restart><svg><use href="#i-reset"/></svg> Restart run</button><p class="small-note">Repairs the current vehicle, clears tire tracks and restores damaged scenery. Your paint colors and display settings stay saved.</p></div><span class="build-note">TERRA DRIVE · EXPERIMENTAL BUILD 1.15.0</span></dialog>
+
+  <dialog id="map-dialog" class="wide-dialog"><div class="dialog-top"><div><span class="eyebrow">CHOOSE YOUR TERRAIN</span><h2>The proving ground.</h2></div><button class="icon-button" data-close aria-label="Close full map"><svg><use href="#i-close"/></svg></button></div><p class="dialog-intro">Drive between the environments, or select a destination to move there instantly.</p><div class="full-map-layout"><canvas id="full-map" width="900" height="760" aria-label="Full proving ground map. Use the destination buttons alongside it."></canvas><div id="map-zones"></div></div></dialog>
+
+  <script type="module">
+    import('./src/app.js?v=1.15.0').catch(error => {
+      document.getElementById('loading').hidden = true;
+      document.getElementById('fatal-error').hidden = false;
+      document.getElementById('fatal-detail').textContent = String(error.stack || error);
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

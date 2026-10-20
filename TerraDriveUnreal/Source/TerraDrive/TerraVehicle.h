@@ -1,0 +1,73 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Pawn.h"
+#include "TerraWorld.h"
+#include "TerraVehicle.generated.h"
+class UBoxComponent;
+class UStaticMeshComponent;
+class USpringArmComponent;
+class UCameraComponent;
+class UInstancedStaticMeshComponent;
+struct FTerraWheel {
+  float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
+        Pressure = 35;
+  FVector Contact, Center;
+  FTerraSample Ground;
+};
+struct FTerraParcel {
+  FVector P, V;
+  float Age = 0, Life = 2, Radius = 2;
+  uint8 Kind = 0;
+};
+UCLASS()
+class TERRADRIVE_API ATerraVehicle : public APawn {
+  GENERATED_BODY()
+public:
+  ATerraVehicle();
+  virtual void BeginPlay() override;
+  virtual void Tick(float Dt) override;
+  void SelectVehicle(int Index);
+  void TeleportZone(int Index);
+  UFUNCTION()
+  void OnBodyHit(UPrimitiveComponent *Hit, UPrimitiveComponent *Other,
+                 FVector Impulse, const FHitResult &Result);
+  // Actual OnComponentHit includes the other actor argument.
+  UFUNCTION()
+  void BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
+               UPrimitiveComponent *Other, FVector Impulse,
+               const FHitResult &Result);
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Chassis;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Body;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
+  UPROPERTY() TObjectPtr<ATerraWorld> Terrain;
+  UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Wheels;
+  UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> SprayMeshes;
+  FTerraWheel WheelState[4];
+  FString VehicleName, SurfaceName, Notice;
+  float Mass = 2100, Speed = 0, RPM = 700, Steer = 0, Throttle = 0, Brake = 0,
+        Pressure = 35, Damage = 0, WinchTension = 0;
+  bool Tracks = false, FourDrive = true, LowRange = false,
+       WinchAttached = false, Reeling = false, Garage = false;
+  int VehicleIndex = 0, Zone = 0, Gear = 0, Direction = 1, EngineUpgrade = 0,
+      LiftUpgrade = 0;
+  bool AutoTest = false, Initialized = false;
+  float TestThrottle = 0, TestSteer = 0, TestBrake = 0;
+  void SetTracks(bool Enabled);
+
+private:
+  TSharedPtr<FJsonObject> Spec;
+  TArray<FTerraParcel> Parcels;
+  UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Deposits;
+  FVector Anchor;
+  float WinchLength = 0, ReverseHold = 0, SpawnCooldown = 1, CameraYaw = 0,
+        CameraPitch = -16, SoilTimer = 0, SprayBudget[4] = {0, 0, 0, 0};
+  float Radius = .42f, Width = .285f, Wheelbase = 3, Track = 1.63f, CG = .76f,
+        FrontWeight = .53f, Spring = 32000, Damping = 3900, Rest = .41f,
+        Power = 210000;
+  float Number(const TCHAR *Name, float Default = 0) const;
+  void Input(float Dt);
+  void Simulate(float Dt);
+  void UpdateSpray(float Dt);
+  void SaveSetup();
+};

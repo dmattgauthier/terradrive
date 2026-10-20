@@ -1,0 +1,11 @@
+{
+  "name": "terra-drive",
+  "version": "1.15.0",
+  "private": true,
+  "type": "module",
+  "description": "A browser-native off-road vehicle proving ground",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:shaders": "node tests/shader-compile.mjs"
+  }
+}

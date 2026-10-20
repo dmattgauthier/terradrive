@@ -1,0 +1,18 @@
+# Generated native products and source conversion intermediates
+TerraDriveUnreal/Binaries/
+TerraDriveUnreal/Intermediate/
+TerraDriveUnreal/Saved/
+TerraDriveUnreal/DerivedDataCache/
+TerraDriveUnreal/Build/
+TerraDriveUnreal/SourceAssets/
+TerraDriveUnreal/Content/
+TerraDriveUnreal/*.log
+TerraDriveUnreal/*.sln
+TerraDriveUnreal/.vs/
+# Historical transfer packages and local deployment state
+*.zip
+*.bundle
+.sites-local/
+.openai/
+TerraDrive-v1.13/.sites-local/
+TerraDrive-v1.13/.openai/
