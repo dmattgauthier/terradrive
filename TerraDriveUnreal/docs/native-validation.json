@@ -1,6 +1,6 @@
 {
   "date": "2026-10-21",
-  "verifiedAt": "2026-10-21T18:29:23.700Z",
+  "verifiedAt": "2026-10-21T20:08:27.048Z",
   "configuration": "Windows Development",
   "displayUnits": "imperial",
   "diagnosticUnits": "SI except explicitly named fields; player displays use imperial units",
@@ -118,13 +118,13 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 61.636,
-      "speedMS": 20.547,
+      "distanceM": 67.386,
+      "speedMS": 21.077,
       "pass": true
     },
     {
       "case": "native braking",
-      "speedMS": 0.004,
+      "speedMS": 0,
       "pass": true
     },
     {
@@ -140,8 +140,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 12.385,
-      "yawDegrees": 91.403,
+      "speedMS": 12.905,
+      "yawDegrees": 91.628,
       "pass": true
     },
     {
@@ -152,7 +152,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.58,
+      "clearanceCM": 510.485,
       "rollDegrees": 0,
       "pass": true
     },
@@ -164,7 +164,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.769,
+      "clearanceCM": 506.967,
       "rollDegrees": 0,
       "pass": true
     },
@@ -176,7 +176,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 642.086,
+      "clearanceCM": 640.502,
       "rollDegrees": 0,
       "pass": true
     },
@@ -188,7 +188,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 615.199,
+      "clearanceCM": 616.576,
       "rollDegrees": 0,
       "pass": true
     },
@@ -200,7 +200,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 527.699,
+      "clearanceCM": 529.92,
       "rollDegrees": 0,
       "pass": true
     },
@@ -212,7 +212,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 662.483,
+      "clearanceCM": 673.486,
       "rollDegrees": 0,
       "pass": true
     },
@@ -224,7 +224,7 @@
     },
     {
       "case": "region 6 camera",
-      "clearanceCM": 515.996,
+      "clearanceCM": 515.995,
       "rollDegrees": 0,
       "pass": true
     },
@@ -236,7 +236,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 484.123,
+      "clearanceCM": 33.141,
       "rollDegrees": 0,
       "pass": true
     },
@@ -247,12 +247,12 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 1.4837,
+      "value": 2.1833,
       "pass": true
     },
     {
       "case": "rolled vehicle camera stays above terrain",
-      "value": 521.9012,
+      "value": 521.9025,
       "pass": true
     },
     {
@@ -262,17 +262,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 173512.9688,
+      "value": 56670.7734,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 682,
+      "value": 476,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 4675.2847,
+      "value": 6425.5928,
       "pass": true
     },
     {
@@ -282,7 +282,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 1.92,
+      "value": 2.4299,
       "pass": true
     },
     {
@@ -292,7 +292,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 3.1183,
+      "value": 2.4859,
       "pass": true
     },
     {
@@ -302,7 +302,7 @@
     },
     {
       "case": "challenge 1 stable spawn",
-      "value": 2,
+      "value": 4,
       "pass": true
     },
     {
@@ -337,12 +337,12 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 527.5986,
+      "value": 526.5429,
       "pass": true
     },
     {
       "case": "inverted loop retains physical wheel support",
-      "value": 3,
+      "value": 2,
       "pass": true
     },
     {
@@ -417,7 +417,7 @@
     },
     {
       "case": "engine upgrade changes packaged driving performance",
-      "value": 21.0949,
+      "value": 21.0511,
       "pass": true
     },
     {
@@ -432,17 +432,17 @@
     },
     {
       "case": "lower pressure enlarges the live soil footprint",
-      "value": 1.6173,
+      "value": 1.6216,
       "pass": true
     },
     {
       "case": "lower pressure improves live loose terrain grip",
-      "value": 1.1579,
+      "value": 1.1586,
       "pass": true
     },
     {
       "case": "deformed ruts add depth dependent rolling resistance",
-      "value": 0.1194,
+      "value": 0.1188,
       "pass": true
     },
     {
@@ -480,25 +480,37 @@
   "preservedBrowserFiles": 189,
   "observations": {
     "engineComparison": {
-      "stockMPH": 31.124731568279397,
-      "stageThreeMPH": 47.18817108184949,
-      "stockDistanceFT": 130.89895013071,
-      "stageThreeDistanceFT": 242.40485564207503
+      "stockMPH": 31.194076593334497,
+      "stageThreeMPH": 47.08974588499709,
+      "stockDistanceFT": 131.61089238792502,
+      "stageThreeDistanceFT": 241.558398949165
     },
     "pressureComparison": {
       "stockPSI": 37,
       "lowPSI": 16,
       "stockPatchIN": 3.937007874,
-      "lowPatchIN": 6.366141732258,
-      "stockGrip": 0.4807,
-      "lowGrip": 0.5566
+      "lowPatchIN": 6.3858267716279995,
+      "stockGrip": 0.4803,
+      "lowGrip": 0.5565
     },
     "interactiveControls": [
-      "native rendered vehicle menu inspected: pounds and inches",
-      "native HUD captures inspected: mph and PSI",
-      "refined terrain rocks, deadwood and vegetation inspected",
-      "native tests verify all model assets, armor visibility and live suspension positions",
-      "live desktop activation unavailable: failed to activate captured window; no live input sent"
+      "Live desktop check completed at 1920x1080 after Windows unlock",
+      "Vehicle selection and all seven upgrade rows fit; pounds, inches, horsepower and PSI inspected",
+      "Suspension, tires, body and electrical stage III selections changed the live Wrangler preview before the mount correction",
+      "Let's Drive, Tab and Escape verified; final package Let's Drive check repeated",
+      "Corrected package inspected live: Wrangler light bar rests over the roof on visible mounting brackets in garage and driving views; recovery drum, fairlead and shackles visible",
+      "Driving HUD inspected: mph and PSI; original all-stock per-vehicle save restored byte-for-byte after normal game exit"
+    ],
+    "lightbarRoofGeometry": {
+      "checks": 8,
+      "vehicles": 4,
+      "allBracketsIntersectRoof": true,
+      "method": "Vertical roof intersections at both mounting brackets; negative foot clearance indicates penetration into the curved roof."
+    },
+    "liveScreenshots": [
+      "Saved/live-imperial-upgrades.jpg",
+      "Saved/live-imperial-mounted-vehicle.jpg",
+      "Saved/live-imperial-mounted-driving.jpg"
     ]
   },
   "sourceSHA256": {
@@ -521,7 +533,7 @@
     "Tools/build-native.ps1": "985f7905be5d270977a89ec621949d6b531457fa3b3a61e12c950fa7ecaf52e7",
     "Tools/export-source.mjs": "0e3a8ad77a70aa4f9225da6f3752a9e5990469672839b4848fef271e5924a972",
     "Tools/import-assets.py": "c30bcb7d595c9615d7bc1d9b4da1395f4d006ed1c2ac2bbda89eff366b56499f",
-    "Tools/native-models.mjs": "2ee60d3811ce21ca7d8621dd380737665ce4b05474d0ba275953511def3fe2f3",
+    "Tools/native-models.mjs": "8eb79f15c9129f3d4ffc08dcf5e68bf28e986d5b5775e8a05c8649ff5a2e79cd",
     "Tools/offroad-courses.mjs": "cdb11b0ee7f16c88a36a08dfa38cbd76276c49ecba2ac72ac7650b53ca48c178",
     "Tools/prepare-github.mjs": "34b6088aa4d4d853d1a1bdacdad7cea308fdf3324ea705d2fa2e9155d5e8cd32",
     "Tools/terrain-materials.py": "c1b6dfa0d5b044567ea066dd4b8c78f805dc8fe2f443d58a21f472407fc67c22",
@@ -530,5 +542,15 @@
     "Tools/test-core.cpp": "3f4f838ab1ad06e35011677717b0fd37e5f5c24098b66cf4536f8ac311a65255",
     "Tools/validate-export.mjs": "ce8c16d0b0f18e83bd7eff917c2eabf9a6592669222badd6f657b113ae6c41e2",
     "Tools/verify-native.ps1": "7c429e4f5f9d6876953d21f3622d971f4114ce5b4dc698fe86f3fbf650f71cae"
-  }
+  },
+  "nativeReportWrittenAt": "2026-10-21T19:11:11.239Z",
+  "packageContentSHA256": {
+    "global.ucas": "b45724a4a9b56772f9be581eb5b939ea1236c85fcb5ef7487d5d214df6218346",
+    "global.utoc": "6a56e5930c9b3cd072498c631dbc3f9ed3d904f3f501a01dcd8c36a3fcd995b0",
+    "TerraDrive-Windows.pak": "373d66af436d3ea315f53e5f467420b0976da8158bf4425857bd0013c4b8cf1e",
+    "TerraDrive-Windows.ucas": "afdfb5c2956cff13bb007068b43cda0a0f0d793117ed61ec2d42e065581c3197",
+    "TerraDrive-Windows.utoc": "267cbb1de733e83a8b574ad2c5e13576d7739f14217eba843489cd8129c58d30"
+  },
+  "coreVerification": "63 core checks passed earlier for unchanged C++ physics source; this follow-up changes generated model geometry only",
+  "playerGarageUnchanged": true
 }

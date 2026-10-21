@@ -36,7 +36,16 @@ export function vehicleAdditions(spec){
     }
     box(equipment,chrome,[0,y-.02,z+.055],[.32,.078,.028]);
     box(equipment,rubber,[0,y-.02,z+.072],[.25,.035,.013]);
-    const lightY=spec.height-datum+.035,lightZ=spec.bodyStyle==='van'?.75:1.0;
+    // Use the actual model roof, including the body-to-CG offset. Catalogue
+    // height and a shared forward position put the SUV bar ahead of its roof.
+    const roof={jeep:[1.86,.16],bronco:[1.873,.24],van:[2.407,1.10],hummer:[1.948,.42]}[spec.bodyStyle];
+    const roofY=roof[0]-datum,lightY=roofY+.09,lightZ=roof[1]+offset;
+    for(const side of [-1,1]){
+      const x=side*half*.55;
+      box(equipment,steel,[x,roofY+.006,lightZ],[.105,.035,.14]);
+      box(equipment,steel,[x,roofY+.047,lightZ],[.035,.105,.075]);
+      box(equipment,chrome,[x,roofY+.025,lightZ+.045],[.018,.012,.018]);
+    }
     box(equipment,steel,[0,lightY,lightZ],[half*1.3,.095,.11]);
     for(let i=0;i<12;i++)box(equipment,amber,[(i-5.5)*half*.10,lightY,lightZ+.058],[half*.075,.065,.018]);
   }else{
