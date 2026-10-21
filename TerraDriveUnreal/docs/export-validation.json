@@ -68,11 +68,15 @@
       "heightM": 12.272045612335205
     }
   ],
-  "meshSources": 144,
+  "meshSources": 163,
   "constructedGroups": 2,
   "challengeRoutes": 8,
   "quarryDeckHeightM": 26.172911834716796,
   "trees": 412,
   "placements": 10975,
+  "detailInstances": 2645,
+  "solidDetailInstances": 645,
+  "tintedMaterials": 13,
+  "preservedInstanceColors": true,
   "pass": true
 }

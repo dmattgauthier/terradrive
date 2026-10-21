@@ -47,6 +47,9 @@ float mineral=f.noise(p.xy*.023+p.z*.017);
 color*=broad*lerp(float3(.91,.97,1.03),float3(1.07,1.02,.87),mineral);
 float wet=smoothstep(.50,.76,patches)*Wetness;
 color*=lerp(1,.56,wet);
+// The deforming terrain supplies packing in vertex color. Tire tracks expose
+// darker compressed soil rather than keeping the pristine photographic tint.
+color*=1-saturate(1-Wear)*1.6;
 float2 uv=p.xy/2.1;
 if(w.x>w.z&&w.x>w.y)uv=p.yz/2.1;
 else if(w.y>w.z)uv=p.xz/2.1;

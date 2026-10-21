@@ -22,7 +22,11 @@ if ($ImportAssets) {
     $importLog=Join-Path $projectRoot 'Saved\Logs\import-assets.log'
     $started=Get-Date
     $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$scriptPath+'"'),'-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$importLog+'"'))
-    $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList $editorArgs -WindowStyle Hidden -Wait -PassThru
+    $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList $editorArgs -WindowStyle Hidden -PassThru
+    # Wait for the commandlet itself. Start-Process -Wait can also wait on
+    # persistent compiler/cache descendants after the commandlet has exited.
+    $editorProcess.WaitForExit()
+    $editorProcess.Refresh()
     if ($editorProcess.ExitCode -or !(Test-Path -LiteralPath $importMarker) -or (Get-Item -LiteralPath $importMarker).LastWriteTime -lt $started -or !(Test-Path -LiteralPath (Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'))) { throw "Asset import did not produce a fresh completion marker and map. Inspect $importLog. If Unreal creates no log, run the editor outside the restricted process sandbox." }
 }
 if ($Package) {

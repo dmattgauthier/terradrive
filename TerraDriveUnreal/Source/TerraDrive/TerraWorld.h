@@ -10,7 +10,7 @@ class UCapsuleComponent;
 class UMaterialInterface;
 struct FTerraSample {
   float Height = 0, Water = 0, Mu = .7f, Rolling = .025f, Softness = .05f,
-        MaxSink = .025f, Packing = 0;
+        MaxSink = .025f, Packing = 0, RutDepth = 0;
   uint8 Surface = 0;
   FVector Normal = FVector::UpVector;
 };
@@ -55,6 +55,8 @@ public:
   FTerraSample Sample(FVector P) const;
   FTerraSupport CastSupport(FVector Mount, FVector Up, float RadiusCM,
                             float MinCM, float MaxCM, const AActor *Ignore) const;
+  FTerraSupport CastTireSupport(FVector Mount,FVector Up,FVector Forward,
+      float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const;
   float Height(float X, float Y) const;
   void Deform(FVector P, FVector Forward, float Load, float Pressure,
               float Width, float Length, float Slip, float Speed, float Dt);
@@ -67,6 +69,7 @@ public:
   TArray<FString> ZoneNames;
   TArray<FTerraRoute> Routes;
   int ConstructedMeshCount = 0;
+  int DetailInstanceCount = 0, SolidDetailCount = 0;
   double DepressedVolume = 0, DisplacedVolume = 0, CompactedVolume = 0;
   bool Rain = false, Ready = false;
   int32 DetailCount() const { return Detail.Num(); }
@@ -84,6 +87,7 @@ private:
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConstructedMeshes;
   float BaseHeight(float X, float Y) const;
   uint8 SurfaceAt(float X, float Y) const;
+  FTerraSupport GroundSupport(FVector Mount,FVector Up,float RadiusCM,float MinCM,float MaxCM) const;
   FTerraTile *EnsureTile(FIntPoint Key);
   void RebuildGround(FIntPoint Key);
   void UpdateTile(FTerraTile &Tile);

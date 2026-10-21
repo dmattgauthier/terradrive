@@ -34,10 +34,10 @@ def load_texture(filename, mask=False):
     return texture
 
 def material(name, color, roughness=.8, metallic=0, opacity=1,
-             sky=False, texture=None, alpha=None, clip=.38):
+             sky=False, texture=None, alpha=None, clip=.38, instance_tint=False):
     dest = '/Game/Materials/' + name
     signature = hashlib.sha256(json.dumps([
-        3, color, roughness, metallic, opacity, sky,
+        5 if instance_tint else 3, color, roughness, metallic, opacity, sky,
         texture.get_path_name() if texture else None,
         alpha.get_path_name() if alpha else None, clip
     ]).encode()).hexdigest()
@@ -60,6 +60,28 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         edit.connect_material_expressions(t, 'RGB', mul, 'A')
         edit.connect_material_expressions(c, '', mul, 'B')
         output = mul
+    if not sky and instance_tint:
+        channels=[]
+        for channel in range(3):
+            node=edit.create_material_expression(m,unreal.MaterialExpressionPerInstanceCustomData,-500,-180-channel*65)
+            node.set_editor_property('data_index',channel)
+            node.set_editor_property('const_default_value',1.)
+            channels.append(node)
+        rg=edit.create_material_expression(m,unreal.MaterialExpressionAppendVector,-260,-200)
+        rgb=edit.create_material_expression(m,unreal.MaterialExpressionAppendVector,-120,-160)
+        edit.connect_material_expressions(channels[0],'',rg,'A')
+        edit.connect_material_expressions(channels[1],'',rg,'B')
+        edit.connect_material_expressions(rg,'',rgb,'A')
+        edit.connect_material_expressions(channels[2],'',rgb,'B')
+        # Conventional instanced meshes need vertex interpolation; direct
+        # pixel-stage per-instance reads only work with Nanite in UE 5.8.
+        interpolated=edit.create_material_expression(m,unreal.MaterialExpressionVertexInterpolator,-30,-140)
+        if not edit.connect_material_expressions(rgb,'',interpolated,'VS'):
+            raise RuntimeError('Could not interpolate instance color: '+name)
+        tint=edit.create_material_expression(m,unreal.MaterialExpressionMultiply,40,0)
+        edit.connect_material_expressions(output,'',tint,'A')
+        edit.connect_material_expressions(interpolated,'',tint,'B')
+        output=tint
     edit.connect_material_property(output, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR if sky else unreal.MaterialProperty.MP_BASE_COLOR)
     for prop, value in [(unreal.MaterialProperty.MP_ROUGHNESS, roughness), (unreal.MaterialProperty.MP_METALLIC, metallic)]:
         node = edit.create_material_expression(m, unreal.MaterialExpressionConstant, -180, 280)
@@ -91,7 +113,7 @@ for d in data['materials']:
     color = [c*t for c, t in zip(d['color'], d.get('vertexTint', [1, 1, 1]))]
     materials[d['id']] = material(d['id'], color, d['roughness'], d['metallic'], d['opacity'],
         texture=load_texture(d.get('diffuse')), alpha=load_texture(d.get('alpha'), True),
-        clip=d.get('alphaTest') or .38)
+        clip=d.get('alphaTest') or .38, instance_tint=d.get('instanceTint',False))
 texture_names = {'dirt':'forest_ground_04_diff_2k.jpg', 'asphalt':'asphalt_02_diff_1k.jpg',
     'mud':'brown_mud_02_diff_2k.jpg', 'wetland':'brown_mud_02_diff_2k.jpg',
     'rock':'mossy_rock_diff_1k.jpg', 'sand':'sand_03_diff_1k.jpg'}
@@ -101,11 +123,14 @@ with open(terrain_script, encoding='utf8') as terrain_stream:
 for name, color in [('mud',[.19,.12,.07]), ('water',[.40,.60,.68]), ('snow',[.90,.95,1]), ('sand',[.69,.50,.26])]:
     material('Spray_'+name, color, .3 if name == 'water' else .94)
 material('M_Sky', [.38,.58,.78], sky=True)
+material('Native_SuspensionSteel',[.035,.05,.055],.48,.72)
+material('Native_Chrome',[.45,.53,.57],.25,.88)
 
 for i, asset in enumerate(data['assets']):
     dest = '/Game/Meshes/' + asset['name']
     mesh = lib.load_asset(dest) if lib.does_asset_exist(dest) else None
-    if mesh and lib.get_metadata_tag(mesh, 'TerraMeshSchema') != str(data['meshSchema']):
+    if mesh and (lib.get_metadata_tag(mesh, 'TerraMeshSchema') != str(data['meshSchema']) or
+                 lib.get_metadata_tag(mesh, 'TerraMeshHash') != asset.get('sha256','')):
         mesh = None
     if mesh is None:
         task = unreal.AssetImportTask()
@@ -141,6 +166,7 @@ for i, asset in enumerate(data['assets']):
     if body and body.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE:
         body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
     lib.set_metadata_tag(mesh, 'TerraMeshSchema', str(data['meshSchema']))
+    lib.set_metadata_tag(mesh, 'TerraMeshHash', asset.get('sha256',''))
     lib.save_loaded_asset(mesh)
     unreal.log('TERRA_IMPORT %d/%d %s' % (i+1, len(data['assets']), asset['name']))
 

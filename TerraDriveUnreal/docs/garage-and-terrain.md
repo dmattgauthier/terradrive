@@ -8,13 +8,13 @@ The Vehicles tab has direct selection cards. The Upgrades tab has seven categori
 
 | Category | Stage I / II / III | Effect in the simulation |
 |---|---|---|
-| Suspension | +70 / 140 / 210 mm droop travel; +35 / 70 / 105 mm lift; +18 / 40 / 65% damping | Longer contact reach, controlled suspension movement and clearance; modest spring-rate increases |
+| Suspension | +2.8 / 5.5 / 8.3 in droop travel; +1.4 / 2.8 / 4.1 in lift; +18 / 40 / 65% damping | Longer contact reach, controlled suspension movement and clearance; modest spring-rate increases |
 | Engine / motor | +18 / 40 / 68% output | Increased delivered driveline torque and usable power; existing tire grip and rev limits still apply |
 | Tires | +4 / 8 / 12% radius; +7 / 14 / 21% width; +13 / 28 / 46% base grip | Larger visible tires, increased friction budget and wider soil footprint |
-| Wheels | 18 / 35 / 50% lower rotational inertia; +35 / 70 / 105 mm track | Quicker wheel response, wider stance and an additional 2.5 / 5 / 7.5% grip multiplier |
+| Wheels | 18 / 35 / 50% lower rotational inertia; +1.4 / 2.8 / 4.1 in track | Quicker wheel response, wider stance and an additional 2.5 / 5 / 7.5% grip multiplier |
 | Frame | +30 / 60 / 90% angular damping; lowered center of mass | More controlled chassis rotation and reduced collision damage, at a 1.4 / 2.8 / 4.2% mass cost |
 | Body | 3 / 7 / 12% lower mass; 7 / 14 / 21% lower drag | Better power-to-weight ratio and protective-panel damage reduction |
-| Electrical | +30 / 60 / 90% winch capacity/reel speed; +20 / 40 / 60 cm water tolerance | Stronger recovery and less power loss in deep water; the EV also gains 8 / 17 / 28% battery/inverter output |
+| Electrical | +30 / 60 / 90% winch capacity/reel speed; +7.9 / 15.7 / 23.6 in water tolerance | Stronger recovery and less power loss in deep water; the EV also gains 8 / 17 / 28% battery/inverter output |
 
 Frame and body protection combine. The electrical package is available on the off-road vehicles and expedition van; the Civic has no auxiliary package. EV electrical output stacks with motor upgrades. These are game tuning stages, not manufacturer-approved modifications or calibrated real-world specifications. Larger tires change effective gearing; more engine power does not override limited traction.
 
@@ -34,3 +34,5 @@ Rebuild material assets and perform a full cook after shader edits:
     .\Tools\verify-native.ps1
 
 See validation-native.md and native-validation.json for the verified package rather than treating source changes as a passing build.
+
+The garage displays weight in pounds, travel/width in inches and winch force in pounds-force. Physics and serialized terrain data retain SI units internally. The native model pass adds live suspension hardware and visible upgrade armor/recovery equipment.

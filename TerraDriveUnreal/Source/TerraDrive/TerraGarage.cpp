@@ -1,5 +1,6 @@
 #include "TerraGarage.h"
 #include "TerraVehicle.h"
+#include "TerraUnits.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/SBoxPanel.h"
@@ -119,7 +120,7 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
           +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,18)
           [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Notes[Vehicle.IsValid()?Vehicle->VehicleIndex:0]);}).Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("OUTPUT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f hp"),Vehicle.IsValid()?Vehicle->PowerHP():0));}))]
-          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("MASS"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f kg"),Vehicle.IsValid()?Vehicle->Mass:0));}))]
+          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("WEIGHT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f lb"),Vehicle.IsValid()?TerraUnits::Pounds(Vehicle->Mass):0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("TIRE DIAMETER"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.1f in"),Vehicle.IsValid()?Vehicle->TireDiameter():0));}))]
           +SVerticalBox::Slot().FillHeight(1)[SNew(SSpacer)]
           +SVerticalBox::Slot().AutoHeight()
@@ -163,7 +164,7 @@ TSharedRef<SWidget> STerraGarage::UpgradePage() {
           [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(24,true)).ColorAndOpacity(White).AutoWrapText(true)]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("POWER"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f hp"),Vehicle.IsValid()?Vehicle->PowerHP():0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("TIRE GRIP"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("+%.0f%%"),Vehicle.IsValid()?(Vehicle->GripMultiplier()-1)*100:0));}))]
-          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("RUNNING MASS"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f kg"),Vehicle.IsValid()?Vehicle->Mass:0));}))]
+          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("RUNNING WEIGHT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f lb"),Vehicle.IsValid()?TerraUnits::Pounds(Vehicle->Mass):0));}))]
           +SVerticalBox::Slot().FillHeight(1)[SNew(SSpacer)]
           +SVerticalBox::Slot().AutoHeight()[Label(TEXT("I    TRAIL\nII   EXPEDITION\nIII  COMPETITION"),12,Mint,true)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,14,0,0)

@@ -31,7 +31,7 @@ def terrain_material(name, stems, biome, wetness):
     custom.set_editor_property('code', terrain_code)
     custom.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     inputs = []
-    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','RoughMap','Biome','Wetness']:
+    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','RoughMap','Biome','Wetness','Wear']:
         item = unreal.CustomInput()
         item.set_editor_property('input_name', name)
         inputs.append(item)
@@ -48,6 +48,8 @@ def terrain_material(name, stems, biome, wetness):
     normal = edit.create_material_expression(m, unreal.MaterialExpressionVertexNormalWS,-600,-160)
     edit.connect_material_expressions(world,'',custom,'World')
     edit.connect_material_expressions(normal,'',custom,'GeoNormal')
+    wear=edit.create_material_expression(m,unreal.MaterialExpressionVertexColor,-600,-80)
+    edit.connect_material_expressions(wear,'R',custom,'Wear')
     maps = [(stems[0],'diff','Primary'),(stems[1],'diff','Secondary'),
             (stems[2],'diff','Accent'),(stems[0],'nor_gl','NormalMap'),(stems[0],'rough','RoughMap')]
     for i, (stem,kind,pin) in enumerate(maps):

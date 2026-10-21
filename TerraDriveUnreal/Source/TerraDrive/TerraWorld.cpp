@@ -1,5 +1,6 @@
 #include "TerraWorld.h"
 #include "TerraSimCore.h"
+#include "TerraContact.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -89,6 +90,7 @@ float ATerraWorld::Height(float X, float Y) const {
 FTerraSample ATerraWorld::Sample(FVector P) const {
   FTerraSample S;
   S.Height = Height(P.X, P.Y);
+  S.RutDepth = FMath::Max(0.f,BaseHeight(P.X,P.Y)-S.Height)/100;
   S.Surface = SurfaceAt(P.X, P.Y);
   S.Normal = FVector(Height(P.X - 8, P.Y) - Height(P.X + 8, P.Y),
                      Height(P.X, P.Y - 8) - Height(P.X, P.Y + 8), 16)
@@ -121,8 +123,8 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
   }
   return S;
 }
-FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM,
-    float MinCM, float MaxCM, const AActor *Ignore) const {
+FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM,
+    float MinCM,float MaxCM) const {
   FTerraSupport Result;
   Up = Up.GetSafeNormal();
   // A tire's finite suspension ray points away from the ground on a rolled
@@ -144,6 +146,12 @@ FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM
       Result = {P, Normal, D, true, false, Sample(P).Surface};
     }
   }
+  return Result;
+}
+FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM,
+    float MinCM, float MaxCM, const AActor *Ignore) const {
+  Up=Up.GetSafeNormal();
+  auto Result=GroundSupport(Mount,Up,RadiusCM,MinCM,MaxCM);
   FCollisionQueryParams Params(SCENE_QUERY_STAT(TerraSuspension), true, Ignore);
   TArray<FHitResult> Hits;
   GetWorld()->SweepMultiByChannel(Hits, Mount - Up * MinCM, Mount - Up * MaxCM,
@@ -153,12 +161,61 @@ FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM
     const float D = MinCM + Hit.Distance;
     if (!TerraSim::ValidSupport(D, MinCM, MaxCM, FVector::DotProduct(Up, Hit.ImpactNormal))) continue;
     if (!Result.Hit || D < Result.Distance) {
-      const bool Built = Hit.Component->ComponentHasTag(TEXT("TerraConstructed"));
+      // Logs, trunks and obstacle boxes are rigid support too; their tires
+      // must not excavate the soil underneath as if it were the contact.
+      const bool Built = true;
       const uint8 Surface = Built ? (Hit.Component->ComponentHasTag(TEXT("TerraRock")) ? 4 : 1) : Sample(Hit.ImpactPoint).Surface;
       Result = {Hit.ImpactPoint, Hit.ImpactNormal, D, true, Built, Surface};
     }
   }
   return Result;
+}
+FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forward,
+    float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const {
+  auto Central=CastSupport(Mount,Up,RadiusCM,MinCM,MaxCM,Ignore);
+  FTerraSupport Best;
+  const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
+  // A sphere is useful for rolling contact, but it is wider than a real tire.
+  // Reject its side hits beyond the physical tread instead of gaining grip
+  // on a boulder beside the wheel. The small margin covers rounded shoulders.
+  if(Central.Hit&&Central.Constructed&&
+      FMath::Abs(FVector::DotProduct(Central.Point-Mount,Side))>WidthCM*.5f+2.f){
+    // On a broad banked face, the real shoulder can still carry load. Solve
+    // the finite cylinder against that face and confirm the shoulder point
+    // exists on actual geometry; an isolated rock outside the tread fails.
+    const FVector Nrm=Central.Normal;
+    const float NSide=FVector::DotProduct(Nrm,Side),Alignment=FVector::DotProduct(Nrm,Up);
+    const FVector CircleNormal=(Nrm-Side*NSide).GetSafeNormal();
+    const float Extent=RadiusCM*FVector::DotProduct(Nrm,CircleNormal)+WidthCM*.5f*FMath::Abs(NSide);
+    const float Distance=(FVector::DotProduct(Mount-Central.Point,Nrm)-Extent)/FMath::Max(.15f,Alignment);
+    const FVector Point=Mount-Up*Distance-CircleNormal*RadiusCM-Side*(FMath::Sign(NSide)*WidthCM*.5f);
+    FHitResult Shoulder;FCollisionQueryParams Q(SCENE_QUERY_STAT(TerraTreadWidth),true,Ignore);
+    if(TerraSim::ValidSupport(Distance,MinCM,MaxCM,Alignment)&&
+        GetWorld()->LineTraceSingleByChannel(Shoulder,Point+Nrm*6,Point-Nrm*6,ECC_Visibility,Q)&&
+        Shoulder.Component.IsValid()&&FVector::Dist(Shoulder.ImpactPoint,Point)<2&&
+        FVector::DotProduct(Shoulder.ImpactNormal,Up)>.15f&&!Shoulder.Component->ComponentHasTag(TEXT("TerraGround"))){
+      Central.Point=Shoulder.ImpactPoint;Central.Normal=Shoulder.ImpactNormal;Central.Distance=Distance;
+    }else Central=FTerraSupport();
+  }
+  // A circular rolling envelope at three points across the real tread width.
+  // The shoulder/front samples can bridge a narrow rut or meet a bump before
+  // the axle is directly above it. No probe can reach behind its suspension.
+  TArray<FTerraSupport,TInlineAllocator<9>> Contacts;
+  for(float L:{-.60f,0.f,.60f})for(float W:{-.42f,0.f,.42f}){
+    auto S=GroundSupport(Mount+Forward*(RadiusCM*L)+Side*(WidthCM*W),Up,
+                         RadiusCM*FMath::Sqrt(1-L*L),MinCM,MaxCM);
+    if(S.Hit){Contacts.Add(S);if(!Best.Hit||S.Distance<Best.Distance)Best=S;}
+  }
+  if(Best.Hit){
+    FVector Normal=FVector::ZeroVector,Point=FVector::ZeroVector;float Weight=0;
+    for(const auto &S:Contacts){
+      const float W=FMath::Max(0.f,1.f-(S.Distance-Best.Distance)/2.f);
+      Normal+=S.Normal*W;Point+=S.Point*W;Weight+=W;
+    }
+    Best.Normal=Normal.GetSafeNormal();if(Weight>0)Best.Point=Point/Weight;
+  }
+  if(Central.Hit&&Central.Constructed&&(!Best.Hit||Central.Distance<Best.Distance))return Central;
+  return Best.Hit?Best:Central;
 }
 void ATerraWorld::BeginPlay() {
   Super::BeginPlay();
@@ -358,9 +415,10 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   if (S.MaxSink <= 0 || Load < 50)
     return;
   F.Z = 0;
-  F.Normalize();
+  if(!F.Normalize())return;
   FVector Side(-F.Y, F.X, 0);
-  float HalfL = FMath::Max(.1f, Length * .5f) * 100,
+  const float CellReach=CellCM*.5f*(FMath::Abs(F.X)+FMath::Abs(F.Y));
+  float HalfL = FMath::Max(.025f, Length * .5f) * 100,
         HalfW = FMath::Max(.09f, Width * .5f) * 100;
   struct FCell {
     FTerraTile *T;
@@ -385,8 +443,10 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
       auto *T = Detail.Find({X, Y});
       if (!T)
         continue;
-      for (int J = 1; J < Div; J++)
-        for (int I = 1; I < Div; I++) {
+      // Each world grid node has one owner (left/bottom inclusive). Border
+      // copies are synchronized below so tires do not hit undeformed seams.
+      for (int J = 0; J < Div; J++)
+        for (int I = 0; I < Div; I++) {
           int A = J * (Div + 1) + I;
           FVector D = T->Vertices[A] - P;
           D.Z = 0;
@@ -395,9 +455,11 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
             continue;
           if (SurfaceAt(T->Vertices[A].X, T->Vertices[A].Y) != S.Surface)
             continue;
-          if (FMath::Abs(U) < HalfL && FMath::Abs(V) < HalfW) {
-            float Edge = (1 - Smooth(.62f, 1.f, FMath::Abs(V) / HalfW)) *
-                         (1 - Smooth(.68f, 1.f, FMath::Abs(U) / HalfL));
+          if (FMath::Abs(U) < HalfL+CellReach && FMath::Abs(V) < HalfW+CellReach) {
+            // Area-weighted cells keep short contact patches effective even
+            // when their center lies between grid nodes.
+            float Edge=TerraSim::FootprintCoverage(U,HalfL,CellReach)*
+                       TerraSim::FootprintCoverage(V,HalfW,CellReach);
             float Aim = -Target * 100 * (1 - T->Packing[A] * .45f) * Edge;
             float Delta = FMath::Max(
                 0.f, (T->Delta[A] - Aim) *
@@ -440,6 +502,18 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   DepressedVolume += Removed;
   DisplacedVolume += Placed;
   CompactedVolume += Removed - Placed;
+  for(int X=FMath::FloorToInt((P.X-Radius)/TileCM)-1;X<=FMath::FloorToInt((P.X+Radius)/TileCM);++X)
+    for(int Y=FMath::FloorToInt((P.Y-Radius)/TileCM)-1;Y<=FMath::FloorToInt((P.Y+Radius)/TileCM);++Y){
+      auto *T=Detail.Find({X,Y});if(!T)continue;
+      auto Copy=[&](int Destination,FTerraTile *SourceTile,int Source){
+        if(SourceTile&&(T->Delta[Destination]!=SourceTile->Delta[Source]||T->Packing[Destination]!=SourceTile->Packing[Source])){
+          T->Delta[Destination]=SourceTile->Delta[Source];T->Packing[Destination]=SourceTile->Packing[Source];T->Dirty=true;
+        }
+      };
+      auto *Right=Detail.Find({X+1,Y}),*Top=Detail.Find({X,Y+1});
+      for(int I=0;I<Div;++I){Copy(I*(Div+1)+Div,Right,I*(Div+1));Copy(Div*(Div+1)+I,Top,I);}
+      Copy(Div*(Div+1)+Div,Detail.Find({X+1,Y+1}),0);
+    }
 }
 void ATerraWorld::LoadScenery() {
   const TArray<TSharedPtr<FJsonValue>> *Built = nullptr;
@@ -485,6 +559,7 @@ void ATerraWorld::LoadScenery() {
     C->SetStaticMesh(Mesh);
     C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     C->SetMobility(EComponentMobility::Movable);
+    C->SetNumCustomDataFloats(3);
     C->RegisterComponent();
     Scenery.Add(C);
     for (auto V : O->GetArrayField(TEXT("instances"))) {
@@ -498,7 +573,10 @@ void ATerraWorld::LoadScenery() {
       while (C->GetInstanceCount() < Expected)
         C->AddInstance(FTransform(FQuat::Identity, FVector(0, 0, -100000),
                                   FVector::ZeroVector));
-      C->AddInstance(T);
+      const int Instance=C->AddInstance(T);
+      const TArray<TSharedPtr<FJsonValue>> *Color=nullptr;
+      for(int Channel=0;Channel<3;++Channel)
+        C->SetCustomDataValue(Instance,Channel,A->TryGetArrayField(TEXT("color"),Color)?float((*Color)[Channel]->AsNumber()):1.f);
     }
   }
   for (auto V : Data->GetArrayField(TEXT("trees"))) {
@@ -549,6 +627,27 @@ void ATerraWorld::LoadScenery() {
       C->RegisterComponent();
       C->SetWorldLocation(P);
     }
+  }
+  const TArray<TSharedPtr<FJsonValue>> *Details=nullptr;
+  if(Data->TryGetArrayField(TEXT("nativeDetails"),Details))for(auto V:*Details){
+    auto O=V->AsObject();auto *C=NewObject<UInstancedStaticMeshComponent>(this);
+    C->SetupAttachment(RootComponent);
+    C->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+O->GetStringField(TEXT("asset")))));
+    const bool Solid=O->GetBoolField(TEXT("solid"));
+    C->SetCollisionProfileName(Solid?TEXT("BlockAll"):TEXT("NoCollision"));
+    C->SetNumCustomDataFloats(3);
+    if(Solid){C->ComponentTags.Add(TEXT("TerraConstructed"));C->ComponentTags.Add(TEXT("TerraRock"));}
+    C->SetCullDistances(Solid?8000:3500,Solid?22000:11000);
+    if(O->GetStringField(TEXT("asset")).StartsWith(TEXT("native_boulder")))C->SetMaterial(0,Materials[4]);
+    C->RegisterComponent();Scenery.Add(C);
+    for(auto I:O->GetArrayField(TEXT("instances"))){
+      auto A=I->AsObject();const auto Q=A->GetArrayField(TEXT("q"));
+      const int Index=C->AddInstance(FTransform(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Vec(A->GetArrayField(TEXT("p"))),Vec(A->GetArrayField(TEXT("s")))));
+      const auto Color=A->GetArrayField(TEXT("color"));
+      for(int Channel=0;Channel<3;++Channel)C->SetCustomDataValue(Index,Channel,Color[Channel]->AsNumber());
+      ++DetailInstanceCount;if(Solid)++SolidDetailCount;
+    }
+    C->MarkRenderStateDirty();
   }
 }
 void ATerraWorld::HitTree(UPrimitiveComponent *C, FVector Impulse,

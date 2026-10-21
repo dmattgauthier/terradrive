@@ -1,5 +1,7 @@
 #include "../Source/TerraDrive/TerraSimCore.h"
 #include "../Source/TerraDrive/TerraUpgrades.h"
+#include "../Source/TerraDrive/TerraContact.h"
+#include "../Source/TerraDrive/TerraUnits.h"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -7,6 +9,36 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    for(float dt:{1.f/30,1.f/60,1.f/120}){
+        const float drive=TerraSim::RevLimitedTorque(10000,3,3,dt,9,420,200);
+        const float omega=TerraSim::LimitedWheelOmega(3+(drive-200)*dt/3,20000,0,.42f,dt,3,1000);
+        check(omega<=9.00001f&&omega>8.99f,"powered wheelspin reaches but cannot overshoot redline at different frame rates");
+    }
+    for(float phase:{0.f,.03f,.0625f}){
+        float area=0;for(int cell=-5;cell<=5;++cell)area+=TerraSim::FootprintCoverage(cell*.125f-phase,.05f,.0625f)*.125f;
+        check(std::abs(area-.10f)<.000001f,"short tire footprints conserve covered area at every grid phase");
+    }
+    check(std::abs(TerraUnits::MPH(44.704f)-100)<.001f,"speed displays miles per hour");
+    check(std::abs(TerraUnits::Feet(.3048f)-1)<.00001f,"distance displays feet");
+    check(std::abs(TerraUnits::Inches(.0254f)-1)<.00001f,"small lengths display inches");
+    check(std::abs(TerraUnits::Pounds(.45359237f)-1)<.00001f,"weight displays pounds");
+    check(std::abs(TerraUnits::PoundsForce(4.4482216f)-1)<.00001f,"winch force displays pounds force");
+    const float roadPatch=TerraSim::FootprintLength(5200,37,.285f,.42f,false);
+    check(TerraSim::FootprintLength(5200,16,.285f,.42f,false)>roadPatch*1.4f,"airing down expands actual soil footprint");
+    check(TerraSim::FootprintLength(5200,16,.285f,.42f,true)==1.35f,"tracks retain their full supported length");
+    check(TerraSim::PressureGrip(16,37,true,false)>1.1f&&TerraSim::PressureGrip(16,37,false,false)<1,"low pressure trades road precision for loose terrain grip");
+    const float grip=TerraSim::TerrainGrip(.6f,5000,5000,37,37,true,false,0,0,0,10);
+    check(TerraSim::TerrainGrip(.6f,5000,5000,37,37,true,false,0,2,0,10)<grip,"sustained wheelspin churns loose soil");
+    check(TerraSim::TerrainGrip(.6f,5000,5000,37,37,true,false,0,0,.4f,15)<grip,"standing water reduces high speed tire grip");
+    check(TerraSim::TerrainGrip(.6f,10000,5000,37,37,true,false,0,0,0,10)<grip,"overloaded tires lose friction coefficient");
+    check(TerraSim::RutResistance(.15f,.42f,.8f,0,false)>TerraSim::RutResistance(.15f,.42f,.8f,1,false),"packing reduces repeated-pass rut resistance");
+    check(TerraSim::RutResistance(.15f,.42f,.8f,0,true)<TerraSim::RutResistance(.15f,.42f,.8f,0,false),"tracks reduce bulldozing resistance");
+    const float spin=TerraSim::LimitedWheelOmega(100,50000,2,.42f,1.f/60,3,1000);
+    check(spin>90&&std::abs(3*(100-spin)/(.42f/60)-1000)<.02f,"traction limit permits real wheelspin and bounds reaction force");
+    check(std::abs(TerraSim::LimitedWheelOmega(-100,50000,-2,.42f,1.f/60,3,1000)+spin)<.0001f,"limited wheel solver is symmetric in reverse");
+    const float coupled=TerraSim::LimitedAxleOmega(12,22000,18000,3,5,1500,2500,.42f,1.f/60,6);
+    const float f0=std::clamp(22000*(coupled*.42f-3),-1500.f,1500.f),f1=std::clamp(18000*(coupled*.42f-5),-2500.f,2500.f);
+    check(std::abs(coupled+(f0+f1)*.42f/60/6-12)<.0001f,"locked shaft conserves angular momentum across unequal tire contacts");
     TerraSim::UpgradeSetup build;
     auto stock=TerraSim::Tune(build,false,true);
     check(stock.Power==1&&stock.Mass==1&&stock.Travel==0&&stock.Grip==1,"stock tuning preserves the baseline");

@@ -16,7 +16,8 @@ struct FTerraWheel {
   FVector Contact, Center;
   FTerraSample Ground;
   FVector ForceForward, ForceSide, PointVelocity;
-  float LongSpeed = 0, LateralSpeed = 0, Angle = 0;
+  float LongSpeed = 0, LateralSpeed = 0, Angle = 0, Grip = 0,
+        Footprint = .14f, RutDepth = 0, FrictionLimit = 0;
   bool ContactValid = false, Constructed = false;
 };
 struct FTerraParcel {
@@ -51,6 +52,9 @@ public:
   UPROPERTY() TObjectPtr<ATerraWorld> Terrain;
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Wheels;
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> SprayMeshes;
+  UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> SuspensionParts;
+  UPROPERTY() TObjectPtr<UStaticMeshComponent> Protection;
+  UPROPERTY() TObjectPtr<UStaticMeshComponent> TrailEquipment;
   FTerraWheel WheelState[4];
   FString VehicleName, SurfaceName, Notice;
   float Mass = 2100, Speed = 0, RPM = 700, Steer = 0, Throttle = 0, Brake = 0,
@@ -109,6 +113,8 @@ private:
   void Input(float Dt);
   void Simulate(float Dt);
   void UpdateSpray(float Dt);
+  void CreateVisualDetails();
+  void UpdateVisualDetails();
   void SaveSetup();
   void UpdateRoute(float Dt);
 };

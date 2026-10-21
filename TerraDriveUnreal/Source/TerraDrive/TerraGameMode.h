@@ -23,6 +23,7 @@ private:
   FVector Start;
   float OpenProgress = 0, MaxProgress = 0;
   float StockUpgradeSpeed = 0, StockUpgradeDistance = 0;
+  float StockFootprint = 0, StockTerrainGrip = 0;
   bool InvertedContactSeen = false;
   TArray<FString> Results;
   bool Captured = false;

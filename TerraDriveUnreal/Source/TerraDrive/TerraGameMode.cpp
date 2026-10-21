@@ -16,6 +16,8 @@
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
 #include "TerraWorld.h"
+#include "TerraUnits.h"
+#include "TerraContact.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
   DefaultPawnClass = ATerraVehicle::StaticClass();
@@ -36,8 +38,8 @@ void ATerraHUD::DrawHUD() {
   DrawText(TEXT("TERRA DRIVE  /  NATIVE PREVIEW"), FLinearColor(.82, .9, .76),
            34, 28, nullptr, 1.25f);
   DrawText(V->VehicleName, FLinearColor::White, 34, 56, nullptr, 1.1f);
-  DrawText(FString::Printf(TEXT("%3.0f km/h    %s%d    %4.0f rpm"),
-                           FMath::Abs(V->Speed) * 3.6f,
+  DrawText(FString::Printf(TEXT("%3.0f mph    %s%d    %4.0f rpm"),
+                           TerraUnits::MPH(FMath::Abs(V->Speed)),
                            V->Direction < 0 ? TEXT("R") : TEXT("D"),
                            V->Gear + 1, V->RPM),
            FLinearColor::White, 34, 82, nullptr, 1.3f);
@@ -63,7 +65,7 @@ void ATerraHUD::DrawHUD() {
   DrawText(TEXT("Shift+W Crawl throttle    K Descent assist    R Recover / restart    Tab Garage    Esc Quit"),
            FLinearColor(.85,.88,.88),30,H-30);
   if (V->WinchAttached)
-    DrawText(FString::Printf(TEXT("WINCH %.1f kN"), V->WinchTension / 1000),
+    DrawText(FString::Printf(TEXT("WINCH %.0f lbf"), TerraUnits::PoundsForce(V->WinchTension)),
              FLinearColor(.74, .9, 1), W - 240, 32);
 }
 void ATerraGameMode::Tick(float Dt) {
@@ -99,6 +101,22 @@ void ATerraGameMode::Tick(float Dt) {
         Loaded &= Wheel->GetStaticMesh() != nullptr;
       Results.Add(FString::Printf(TEXT("{\"case\":\"vehicle %d meshes\",\"pass\":%s}"),
           I, Loaded ? TEXT("true") : TEXT("false")));
+      Check(FString::Printf(TEXT("vehicle %d articulated suspension and upgrade models"),I),
+          V->SuspensionParts.Num()==20&&V->Protection->GetStaticMesh()&&V->TrailEquipment->GetStaticMesh());
+    }
+    Check(TEXT("imperial garage measurements"),V->UpgradeEffect(TerraSim::Body).Contains(TEXT(" lb"))&&
+      V->UpgradeEffect(TerraSim::Suspension).Contains(TEXT(" in"))&&V->UpgradeEffect(TerraSim::Tires).Contains(TEXT(" in width")));
+    Check(TEXT("detailed scenery models and solid obstacles"),V->Terrain->DetailInstanceCount>500&&V->Terrain->SolidDetailCount>20,V->Terrain->DetailInstanceCount);
+    {
+      const FVector Probe(-30000,30000,5000);
+      auto *Edge=NewObject<UBoxComponent>(V->Terrain);
+      Edge->SetupAttachment(V->Terrain->GetRootComponent());Edge->InitBoxExtent(FVector(8,1,8));
+      Edge->SetCollisionProfileName(TEXT("BlockAll"));Edge->ComponentTags.Add(TEXT("TerraRock"));
+      Edge->RegisterComponent();Edge->SetWorldLocation(Probe+FVector(0,30,-60));
+      const auto Narrow=V->Terrain->CastTireSupport(Probe,FVector::UpVector,FVector::ForwardVector,42,28,-30,57,V);
+      const auto Wide=V->Terrain->CastTireSupport(Probe,FVector::UpVector,FVector::ForwardVector,42,80,-30,57,V);
+      Check(TEXT("tire tread rejects rigid support outside its width"),!Narrow.Hit&&Wide.Hit&&Wide.Constructed);
+      Edge->DestroyComponent();
     }
     Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==8,V->Terrain->ConstructedMeshCount);
       { FVector P(5800,23600,472), N(0,0,1); const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V); Check(TEXT("loop contact 0"),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance); }
@@ -313,6 +331,7 @@ void ATerraGameMode::Tick(float Dt) {
     V->SetUpgrade(TerraSim::Body,3,false);
     Check(TEXT("body upgrade reduces actual rigid body mass"),V->Chassis->GetMass()<StockMass*.9f,V->Chassis->GetMass());
     V->SetUpgrade(TerraSim::Frame,3,false);
+    Check(TEXT("upgrade armor becomes visible on the vehicle"),V->Protection->IsVisible());
     Check(TEXT("frame upgrade changes Chaos damping and impact survival"),V->Chassis->GetAngularDamping()>1&&V->ImpactDamage(10000000)<StockImpact*.6f,V->ImpactDamage(10000000));
     V->SetUpgrade(TerraSim::Tires,3,false);
     Check(TEXT("tire upgrade changes rendered size and friction budget"),V->Wheels[0]->GetRelativeScale3D().X>1.1f&&V->GripMultiplier()>1.4f,V->GripMultiplier());
@@ -362,7 +381,39 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>2){
       V->SetGarage(false);
       Check(TEXT("leaving garage resumes native driving"),!V->Garage&&V->Chassis->IsSimulatingPhysics()&&!GetWorld()->GetFirstPlayerController()->bShowMouseCursor);
-      FinishValidation();
+      V->SelectVehicle(0);V->Terrain->ResetSoil();V->TeleportZone(3);V->TestBrake=1;V->TestThrottle=0;V->Pressure=37;Next(33);
+    }
+  } else if(Stage==33){
+    if(StageTime>2&&!Captured){
+      StockFootprint=StockTerrainGrip=0;
+      for(const auto &W:V->WheelState){StockFootprint+=W.Footprint*.25f;StockTerrainGrip+=W.Grip*.25f;}
+      V->Pressure=16;Captured=true;
+    }
+    if(StageTime>4){
+      float Patch=0,Grip=0;for(const auto &W:V->WheelState){Patch+=W.Footprint*.25f;Grip+=W.Grip*.25f;}
+      Check(TEXT("lower pressure enlarges the live soil footprint"),Patch>StockFootprint*1.15f,Patch/StockFootprint);
+      Check(TEXT("lower pressure improves live loose terrain grip"),Grip>StockTerrainGrip*1.05f,Grip/StockTerrainGrip);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_PRESSURE stock_patch=%.4f low_patch=%.4f stock_grip=%.4f low_grip=%.4f"),StockFootprint,Patch,StockTerrainGrip,Grip);
+      const auto P=V->WheelState[0].Contact;const float Before=V->Terrain->Height(P.X,P.Y);
+      for(int I=0;I<100;++I)V->Terrain->Deform(P,FVector::ForwardVector,5500,16,.285f,.28f,.8f,1,.025f);
+      const auto Soil=V->Terrain->Sample(P);
+      Check(TEXT("deformed ruts add depth dependent rolling resistance"),Soil.RutDepth>.005f&&V->Terrain->Height(P.X,P.Y)<Before&&TerraSim::RutResistance(Soil.RutDepth,.42f,Soil.Softness,Soil.Packing,false)>0,Soil.RutDepth);
+      FVector Seam=P;Seam.X=FMath::RoundToFloat(P.X/800)*800;
+      for(int I=0;I<100;++I)V->Terrain->Deform(Seam,FVector::ForwardVector,5500,16,.7f,.7f,.8f,1,.025f);
+      const float Left=V->Terrain->Sample(Seam-FVector(.5,0,0)).RutDepth,Right=V->Terrain->Sample(Seam+FVector(.5,0,0)).RutDepth;
+      Check(TEXT("rut deformation remains continuous across tile seams"),Left>.005f&&Right>.005f&&FMath::Abs(Left-Right)<.005f,FMath::Abs(Left-Right));
+      const auto Groups=V->Terrain->Data->GetArrayField(TEXT("nativeDetails"));
+      const auto Position=Groups[0]->AsObject()->GetArrayField(TEXT("instances"))[0]->AsObject()->GetArrayField(TEXT("p"));
+      const FVector Rock(Position[0]->AsNumber(),Position[1]->AsNumber(),Position[2]->AsNumber());
+      const auto Support=V->Terrain->CastTireSupport(Rock+FVector(0,0,220),FVector::UpVector,FVector::ForwardVector,42,28,-30,260,V);
+      Check(TEXT("modeled boulder provides physical tire support"),Support.Hit&&Support.Constructed&&Support.Surface==4,Support.Distance);
+      const auto LogPosition=Groups[4]->AsObject()->GetArrayField(TEXT("instances"))[0]->AsObject()->GetArrayField(TEXT("p"));
+      const FVector LogPoint(LogPosition[0]->AsNumber(),LogPosition[1]->AsNumber(),LogPosition[2]->AsNumber());
+      const auto LogSupport=V->Terrain->CastTireSupport(LogPoint+FVector(0,0,220),FVector::UpVector,FVector::ForwardVector,42,28,-30,260,V);
+      Check(TEXT("modeled deadwood provides physical tire support"),LogSupport.Hit&&LogSupport.Constructed,LogSupport.Distance);
+      Check(TEXT("visible suspension follows live wheel travel"),FVector::Dist(V->SuspensionParts[0]->GetComponentLocation(),V->Wheels[0]->GetComponentLocation())<90&&V->SuspensionParts[2]->GetComponentScale().Z>.1f);
+      Capture(TEXT("native-tire-ruts.png"));
+      V->Pressure=37;FinishValidation();
     }
   }
 

@@ -1,46 +1,48 @@
 # Native migration validation
 
-Verified October 20, 2026 with Unreal Engine 5.8.3 on Windows x64, DirectX 12 SM6 and NVIDIA GeForce RTX 4060 Laptop GPU. Launch Build/Windows/TerraDrive.exe and keep the complete Windows folder together.
+Verified October 21, 2026 with Unreal Engine 5.8.3 on Windows x64, DirectX 12 SM6 and NVIDIA GeForce RTX 4060 Laptop GPU. Launch Build/Windows/TerraDrive.exe and keep the full Windows folder together.
 
 ## Recorded results
 
 | Check | Result |
 |---|---|
-| Editor/game compilation, import and full cook/package | Successful |
-| Packaged native game | All 71 checks passed with a fresh report and successful process exit |
-| Shared C++ core | 41 checks passed, including upgrade progression, hardware limits, contact, differential torque, friction and flotation |
-| Assets | 144 mesh sources, 295 source materials, seven layered terrain materials, 26 imported textures, nine regions and eight routes |
-| Browser preservation | All 189 preserved browser files match their recorded Git blob hashes |
-| Existing terrain conversion | 1,000 height/water/surface samples and region references remain the unchanged geometry baseline |
-| Matched engine comparison | Stock 13.953 m/s and 40.177 m; stage III 21.059 m/s and 73.749 m at identical throttle and duration |
-| Body upgrade | Actual Chaos mass falls with lightweight body stages; roof collision no longer adds a second cabin mass |
-| Other upgrade systems | Rendered tire size/friction, wheel inertia, suspension travel, frame damping/protection, electrical recovery and EV output checks passed |
-| Persistence | Atomic save, seven-category reload, independent vehicle builds and invalid-file protection passed |
-| Garage | Vehicle freeze/cursor and return to simulated driving passed |
-| Live controls | mouse vehicle selection and all seven visible upgrade rows, Bronco engine II: 330 to 462 hp, stage II engine retained after full restart, Wrangler stock build remained independent, Bronco tire II: 35.3 in and +28% grip, Reset to Stock restored 330 hp and 32.7 in, Let's Drive, Tab and Escape, test setups restored to stock and game closed |
-| Rollover/airborne input | Zero tire drive or invented airborne steering |
-| Debris | 434 emitted, 410 expired, 24 rendered at the sample; no permanent particles after stopping |
-| Courses | Five loop contact probes, unsupported gap, moving inverted wheel support, eight stable route starts, locker comparison and controlled descent passed |
+| Final compile, import, full cook and Windows staging | Successful; process exit 0 |
+| Packaged game | All 87 checks passed with a fresh JSON report and successful game exit |
+| Standalone simulation | All 63 checks passed, including imperial conversions, footprint area across grid phases and redline limits at 30/60/120 Hz |
+| Assets | 163 mesh sources, 305 source materials, seven terrain materials and 26 textures |
+| Scenery | 2,645 added detail instances, including 645 solid rocks/logs; 13 materials use individual instance colors |
+| Browser source | All 189 reference files unchanged; 53 existing vendor/binary files preserved |
+| Display units | mph, feet/inches, pounds, pounds-force, PSI and horsepower; raw diagnostics retain SI where named |
+| Pressure comparison | 37 to 16 PSI changed mean contact length from 3.94 to 6.37 in and mean grip from 0.4807 to 0.5566 |
+| Low-range wheelspin | 4675 RPM at the sampled point; powered rotation is constrained by delivered torque at redline |
+| Contact geometry | Rigid support outside the tread width rejected; boulders and deadwood supply physical support |
+| Ruts | Depth-dependent resistance and continuous deformation across tile seams passed |
+| Engine comparison | Stock 31.1 mph / 130.9 ft; stage III 47.2 mph / 242.4 ft at identical throttle and duration |
+| Vehicle models | All five vehicles load articulated suspension and upgrade models; armor visibility and live wheel-travel positions passed |
+| Existing behavior | Rollover/airborne control suppression, moving/expiring debris, locker comparison, controlled descent, loop/gap probes, eight route starts, upgrades, persistence and garage entry/exit passed |
 
-The engine comparison is a repeatable game regression, not a calibrated real-world performance claim. The machine-readable report records every case, executable hash and source hashes. Test save files live under Saved/Validation and never overwrite the player garage.
+The pressure and engine comparisons are game regressions, not real-vehicle setup recommendations or manufacturer calibration. The machine-readable report records every case, source hashes and the executable hash. Test saves use a separate Validation folder.
 
-## Visual and interaction checks
+## Rendered inspection
 
-The native vehicle and upgrade menus were inspected in the running game. Vehicle cards, live preview, stage controls and build-sheet numbers were checked. Saved vehicle upgrades were checked after restarting. Terrain screenshots were inspected across the regions, including varied dirt, mud and rock. The material pass uses three photographic layers, world-space/triplanar projection, irregular patches at multiple scales, normal maps and roughness variation. Dry-soil specularity was reduced and pale gravel was soil-stained after the first renders showed unnatural white patches. The final seven-row upgrade layout was rebuilt and staged against that successful cook, then passed the complete native suite again.
+Native engine captures were inspected for mph in the driving HUD, pounds/inches in the vehicle menu, detailed boulders/deadwood, revised vegetation, textured terrain and the loop view. Shrub geometry was refined from oversized shapes to thin curved leaves before the final package. Individual source instance colors are preserved through a vertex-interpolated path on the 13 scenery materials that use them.
 
-Final cook and runtime logs contain no material compilation errors, fatal errors or virtual-shadow overflow. Existing SSGI deprecation and unused Enhanced Input settings notices remain non-fatal. These observations do not constitute a frame-time benchmark or long-session stability test.
+The live desktop control tool returned "failed to activate captured window" after a refreshed binding and showed only wallpaper. Live UI input was stopped; no new live mouse/keyboard verification is claimed for this pass. The packaged native suite did verify garage freeze/cursor/exit, persistence and upgrade effects. Previous live menu/persistence checks remain historical evidence. The displayed native captures are from the final package.
+
+Final build and runtime logs contain no fatal or material-compilation errors. Existing SSGI deprecation, Enhanced Input notices and numeric-conversion compiler warnings remain non-fatal. This is not a frame-time benchmark or a long-session stability claim.
 
 ## Reproduce
 
+    .\Tools\test-core.cmd
     .\Tools\build-native.ps1 -ImportAssets -Package
     .\Tools\verify-native.ps1
 
-Use a normal Windows process context for Unreal. Material/rendering changes require a full cook; code-only changes may reuse a successful cook with -SkipCook. The importer uses forward-slash Python arguments, resumable material signatures and mesh schema 2. The verifier rejects stale reports or failed checks.
+Run Unreal in a normal Windows process context. Full material/model changes need a cook; code-only changes can reuse a valid cook with -SkipCook. The importer checks per-mesh source hashes, fresh completion and saved map. It waits for the commandlet process directly and rejects failed imports. Upload preparation checks the explicit source allowlist for credential-like values.
 
-Logs remain under Saved/Validation, Saved/Logs and Saved/AutomationLogs. Captures are in Build/Windows/TerraDrive/Saved/Screenshots. Generated assets, Windows packages, local saves and private configuration are excluded from GitHub. The unused Android File Server plugin is disabled, and upload preparation rejects credential-like configuration values.
+Final logs: Saved/package-imperial-release-console.log, Saved/verify-imperial-final-console.log, Saved/core-imperial-console.log and Saved/Validation/packaged-game.log. Captures: Build/Windows/TerraDrive/Saved/Screenshots. Generated assets, builds, local saves and private configuration are excluded from publication.
 
 ## Practical limits
 
-This is a playable migration preview. Upgrade stages are game tuning rather than manufacturer-approved or factory-calibrated modifications. Body/frame upgrades primarily change simulation properties; they do not provide a complete set of replacement body meshes. Terrain variation improves existing surface materials without adding new physical soil categories.
+This remains a playable migration preview. Tire/soil coefficients, chassis parameters, recovery hardware and upgrade stages are simulator tuning. Contact uses finite analytical/mesh queries, not a fully deformable tire or flexible frame. Scenery rocks/logs are fixed solid obstacles; vegetation is nonblocking. Vehicle details are procedural additions to the preserved reference bodies.
 
-Full browser 1.15 parity, detailed track animation, every procedural sign, factory driveline interlocks, gamepad hardware testing and long-session performance/stability are not established. Some signs remain blank. The tests verify course collision, route starts and selected driving segments; they do not prove an uninterrupted full-speed loop or completion of every rocky route. Historical browser regressions remain reference evidence; no new full browser-suite pass is claimed.
+Full browser parity, every complete rocky route, uninterrupted full-loop traversal, factory driveline/calibration fidelity, detailed track animation, all sign lettering, gamepad hardware and long-session stability/performance remain unproven. The tests verify collision, starts and selected driving segments. Historical browser results are reference evidence; no fresh full browser-suite pass is claimed.

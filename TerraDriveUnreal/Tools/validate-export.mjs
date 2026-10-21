@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Terrain} from '../../TerraDrive-v1.13/dist/src/terrain.js';
@@ -31,8 +32,17 @@ const zoneSamples=data.zones.map(zone=>{
  assert.ok(Math.abs(b.readFloatLE(offset)-reference.height)<1e-4,zone.name+' height');
  return {name:zone.name,unrealXM:ux,unrealYM:uy,surface:reference.surface,heightM:reference.height};
 });
-for(const a of data.assets){assert.ok(fs.statSync(path.join(root,'SourceAssets',a.name+'.obj')).size>50);for(const slot of a.slots)assert.ok(data.materials.some(m=>m.id===slot));}
+for(const a of data.assets){const obj=fs.readFileSync(path.join(root,'SourceAssets',a.name+'.obj'));assert.ok(obj.length>50);assert.equal(crypto.createHash('sha256').update(obj).digest('hex'),a.sha256);for(const slot of a.slots)assert.ok(data.materials.some(m=>m.id===slot));}
 for(const group of data.placements)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 for(const t of data.trees)for(const p of t.parts){assert.ok(data.placements[p.group].instances.some(i=>i.index===p.index));}
-const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),pass:true};
+assert.equal(data.displayUnits,'imperial');
+for(const v of data.vehicles)for(const part of ['armor','equipment'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
+for(const group of [...data.placements,...data.nativeDetails])for(const i of group.instances){assert.equal(i.color.length,3);assert.ok(i.color.every(c=>Number.isFinite(c)&&c>=0));}
+const details=data.nativeDetails.reduce((n,g)=>n+g.instances.length,0),solid=data.nativeDetails.filter(g=>g.solid).reduce((n,g)=>n+g.instances.length,0);
+const tinted=new Set();for(const group of [...data.placements,...data.nativeDetails])
+ if(group.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))for(const slot of data.assets.find(a=>a.name===group.asset).slots)tinted.add(slot);
+for(const m of data.materials)assert.equal(m.instanceTint,tinted.has(m.id));
+assert.ok(details>500&&solid>20);
+for(const group of data.nativeDetails)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(i.s.every(s=>s>0));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
+const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});fs.writeFileSync(path.join(root,'docs/export-validation.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

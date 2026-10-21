@@ -1,5 +1,6 @@
 #include "TerraVehicle.h"
 #include "TerraGarage.h"
+#include "TerraUnits.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
@@ -83,6 +84,7 @@ void ATerraVehicle::ApplyUpgrades(){
       Wheels[I]->SetWorldLocationAndRotation(GetActorTransform().TransformPosition(Local),GetActorQuat());
     }
   }
+  UpdateVisualDetails();
 }
 void ATerraVehicle::SetUpgrade(int Part,int Stage,bool Persist){
   if(Part<0||Part>=TerraSim::PartCount||(!Garage&&!AutoTest))return;
@@ -144,13 +146,13 @@ FString ATerraVehicle::UpgradeDescription(int Part) const{
 FString ATerraVehicle::UpgradeEffect(int Part) const{
   const int S=UpgradeStage(Part);
   switch(Part){
-  case TerraSim::Suspension:return FString::Printf(TEXT("+%.0f mm travel  /  +%.0f mm lift  /  +%.0f%% damping"),Tuning.Travel*1000,Tuning.Lift*1000,(Tuning.Damping-1)*100);
+  case TerraSim::Suspension:return FString::Printf(TEXT("+%.1f in travel  /  +%.1f in lift  /  +%.0f%% damping"),TerraUnits::Inches(Tuning.Travel),TerraUnits::Inches(Tuning.Lift),(Tuning.Damping-1)*100);
   case TerraSim::Engine:return FString::Printf(TEXT("+%.0f%% output  /  %.0f hp total"),(Tuning.Power-1)*100,PowerHP());
-  case TerraSim::Tires:return FString::Printf(TEXT("%.1f in diameter  /  %.0f mm width  /  +%.0f%% grip"),TireDiameter(),Width*1000,(Tuning.Grip-1)*100);
-  case TerraSim::Wheels:return FString::Printf(TEXT("%.0f%% less rotational inertia  /  +%.0f mm track"),(1-Tuning.WheelInertia)*100,Tuning.Track*1000);
+  case TerraSim::Tires:return FString::Printf(TEXT("%.1f in diameter  /  %.1f in width  /  +%.0f%% grip"),TireDiameter(),TerraUnits::Inches(Width),(Tuning.Grip-1)*100);
+  case TerraSim::Wheels:return FString::Printf(TEXT("%.0f%% less rotational inertia  /  +%.1f in track"),(1-Tuning.WheelInertia)*100,TerraUnits::Inches(Tuning.Track));
   case TerraSim::Frame:return FString::Printf(TEXT("+%.0f%% chassis damping  /  %.0f%% less combined impact damage"),(Tuning.Stability-1)*100,(1-Tuning.Damage)*100);
-  case TerraSim::Body:return FString::Printf(TEXT("%.0f kg total  /  %.0f%% less drag  /  protective panels stage %d"),Mass,(1-Tuning.Drag)*100,S);
-  case TerraSim::Electrical:return !HasElectrical()?TEXT("NOT AVAILABLE"):FString::Printf(TEXT("+%.0f%% winch power  /  %.0f cm water margin%s"),(Tuning.Winch-1)*100,Tuning.WaterDepth*100,VehicleIndex==4?*FString::Printf(TEXT("  /  +%.0f%% EV output"),(Tuning.ElectricalPower-1)*100):TEXT(""));
+  case TerraSim::Body:return FString::Printf(TEXT("%.0f lb total  /  %.0f%% less drag  /  armor stage %d"),TerraUnits::Pounds(Mass),(1-Tuning.Drag)*100,S);
+  case TerraSim::Electrical:return !HasElectrical()?TEXT("NOT AVAILABLE"):FString::Printf(TEXT("+%.0f%% winch  /  %.1f in water margin%s"),(Tuning.Winch-1)*100,TerraUnits::Inches(Tuning.WaterDepth),VehicleIndex==4?*FString::Printf(TEXT("  /  +%.0f%% EV output"),(Tuning.ElectricalPower-1)*100):TEXT(""));
   }
   return FString();
 }
