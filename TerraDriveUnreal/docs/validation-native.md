@@ -1,39 +1,42 @@
 # Native migration validation
 
-Verified October 20, 2026 with Unreal Engine 5.8.3 on Windows x64. The project imports, cooks and packages successfully. The packaged Development game runs using native C++ and DirectX 12 SM6 on an NVIDIA GeForce RTX 4060 Laptop GPU.
+Verified October 20, 2026 with Unreal Engine 5.8.3 on Windows x64, DirectX 12 SM6 and NVIDIA GeForce RTX 4060 Laptop GPU. Launch `Build/Windows/TerraDrive.exe` and keep the complete Windows folder together.
 
-Launch `Build/Windows/TerraDrive.exe` and keep the entire `Windows` folder together. The executable under the project's top-level `Binaries/Win64` is an uncooked build product; use the packaged launcher above.
-
-## Observed results
+## Recorded results
 
 | Check | Result |
 |---|---|
-| Editor and game C++ targets | Both compiled successfully with MSVC 14.51.36256 and Windows SDK 10.0.26100 |
-| Shared simulation core | 15 checks passed after recompilation: wheel integration, reverse symmetry, flotation, rigid soil, traction budget and brake-to-reverse gating |
-| Source conversion | 141 meshes, five vehicle variants, eight regions and 472 tree placements |
-| Terrain export | 1,000 height/water/surface samples passed; maximum height conversion error 0.00000190735 m; eight region references also verified |
-| Native import | 141 meshes, 207 materials, nine textures and `/Game/Maps/ProvingGround`; mesh schema 2; fresh completion marker |
-| Windows package | Full cook/stage/archive succeeded; camera and unused Android-plugin configuration revisions rebuilt and staged using that cooked content |
-| Packaged runtime | All 27 native checks passed, with a fresh report and process exit 0 |
-| Graphics | Nine rendered 1280×720 captures inspected across the driving test and eight regions; no fatal/runtime error entries in the final game log |
-| Interactive desktop check | Packaged launcher opened the game; Tab opened the field garage, V changed Jeep to Bronco, Escape exited |
-| Browser preservation | 189 browser code, test and asset files matched the remote Git tree by Git blob SHA-1; browser files were not edited |
+| Editor/game compilation and packaging | Successful; full cook followed by code-only rebuilds/staging against that cook |
+| Packaged native game | All 55 checks passed with a fresh report and successful process exit |
+| Shared C++ core | 24 checks passed: finite support reach, differential torque transfer, tire integration, friction budget, flotation and direction gating |
+| Export/import | 144 mesh sources, 295 materials, nine textures, nine regions, eight challenge routes and 412 trees; mesh schema 2 |
+| Terrain conversion | 1,000 height/water/surface samples plus zone references passed; maximum height conversion error 0.00000190735 m |
+| Roof-down input | Zero tire drive force; 0.0916 cm horizontal drift during the stationary roof test; upright camera horizon and positive terrain clearance |
+| Airborne input | No tire force or artificial horizontal/yaw control |
+| Debris | 430 emitted, 403 expired and 27 still rendered at the driving sample; zero live/rendered particles after stopping |
+| Locked axle climb | 8.746 m progress open versus 10.081 m locked under the same throttle and duration; shaft-speed coupling passed |
+| Low range | Engine drive cuts near redline; the driving regression stayed below 7,000 rpm |
+| Descent assist | 2.788 m/s at the recorded downhill sample |
+| Summit park | Five real collision probes around the loop, including its ceiling; no hidden support across the jump gap; an inverted vehicle retained wheel support |
+| Cameras/routes | All eight original region camera checks, eight stable challenge spawns, rollover camera clearance and inverted-loop camera line of sight passed |
+| Live keyboard check | 7 Summit park, 9 Granite Trials, L low range, Z rear locker, U front locker, K descent assist, J next route, R restart, Escape exit |
+| Browser preservation | All 189 preserved browser files match their recorded Git blob hashes; none were edited |
 
-The final machine-readable results are in [native-validation.json](native-validation.json). The export comparisons are in [export-validation.json](export-validation.json), and preserved browser hashes are in [browser-source-sha1.json](browser-source-sha1.json).
+Native acceleration traveled 55.182 m and reached 18.766 m/s; braking stopped the vehicle. EV steering reached 14.897 m/s with 91.293 degrees of yaw. These are regression scenarios, not calibrated real-world performance measurements.
 
-The native driving scenario traveled 66.483 m and reached 20.987 m/s, then stopped to 0.000 m/s under braking. The EV steered launch reached 16.558 m/s with 89.294 degrees of yaw. Snow deformation measured 22.02576 cm under the tire test versus 4.74707 cm under the track test; the soil volume accounting error was zero at the recorded precision. All eight region surface references matched, and the camera stayed above the terrain with zero roll at each capture. These are regression scenarios, not calibrated performance or real-world handling measurements.
+The machine-readable report and executable/source hashes are in [native-validation.json](native-validation.json). Export checks are in [export-validation.json](export-validation.json); browser hashes are in [browser-source-sha1.json](browser-source-sha1.json).
 
-## Repairs verified in this continuation
+## Changes verified
 
-Unreal commandlets start correctly outside the restricted process sandbox. Forward slashes prevent PythonScriptCommandlet from treating the project path's backslash-t as a tab. The importer uses UE 5.8 editor property access for material slots and checks the saved map and a fresh completion marker. Packaging stages the native terrain data and dynamically loaded engine sphere asset.
+Suspension contacts now require finite travel and a surface facing the tire. A roof-down vehicle cannot obtain invented grip from ground behind its suspension. The cabin has a physical roof collider. Legitimate ceiling contact inside the loop remains supported.
 
-The native terrain sampler now follows the exported row-X/column-Y layout. Mesh schema 2 compensates for the OBJ importer's own Y-axis conversion. Imported foliage uses the source diffuse textures and alpha masks, and materials enable instanced static mesh usage. The camera uses absolute rotation to keep its horizon upright when the chassis rolls or pitches; eight camera regression checks now catch underground or tilted views. The wider chase camera also returns correctly after toggling C.
+Moving debris uses persistent world-space instances, gravity, drag, impact removal and short lifetimes. Permanent spheres behind the tires were removed. Detailed terrain updates reuse collision/render vertices instead of repeatedly recooking bodies.
 
-The renderer uses screen-space GI/reflections, removing the invalid Lumen configuration seen in the first package. The final log retains two non-fatal warnings: SSGI is deprecated in UE 5.8, and the unused Enhanced Input user-settings subsystem has no PlayerInput object. Direct keyboard controls were verified. The compiler also warns that MSVC 14.51 is newer than its preferred 14.50 toolchain.
+The full source Summit park is exported with an exposed-surface collision mesh. Granite Trials adds alternating axle-lift ledges, a steep staircase, an off-camber ridge and a controlled descent. Low range, supported front/rear lockers, axle shaft coupling, crawl throttle, engine rev limiting and descent assistance affect the native simulation. The full-loop route requires its ceiling checkpoint before the exit gate.
 
-An automatically generated Android File Server token was removed before the final source publication; it was absent from the earlier remote configuration. The unused Android File Server plugin is now disabled, and the upload helper rejects credential-like configuration content.
+Conventional dynamic shadows avoid the virtual-shadow marking overflow from large non-Nanite course meshes. The camera uses an upright horizon, a world-height pivot after a rollover and a shorter inside-loop view. Soft ground-bounce lighting improves underside readability. Final runtime logs contain no fatal/error entries or VSM overflow. Existing non-fatal notices concern deprecated SSGI and unused Enhanced Input user settings; keyboard handling is native.
 
-## Reproduce and inspect
+## Reproduce
 
 From the native project directory, in a normal Windows process context:
 
@@ -42,12 +45,12 @@ From the native project directory, in a normal Windows process context:
 .\Tools\verify-native.ps1
 ```
 
-The verifier rejects stale reports, failed checks and unsuccessful process exits. Local evidence remains in `Saved/Validation/native-validation.json`, `Saved/Validation/packaged-game.log`, `Saved/Logs/import-assets.log`, and `Saved/AutomationLogs`. Screenshots are in `Build/Windows/TerraDrive/Saved/Screenshots/native-acceleration.png` and `native-region-1.png` through `native-region-8.png`. The executable SHA-256 is recorded with the JSON results. Generated assets, builds, logs and private application configuration are excluded from GitHub.
+The verifier rejects stale reports, failed checks and unsuccessful process exits. The importer uses forward-slash Python arguments, resumable material signatures and schema metadata. Asset or rendering changes require a fresh cook; code-only changes may reuse the successful cook with -SkipCook. Logs and local reports remain under Saved/Validation, Saved/AutomationLogs and Saved/Logs. Captures are in Build/Windows/TerraDrive/Saved/Screenshots.
 
-## Remaining migration limits
+Generated assets, Windows packages, logs and private application configuration are excluded from GitHub. The unused Android File Server plugin is disabled and upload preparation rejects credential-like configuration values.
 
-This is a playable migration preview; full behavioral or visual parity with browser 1.15 has not been established. Advanced safety interlocks, detailed body/tire deformation, full upgrade persistence, moving-body spray sweep accuracy, tree inertia/contact calibration, track belt animation and challenge collision need further work. Native soil and vehicle values remain simulation estimates.
+## Practical limits
 
-OBJ conversion represents per-vertex color variation with each material's average source tint. Browser procedural shaders and canvas sign lettering are not reproduced; signs currently render blank. Lighting, water appearance, snow shading and steep-slope camera framing still need polish. Gamepad mappings are implemented but were not physically tested. Frame rate and long-session stability were not benchmarked.
+This remains a playable migration preview. Full browser 1.15 parity, factory-accurate driveline/safety interlocks, detailed deformation, setup persistence, tree calibration and track belt animation are not established. The courses are competition-inspired exercises, not an official event/rules replica. The tests verify collision, driving behavior and route starts; they do not establish an uninterrupted completion of every course or a complete full-speed loop traversal.
 
-The historical browser checkpoint contains 62 passing focused Node regressions. A broad rerun during this continuation was interrupted to reduce memory pressure, so it is not recorded as a fresh full-suite pass. The browser source remains intact as the reference for further migration.
+Browser procedural shaders and canvas sign lettering are not reproduced; some signs remain blank. Material vertex variation is represented by mean tints, and lighting/terrain appearance remains approximate. Gamepad hardware testing, frame-rate benchmarking and long-session stability are not complete. Historical browser tests are reference evidence; this work preserves the browser rather than claiming a new full browser-suite pass.

@@ -6,6 +6,19 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    check(TerraSim::ValidSupport(.25f,-.3f,.57f,1),"upright support within suspension travel");
+    check(!TerraSim::ValidSupport(-1,-.3f,.57f,1),"ground behind the suspension cannot support a rolled car");
+    check(!TerraSim::ValidSupport(5,-.3f,.57f,1),"airborne wheel cannot reach distant ground");
+    check(!TerraSim::ValidSupport(.25f,-.3f,.57f,-1),"back-facing surface cannot supply tire grip");
+    check(!TerraSim::ValidSupport(std::numeric_limits<float>::quiet_NaN(),-.3f,.57f,1),"invalid suspension result rejected");
+    auto open=TerraSim::SplitAxleTorque(3000,2000,0,false);
+    auto locked=TerraSim::SplitAxleTorque(3000,2000,0,true);
+    check(open.left==open.right&&open.left<=12,"open axle loses traction when one wheel lifts");
+    check(locked.left==3000&&locked.right==0,"locked axle transfers torque to the loaded wheel");
+    auto reverseLock=TerraSim::SplitAxleTorque(-3000,500,1500,true);
+    check(reverseLock.left==-750&&reverseLock.right==-2250,"reverse locked torque conserves requested torque");
+    auto equal=TerraSim::SplitAxleTorque(800,2000,2000,false);
+    check(equal.left==400&&equal.right==400,"balanced open axle delivers requested torque");
     for(float dt:{1.f/30,1.f/60,1.f/120}){
         float omega=0;
         for(int i=0;i<300;i++)omega=TerraSim::WheelOmega(omega,50000,12,.42f,dt,3);

@@ -5,6 +5,7 @@
 #include "Components/DirectionalLightComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/SkyLightComponent.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
@@ -120,6 +121,45 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
   }
   return S;
 }
+FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM,
+    float MinCM, float MaxCM, const AActor *Ignore) const {
+  FTerraSupport Result;
+  Up = Up.GetSafeNormal();
+  // A tire's finite suspension ray points away from the ground on a rolled
+  // chassis. Never invent a world-vertical contact behind that ray.
+  if (Up.Z > .15f) {
+    float D = (Mount.Z - Height(Mount.X, Mount.Y) - RadiusCM) / Up.Z;
+    FVector Normal = FVector::UpVector, P;
+    for (int I = 0; I < 5; ++I) {
+      const FVector Center = Mount - Up * D;
+      const auto S = Sample(Center);
+      Normal = S.Normal;
+      const float Alignment = FVector::DotProduct(Up, Normal);
+      if (Alignment <= .15f) break;
+      D += (FVector::DotProduct(Center - FVector(Center.X, Center.Y, S.Height), Normal) - RadiusCM) / Alignment;
+    }
+    P = Mount - Up * D - Normal * RadiusCM;
+    if (TerraSim::ValidSupport(D, MinCM, MaxCM, FVector::DotProduct(Up, Normal)) &&
+        FMath::Abs(P.Z - Height(P.X, P.Y)) < 12) {
+      Result = {P, Normal, D, true, false, Sample(P).Surface};
+    }
+  }
+  FCollisionQueryParams Params(SCENE_QUERY_STAT(TerraSuspension), true, Ignore);
+  TArray<FHitResult> Hits;
+  GetWorld()->SweepMultiByChannel(Hits, Mount - Up * MinCM, Mount - Up * MaxCM,
+      FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(RadiusCM), Params);
+  for (const auto &Hit : Hits) {
+    if (!Hit.Component.IsValid() || Hit.Component->ComponentHasTag(TEXT("TerraGround")) || Hit.bStartPenetrating) continue;
+    const float D = MinCM + Hit.Distance;
+    if (!TerraSim::ValidSupport(D, MinCM, MaxCM, FVector::DotProduct(Up, Hit.ImpactNormal))) continue;
+    if (!Result.Hit || D < Result.Distance) {
+      const bool Built = Hit.Component->ComponentHasTag(TEXT("TerraConstructed"));
+      const uint8 Surface = Built ? (Hit.Component->ComponentHasTag(TEXT("TerraRock")) ? 4 : 1) : Sample(Hit.ImpactPoint).Surface;
+      Result = {Hit.ImpactPoint, Hit.ImpactNormal, D, true, Built, Surface};
+    }
+  }
+  return Result;
+}
 void ATerraWorld::BeginPlay() {
   Super::BeginPlay();
   FString Text;
@@ -171,9 +211,19 @@ void ATerraWorld::BeginPlay() {
                                                         FRotator(-36, -44, 0));
   Sun->GetLightComponent()->SetIntensity(4.f);
   Sun->GetLightComponent()->SetLightColor(FLinearColor(1, .91, .78));
+  // A soft, unshadowed ground-bounce light keeps the underside of the loop
+  // and an inverted vehicle readable in this non-baked procedural world.
+  auto *Bounce = GetWorld()->SpawnActor<ADirectionalLight>(FVector(0,0,-10000),FRotator(62,140,0));
+  Bounce->GetLightComponent()->SetMobility(EComponentMobility::Movable);
+  Bounce->GetLightComponent()->SetIntensity(.65f);
+  Bounce->GetLightComponent()->SetLightColor(FLinearColor(.74f,.68f,.60f));
+  Bounce->GetLightComponent()->SetCastShadows(false);
   auto *Sky = GetWorld()->SpawnActor<ASkyLight>();
   Sky->GetLightComponent()->SetMobility(EComponentMobility::Movable);
   Sky->GetLightComponent()->SetIntensity(1.1f);
+  // Ground bounce keeps downward-facing surfaces readable inside the loop.
+  // The default black lower hemisphere makes the inverted car disappear.
+  Sky->GetLightComponent()->SetLowerHemisphereColor(FLinearColor(.16f,.14f,.11f));
   Sky->GetLightComponent()->bRealTimeCapture = true;
   auto *Fog = GetWorld()->SpawnActor<AExponentialHeightFog>();
   Fog->GetComponent()->SetFogDensity(.009f);
@@ -202,6 +252,7 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
     Mesh->RegisterComponent();
     Mesh->bUseAsyncCooking = true;
     Mesh->SetCollisionProfileName(TEXT("BlockAll"));
+    Mesh->ComponentTags.Add(TEXT("TerraGround"));
   }
   const int D = 32;
   float X0 = Key.X * 3200.f, Y0 = Key.Y * 3200.f;
@@ -250,7 +301,9 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
   T.Mesh = NewObject<UProceduralMeshComponent>(this);
   T.Mesh->SetupAttachment(RootComponent);
   T.Mesh->RegisterComponent();
-  T.Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+  T.Mesh->SetCollisionProfileName(TEXT("BlockAll"));
+  T.Mesh->ComponentTags.Add(TEXT("TerraGround"));
+  T.Mesh->bUseAsyncCooking = true;
   for (int J = 0; J <= Div; J++)
     for (int I = 0; I <= Div; I++) {
       float X = Key.X * TileCM + I * CellCM, Y = Key.Y * TileCM + J * CellCM;
@@ -287,8 +340,13 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
       Idx[S].Append({A, A + Div + 1, A + 1, A + 1, A + Div + 1, A + Div + 2});
     }
   for (int S = 0; S < 7; S++) {
-    T.Mesh->CreateMeshSection_LinearColor(S, V, Idx[S], T.Normals, T.UV,
-                                          T.Colors, {}, false);
+    if (Idx[S].IsEmpty()) continue;
+    // Topology is fixed. Update both render and collision vertices in place;
+    // repeatedly cooking new bodies for every rut wastes memory and CPU.
+    if (T.Mesh->GetProcMeshSection(S))
+      T.Mesh->UpdateMeshSection_LinearColor(S,V,T.Normals,T.UV,T.Colors,{});
+    else
+      T.Mesh->CreateMeshSection_LinearColor(S,V,Idx[S],T.Normals,T.UV,T.Colors,{},true);
     T.Mesh->SetMaterial(S, Materials[S]);
   }
   T.Dirty = false;
@@ -384,6 +442,40 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   CompactedVolume += Removed - Placed;
 }
 void ATerraWorld::LoadScenery() {
+  const TArray<TSharedPtr<FJsonValue>> *Built = nullptr;
+  if (Data->TryGetArrayField(TEXT("constructed"), Built)) for (auto V : *Built) {
+    auto O = V->AsObject();
+    const FString Visual = O->GetStringField(TEXT("asset"));
+    FString Collision = Visual;
+    O->TryGetStringField(TEXT("collision"), Collision);
+    for (int Pass = 0; Pass < (Visual == Collision ? 1 : 2); ++Pass) {
+      auto *C = NewObject<UStaticMeshComponent>(this);
+      C->SetupAttachment(RootComponent);
+      C->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, *(TEXT("/Game/Meshes/") + (Pass == 0 ? Visual : Collision))));
+      const bool Physical = Visual == Collision || Pass == 1;
+      C->SetCollisionProfileName(Physical ? TEXT("BlockAll") : TEXT("NoCollision"));
+      C->ComponentTags.Add(TEXT("TerraConstructed"));
+      if (O->GetIntegerField(TEXT("surface")) == 4) C->ComponentTags.Add(TEXT("TerraRock"));
+      C->SetVisibility(Pass == 0);
+      C->SetCastShadow(Pass == 0);
+      C->RegisterComponent();
+      ConstructedMeshes.Add(C);
+      if (C->GetStaticMesh()) ++ConstructedMeshCount;
+    }
+  }
+  const TArray<TSharedPtr<FJsonValue>> *RouteData = nullptr;
+  if (Data->TryGetArrayField(TEXT("routes"), RouteData)) for (auto V : *RouteData) {
+    auto O = V->AsObject(); FTerraRoute R;
+    R.Name = O->GetStringField(TEXT("name")); R.Hint = O->GetStringField(TEXT("hint"));
+    R.Spawn = Vec(O->GetArrayField(TEXT("spawn"))); R.Yaw = O->GetNumberField(TEXT("yaw"));
+    R.Zone = O->GetIntegerField(TEXT("zone")); R.GateWidth = O->GetNumberField(TEXT("gateWidth"));
+    for (auto G : O->GetArrayField(TEXT("gates"))) R.Gates.Add(Vec(G->AsArray()));
+    const TArray<TSharedPtr<FJsonValue>> *Directions = nullptr;
+    if (O->TryGetArrayField(TEXT("gateDirections"),Directions))
+      for (auto D : *Directions) R.GateDirections.Add(D->AsNumber()<0?-1:1);
+    Routes.Add(R);
+  }
+  if (Spawns.IsValidIndex(8) && Routes.IsValidIndex(4)) Spawns[8] = Routes[4].Spawn;
   for (auto G : Data->GetArrayField(TEXT("placements"))) {
     auto O = G->AsObject();
     auto *Mesh = LoadObject<UStaticMesh>(

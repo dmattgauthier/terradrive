@@ -13,6 +13,9 @@ struct FTerraWheel {
         Pressure = 35;
   FVector Contact, Center;
   FTerraSample Ground;
+  FVector ForceForward, ForceSide, PointVelocity;
+  float LongSpeed = 0, LateralSpeed = 0, Angle = 0;
+  bool ContactValid = false, Constructed = false;
 };
 struct FTerraParcel {
   FVector P, V;
@@ -28,6 +31,8 @@ public:
   virtual void Tick(float Dt) override;
   void SelectVehicle(int Index);
   void TeleportZone(int Index);
+  void TeleportRoute(int Index);
+  void ToggleLocker(bool Front);
   UFUNCTION()
   void OnBodyHit(UPrimitiveComponent *Hit, UPrimitiveComponent *Other,
                  FVector Impulse, const FHitResult &Result);
@@ -37,6 +42,7 @@ public:
                UPrimitiveComponent *Other, FVector Impulse,
                const FHitResult &Result);
   UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Chassis;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> RoofCollision;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Body;
   UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
@@ -49,6 +55,14 @@ public:
         Pressure = 35, Damage = 0, WinchTension = 0;
   bool Tracks = false, FourDrive = true, LowRange = false,
        WinchAttached = false, Reeling = false, Garage = false;
+  bool FrontLocked = false, RearLocked = false, Overturned = false,
+       DescentAssist = false;
+  int ContactCount = 0, RouteIndex = -1, GateIndex = 0;
+  float RouteTime = 0, LastTireForceN = 0;
+  FString RouteStatus;
+  int SprayEmitted = 0, SprayExpired = 0;
+  float SprayTravelCM = 0;
+  int SprayCount() const { return Parcels.Num(); }
   int VehicleIndex = 0, Zone = 0, Gear = 0, Direction = 1, EngineUpgrade = 0,
       LiftUpgrade = 0;
   bool AutoTest = false, Initialized = false;
@@ -58,8 +72,9 @@ public:
 private:
   TSharedPtr<FJsonObject> Spec;
   TArray<FTerraParcel> Parcels;
-  UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Deposits;
   FVector Anchor;
+  FVector PreviousRoutePosition;
+  bool NearCamera = false;
   float WinchLength = 0, ReverseHold = 0, SpawnCooldown = 1, CameraYaw = 0,
         CameraPitch = -16, SoilTimer = 0, SprayBudget[4] = {0, 0, 0, 0};
   float Radius = .42f, Width = .285f, Wheelbase = 3, Track = 1.63f, CG = .76f,
@@ -70,4 +85,5 @@ private:
   void Simulate(float Dt);
   void UpdateSpray(float Dt);
   void SaveSetup();
+  void UpdateRoute(float Dt);
 };

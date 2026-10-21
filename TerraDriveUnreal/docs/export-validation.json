@@ -2,7 +2,7 @@
   "terrainSamples": 1000,
   "maximumHeightExportErrorM": 0.0000019073486328125,
   "vehicles": 5,
-  "zones": 8,
+  "zones": 9,
   "zoneSamples": [
     {
       "name": "Pine Ridge Trail",
@@ -59,10 +59,20 @@
       "unrealYM": 218,
       "surface": "snow",
       "heightM": 7.0382914543151855
+    },
+    {
+      "name": "Granite Trials Arena",
+      "unrealXM": 126,
+      "unrealYM": -281,
+      "surface": "dirt",
+      "heightM": 12.272045612335205
     }
   ],
-  "meshSources": 141,
-  "trees": 472,
-  "placements": 11662,
+  "meshSources": 144,
+  "constructedGroups": 2,
+  "challengeRoutes": 8,
+  "quarryDeckHeightM": 26.172911834716796,
+  "trees": 412,
+  "placements": 10975,
   "pass": true
 }

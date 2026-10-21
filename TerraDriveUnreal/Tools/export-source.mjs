@@ -10,6 +10,9 @@ import {VEHICLES} from '../../TerraDrive-v1.13/dist/src/vehicles.js';
 import {OffroadWorld} from '../../TerraDrive-v1.13/dist/src/world.js';
 import {createTrackModule} from '../../TerraDrive-v1.13/dist/src/track-view.js';
 import {SURFACE_RESPONSE_PROFILES} from '../../TerraDrive-v1.13/dist/src/surface-response.js';
+import {createChallengeCourse} from '../../TerraDrive-v1.13/dist/src/challenge-course.js';
+import {createChallengeView} from '../../TerraDrive-v1.13/dist/src/challenge-view.js';
+import {buildRockCourses,challengeCollisionMesh,inQuarry} from './offroad-courses.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeData');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
@@ -52,11 +55,23 @@ world.scene.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;if(obj.name==='br
  const count=obj.isInstancedMesh?obj.count:1,instances=[];for(let i=0;i<count;i++){const m=obj.matrixWorld.clone();if(obj.isInstancedMesh){const im=new THREE.Matrix4();obj.getMatrixAt(i,im);m.multiply(im);}const p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();m.decompose(p,q,s);if(Math.max(s.x,s.y,s.z)<.0001)continue;
  // Conjugation by (old Z,-old X,old Y), including the handedness reversal.
  instances.push({index:i,p:[p.z*100,-p.x*100,p.y*100],q:[-q.z,q.x,-q.y,q.w],s:[s.z,s.x,s.y]});}
- const id=placements.length;obj.userData.nativeGroup=id;placements.push({asset,instances});
+ const id=placements.length;obj.userData.nativeGroup=id;placements.push({asset,instances:instances.filter(i=>!inQuarry(i.p[0]/100,i.p[1]/100))});
 });
-const trees=(world.treeRecords||[]).map(t=>({id:t.id,p:[t.z*100,-t.x*100,terrain.heightAt(t.x,t.z)*100],radius:t.obstacle.radius*100,height:t.height*100,parts:Object.values(t.meshes).filter(m=>m?.isMesh).map(m=>({group:m.userData.nativeGroup,index:t.meshes.index}))}));
+const trees=(world.treeRecords||[]).filter(t=>!inQuarry(t.z,-t.x)).map(t=>({id:t.id,p:[t.z*100,-t.x*100,terrain.heightAt(t.x,t.z)*100],radius:t.obstacle.radius*100,height:t.height*100,parts:Object.values(t.meshes).filter(m=>m?.isMesh).map(m=>({group:m.userData.nativeGroup,index:t.meshes.index}))}));
+const course=createChallengeCourse(),view=createChallengeView(course),quarry=buildRockCourses(terrain);
+const constructed=[
+ {asset:exportObj('summit_park',view.group),collision:exportObj('summit_park_collision',challengeCollisionMesh(course)),surface:1},
+ {asset:exportObj('granite_trials',quarry.group),surface:4}
+];
+const routes=[
+ {name:'Summit full loop',hint:'Long run-up: build speed and hold a smooth line. Grip requires real tire contact even upside down.',zone:6,yaw:0,spawn:[-16900,23600,472],gateWidth:8.8,gateDirections:[1,1,-1,1],gates:[[-14000,23600,472],[0,23600,472],[5800,22900,4472],[14300,22200,472]]},
+ {name:'Tabletop jump',hint:'Progressive take-off and landing. Lift before the lip to control pitch.',zone:6,yaw:0,spawn:[-14400,18300,460],gateWidth:9,gates:[[-12500,18300,483],[-10000,18300,715],[-6800,18300,460]]},
+ {name:'Gap jump',hint:'Ten-metre gap with no hidden support. Approach square and land with the wheels aligned.',zone:6,yaw:0,spawn:[-6000,18300,460],gateWidth:9,gates:[[-2000,18300,481],[-100,18300,781],[3300,18300,481]]},
+ {name:'Balance and articulation',hint:'Narrow ramp, then seven alternating bumps. Try open axles against locked axles.',zone:6,yaw:0,spawn:[-13500,15700,460],gateWidth:3.5,gates:[[-10000,15700,615],[-5400,15700,460],[4500,15700,460]]},
+ ...quarry.routes
+];
 for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);}
-const manifest={version:'1.15.0',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:terrain.zones,placements,trees,obstacles:terrain.obstacles};
+const manifest={version:'1.15.0',nativeRevision:'offroad-challenges-1',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));

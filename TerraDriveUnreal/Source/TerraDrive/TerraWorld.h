@@ -5,6 +5,7 @@
 #include "TerraWorld.generated.h"
 class UProceduralMeshComponent;
 class UInstancedStaticMeshComponent;
+class UStaticMeshComponent;
 class UCapsuleComponent;
 class UMaterialInterface;
 struct FTerraSample {
@@ -12,6 +13,20 @@ struct FTerraSample {
         MaxSink = .025f, Packing = 0;
   uint8 Surface = 0;
   FVector Normal = FVector::UpVector;
+};
+struct FTerraSupport {
+  FVector Point = FVector::ZeroVector, Normal = FVector::UpVector;
+  float Distance = 0;
+  bool Hit = false, Constructed = false;
+  uint8 Surface = 0;
+};
+struct FTerraRoute {
+  FString Name, Hint;
+  FVector Spawn;
+  float Yaw = 0, GateWidth = 5;
+  int Zone = 6;
+  TArray<FVector> Gates;
+  TArray<int> GateDirections;
 };
 struct FTerraTile {
   UProceduralMeshComponent *Mesh = nullptr;
@@ -38,6 +53,8 @@ public:
   virtual void BeginPlay() override;
   virtual void Tick(float Dt) override;
   FTerraSample Sample(FVector P) const;
+  FTerraSupport CastSupport(FVector Mount, FVector Up, float RadiusCM,
+                            float MinCM, float MaxCM, const AActor *Ignore) const;
   float Height(float X, float Y) const;
   void Deform(FVector P, FVector Forward, float Load, float Pressure,
               float Width, float Length, float Slip, float Speed, float Dt);
@@ -48,6 +65,8 @@ public:
   TArray<FTerraTree> Trees;
   TArray<FVector> Spawns;
   TArray<FString> ZoneNames;
+  TArray<FTerraRoute> Routes;
+  int ConstructedMeshCount = 0;
   double DepressedVolume = 0, DisplacedVolume = 0, CompactedVolume = 0;
   bool Rain = false, Ready = false;
   int32 DetailCount() const { return Detail.Num(); }
@@ -62,6 +81,7 @@ private:
   TMap<FIntPoint, UProceduralMeshComponent *> Ground;
   UPROPERTY() TArray<TObjectPtr<UMaterialInterface>> Materials;
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Scenery;
+  UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConstructedMeshes;
   float BaseHeight(float X, float Y) const;
   uint8 SurfaceAt(float X, float Y) const;
   FTerraTile *EnsureTile(FIntPoint Key);

@@ -5,6 +5,29 @@
 // SI-only functions shared by the actual Unreal simulation and the small
 // standalone regression executable. No engine or graphics dependency.
 namespace TerraSim {
+inline bool ValidSupport(float distance, float minTravel, float maxTravel,
+                         float normalDotUp) {
+    return std::isfinite(distance) && distance >= minTravel &&
+           distance <= maxTravel && normalDotUp > .15f;
+}
+struct AxleTorque { float left, right; };
+inline AxleTorque SplitAxleTorque(float torque, float leftCapacity,
+                                 float rightCapacity, bool locked) {
+    const float sign = torque < 0 ? -1.f : 1.f;
+    const float requested = std::abs(torque);
+    leftCapacity = std::max(0.f, leftCapacity);
+    rightCapacity = std::max(0.f, rightCapacity);
+    if (!locked) {
+        // An open differential delivers equal shaft torque. The lightly loaded
+        // wheel limits both sides; a small allowance lets that wheel spin.
+        const float each = std::min(requested * .5f,
+                                   std::min(leftCapacity, rightCapacity) + 12.f);
+        return {sign * each, sign * each};
+    }
+    const float sum = leftCapacity + rightCapacity;
+    if (sum < 1.f) return {torque * .5f, torque * .5f};
+    return {torque * leftCapacity / sum, torque * rightCapacity / sum};
+}
 inline float WheelOmega(float freeOmega, float stiffness, float longitudinalSpeed,
                         float radius, float dt, float inertia) {
     return (freeOmega + stiffness * longitudinalSpeed * radius * dt / inertia) /

@@ -7,15 +7,16 @@
     "automatedResolution": [
       1280,
       720
-    ]
+    ],
+    "shadows": "Conventional dynamic shadows"
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "557a98635f55fb3f40b7cea9c919c0767c9356fa34085f9721f5ba6d0000694e",
+  "executableSHA256": "a4cf1de60afcbf4b9ea627061518add3bc8a7786d18810608f3c535f189bc260",
   "engine": "5.8.3",
   "tests": [
     {
       "case": "native world data",
-      "zones": 8,
+      "zones": 9,
       "pass": true
     },
     {
@@ -39,9 +40,44 @@
       "pass": true
     },
     {
+      "case": "challenge assets and routes",
+      "value": 3,
+      "pass": true
+    },
+    {
+      "case": "loop contact 0",
+      "value": 22.9997,
+      "pass": true
+    },
+    {
+      "case": "loop contact 1",
+      "value": 22.9995,
+      "pass": true
+    },
+    {
+      "case": "loop contact 2",
+      "value": 22.9989,
+      "pass": true
+    },
+    {
+      "case": "loop contact 3",
+      "value": 22.9993,
+      "pass": true
+    },
+    {
+      "case": "loop contact 4",
+      "value": 22.9998,
+      "pass": true
+    },
+    {
+      "case": "jump gap has no hidden support",
+      "value": 0,
+      "pass": true
+    },
+    {
       "case": "native acceleration",
-      "distanceM": 66.483,
-      "speedMS": 20.987,
+      "distanceM": 55.182,
+      "speedMS": 18.766,
       "pass": true
     },
     {
@@ -62,8 +98,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 16.558,
-      "yawDegrees": 89.294,
+      "speedMS": 14.897,
+      "yawDegrees": 91.293,
       "pass": true
     },
     {
@@ -74,7 +110,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.162,
+      "clearanceCM": 506.382,
       "rollDegrees": 0,
       "pass": true
     },
@@ -86,7 +122,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.955,
+      "clearanceCM": 503.753,
       "rollDegrees": 0,
       "pass": true
     },
@@ -98,7 +134,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 643.758,
+      "clearanceCM": 637.74,
       "rollDegrees": 0,
       "pass": true
     },
@@ -110,7 +146,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 608.288,
+      "clearanceCM": 605.815,
       "rollDegrees": 0,
       "pass": true
     },
@@ -122,7 +158,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 525.323,
+      "clearanceCM": 523.143,
       "rollDegrees": 0,
       "pass": true
     },
@@ -134,7 +170,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 663.341,
+      "clearanceCM": 669.815,
       "rollDegrees": 0,
       "pass": true
     },
@@ -146,7 +182,7 @@
     },
     {
       "case": "region 6 camera",
-      "clearanceCM": 503.705,
+      "clearanceCM": 512.177,
       "rollDegrees": 0,
       "pass": true
     },
@@ -158,9 +194,146 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 29.53,
+      "clearanceCM": 24.99,
       "rollDegrees": 0,
       "pass": true
+    },
+    {
+      "case": "rolled vehicle has no tire drive or steering",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "rolled chassis rests on roof",
+      "value": 0.0916,
+      "pass": true
+    },
+    {
+      "case": "rolled vehicle camera stays above terrain",
+      "value": 521.9029,
+      "pass": true
+    },
+    {
+      "case": "airborne controls cannot push or yaw chassis",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "tire debris moves and renders in world space",
+      "value": 26685.2637,
+      "pass": true
+    },
+    {
+      "case": "airborne debris expires after impact",
+      "value": 403,
+      "pass": true
+    },
+    {
+      "case": "low range respects engine rev limit",
+      "value": 6447.5151,
+      "pass": true
+    },
+    {
+      "case": "stopped tires leave no frozen debris",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "locked axles climb farther than open axles",
+      "value": 1.3358,
+      "pass": true
+    },
+    {
+      "case": "locked axle shaft speeds remain coupled",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "descent assist controls rocky downhill speed",
+      "value": 2.7875,
+      "pass": true
+    },
+    {
+      "case": "challenge 0 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "challenge 1 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "challenge 2 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "challenge 3 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "challenge 4 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "challenge 5 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "challenge 6 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "challenge 7 stable spawn",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "inverted loop camera can see the vehicle",
+      "value": 526.5664,
+      "pass": true
+    },
+    {
+      "case": "inverted loop retains physical wheel support",
+      "value": 3,
+      "pass": true
     }
-  ]
+  ],
+  "observations": {
+    "spray": {
+      "emitted": 430,
+      "expired": 403,
+      "rendered": 27,
+      "speedMS": 3.652
+    },
+    "climb": {
+      "openProgressM": 8.746,
+      "lockedProgressM": 10.081
+    },
+    "interactiveControls": [
+      "7 Summit park",
+      "9 Granite Trials",
+      "L low range",
+      "Z rear locker",
+      "U front locker",
+      "K descent assist",
+      "J next route",
+      "R restart",
+      "Escape exit"
+    ]
+  },
+  "sourceSHA256": {
+    "TerraGameMode.cpp": "33f3ba1ba2cc6322e4826e4addcecef2eab301ea6f37a64d86feb580de810c76",
+    "TerraGameMode.h": "5c210d3d8b189a76e67e88da5c1e375ea4be55734fd8272383a549eb4c377466",
+    "TerraSimCore.h": "d23a80502d75a3343f0b91abb015fc088d1d7733e41637d61d71d9883d37abdb",
+    "TerraVehicle.cpp": "b032fa4f2d29b3567795d1b2a1ee60d03d402237b5d777c9cfd1509e19dee2a1",
+    "TerraVehicle.h": "6609dc9cbf0337a1b03b99efec4885f42cb6651d5161eaee427e517de6234807",
+    "TerraWorld.cpp": "824459b40b7a93c40e0456408a491d6c3d7c8bf253b6df018718a59eaa6cc307",
+    "TerraWorld.h": "d1c6f19f287a97d246390b30cb0939cfa866364e90af3b7be031f5427eb3b610"
+  }
 }

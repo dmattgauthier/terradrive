@@ -21,6 +21,8 @@ private:
   float TestTime = 0, StageTime = 0;
   int Stage = 0;
   FVector Start;
+  float OpenProgress = 0, MaxProgress = 0;
+  bool InvertedContactSeen = false;
   TArray<FString> Results;
   bool Captured = false;
   void FinishValidation();
