@@ -14,20 +14,26 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeData');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
 globalThis.document={createElement(){return {width:0,height:0,getContext:()=>({fillRect(){},fillText(){},putImageData(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})})}}};
-const mats=[],matIds=new Map(),assets=[];
-function matId(m){if(matIds.has(m.uuid))return matIds.get(m.uuid);const id='M_'+String(mats.length).padStart(3,'0');matIds.set(m.uuid,id);mats.push({id,color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors});return id;}
+const mats=[],matIds=new Map(),assets=[],tints=new Map();
+function matId(m){if(matIds.has(m.uuid))return matIds.get(m.uuid);const id='M_'+String(mats.length).padStart(3,'0');matIds.set(m.uuid,id);mats.push({id,color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors,diffuse:m.map?.userData?.source||null,alpha:m.alphaMap?.userData?.source||null,alphaTest:m.alphaTest||0});return id;}
 function exportObj(name,group){
  group.updateMatrixWorld(true);let lines=['# Converted directly from Terra Drive 1.15 source. Metres baked to Unreal centimetres.'],offset=1,slots=[];
  group.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;const n=obj.isInstancedMesh?obj.count:1;
  for(let instance=0;instance<n;instance++){
  const matrix=obj.matrixWorld.clone();if(obj.isInstancedMesh){const im=new THREE.Matrix4();obj.getMatrixAt(instance,im);matrix.multiply(im);}
  const geo=obj.geometry,pa=geo.attributes.position,na=geo.attributes.normal,uv=geo.attributes.uv,normalMatrix=new THREE.Matrix3().getNormalMatrix(matrix);
- const v=new THREE.Vector3();for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(matrix);lines.push(`v ${v.z*100} ${-v.x*100} ${v.y*100}`);}
- for(let i=0;i<pa.count;i++){v.set(0,1,0);if(na)v.fromBufferAttribute(na,i);v.applyMatrix3(normalMatrix).normalize();lines.push(`vn ${v.z} ${-v.x} ${v.y}`);}
+ // UE 5.8's Interchange OBJ translator flips OBJ Y itself. Emit a
+ // right-handed (Z,X,Y) basis so the imported mesh becomes (Z,-X,Y).
+ const v=new THREE.Vector3();for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(matrix);lines.push(`v ${v.z*100} ${v.x*100} ${v.y*100}`);}
+ for(let i=0;i<pa.count;i++){v.set(0,1,0);if(na)v.fromBufferAttribute(na,i);v.applyMatrix3(normalMatrix).normalize();lines.push(`vn ${v.z} ${v.x} ${v.y}`);}
  for(let i=0;i<pa.count;i++)lines.push(`vt ${uv?uv.getX(i):0} ${uv?uv.getY(i):0}`);
  const materials=Array.isArray(obj.material)?obj.material:[obj.material],idx=geo.index;
  const groups=Array.isArray(obj.material)&&geo.groups.length?geo.groups:[{start:0,count:idx?idx.count:pa.count,materialIndex:0}];
- for(const g of groups){const mid=matId(materials[g.materialIndex]||materials[0]);if(!slots.includes(mid))slots.push(mid);lines.push('usemtl '+mid);for(let k=g.start;k<g.start+g.count;k+=3){const ids=[0,2,1].map(t=>offset+(idx?idx.getX(k+t):k+t));lines.push('f '+ids.map(i=>`${i}/${i}/${i}`).join(' '));}}
+ for(const g of groups){const mat=materials[g.materialIndex]||materials[0],mid=matId(mat);if(!slots.includes(mid))slots.push(mid);lines.push('usemtl '+mid);for(let k=g.start;k<g.start+g.count;k+=3){const ids=[0,1,2].map(t=>offset+(idx?idx.getX(k+t):k+t));lines.push('f '+ids.map(i=>`${i}/${i}/${i}`).join(' '));
+ // OBJ has no vertex-color stream in this importer. Preserve the source's
+ // mean tint per material instead of turning white-base foliage white.
+ if(mat.vertexColors&&geo.attributes.color){const c=geo.attributes.color,s=tints.get(mid)||[0,0,0,0];for(const id of ids){const j=id-offset;s[0]+=c.getX(j);s[1]+=c.getY(j);s[2]+=c.getZ(j);s[3]++;}tints.set(mid,s);}
+ }}
  offset+=pa.count;
  }});
  fs.writeFileSync(path.join(out,name+'.obj'),lines.join('\n'));assets.push({name,slots});return name;
@@ -49,7 +55,8 @@ world.scene.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;if(obj.name==='br
  const id=placements.length;obj.userData.nativeGroup=id;placements.push({asset,instances});
 });
 const trees=(world.treeRecords||[]).map(t=>({id:t.id,p:[t.z*100,-t.x*100,terrain.heightAt(t.x,t.z)*100],radius:t.obstacle.radius*100,height:t.height*100,parts:Object.values(t.meshes).filter(m=>m?.isMesh).map(m=>({group:m.userData.nativeGroup,index:t.meshes.index}))}));
-const manifest={version:'1.15.0',coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:terrain.zones,placements,trees,obstacles:terrain.obstacles};
+for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);}
+const manifest={version:'1.15.0',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:terrain.zones,placements,trees,obstacles:terrain.obstacles};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));

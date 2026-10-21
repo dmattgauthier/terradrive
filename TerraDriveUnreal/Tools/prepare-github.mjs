@@ -6,6 +6,13 @@ const textExt=new Set(['.js','.mjs','.json','.html','.css','.md','.cpp','.h','.c
 const files=[];
 function add(rel){const p=path.join(workspace,rel);if(!fs.existsSync(p))return;const stat=fs.statSync(p);if(stat.isDirectory()){for(const n of fs.readdirSync(p))add(path.join(rel,n));return;}const ext=path.extname(rel).toLowerCase();const text=textExt.has(ext)||path.basename(rel)==='.gitignore';files.push({path:rel.replaceAll('\\','/'),size:stat.size,text});}
 for(const p of ['README.md','.gitignore','TerraDriveUnreal/.clang-format','TerraDriveUnreal/TerraDrive.uproject','TerraDriveUnreal/Source','TerraDriveUnreal/Config','TerraDriveUnreal/Tools','TerraDriveUnreal/README.md','TerraDriveUnreal/docs','TerraDrive-v1.13/dist','TerraDrive-v1.13/tests','TerraDrive-v1.13/package.json'])add(p);
+// Unreal can append local Android File Server credentials to DefaultEngine.ini.
+// Never include those generated values in a source publication manifest.
+for(const file of files.filter(f=>f.text)){
+  const content=fs.readFileSync(path.join(workspace,file.path),'utf8');
+  if(/^\s*(?:SecurityToken|Password|ClientSecret)\s*=\s*[^\s;#]/mi.test(content)||/-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----/.test(content))
+    throw new Error(`Private credential-like content must be removed before publishing: ${file.path}`);
+}
 fs.mkdirSync(path.join(workspace,'TerraDriveUnreal','Saved'),{recursive:true});
 fs.writeFileSync(path.join(workspace,'TerraDriveUnreal','Saved','github-files.json'),JSON.stringify(files));
 const textPayload=()=>JSON.stringify(files.filter(f=>f.text).map(f=>({path:f.path,mode:'100644',type:'blob',content:fs.readFileSync(path.join(workspace,f.path),'utf8')})));

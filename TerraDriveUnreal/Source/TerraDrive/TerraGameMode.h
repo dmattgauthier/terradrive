@@ -22,4 +22,6 @@ private:
   int Stage = 0;
   FVector Start;
   TArray<FString> Results;
+  bool Captured = false;
+  void FinishValidation();
 };

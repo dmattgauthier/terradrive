@@ -54,8 +54,10 @@ float ATerraWorld::BaseHeight(float X, float Y) const {
   IX = FMath::Min(IX, N - 3);
   IY = FMath::Min(IY, N - 3);
   float U = (GX - IX) / 2, V = (GY - IY) / 2;
-  float A = Heights[IY * N + IX], B = Heights[IY * N + IX + 2],
-        C = Heights[(IY + 2) * N + IX], D = Heights[(IY + 2) * N + IX + 2];
+  // The exported stream has source-Z rows and reversed source-X columns:
+  // Unreal X is the row, Unreal Y is the column (not a conventional Y/X grid).
+  float A = Heights[IX * N + IY], B = Heights[(IX + 2) * N + IY],
+        C = Heights[IX * N + IY + 2], D = Heights[(IX + 2) * N + IY + 2];
   return 100 * (U + V <= 1 ? A + (B - A) * U + (C - A) * V
                            : D + (C - D) * (1 - U) + (B - D) * (1 - V));
 }
@@ -64,7 +66,7 @@ uint8 ATerraWorld::SurfaceAt(float X, float Y) const {
     return 0;
   int I = FMath::Clamp(FMath::RoundToInt((X / 100 - Origin) / Step), 0, N - 1),
       J = FMath::Clamp(FMath::RoundToInt((Y / 100 - Origin) / Step), 0, N - 1);
-  return Surfaces[J * N + I];
+  return Surfaces[I * N + J];
 }
 float ATerraWorld::Height(float X, float Y) const {
   FIntPoint K(FMath::FloorToInt(X / TileCM), FMath::FloorToInt(Y / TileCM));
@@ -103,7 +105,7 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
                          N - 1),
         J = FMath::Clamp(FMath::RoundToInt((P.Y / 100 - Origin) / Step), 0,
                          N - 1);
-    S.Water = FMath::Max(0.f, 100 * Water[J * N + I] + BaseHeight(P.X, P.Y) -
+    S.Water = FMath::Max(0.f, 100 * Water[I * N + J] + BaseHeight(P.X, P.Y) -
                                   S.Height);
   }
   FIntPoint K(FMath::FloorToInt(P.X / TileCM), FMath::FloorToInt(P.Y / TileCM));

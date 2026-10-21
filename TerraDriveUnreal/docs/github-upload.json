@@ -1,0 +1,15 @@
+{
+  "repository": "dmattgauthier/terradrive",
+  "initialSourceCommit": "51229a4fadd23103c36546c631e3c162f006e22a",
+  "initialSourceTree": "7b09162fc9e1dc6cb1107218a8b95add63d78737",
+  "initialSourceFileCount": 163,
+  "assetCommit": "546b3c2a296298c2036374795487c662583955fd",
+  "assetTree": "c18628a622c5c82b46872f416abc6fd8dc2c7175",
+  "assetFileCount": 53,
+  "assetHashesVerified": true,
+  "preservedBrowserFilesVerified": 189,
+  "binaryAssetsPending": false,
+  "sourceRevision": "The Git commit containing this file includes the final import, packaging and native validation fixes.",
+  "excluded": ["generated Unreal assets", "Windows builds", "private application configuration", "runtime logs"],
+  "localFinalVerification": "Saved/github-complete.json records the final remote commit and comparison against all upload-manifest file hashes."
+}

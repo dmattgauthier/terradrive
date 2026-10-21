@@ -1,5 +1,7 @@
 #include "TerraGameMode.h"
+#include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -12,6 +14,7 @@
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
 #include "TerraWorld.h"
+#include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
   DefaultPawnClass = ATerraVehicle::StaticClass();
   HUDClass = ATerraHUD::StaticClass();
@@ -77,19 +80,39 @@ void ATerraGameMode::Tick(float Dt) {
   Super::Tick(Dt);
   if (!FParse::Param(FCommandLine::Get(), TEXT("TerraValidate")))
     return;
+  TestTime += Dt;
+  if (TestTime > 100) {
+    Results.Add(TEXT("{\"case\":\"validation timeout or missing world\",\"pass\":false}"));
+    FinishValidation();
+    return;
+  }
   auto *V = Cast<ATerraVehicle>(UGameplayStatics::GetPlayerPawn(this, 0));
-  if (!V || !V->Terrain || !V->Terrain->Ready)
+  if (!V || !V->Terrain || !V->Terrain->Ready || !V->Initialized)
     return;
   StageTime += Dt;
-  TestTime += Dt;
   // These exercise the native Chaos world, not the historical JS tests.
   if (Stage == 0) {
+    Results.Add(FString::Printf(TEXT("{\"case\":\"native world data\",\"zones\":%d,\"pass\":%s}"),
+        V->Terrain->Spawns.Num(), V->Terrain->Spawns.Num() == 8 ? TEXT("true") : TEXT("false")));
+    for (int I = 0; I < 5; ++I) {
+      V->SelectVehicle(I);
+      bool Loaded = V->Body->GetStaticMesh() != nullptr;
+      for (auto Wheel : V->Wheels)
+        Loaded &= Wheel->GetStaticMesh() != nullptr;
+      Results.Add(FString::Printf(TEXT("{\"case\":\"vehicle %d meshes\",\"pass\":%s}"),
+          I, Loaded ? TEXT("true") : TEXT("false")));
+    }
+    V->SelectVehicle(0);
     V->TeleportZone(1);
     Start = V->GetActorLocation();
     Stage = 1;
     StageTime = 0;
   }
   if (Stage == 1) {
+    if (StageTime > 3 && !Captured && FParse::Param(FCommandLine::Get(), TEXT("TerraCapture"))) {
+      FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / TEXT("Screenshots/native-acceleration.png"), true, false);
+      Captured = true;
+    }
     V->TestThrottle = StageTime > 2 ? 1 : 0;
     if (StageTime > 8) {
       float D = FVector::Dist2D(Start, V->GetActorLocation()) / 100;
@@ -144,21 +167,67 @@ void ATerraGameMode::Tick(float Dt) {
     V->TestThrottle = 1;
     V->TestSteer = .35f;
     if (StageTime > 5) {
+      const float Yaw = V->GetActorRotation().Yaw;
       Results.Add(FString::Printf(
-          TEXT("{\"case\":\"EV steered launch\",\"speedMS\":%.3f,\"pass\":%s}"),
-          V->Speed, V->Speed > 1 ? TEXT("true") : TEXT("false")));
-      FString Report = TEXT("{\"engine\":\"5.8.3\",\"tests\":[") +
-                       FString::Join(Results, TEXT(",")) + TEXT("]}");
-      FFileHelper::SaveStringToFile(Report, *(FPaths::ProjectSavedDir() /
-                                              TEXT("native-validation.json")));
-      bool Failed = Report.Contains(TEXT("false"));
-      UE_LOG(LogTemp, Display, TEXT("TERRA_NATIVE_VALIDATION %s %s"),
-             Failed ? TEXT("FAIL") : TEXT("PASS"), *Report);
-      FPlatformMisc::RequestExitWithStatus(false, Failed ? 1 : 0);
+          TEXT("{\"case\":\"EV steered launch\",\"speedMS\":%.3f,\"yawDegrees\":%.3f,\"pass\":%s}"),
+          V->Speed, Yaw, V->Speed > 1 && Yaw > 5 ? TEXT("true") : TEXT("false")));
+      V->TestThrottle = 0;
+      V->TestSteer = 0;
+      V->TestBrake = 1;
+      Stage = 5;
+      StageTime = 0;
+      Captured = false;
+      V->SelectVehicle(0);
+      V->TeleportZone(0);
+    }
+  } else if (Stage >= 5 && Stage < 13) {
+    const int Region = Stage - 5;
+    if (StageTime > 2 && !Captured) {
+      const FVector P = V->GetActorLocation();
+      // Browser Terrain.sample at each original spawn; marsh starts on its
+      // grassy bank. These references catch native/export coordinate swaps.
+      static const uint8 ExpectedSurfaces[] = {0, 1, 4, 2, 0, 5, 0, 6};
+      static const float ExpectedHeights[] = {3.189869f, 3.585f, 7.332479f, 3.332015f,
+          4.690650f, 11.039977f, 4.6f, 7.038291f};
+      const FVector Spawn = V->Terrain->Spawns[Region];
+      const uint8 Surface = V->Terrain->Sample(Spawn).Surface;
+      const bool Stable = !P.ContainsNaN() && FMath::IsFinite(V->Speed) &&
+          FMath::Abs(P.Z - V->Terrain->Height(P.X, P.Y)) < 400 &&
+          Surface == ExpectedSurfaces[Region] && FMath::Abs(Spawn.Z / 100 - ExpectedHeights[Region]) < .01f;
+      Results.Add(FString::Printf(TEXT("{\"case\":\"region %d spawn\",\"surface\":%d,\"expectedSurface\":%d,\"pass\":%s}"),
+          Region, Surface, ExpectedSurfaces[Region], Stable ? TEXT("true") : TEXT("false")));
+      const FVector CameraPosition = V->Camera->GetComponentLocation();
+      const float Clearance = CameraPosition.Z - V->Terrain->Height(CameraPosition.X, CameraPosition.Y);
+      const float CameraRoll = V->Camera->GetComponentRotation().Roll;
+      Results.Add(FString::Printf(TEXT("{\"case\":\"region %d camera\",\"clearanceCM\":%.3f,\"rollDegrees\":%.3f,\"pass\":%s}"),
+          Region, Clearance, CameraRoll,
+          Clearance > 5 && FMath::Abs(CameraRoll) < 1 ? TEXT("true") : TEXT("false")));
+      if (FParse::Param(FCommandLine::Get(), TEXT("TerraCapture")))
+        FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() /
+            FString::Printf(TEXT("Screenshots/native-region-%d.png"), Region + 1), true, false);
+      Captured = true;
+    }
+    if (StageTime > 3) {
+      ++Stage;
+      StageTime = 0;
+      Captured = false;
+      if (Stage == 13) {
+        FinishValidation();
+      } else {
+        V->SelectVehicle((Stage - 5) % 5);
+        V->TeleportZone(Stage - 5);
+      }
     }
   }
-  if (TestTime > 40) {
-    UE_LOG(LogTemp, Error, TEXT("Native validation timed out"));
-    FPlatformMisc::RequestExitWithStatus(false, 2);
-  }
+}
+void ATerraGameMode::FinishValidation() {
+  const FString Report = TEXT("{\"engine\":\"5.8.3\",\"tests\":[") +
+      FString::Join(Results, TEXT(",")) + TEXT("]}");
+  FString Output = FPaths::ProjectSavedDir() / TEXT("native-validation.json");
+  FParse::Value(FCommandLine::Get(), TEXT("TerraReport="), Output);
+  const bool Saved = FFileHelper::SaveStringToFile(Report, *Output);
+  const bool Failed = !Saved || Report.Contains(TEXT("false"));
+  UE_LOG(LogTemp, Display, TEXT("TERRA_NATIVE_VALIDATION %s %s"),
+      Failed ? TEXT("FAIL") : TEXT("PASS"), *Report);
+  FPlatformMisc::RequestExitWithStatus(false, Failed ? 1 : 0);
 }

@@ -1,0 +1,763 @@
+{
+  "algorithm": "git blob SHA-1",
+  "referenceCommit": "546b3c2a296298c2036374795487c662583955fd",
+  "fileCount": 189,
+  "files": [
+    {
+      "path": "TerraDrive-v1.13/dist/assets/garage/sources.json",
+      "sha": "bbf6ba8c318264a6e65efbe45b30c837e984ffdd"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/garage/SOURCES.md",
+      "sha": "910d7b7706a3d7db9ce644cfbc2de5e3af5cd240"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/asphalt_02_diff_1k.jpg",
+      "sha": "d7a1b5e7383e6ce04246b88dc3a9b125dcad636b"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/asphalt_02_nor_gl_1k.jpg",
+      "sha": "19e3c724a167b9e7101b3a390fffd74398e5021e"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/asphalt_02_rough_1k.jpg",
+      "sha": "77089146431d1b0266405199b0866044771211c8"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/brown_mud_02_diff_1k.jpg",
+      "sha": "b66411ec1ee85e9844f18e861841460a6dce269c"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/brown_mud_02_diff_2k.jpg",
+      "sha": "13498d20452e91b2a4c6ee6e1826ab5fdd0202f8"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/brown_mud_02_nor_gl_1k.jpg",
+      "sha": "3d1dec27b21a8aca4583350cd10ff1840d71de0a"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/brown_mud_02_nor_gl_2k.jpg",
+      "sha": "b0409d58dbea3b72ec1e33384c8df8bf40099165"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/brown_mud_02_rough_1k.jpg",
+      "sha": "e59fbc8d4c7e55b29a47a7f114d5803061190227"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/dry_riverbed_rock_diff_1k.jpg",
+      "sha": "78050d6b28d67940b4f5a9f528d2aefe0e6cef79"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/dry_riverbed_rock_nor_gl_1k.jpg",
+      "sha": "9d1e58b9933c33d7a87636dc0b2223a171091416"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/dry_riverbed_rock_rough_1k.jpg",
+      "sha": "cb27e7aa78a6a1356948a71a90086c3d9a4db00b"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/forest_ground_04_diff_1k.jpg",
+      "sha": "eb58fbc9865eb16876e41e4912350fe90aed1fbb"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/forest_ground_04_diff_2k.jpg",
+      "sha": "127974949d7eabd6fa527597908bd84c0bb7d645"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/forest_ground_04_nor_gl_1k.jpg",
+      "sha": "440bd7b41d02aa6c64d2ba93b0f64fac0083062e"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/forest_ground_04_nor_gl_2k.jpg",
+      "sha": "0d39601ad70421d895dcb1cc5fd7985fb8112653"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/forest_ground_04_rough_1k.jpg",
+      "sha": "2fafd4a80c3df879bc21edb1185097278c47d5e0"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_floor_02_diff_1k.jpg",
+      "sha": "6ed3c7042c1403b1b0a4cc0bfdb3bf28fc082a26"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_floor_02_nor_gl_1k.jpg",
+      "sha": "3e5e4777e8e4b6ca6186b4ff851c58745c0ef969"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_floor_02_rough_1k.jpg",
+      "sha": "a4d3d2f913170d76d47d11d547e3e11fed09cfe6"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_ground_01_ao_1k.jpg",
+      "sha": "02907a3a9a29855af2faa8d8e69c711c3bf67346"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_ground_01_diff_1k.jpg",
+      "sha": "d3acb1f9d697bca4b07b8f15c7d45884bac6f7e3"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_ground_01_disp_1k.jpg",
+      "sha": "1e8b71147302eb3e1a3b0d9de909adc849438690"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_ground_01_nor_gl_1k.jpg",
+      "sha": "c6334b8332b348cce79f7667db170fb864477cb2"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/gravel_ground_01_rough_1k.jpg",
+      "sha": "086015ed976d0a53b0d7ccefed3e553b7ddeb0aa"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/kiara_5_noon_1k.hdr",
+      "sha": "b3fb8786a4f97a810a5c05cc37dba5c04547aaf4"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/leafy_grass_diff_1k.jpg",
+      "sha": "76abe0bede82ba2fe5b35713db5f23ccfa3e7643"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/leafy_grass_nor_gl_1k.jpg",
+      "sha": "5edb7077796cd94f0336050c58b1b9b8e410372d"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/leafy_grass_rough_1k.jpg",
+      "sha": "33fec45c9f946107e8822859a594a134b931c6c9"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/manifest.json",
+      "sha": "8b985f624014b8e921ff42d44bd2bfe9908a741f"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/mossy_rock_diff_1k.jpg",
+      "sha": "3895ff94f6bf7077df4c15978e1c9b289c5ac30d"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/mossy_rock_nor_gl_1k.jpg",
+      "sha": "1e4914bc5efaf83b9a41d42fe88fb26b455221e7"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/mossy_rock_rough_1k.jpg",
+      "sha": "4a3293c68d1f38dcb061ff3e29aa6ab72c28937b"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/pine_tree_01_bark_diff_1k.jpg",
+      "sha": "c5108940790fdd2412a4455d808cc2a12de93c12"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/pine_tree_01_bark_nor_gl_1k.jpg",
+      "sha": "bbe72784a5ea4f3c40458cf46b4737e8efda4bc7"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/pine_tree_01_twig_alpha_1k.jpg",
+      "sha": "b05848f43768ee40349a339a97109ddb001536b6"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/pine_tree_01_twig_diff_1k.jpg",
+      "sha": "ddd31773d228fd0f3240605661f586eef1a28c72"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/pine_tree_01_twig_nor_gl_1k.jpg",
+      "sha": "3f7e2aa880996a602a7cd95557fff323f92a91ca"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/rock_moss_set_01.bin",
+      "sha": "ce427c52a9ff174a26fa9e2abffdb1ebce801448"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/rock_moss_set_01_2k.gltf",
+      "sha": "d3a412ce0f0bda5149eee765eb717da9b5fad990"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/textures/rock_moss_set_01_diff_1k.jpg",
+      "sha": "fecf95591a80b9e6233cc1861170d461e2c62766"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/textures/rock_moss_set_01_diff_2k.jpg",
+      "sha": "3d8360bcc27812fbc29d861ce8a24bae61031b0a"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/textures/rock_moss_set_01_nor_gl_1k.jpg",
+      "sha": "fff84a61054fcbedb49634752adfaa134536caf8"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/textures/rock_moss_set_01_nor_gl_2k.jpg",
+      "sha": "e4b15131de6e62fe47adb4067ed5a11eef8bbe61"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/textures/rock_moss_set_01_rough_1k.jpg",
+      "sha": "90b0b17821b62ff246ba8656fae79e181ef668f3"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/rock_moss_set_01/textures/rock_moss_set_01_rough_2k.jpg",
+      "sha": "2de56ac4e61114183dbba5dfa93807eb00ab9956"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/sand_03_diff_1k.jpg",
+      "sha": "75b08187606f0d54712c28d3d942c906ecbe149c"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/sand_03_nor_gl_1k.jpg",
+      "sha": "29a98bc8fdafbce6e3a3f99f02509a32d3f4b4ea"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/sand_03_rough_1k.jpg",
+      "sha": "1c7f52c1edcbbc157e2c83f391e297dbdc65de66"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/SOURCES.md",
+      "sha": "e043c28f71b42ea030f07adae9c61996324b1e32"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/sparse_grass_diff_1k.jpg",
+      "sha": "af647c1b2e1686fe8cbab04b7c4d86a85d9acdd5"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/sparse_grass_nor_gl_1k.jpg",
+      "sha": "f6886144659eb2266e810ef79a5005b8d9a88cec"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/sparse_grass_rough_1k.jpg",
+      "sha": "7d52f17b7e2d62724e3b51f2d9d99aee5d31d390"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/assets/terrain/syferfontein_18d_clear_1k.hdr",
+      "sha": "55fe016b23946630b450276436d0a07052618d69"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/icon.svg",
+      "sha": "56d9b23baed2965bd0c3c86a5cfa9c6ddcd43ed9"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/index.html",
+      "sha": "f38fb2c068c4cd45f76de419d81bcd7c9745db37"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/app.js",
+      "sha": "6ab3fe5a952d8356d0be060417fa7761af6c5d1a"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/audio.js",
+      "sha": "480cc69c08bd132d71947205cc9369860bbf7a91"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/biome-scenery.js",
+      "sha": "51c5b7c53d86d2b0cfb145b7748327802a97f519"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/challenge-collision.js",
+      "sha": "18943cd7cc5e0efd0ea488d6958c10b3dd0dd2f1"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/challenge-course.js",
+      "sha": "9463d94578d451bf95070a267c107272630079df"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/challenge-view.js",
+      "sha": "3abf90a9c97a4b80ee4d528554f4a6bf95732ece"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/chassis-contact.js",
+      "sha": "98aa2ceb2b532b076c29cb9c2d19719d66a7c8a0"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/damage.js",
+      "sha": "db42723b3291883ee246d0a82a4bcef60fc52a16"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/electric-controls.js",
+      "sha": "77f0ac8d6b6b00277bc02b0db680a5db229e7c4c"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/electric-drive.js",
+      "sha": "59a0c707b9c9ada86b44ae0f75526626bdafd806"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/environment-models.js",
+      "sha": "4fc207ed0f37e5092300e935ae9a89ec3519585a"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/garage.js",
+      "sha": "19ac71322421d3e21ea17bdaa0103c00c4befeb3"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/geology-profiles.js",
+      "sha": "1ea642c9a0347a93d6a72edd4e9823676e031abf"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/ground-cover-contact.js",
+      "sha": "b6a487b73b5294464d26071110936cb6a628bbb3"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/guide.js",
+      "sha": "a3481e84c8f6f100cb31d8c59ca6346a31e503d7"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/imported-ground-rock.js",
+      "sha": "1437b6d640fba629a6e76862f50c5a4a5b690ef3"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/input.js",
+      "sha": "7feb0d371cf8712be6fba54330a194f228c36cf5"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/landscape-models.js",
+      "sha": "d728b1953b6ca35f33b2191d03c1c8695862eac1"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/obstacle-contact.js",
+      "sha": "fac51f10423208df776e75cc2aa81dcdaeccf3a7"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/outdoor-lighting.js",
+      "sha": "aefb26457d9830cc3ad172d286b43324602f347c"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/particle-vehicle-collision.js",
+      "sha": "57edfdb682e06ece74457350b86c9c241afdc872"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/physics.js",
+      "sha": "1dd04bef0169f404e13877059c679abd3cd0a226"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/recovery-mount.js",
+      "sha": "05cf3527852e0d8801b23e4b97ac899348d3bf2f"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/render-lighting.js",
+      "sha": "173229cc1f4a7cc010c7737f6c847684ff96a55e"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/rock-relief.js",
+      "sha": "6cb1f7cb10ca49f548e726286469f2550016e091"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/snow-view.js",
+      "sha": "1422480b86a0949078d7c6384f696dace30a60ca"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/soil-flow.js",
+      "sha": "47170aa2785fbc413ed9a977c195d4c066afd209"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/surface-feedback.js",
+      "sha": "472ae63fbeff110a33f9a0093edda2085c03e08c"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/surface-response.js",
+      "sha": "69f6520e562f18e13c1954ceac9eb9695202a849"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/terrain-diversity.js",
+      "sha": "df577cdc1265ba6a2ee84e5a72c059349d53cae0"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/terrain-geology.js",
+      "sha": "3c23b320271fd419129ed616f629bad902b1a96e"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/terrain-shading.js",
+      "sha": "1c1623d4fd517b388b03e28e9ac3d8cf4c5cc74a"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/terrain.js",
+      "sha": "5bebee6f2276244371f427914d9feeeacc0f5fe0"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/tire-impact-marks.js",
+      "sha": "b44230f9fe77b666d9163df41cd99fd130b484a3"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/tire-obstacle-collision.js",
+      "sha": "63109f7088c239d4f39cbed624f5c4172a7120dc"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/tire-spray-view.js",
+      "sha": "c9a765b31ede082c60d210c106a2e9045e550aa5"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/tire-spray.js",
+      "sha": "1620286d2b3d90b97784d3a9124834afa65e0b8a"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/track-view.js",
+      "sha": "f982dc96d20b105e06d6fc3f5e48f7192e87bbfd"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/tree-collision.js",
+      "sha": "577148ecba2bcd6d2a093ed61c54ddfbb8981764"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/tree-dynamics.js",
+      "sha": "d86c88f2509b0494ef6eeb0c124dbed88577c2ed"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/upgrades.js",
+      "sha": "a435929da2ab2fa124f9799b597d4d388d0dcc15"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vegetation-shading.js",
+      "sha": "2a5771961f60bc7fad92949a2916e3f5168d2b82"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicle-civic.js",
+      "sha": "82b838041437a2fb2de79d74905d59ca93e5a7b7"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicle-deformation.js",
+      "sha": "0a0362aa7b3063515cd4cb2eafc5d35eadbe3e97"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicle-hummer.js",
+      "sha": "a21be7a55d75680647e35299d1b26d6b89683e58"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicle-sprinter.js",
+      "sha": "b6ac3073b1eab52cf23465984d55076b937e7c6f"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicle-suv.js",
+      "sha": "73631a40309d830865eb1dbbb23963276f978d16"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicle-tessellation.js",
+      "sha": "3fa1f175bcd18e14330c11327648529668ed5b50"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicle-view.js",
+      "sha": "32c19382514326197421147e902cb40e5edcf9d3"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/vehicles.js",
+      "sha": "1e3286822884acd2d5909982e5b1158bf90dda5b"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/winch-view.js",
+      "sha": "73ff929423a9840947cb24e1651dbf45af795251"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/winch.js",
+      "sha": "fe810fedf07e3e650068dd689fe9fce350ea091d"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/workshop-view.js",
+      "sha": "d062d1ef197c9a9b12c9c7ea06723241d3013e50"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/src/world.js",
+      "sha": "125d5ba64a4c589072e0541ed0618a81f7dd1aa8"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/style.css",
+      "sha": "a10f593b8d4c64727f99c485d806a402fcfc8929"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/vendor/cannon-es.js",
+      "sha": "d075cb95413d4b8a15a61349782cbd9e479ce957"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/vendor/CANNON-LICENSE.txt",
+      "sha": "f1a0ed0a402538a15a0f417efe4359c68b8e0014"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/vendor/HDRLoader.js",
+      "sha": "64d11f804addde607941a1573525457353feb4e2"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/vendor/RGBELoader.js",
+      "sha": "4dc5748da82b9515876a58c7b12b3db2f4d74fbc"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/vendor/THREE-LICENSE.txt",
+      "sha": "cf781430404b0ae0ba7d8dea3457a3515dd7c9b9"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/vendor/three.core.js",
+      "sha": "7dcd0fbcbc04b8d9a20ecb96c1ce344cb55150d5"
+    },
+    {
+      "path": "TerraDrive-v1.13/dist/vendor/three.module.js",
+      "sha": "477ca4dafa7af919a2b9818e01b5ae25198d4aa4"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/biome-scenery-v1.15.test.mjs",
+      "sha": "44db12bd4833044d67d853a214774e1be19c6540"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/challenge-clearance.test.mjs",
+      "sha": "14934eec0c7589bf96f8490235e700f69f163469"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/challenge-course.test.mjs",
+      "sha": "3cc17b99c109f0e5cbfa2a9e47a8a2dcaec69b0a"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/challenge-driving.test.mjs",
+      "sha": "144128c1c891652b217f33aaa0d4cf2115ac604f"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/compare-terrain-native.py",
+      "sha": "2d4de0a114a2ccc069264a00d6e52e2ad282935a"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/curate-model-evidence.py",
+      "sha": "01506da9de52001631748223c2a358dd7515056e"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/damage.test.mjs",
+      "sha": "a54c79771148f605f05839516c872187d69fbfe4"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/deferred-ground-upload.test.mjs",
+      "sha": "17963e021ba105eb56ae44bf3587cf12fa5021c0"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/electric-drive.test.mjs",
+      "sha": "3c9627be873aee05225937a9c595879977e3f936"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/electric-input.test.mjs",
+      "sha": "096922305d7ebd1278aa8f241fda75fe6ff3c82e"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/electric-launch.test.mjs",
+      "sha": "92aff3fa4dcfaac3d489fbbb5301a9668e1a7f17"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/environment-models.test.mjs",
+      "sha": "a6efd9a9d163604d52520e366cfda9974c5c6361"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/fixtures/handling-v1.3-baseline.json",
+      "sha": "c73aa984784abae0aba93af527b5b5d6588efddb"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/fixtures/rut-driving-v1.11.mjs",
+      "sha": "aa36f1f23e09becde5c16e063ffccb88fc88e83d"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/fixtures/terrain-driving-v1.12.mjs",
+      "sha": "363de9fbf2405cb96cca9a8095fd36f3dffd8249"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/fixtures/tire-spray-driving-v1.13.mjs",
+      "sha": "e57a661021c582dad198371443752144111ddc92"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/fixtures/water-reflection-v1.3.mjs",
+      "sha": "71ea2435e35097f2bfc492506142653bd32cd69f"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/garage.test.mjs",
+      "sha": "26744e233e7cbc726a74abab9d164a72ad8df24c"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/ground-cover-contact.test.mjs",
+      "sha": "6fbf01c12790f11036d99d6e840fcd9998c621be"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/ground-proximity.test.mjs",
+      "sha": "b6bc635db53b006e4b128169b0ce21d2c6f5db3d"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/handling-metrics.mjs",
+      "sha": "45a54c925df39d2839ab55f171e92366f0826f6a"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/handling.test.mjs",
+      "sha": "cdcc551f4112052ed57e6d9e63e505b69e0a7b37"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/hummer-model.test.mjs",
+      "sha": "5e8e0bb85da2a28d350926fc0ffd8f45d85155ad"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/input.test.mjs",
+      "sha": "80af1b13e23c412f090a69f80ed4c9c107cc91be"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/landscape-models.test.mjs",
+      "sha": "cf5a48bc4203452a548a237a3ca0679ca18d76f6"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/material-blend-v1.8.test.mjs",
+      "sha": "f4161965cf357e28127306e6393693b957f28873"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/model-control.py",
+      "sha": "12bf6f49bf68f984ce975901ca476ac91aadc0b2"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/model-fascia-v1.10.test.mjs",
+      "sha": "c45789723ade18042f1b63365bf0755e271c22a3"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/model-hummer-sprinter-v1.10.test.mjs",
+      "sha": "a27fc774609218317045f325c17ffcda963350f5"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/native-render-utils.mjs",
+      "sha": "83d8ab1fe784c2ecceac7e0ed72b191541167bd7"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/needle-native-controls.py",
+      "sha": "5dac50a3d18e3125d41c62a7494f6333f292e19d"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/obstacle-contact.test.mjs",
+      "sha": "2cb33d919bb4bd8adb2432f0211f29000644f4c4"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/obstacle-wetness.test.mjs",
+      "sha": "f3c52e41536ed992ca0a49191ec12e0c8c8fe06b"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/outdoor-lighting.test.mjs",
+      "sha": "ea60f0ec4f8262a6385f94569a7353efc774c628"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/particle-vehicle-collision.test.mjs",
+      "sha": "1a62802eac7e1419ed44901ec3ed97924653aa4a"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/physics.test.mjs",
+      "sha": "1348fa936513c8c2a09b3078c4d9679e6c1010d1"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/render-model-native.py",
+      "sha": "bd3d0088bbf0d20374e19853239926a358d41745"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/render-model.mjs",
+      "sha": "d1315b7eb7461ffa1f2b4884f54bbe5f0f4a4877"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/render-terrain-evidence.mjs",
+      "sha": "f3f64c15f4e8d7ada5c5abd4fd07c54eb561abf2"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/render-terrain-evidence.py",
+      "sha": "f286758261487ea116612e805117f20528c05b46"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/rock-relief.test.mjs",
+      "sha": "0862f0085f86bd50cb511ee99041d4bca88e3940"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/run-release-tests.py",
+      "sha": "d8ed11e599a4d87453d5f1fd4ab8bf594dbcf041"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/rut-driving-metrics.mjs",
+      "sha": "1e192d6be3fc1735c3d247a9bfded9688ece393c"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/rut-driving.test.mjs",
+      "sha": "ca0e575fcb18e60491506cde3b04dfd00b827673"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/shader-compile-native.py",
+      "sha": "8708d4b5172fb980cbd4bbc3965887deb631db67"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/shader-compile.mjs",
+      "sha": "dfbabbd42568242d25bc181bab222fc73d755936"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/snow-tracks.test.mjs",
+      "sha": "4062c4450e45036d8d01255559bd642af69538f9"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/soil-displacement.test.mjs",
+      "sha": "bc4ee60e1c6069b0922c9ac329c6e1b57d1c880d"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/soil-wake-v1.15.test.mjs",
+      "sha": "5cb786efdcf1468cdbd40194cde6ec908127afe6"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/surface-handling.test.mjs",
+      "sha": "7c261126648238844379dc3ffe57523b02e41b5e"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/surface-metrics.mjs",
+      "sha": "2d4b9f858f656ef7e45331fd3df96891bb8e2b28"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/terrain-contact-metrics.mjs",
+      "sha": "e8e5c89601d86d63accbd44402c2636d1302e991"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/terrain-contact.test.mjs",
+      "sha": "4dd5116656e70a0ec1af26714ada501ee91b75df"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/terrain-geology.test.mjs",
+      "sha": "c5223ea31804368716fae51a19155db76c4503f5"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/terrain-native-controls.py",
+      "sha": "b81c430c083cb2f4cd147178ba5e02352a80770d"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/terrain-routes.mjs",
+      "sha": "9f3f4ff5930934d267adca071e78af20360c40d7"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/terrain-sampling-benchmark.mjs",
+      "sha": "36c2ce9ac709108ce5871ba2ed411df249672ef6"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/terrain.test.mjs",
+      "sha": "6b4c2f5082531fa544ee8850ee3cb37d82c85692"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/tire-spray.test.mjs",
+      "sha": "909d4477ff5d2de45060511c6c7acd1abdbe29d5"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/tree-collision.test.mjs",
+      "sha": "2ed8edd8b4d6b6f076fc16c62857fa48035782bb"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/tree-fall.test.mjs",
+      "sha": "7db298b834817afcd3a2bec6701478c1e1b6dc19"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/upgrades.test.mjs",
+      "sha": "bce8be14cb408a62d1674551f865e9705a2be3a5"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/vehicle-tessellation.test.mjs",
+      "sha": "dda437ce1f117514869cfbaeef1637cd9292f8ca"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/vehicle-view.test.mjs",
+      "sha": "4835c63c80e832075d1e8f60857bcd7cf6708efe"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/water-temporal.test.mjs",
+      "sha": "33658ec85e24ad4896578735154e438bcd3eab83"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/winch.test.mjs",
+      "sha": "b848fbdd99dde4e39e17a932587a4e864c1df2d5"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/worked-soil-material.test.mjs",
+      "sha": "09b6e00de668c2da0eb7d3528c18c3d075d58d36"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/world-additions-v1.9.test.mjs",
+      "sha": "b7a5fec0ccc739c1dd08d5f8b985ae0a9ee11b14"
+    },
+    {
+      "path": "TerraDrive-v1.13/tests/world.test.mjs",
+      "sha": "adc14080813df4f49f12b45b56de0125aa72e64c"
+    },
+    {
+      "path": "TerraDrive-v1.13/package.json",
+      "sha": "c1e18256736813315e26b25ecb6f2e6254043405"
+    }
+  ]
+}

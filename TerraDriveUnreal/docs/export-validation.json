@@ -3,6 +3,64 @@
   "maximumHeightExportErrorM": 0.0000019073486328125,
   "vehicles": 5,
   "zones": 8,
+  "zoneSamples": [
+    {
+      "name": "Pine Ridge Trail",
+      "unrealXM": -44,
+      "unrealYM": 3,
+      "surface": "dirt",
+      "heightM": 3.189868927001953
+    },
+    {
+      "name": "Tarmac Straight",
+      "unrealXM": -186,
+      "unrealYM": 108,
+      "surface": "asphalt",
+      "heightM": 3.5850000381469727
+    },
+    {
+      "name": "Granite Steps",
+      "unrealXM": 42,
+      "unrealYM": -112,
+      "surface": "rock",
+      "heightM": 7.3324785232543945
+    },
+    {
+      "name": "Rutted Hollow",
+      "unrealXM": -163,
+      "unrealYM": -48,
+      "surface": "mud",
+      "heightM": 3.332014560699463
+    },
+    {
+      "name": "Willow Marsh",
+      "unrealXM": 77,
+      "unrealYM": 24,
+      "surface": "dirt",
+      "heightM": 4.690649509429932
+    },
+    {
+      "name": "Copper Dunes",
+      "unrealXM": -178,
+      "unrealYM": -195,
+      "surface": "sand",
+      "heightM": 11.039977312088013
+    },
+    {
+      "name": "Summit Challenge Park",
+      "unrealXM": -169,
+      "unrealYM": 236,
+      "surface": "dirt",
+      "heightM": 4.599999904632568
+    },
+    {
+      "name": "Boreal Snow Basin",
+      "unrealXM": 230,
+      "unrealYM": 218,
+      "surface": "snow",
+      "heightM": 7.0382914543151855
+    }
+  ],
   "meshSources": 141,
   "trees": 472,
   "placements": 11662,

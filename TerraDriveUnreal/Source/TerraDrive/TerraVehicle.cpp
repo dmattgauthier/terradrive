@@ -45,7 +45,11 @@ ATerraVehicle::ATerraVehicle() {
   }
   CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("ChaseArm"));
   CameraArm->SetupAttachment(Chassis);
-  CameraArm->TargetArmLength = 740;
+  // Keep the chase horizon upright when the physics chassis pitches or rolls.
+  // With relative rotation, the spring arm's inherit flags reinterpret a world
+  // rotation as local angles and can put the camera below sloping terrain.
+  CameraArm->SetUsingAbsoluteRotation(true);
+  CameraArm->TargetArmLength = 1150;
   CameraArm->SetRelativeLocation(FVector(0, 0, 110));
   CameraArm->bInheritPitch = false;
   CameraArm->bInheritRoll = false;
@@ -54,7 +58,7 @@ ATerraVehicle::ATerraVehicle() {
   CameraArm->CameraLagSpeed = 5;
   CameraArm->ProbeSize = 18;
   Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-  Camera->SetupAttachment(CameraArm);
+  Camera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
   Camera->FieldOfView = 64;
   AutoPossessPlayer = EAutoReceiveInput::Player0;
 }
@@ -282,7 +286,7 @@ void ATerraVehicle::Input(float Dt) {
     CameraPitch = FMath::Clamp(CameraPitch + MY * .2f, -50.f, 5.f);
   }
   if (Press(EKeys::C))
-    CameraArm->TargetArmLength = CameraArm->TargetArmLength > 500 ? 340 : 740;
+    CameraArm->TargetArmLength = CameraArm->TargetArmLength > 500 ? 340 : 1150;
 }
 void ATerraVehicle::Simulate(float Dt) {
   FVector Velocity = Chassis->GetPhysicsLinearVelocity() / 100,

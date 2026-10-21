@@ -17,8 +17,18 @@ for(let i=0;i<1000;i++){
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
 assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,5);assert.equal(data.zones.length,8);
+// Exercise the native addressing convention in world coordinates, not just
+// the export loop's row/column convention. Source Z maps to Unreal X (row).
+const zoneSamples=data.zones.map(zone=>{
+ const {x,z}=zone.spawn,ux=z,uy=-x;
+ const row=Math.round((ux+400)/.5),col=Math.round((uy+400)/.5);
+ const offset=16+(row*1601+col)*9,reference=terrain.sample(x,z);
+ assert.equal(data.surfaces[b[offset+8]],reference.surface,zone.name+' surface');
+ assert.ok(Math.abs(b.readFloatLE(offset)-reference.height)<1e-4,zone.name+' height');
+ return {name:zone.name,unrealXM:ux,unrealYM:uy,surface:reference.surface,heightM:reference.height};
+});
 for(const a of data.assets){assert.ok(fs.statSync(path.join(root,'SourceAssets',a.name+'.obj')).size>50);for(const slot of a.slots)assert.ok(data.materials.some(m=>m.id===slot));}
 for(const group of data.placements)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 for(const t of data.trees)for(const p of t.parts){assert.ok(data.placements[p.group].instances.some(i=>i.index===p.index));}
-const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,meshSources:data.assets.length,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),pass:true};
+const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),pass:true};
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});fs.writeFileSync(path.join(root,'docs/export-validation.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

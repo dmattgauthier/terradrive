@@ -1,0 +1,166 @@
+{
+  "date": "2026-10-20",
+  "configuration": "Windows Development",
+  "graphics": {
+    "api": "DirectX 12 SM6",
+    "adapter": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "automatedResolution": [
+      1280,
+      720
+    ]
+  },
+  "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
+  "executableSHA256": "557a98635f55fb3f40b7cea9c919c0767c9356fa34085f9721f5ba6d0000694e",
+  "engine": "5.8.3",
+  "tests": [
+    {
+      "case": "native world data",
+      "zones": 8,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 meshes",
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 meshes",
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 meshes",
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 meshes",
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 meshes",
+      "pass": true
+    },
+    {
+      "case": "native acceleration",
+      "distanceM": 66.483,
+      "speedMS": 20.987,
+      "pass": true
+    },
+    {
+      "case": "native braking",
+      "speedMS": 0,
+      "pass": true
+    },
+    {
+      "case": "snow flotation",
+      "tireSinkCM": 22.02576,
+      "trackSinkCM": 4.74707,
+      "pass": true
+    },
+    {
+      "case": "soil volume ledger",
+      "errorM3": 0,
+      "pass": true
+    },
+    {
+      "case": "EV steered launch",
+      "speedMS": 16.558,
+      "yawDegrees": 89.294,
+      "pass": true
+    },
+    {
+      "case": "region 0 spawn",
+      "surface": 0,
+      "expectedSurface": 0,
+      "pass": true
+    },
+    {
+      "case": "region 0 camera",
+      "clearanceCM": 510.162,
+      "rollDegrees": 0,
+      "pass": true
+    },
+    {
+      "case": "region 1 spawn",
+      "surface": 1,
+      "expectedSurface": 1,
+      "pass": true
+    },
+    {
+      "case": "region 1 camera",
+      "clearanceCM": 506.955,
+      "rollDegrees": 0,
+      "pass": true
+    },
+    {
+      "case": "region 2 spawn",
+      "surface": 4,
+      "expectedSurface": 4,
+      "pass": true
+    },
+    {
+      "case": "region 2 camera",
+      "clearanceCM": 643.758,
+      "rollDegrees": 0,
+      "pass": true
+    },
+    {
+      "case": "region 3 spawn",
+      "surface": 2,
+      "expectedSurface": 2,
+      "pass": true
+    },
+    {
+      "case": "region 3 camera",
+      "clearanceCM": 608.288,
+      "rollDegrees": 0,
+      "pass": true
+    },
+    {
+      "case": "region 4 spawn",
+      "surface": 0,
+      "expectedSurface": 0,
+      "pass": true
+    },
+    {
+      "case": "region 4 camera",
+      "clearanceCM": 525.323,
+      "rollDegrees": 0,
+      "pass": true
+    },
+    {
+      "case": "region 5 spawn",
+      "surface": 5,
+      "expectedSurface": 5,
+      "pass": true
+    },
+    {
+      "case": "region 5 camera",
+      "clearanceCM": 663.341,
+      "rollDegrees": 0,
+      "pass": true
+    },
+    {
+      "case": "region 6 spawn",
+      "surface": 0,
+      "expectedSurface": 0,
+      "pass": true
+    },
+    {
+      "case": "region 6 camera",
+      "clearanceCM": 503.705,
+      "rollDegrees": 0,
+      "pass": true
+    },
+    {
+      "case": "region 7 spawn",
+      "surface": 6,
+      "expectedSurface": 6,
+      "pass": true
+    },
+    {
+      "case": "region 7 camera",
+      "clearanceCM": 29.53,
+      "rollDegrees": 0,
+      "pass": true
+    }
+  ]
+}
