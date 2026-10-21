@@ -38,6 +38,9 @@ ATerraVehicle::ATerraVehicle() {
   RoofCollision->SetRelativeLocation(FVector(0,0,40));
   RoofCollision->SetCollisionProfileName(TEXT("PhysicsActor"));
   RoofCollision->BodyInstance.bAutoWeld = true;
+  // Vehicle mass already includes the cabin. Its extra collision shape must
+  // not add an automatically computed second mass to the welded rigid body.
+  RoofCollision->BodyInstance.SetMassOverride(.001f,true);
   Body = CreateDefaultSubobject<UStaticMeshComponent>(
       TEXT("OriginalVehicleModel"));
   Body->SetupAttachment(Chassis);
@@ -105,6 +108,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   if (!Terrain || !Terrain->Data)
     return;
   auto &List = Terrain->Data->GetArrayField(TEXT("vehicles"));
+  const int PreviousRoute = RouteIndex;
   VehicleIndex = (Index + List.Num()) % List.Num();
   Spec = List[VehicleIndex]->AsObject();
   VehicleName = Spec->GetStringField(TEXT("name"));
@@ -145,8 +149,11 @@ void ATerraVehicle::SelectVehicle(int Index) {
         nullptr, *(TEXT("/Game/Meshes/") + Asset + TEXT("_wheel"))));
   for (auto &W : WheelState)
     W = FTerraWheel();
+  ApplyUpgrades();
   Notice = VehicleName;
-  TeleportZone(Zone);
+  if(PreviousRoute>=0)TeleportRoute(PreviousRoute);else TeleportZone(Zone);
+  if(Garage)ApplyUpgrades();
+  if(!AutoTest&&Initialized)SaveGarage(GaragePath());
 }
 void ATerraVehicle::SetTracks(bool Enabled) {
   if (VehicleIndex == 2) {
@@ -166,6 +173,7 @@ void ATerraVehicle::SetTracks(bool Enabled) {
         nullptr, *(TEXT("/Game/Meshes/") + Asset +
                    (Tracks ? TEXT("_track") : TEXT("_wheel")))));
   Chassis->SetMassOverrideInKg(NAME_None, Mass + (Tracks ? 380 : 0));
+  ApplyUpgrades();
   Notice =
       Tracks ? TEXT("Flotation tracks equipped") : TEXT("Road wheels equipped");
   SaveSetup();
@@ -177,7 +185,7 @@ void ATerraVehicle::TeleportZone(int Index) {
   RouteIndex = -1;
   RouteStatus.Empty();
   FVector P =
-      Terrain->Spawns[Zone] + FVector(0, 0, CG * 100 + 12 + LiftUpgrade * 5);
+      Terrain->Spawns[Zone] + FVector(0, 0, CG * 100 + 12 + Tuning.Lift * 100 + (Radius-Number(TEXT("tireRadius"),.42f))*100);
   Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);
   Chassis->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
   SetActorLocationAndRotation(P, FRotator::ZeroRotator, false, nullptr,
@@ -198,7 +206,7 @@ void ATerraVehicle::TeleportRoute(int Index) {
   const auto &Route = Terrain->Routes[R];
   TeleportZone(Route.Zone);
   RouteIndex = R; GateIndex = 0; RouteTime = 0;
-  SetActorLocationAndRotation(Route.Spawn + FVector(0,0,CG*100+16+LiftUpgrade*5),
+  SetActorLocationAndRotation(Route.Spawn + FVector(0,0,CG*100+16+Tuning.Lift*100+(Radius-Number(TEXT("tireRadius"),.42f))*100),
       FRotator(0,Route.Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
   PreviousRoutePosition = GetActorLocation();
   Notice = Route.Hint;
@@ -255,10 +263,9 @@ void ATerraVehicle::Input(float Dt) {
     PC->ConsoleCommand(TEXT("quit"));
     return;
   }
-  if (Press(EKeys::Tab))
-    Garage = !Garage;
-  if (Press(EKeys::V))
-    SelectVehicle(VehicleIndex + 1);
+  if (Press(EKeys::Tab)) { SetGarage(!Garage); return; }
+  if (Garage) { Throttle=Steer=0; Brake=1; return; }
+  if (Press(EKeys::V)) { SetGarage(true); return; }
   if (Press(EKeys::R))
     { if (RouteIndex >= 0) TeleportRoute(RouteIndex); else TeleportZone(Zone); }
   if (Press(EKeys::J)) TeleportRoute(RouteIndex + 1);
@@ -301,12 +308,7 @@ void ATerraVehicle::Input(float Dt) {
     Damage = 0;
     Parcels.Empty();
   }
-  if (Garage && FMath::Abs(Speed) < .5f) {
-    if (Press(EKeys::E))
-      EngineUpgrade = (EngineUpgrade + 1) % 4;
-    if (Press(EKeys::H))
-      LiftUpgrade = (LiftUpgrade + 1) % 4;
-  }
+
   if (Press(EKeys::X)) {
     if (WinchAttached)
       WinchAttached = false;
@@ -406,7 +408,9 @@ void ATerraVehicle::Simulate(float Dt) {
     TotalTorque *= FMath::Clamp((Redline-RPM)/(Redline*.08f),0.f,1.f);
   }
   TotalTorque *=
-      Throttle * (1 + EngineUpgrade * .12f) * (1 - Damage * .35f) * Direction;
+      Throttle * Tuning.Power * Tuning.ElectricalPower * (1 - Damage * .35f) * Direction;
+  const float WaterDepth=Terrain->Sample(GetActorLocation()).Water/100;
+  TotalTorque*=1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f);
   if (Tracks && FMath::Abs(Speed) > 12)
     TotalTorque = 0;
   if (LowRange) TotalTorque *= FMath::Clamp(8.f-FMath::Abs(Speed),0.f,1.f);
@@ -423,14 +427,14 @@ void ATerraVehicle::Simulate(float Dt) {
     const float StaticLoad = Mass * 9.81f * (Front ? FrontWeight : 1-FrontWeight) * .5f;
     const float Preload = StaticLoad / Spring;
     const FVector Local(Wheelbase * (Front ? 1-FrontWeight : -FrontWeight)*100,
-        (I%2 ? 1:-1)*Track*50, (Radius+Rest-CG-Preload+LiftUpgrade*.05f)*100);
+        (I%2 ? 1:-1)*Track*50, (Radius+Rest-CG-Preload+Tuning.Lift)*100);
     const FVector Mount = GetActorTransform().TransformPosition(Local);
     W.Angle = Front ? SteerAngle : Electric ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : 0;
-    const auto Support = Terrain->CastSupport(Mount,Up,Radius*100,-30,(Rest+.16f)*100,this);
+    const auto Support = Terrain->CastSupport(Mount,Up,Radius*100,-30,(Rest+Droop)*100,this);
     W.ContactValid = Support.Hit;
     W.Constructed = Support.Constructed;
-    W.Distance = Support.Hit ? Support.Distance/100 : Rest+.16f;
-    W.Center = Mount-Up*FMath::Clamp(W.Distance,Rest-.30f,Rest+.16f)*100;
+    W.Distance = Support.Hit ? Support.Distance/100 : Rest+Droop;
+    W.Center = Mount-Up*FMath::Clamp(W.Distance,Rest-.30f,Rest+Droop)*100;
     W.Contact = Support.Hit ? Support.Point : W.Center-Up*Radius*100;
     W.Ground = Terrain->Sample(W.Contact);
     if (Support.Hit) {
@@ -452,7 +456,7 @@ void ATerraVehicle::Simulate(float Dt) {
     W.ForceSide = FVector::CrossProduct(Normal,W.ForceForward).GetSafeNormal();
     W.LongSpeed = FVector::DotProduct(W.PointVelocity,W.ForceForward);
     W.LateralSpeed = FVector::DotProduct(W.PointVelocity,W.ForceSide);
-    const float Mu = W.Ground.Mu*(Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
+    const float Mu = W.Ground.Mu*Tuning.Grip*(Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
     Capacities[I] = W.Load*Mu*Radius;
   }
   Overturned = Up.Z < .15f && ContactCount == 0;
@@ -469,7 +473,7 @@ void ATerraVehicle::Simulate(float Dt) {
   const float AssistBrake = DescentAssist && Throttle<.05f
       ? FMath::Clamp((FMath::Abs(Speed)-2.f)*.45f,0.f,.8f) : 0.f;
   const float EffectiveBrake = FMath::Max(Brake,AssistBrake);
-  const float Inertia=Tracks?24.f:3.f, R=Radius;
+  const float Inertia=Tracks?24.f:3.f*Tuning.WheelInertia, R=Radius;
   float Stiffness[4]={}, Drag[4]={};
   for(int I=0;I<4;++I){
     const auto &W=WheelState[I];
@@ -503,7 +507,7 @@ void ATerraVehicle::Simulate(float Dt) {
     const float C=Stiffness[I];
     float FX=C*(W.Omega*R-W.LongSpeed);
     float FY=-W.Load*FMath::Atan2(W.LateralSpeed,FMath::Max(2.f,FMath::Abs(W.LongSpeed)))*5.5f;
-    const float Mu=W.Ground.Mu*(Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
+    const float Mu=W.Ground.Mu*Tuning.Grip*(Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
     const float Scale=TerraSim::FrictionScale(FX,FY,Mu,W.Load);
     FX*=Scale; FY*=Scale;
     W.Slip=(W.Omega*R-W.LongSpeed)/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
@@ -523,7 +527,7 @@ void ATerraVehicle::Simulate(float Dt) {
   }
   if (SoilTimer >= .025f)
     SoilTimer = 0;
-  Chassis->AddForce(-Velocity * Velocity.Size() * .5f * 1.2f * .5f *
+  Chassis->AddForce(-Velocity * Velocity.Size() * .5f * 1.2f * .5f * Tuning.Drag *
                     Number(TEXT("width"), 1.8) * Number(TEXT("height"), 1.8) *
                     100);
   if (WinchAttached) {
@@ -532,11 +536,11 @@ void ATerraVehicle::Simulate(float Dt) {
     FVector D = Anchor - Hook;
     float L = D.Size() / 100;
     if (Reeling)
-      WinchLength = FMath::Max(2.f, WinchLength - Dt * .65f);
+      WinchLength = FMath::Max(2.f, WinchLength - Dt * .65f*Tuning.Winch);
     WinchTension =
         FMath::Clamp((L - WinchLength) * 14000 -
                          FVector::DotProduct(Velocity, D.GetSafeNormal()) * 900,
-                     0.f, 45000.f);
+                     0.f, 45000.f*Tuning.Winch);
     Chassis->AddForceAtLocation(D.GetSafeNormal() * WinchTension * 100, Hook);
     DrawDebugLine(GetWorld(), Hook, Anchor, FColor(92, 130, 140), false, 0, 0,
                   1.7f);
@@ -629,15 +633,25 @@ void ATerraVehicle::Tick(float Dt) {
   if (!Terrain || !Terrain->Ready)
     return;
   if (!Initialized) {
-    SelectVehicle(0);
+    if(!AutoTest)LoadGarage(GaragePath());
+    SelectVehicle(AutoTest?0:LastVehicle);
     Initialized = true;
+    if(!AutoTest)SetGarage(true);
   }
   Dt = FMath::Min(Dt, .1f);
   Input(Dt);
-  SoilTimer += Dt;
-  Simulate(Dt);
-  UpdateSpray(Dt);
-  UpdateRoute(Dt);
+  if(!Garage){
+    SoilTimer += Dt;
+    Simulate(Dt);
+    UpdateSpray(Dt);
+    UpdateRoute(Dt);
+  }else{
+    CameraArm->bEnableCameraLag=false;
+    CameraArm->TargetArmLength=1050;
+    CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,70));
+    CameraArm->SetWorldRotation(FRotator(-12,GetActorRotation().Yaw+145,0));
+    return;
+  }
   SpawnCooldown = FMath::Max(0.f, SpawnCooldown - Dt);
   CameraArm->bEnableCameraLag = SpawnCooldown <= 0;
   // Keep the boom pivot above a rolled chassis instead of rotating its local
@@ -660,7 +674,7 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
                             const FHitResult &Result) {
   if (SpawnCooldown > 0)
     return;
-  Damage = FMath::Clamp(Damage + Impulse.Size() / (Mass * 100 * 95), 0.f, 1.f);
+  Damage = FMath::Clamp(Damage + ImpactDamage(Impulse.Size()), 0.f, 1.f);
   if (Terrain)
     Terrain->HitTree(Other, -Impulse, Result.ImpactPoint);
 }
@@ -668,6 +682,8 @@ void ATerraVehicle::OnBodyHit(UPrimitiveComponent *Hit,
                               UPrimitiveComponent *Other, FVector Impulse,
                               const FHitResult &Result) {}
 void ATerraVehicle::SaveSetup() {
+  if(AutoTest)return;
+  SaveGarage(GaragePath());
   GConfig->SetFloat(TEXT("TerraDrive"), TEXT("Pressure"), Pressure,
                     GGameUserSettingsIni);
   GConfig->SetBool(TEXT("TerraDrive"), TEXT("Tracks"), Tracks,

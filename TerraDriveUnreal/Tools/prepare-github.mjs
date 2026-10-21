@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const workspace=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-const textExt=new Set(['.js','.mjs','.json','.html','.css','.md','.cpp','.h','.cs','.uproject','.ini','.ps1','.cmd','.txt','.py']);
+const textExt=new Set(['.js','.mjs','.json','.html','.css','.md','.cpp','.h','.hlsl','.cs','.uproject','.ini','.ps1','.cmd','.txt','.py']);
 const files=[];
 function add(rel){const p=path.join(workspace,rel);if(!fs.existsSync(p))return;const stat=fs.statSync(p);if(stat.isDirectory()){for(const n of fs.readdirSync(p))add(path.join(rel,n));return;}const ext=path.extname(rel).toLowerCase();const text=textExt.has(ext)||path.basename(rel)==='.gitignore';files.push({path:rel.replaceAll('\\','/'),size:stat.size,text});}
 for(const p of ['README.md','.gitignore','TerraDriveUnreal/.clang-format','TerraDriveUnreal/TerraDrive.uproject','TerraDriveUnreal/Source','TerraDriveUnreal/Config','TerraDriveUnreal/Tools','TerraDriveUnreal/README.md','TerraDriveUnreal/docs','TerraDrive-v1.13/dist','TerraDrive-v1.13/tests','TerraDrive-v1.13/package.json'])add(p);

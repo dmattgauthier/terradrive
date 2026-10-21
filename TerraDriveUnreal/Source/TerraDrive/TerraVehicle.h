@@ -2,12 +2,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "TerraWorld.h"
+#include "TerraUpgrades.h"
 #include "TerraVehicle.generated.h"
 class UBoxComponent;
 class UStaticMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UInstancedStaticMeshComponent;
+class STerraGarage;
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35;
@@ -68,6 +70,26 @@ public:
   bool AutoTest = false, Initialized = false;
   float TestThrottle = 0, TestSteer = 0, TestBrake = 0;
   void SetTracks(bool Enabled);
+  void SetGarage(bool Open);
+  void SetUpgrade(int Part, int Stage, bool Persist = true);
+  void ResetUpgrades(bool Persist = true);
+  void ApplyUpgrades();
+  bool LoadGarage(const FString &Path);
+  bool SaveGarage(const FString &Path) const;
+  FString GaragePath() const;
+  FString UpgradeEffect(int Part) const;
+  FString UpgradeName(int Part) const;
+  FString UpgradeDescription(int Part) const;
+  int UpgradeStage(int Part) const { return Builds[VehicleIndex].Stage[Part]; }
+  bool HasElectrical() const { return VehicleIndex != 2; }
+  float PowerHP() const { return Power/745.7f*Tuning.Power*Tuning.ElectricalPower; }
+  float SuspensionTravel() const { return .46f+Tuning.Travel; }
+  float TireDiameter() const { return Radius*200/2.54f; }
+  float GripMultiplier() const { return Tuning.Grip; }
+  float WheelInertia() const { return 3*Tuning.WheelInertia; }
+  float ImpactDamage(float Impulse) const;
+  TerraSim::UpgradeSetup Builds[5];
+  TerraSim::UpgradeTuning Tuning;
 
 private:
   TSharedPtr<FJsonObject> Spec;
@@ -75,6 +97,9 @@ private:
   FVector Anchor;
   FVector PreviousRoutePosition;
   bool NearCamera = false;
+  TSharedPtr<STerraGarage> GarageWidget;
+  int LastVehicle = 0;
+  float TireVisualScale = 1, WidthVisualScale = 1, Droop = .16f;
   float WinchLength = 0, ReverseHold = 0, SpawnCooldown = 1, CameraYaw = 0,
         CameraPitch = -16, SoilTimer = 0, SprayBudget[4] = {0, 0, 0, 0};
   float Radius = .42f, Width = .285f, Wheelbase = 3, Track = 1.63f, CG = .76f,

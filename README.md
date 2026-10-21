@@ -8,4 +8,6 @@ The Unreal migration is a playable development preview. Asset import and Windows
 
 The native preview includes the Summit loop/jump/articulation park and a Granite Trials arena with four rocky routes. Finite suspension contact prevents roof-down driving, airborne tire debris moves and expires, and selectable axle lockers/low range affect climbing traction. See `TerraDriveUnreal/docs/offroad-challenges.md` for the course controls.
 
+The native garage provides direct vehicle selection, a live model preview and seven upgrade categories with stock plus three stages. Per-vehicle builds are saved locally. Terrain uses layered photographic ground, slope-aware patches, normal/roughness maps and world-space variation. See `TerraDriveUnreal/docs/garage-and-terrain.md` for details.
+
 Third-party asset attribution is retained in `TerraDrive-v1.13/dist/assets/terrain/manifest.json` and adjacent source/license records. Unreal Engine itself is not included.

@@ -22,6 +22,7 @@ private:
   int Stage = 0;
   FVector Start;
   float OpenProgress = 0, MaxProgress = 0;
+  float StockUpgradeSpeed = 0, StockUpgradeDistance = 0;
   bool InvertedContactSeen = false;
   TArray<FString> Results;
   bool Captured = false;

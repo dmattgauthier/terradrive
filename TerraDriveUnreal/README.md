@@ -26,7 +26,7 @@ After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows
 .\Tools\verify-native.ps1
 ```
 
-The verifier requires a fresh JSON report, a successful game exit, and all 55 checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist and eight challenge route spawns. They do not establish full behavioral parity with the browser reference.
+The verifier requires a fresh JSON report, a successful game exit, and all 71 checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, eight challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit. They do not establish full behavioral parity with the browser reference.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
 
@@ -41,7 +41,7 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 | C | Near/far chase camera |
 | 1–9 | Trail, tarmac, rock, mud, marsh, sand, Summit park, snow, Granite Trials |
 | J | Cycle eight challenge routes |
-| V | Cycle the five migrated vehicles |
+| V | Open vehicle selection while stopped |
 | T | Equip/remove flotation tracks while stopped; Civic excluded |
 | F / L | 2WD/4WD / low range on supported vehicles |
 | Z / U | Rear / front differential lock; stop and select required driveline first |
@@ -49,8 +49,9 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 | K | Descent assist on supported vehicles |
 | + / - | Tire pressure |
 | X / Q | Attach/detach nearest standing-tree anchor / reel winch |
-| Tab | Field garage |
-| E / H in garage | Engine stage / suspension lift |
+| Tab | Open vehicle and upgrade garage while stopped; return to driving |
+| Mouse in garage | Select a vehicle, category stage, reset to stock, or drive |
+| Escape in garage | Return to driving |
 | P | Dry/rain response |
 | R | Recover at current region or restart current challenge route |
 | Backspace | Repair/reset deformed soil |
@@ -61,3 +62,5 @@ Gamepad left stick steers, right trigger drives, left trigger and bottom face bu
 This is a migration preview. Browser regression results are reference evidence, not proof of native parity. See `docs/validation-native.md` for observed native results and remaining limits.
 
 See [offroad-challenges.md](docs/offroad-challenges.md) for route descriptions, driving techniques and the native axle/contact model.
+
+The game opens in the vehicle garage. Stock plus three upgrade stages are available immediately and saved independently for each vehicle. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [garage-and-terrain.md](docs/garage-and-terrain.md) for stages, persistence and material reproduction.

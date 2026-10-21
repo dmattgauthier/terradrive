@@ -95,10 +95,9 @@ for d in data['materials']:
 texture_names = {'dirt':'forest_ground_04_diff_2k.jpg', 'asphalt':'asphalt_02_diff_1k.jpg',
     'mud':'brown_mud_02_diff_2k.jpg', 'wetland':'brown_mud_02_diff_2k.jpg',
     'rock':'mossy_rock_diff_1k.jpg', 'sand':'sand_03_diff_1k.jpg'}
-for s in data['surfaces']:
-    color = [.86,.88,.81] if s == 'dirt' else [.82,.81,.77] if s != 'snow' else [.87,.93,1]
-    material('Terrain_'+s, color, .97 if s in ['snow','sand'] else .38 if s in ['mud','wetland'] else .85,
-        texture=load_texture(texture_names.get(s)))
+terrain_script = os.path.join(root, 'Tools', 'terrain-materials.py')
+with open(terrain_script, encoding='utf8') as terrain_stream:
+    exec(compile(terrain_stream.read(), terrain_script, 'exec'), globals())
 for name, color in [('mud',[.19,.12,.07]), ('water',[.40,.60,.68]), ('snow',[.90,.95,1]), ('sand',[.69,.50,.26])]:
     material('Spray_'+name, color, .3 if name == 'water' else .94)
 material('M_Sky', [.38,.58,.78], sky=True)

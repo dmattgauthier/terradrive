@@ -1,56 +1,46 @@
 # Native migration validation
 
-Verified October 20, 2026 with Unreal Engine 5.8.3 on Windows x64, DirectX 12 SM6 and NVIDIA GeForce RTX 4060 Laptop GPU. Launch `Build/Windows/TerraDrive.exe` and keep the complete Windows folder together.
+Verified October 20, 2026 with Unreal Engine 5.8.3 on Windows x64, DirectX 12 SM6 and NVIDIA GeForce RTX 4060 Laptop GPU. Launch Build/Windows/TerraDrive.exe and keep the complete Windows folder together.
 
 ## Recorded results
 
 | Check | Result |
 |---|---|
-| Editor/game compilation and packaging | Successful; full cook followed by code-only rebuilds/staging against that cook |
-| Packaged native game | All 55 checks passed with a fresh report and successful process exit |
-| Shared C++ core | 24 checks passed: finite support reach, differential torque transfer, tire integration, friction budget, flotation and direction gating |
-| Export/import | 144 mesh sources, 295 materials, nine textures, nine regions, eight challenge routes and 412 trees; mesh schema 2 |
-| Terrain conversion | 1,000 height/water/surface samples plus zone references passed; maximum height conversion error 0.00000190735 m |
-| Roof-down input | Zero tire drive force; 0.0916 cm horizontal drift during the stationary roof test; upright camera horizon and positive terrain clearance |
-| Airborne input | No tire force or artificial horizontal/yaw control |
-| Debris | 430 emitted, 403 expired and 27 still rendered at the driving sample; zero live/rendered particles after stopping |
-| Locked axle climb | 8.746 m progress open versus 10.081 m locked under the same throttle and duration; shaft-speed coupling passed |
-| Low range | Engine drive cuts near redline; the driving regression stayed below 7,000 rpm |
-| Descent assist | 2.788 m/s at the recorded downhill sample |
-| Summit park | Five real collision probes around the loop, including its ceiling; no hidden support across the jump gap; an inverted vehicle retained wheel support |
-| Cameras/routes | All eight original region camera checks, eight stable challenge spawns, rollover camera clearance and inverted-loop camera line of sight passed |
-| Live keyboard check | 7 Summit park, 9 Granite Trials, L low range, Z rear locker, U front locker, K descent assist, J next route, R restart, Escape exit |
-| Browser preservation | All 189 preserved browser files match their recorded Git blob hashes; none were edited |
+| Editor/game compilation, import and full cook/package | Successful |
+| Packaged native game | All 71 checks passed with a fresh report and successful process exit |
+| Shared C++ core | 41 checks passed, including upgrade progression, hardware limits, contact, differential torque, friction and flotation |
+| Assets | 144 mesh sources, 295 source materials, seven layered terrain materials, 26 imported textures, nine regions and eight routes |
+| Browser preservation | All 189 preserved browser files match their recorded Git blob hashes |
+| Existing terrain conversion | 1,000 height/water/surface samples and region references remain the unchanged geometry baseline |
+| Matched engine comparison | Stock 13.953 m/s and 40.177 m; stage III 21.059 m/s and 73.749 m at identical throttle and duration |
+| Body upgrade | Actual Chaos mass falls with lightweight body stages; roof collision no longer adds a second cabin mass |
+| Other upgrade systems | Rendered tire size/friction, wheel inertia, suspension travel, frame damping/protection, electrical recovery and EV output checks passed |
+| Persistence | Atomic save, seven-category reload, independent vehicle builds and invalid-file protection passed |
+| Garage | Vehicle freeze/cursor and return to simulated driving passed |
+| Live controls | mouse vehicle selection and all seven visible upgrade rows, Bronco engine II: 330 to 462 hp, stage II engine retained after full restart, Wrangler stock build remained independent, Bronco tire II: 35.3 in and +28% grip, Reset to Stock restored 330 hp and 32.7 in, Let's Drive, Tab and Escape, test setups restored to stock and game closed |
+| Rollover/airborne input | Zero tire drive or invented airborne steering |
+| Debris | 434 emitted, 410 expired, 24 rendered at the sample; no permanent particles after stopping |
+| Courses | Five loop contact probes, unsupported gap, moving inverted wheel support, eight stable route starts, locker comparison and controlled descent passed |
 
-Native acceleration traveled 55.182 m and reached 18.766 m/s; braking stopped the vehicle. EV steering reached 14.897 m/s with 91.293 degrees of yaw. These are regression scenarios, not calibrated real-world performance measurements.
+The engine comparison is a repeatable game regression, not a calibrated real-world performance claim. The machine-readable report records every case, executable hash and source hashes. Test save files live under Saved/Validation and never overwrite the player garage.
 
-The machine-readable report and executable/source hashes are in [native-validation.json](native-validation.json). Export checks are in [export-validation.json](export-validation.json); browser hashes are in [browser-source-sha1.json](browser-source-sha1.json).
+## Visual and interaction checks
 
-## Changes verified
+The native vehicle and upgrade menus were inspected in the running game. Vehicle cards, live preview, stage controls and build-sheet numbers were checked. Saved vehicle upgrades were checked after restarting. Terrain screenshots were inspected across the regions, including varied dirt, mud and rock. The material pass uses three photographic layers, world-space/triplanar projection, irregular patches at multiple scales, normal maps and roughness variation. Dry-soil specularity was reduced and pale gravel was soil-stained after the first renders showed unnatural white patches. The final seven-row upgrade layout was rebuilt and staged against that successful cook, then passed the complete native suite again.
 
-Suspension contacts now require finite travel and a surface facing the tire. A roof-down vehicle cannot obtain invented grip from ground behind its suspension. The cabin has a physical roof collider. Legitimate ceiling contact inside the loop remains supported.
-
-Moving debris uses persistent world-space instances, gravity, drag, impact removal and short lifetimes. Permanent spheres behind the tires were removed. Detailed terrain updates reuse collision/render vertices instead of repeatedly recooking bodies.
-
-The full source Summit park is exported with an exposed-surface collision mesh. Granite Trials adds alternating axle-lift ledges, a steep staircase, an off-camber ridge and a controlled descent. Low range, supported front/rear lockers, axle shaft coupling, crawl throttle, engine rev limiting and descent assistance affect the native simulation. The full-loop route requires its ceiling checkpoint before the exit gate.
-
-Conventional dynamic shadows avoid the virtual-shadow marking overflow from large non-Nanite course meshes. The camera uses an upright horizon, a world-height pivot after a rollover and a shorter inside-loop view. Soft ground-bounce lighting improves underside readability. Final runtime logs contain no fatal/error entries or VSM overflow. Existing non-fatal notices concern deprecated SSGI and unused Enhanced Input user settings; keyboard handling is native.
+Final cook and runtime logs contain no material compilation errors, fatal errors or virtual-shadow overflow. Existing SSGI deprecation and unused Enhanced Input settings notices remain non-fatal. These observations do not constitute a frame-time benchmark or long-session stability test.
 
 ## Reproduce
 
-From the native project directory, in a normal Windows process context:
+    .\Tools\build-native.ps1 -ImportAssets -Package
+    .\Tools\verify-native.ps1
 
-```powershell
-.\Tools\build-native.ps1 -ImportAssets -Package
-.\Tools\verify-native.ps1
-```
+Use a normal Windows process context for Unreal. Material/rendering changes require a full cook; code-only changes may reuse a successful cook with -SkipCook. The importer uses forward-slash Python arguments, resumable material signatures and mesh schema 2. The verifier rejects stale reports or failed checks.
 
-The verifier rejects stale reports, failed checks and unsuccessful process exits. The importer uses forward-slash Python arguments, resumable material signatures and schema metadata. Asset or rendering changes require a fresh cook; code-only changes may reuse the successful cook with -SkipCook. Logs and local reports remain under Saved/Validation, Saved/AutomationLogs and Saved/Logs. Captures are in Build/Windows/TerraDrive/Saved/Screenshots.
-
-Generated assets, Windows packages, logs and private application configuration are excluded from GitHub. The unused Android File Server plugin is disabled and upload preparation rejects credential-like configuration values.
+Logs remain under Saved/Validation, Saved/Logs and Saved/AutomationLogs. Captures are in Build/Windows/TerraDrive/Saved/Screenshots. Generated assets, Windows packages, local saves and private configuration are excluded from GitHub. The unused Android File Server plugin is disabled, and upload preparation rejects credential-like configuration values.
 
 ## Practical limits
 
-This remains a playable migration preview. Full browser 1.15 parity, factory-accurate driveline/safety interlocks, detailed deformation, setup persistence, tree calibration and track belt animation are not established. The courses are competition-inspired exercises, not an official event/rules replica. The tests verify collision, driving behavior and route starts; they do not establish an uninterrupted completion of every course or a complete full-speed loop traversal.
+This is a playable migration preview. Upgrade stages are game tuning rather than manufacturer-approved or factory-calibrated modifications. Body/frame upgrades primarily change simulation properties; they do not provide a complete set of replacement body meshes. Terrain variation improves existing surface materials without adding new physical soil categories.
 
-Browser procedural shaders and canvas sign lettering are not reproduced; some signs remain blank. Material vertex variation is represented by mean tints, and lighting/terrain appearance remains approximate. Gamepad hardware testing, frame-rate benchmarking and long-session stability are not complete. Historical browser tests are reference evidence; this work preserves the browser rather than claiming a new full browser-suite pass.
+Full browser 1.15 parity, detailed track animation, every procedural sign, factory driveline interlocks, gamepad hardware testing and long-session performance/stability are not established. Some signs remain blank. The tests verify course collision, route starts and selected driving segments; they do not prove an uninterrupted full-speed loop or completion of every rocky route. Historical browser regressions remain reference evidence; no new full browser-suite pass is claimed.

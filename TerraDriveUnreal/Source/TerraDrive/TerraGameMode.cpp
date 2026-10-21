@@ -7,6 +7,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
 #include "HAL/PlatformMisc.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
@@ -28,7 +29,7 @@ void ATerraGameMode::BeginPlay() {
 void ATerraHUD::DrawHUD() {
   Super::DrawHUD();
   auto *V = Cast<ATerraVehicle>(GetOwningPawn());
-  if (!V || !Canvas)
+  if (!V || !Canvas || V->Garage)
     return;
   float W = Canvas->SizeX, H = Canvas->SizeY;
   DrawRect(FLinearColor(.015, .025, .028, .88), 18, 18, 510, 172);
@@ -57,27 +58,10 @@ void ATerraHUD::DrawHUD() {
   DrawText(TEXT("W/S  Accelerate / brake, hold at rest to reverse     A/D  "
                 "Steer     Space  Brake     RMB + mouse  Camera"),
            FLinearColor(.85, .88, .88), 30, H - 80);
-  DrawText(TEXT("1-9 Regions    J Next challenge    V Vehicle    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
+  DrawText(TEXT("1-9 Regions    J Next challenge    V Garage    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
            FLinearColor(.85, .88, .88), 30, H - 54);
   DrawText(TEXT("Shift+W Crawl throttle    K Descent assist    R Recover / restart    Tab Garage    Esc Quit"),
            FLinearColor(.85,.88,.88),30,H-30);
-  if (V->Garage) {
-    DrawRect(FLinearColor(.025, .04, .045, .97), W * .25, H * .22, W * .5, 240);
-    DrawText(TEXT("FIELD GARAGE"), FLinearColor(.8, .9, .72), W * .25 + 24,
-             H * .22 + 24, nullptr, 1.8f);
-    DrawText(
-        TEXT("V  Next vehicle      T  Wheels / tracks      +/-  Tire pressure"),
-        FLinearColor::White, W * .25 + 24, H * .22 + 70);
-    DrawText(FString::Printf(
-                 TEXT("E  Engine stage %d      H  Suspension lift %d mm"),
-                 V->EngineUpgrade, V->LiftUpgrade * 50),
-             FLinearColor::White, W * .25 + 24, H * .22 + 104);
-    DrawText(TEXT("F  Driveline      L  Low range      Backspace  Repair / "
-                  "reset soil"),
-             FLinearColor::White, W * .25 + 24, H * .22 + 138);
-    DrawText(TEXT("P  Dry / rain      Tab  Return to driving"),
-             FLinearColor::White, W * .25 + 24, H * .22 + 172);
-  }
   if (V->WinchAttached)
     DrawText(FString::Printf(TEXT("WINCH %.1f kN"), V->WinchTension / 1000),
              FLinearColor(.74, .9, 1), W - 240, 32);
@@ -320,6 +304,64 @@ void ATerraGameMode::Tick(float Dt) {
     }
     if(StageTime>1.2f){
       Check(TEXT("inverted loop retains physical wheel support"),InvertedContactSeen&&FVector::Dist(Start,V->GetActorLocation())>100, V->ContactCount);
+      V->SelectVehicle(0);V->TeleportZone(1);V->TestThrottle=0;V->TestBrake=1;Next(29);
+    }
+  } else if(Stage==29){
+    // Validate the values consumed by Chaos and visible meshes, then exercise
+    // persistence without reading or overwriting the player's garage file.
+    const float StockMass=V->Chassis->GetMass(),StockImpact=V->ImpactDamage(10000000),StockPower=V->PowerHP();
+    V->SetUpgrade(TerraSim::Body,3,false);
+    Check(TEXT("body upgrade reduces actual rigid body mass"),V->Chassis->GetMass()<StockMass*.9f,V->Chassis->GetMass());
+    V->SetUpgrade(TerraSim::Frame,3,false);
+    Check(TEXT("frame upgrade changes Chaos damping and impact survival"),V->Chassis->GetAngularDamping()>1&&V->ImpactDamage(10000000)<StockImpact*.6f,V->ImpactDamage(10000000));
+    V->SetUpgrade(TerraSim::Tires,3,false);
+    Check(TEXT("tire upgrade changes rendered size and friction budget"),V->Wheels[0]->GetRelativeScale3D().X>1.1f&&V->GripMultiplier()>1.4f,V->GripMultiplier());
+    V->SetUpgrade(TerraSim::Wheels,3,false);
+    Check(TEXT("wheel upgrade reduces rotating inertia"),V->WheelInertia()<1.6f,V->WheelInertia());
+    V->SetUpgrade(TerraSim::Suspension,3,false);
+    Check(TEXT("suspension upgrade extends contact travel"),V->SuspensionTravel()>.65f&&V->Tuning.Damping>1.6f,V->SuspensionTravel());
+    V->SetUpgrade(TerraSim::Engine,3,false);
+    Check(TEXT("engine stage three increases usable power"),V->PowerHP()>StockPower*1.6f,V->PowerHP());
+    V->SetUpgrade(TerraSim::Electrical,3,false);
+    Check(TEXT("auxiliary electrical upgrades improve recovery and sealing"),V->Tuning.Winch>1.8f&&V->Tuning.WaterDepth>.8f,V->Tuning.Winch);
+    const FString SetupPath=FPaths::ProjectSavedDir()/TEXT("Validation/garage-roundtrip.json");
+    Check(TEXT("garage setup saved atomically"),V->SaveGarage(SetupPath));
+    V->ResetUpgrades(false);V->SelectVehicle(1);
+    Check(TEXT("vehicle builds remain independent"),V->UpgradeStage(TerraSim::Engine)==0);
+    V->SelectVehicle(0);V->ResetUpgrades(false);
+    const bool Loaded=V->LoadGarage(SetupPath);V->ApplyUpgrades();
+    Check(TEXT("all seven upgrade categories survive save reload"),Loaded&&V->UpgradeStage(TerraSim::Engine)==3&&V->UpgradeStage(TerraSim::Electrical)==3&&V->UpgradeStage(TerraSim::Body)==3);
+    const FString BadPath=FPaths::ProjectSavedDir()/TEXT("Validation/garage-invalid.json");
+    FFileHelper::SaveStringToFile(TEXT("{\"version\":1,\"builds\":[]}"),*BadPath);
+    Check(TEXT("invalid save cannot erase an existing build"),!V->LoadGarage(BadPath)&&V->UpgradeStage(TerraSim::Engine)==3);
+    V->ResetUpgrades(false);V->SelectVehicle(2);V->SetUpgrade(TerraSim::Electrical,3,false);
+    Check(TEXT("unfitted electrical upgrade stays unavailable"),V->UpgradeStage(TerraSim::Electrical)==0&&V->Tuning.ElectricalPower==1);
+    V->SelectVehicle(4);const float EVStock=V->PowerHP();V->SetUpgrade(TerraSim::Electrical,3,false);
+    Check(TEXT("EV battery inverter stage increases propulsion power"),V->PowerHP()>EVStock*1.25f,V->PowerHP());
+    V->ResetUpgrades(false);V->SelectVehicle(0);V->TeleportZone(1);Next(30);Start=V->GetActorLocation();
+  } else if(Stage==30||Stage==31){
+    V->TestThrottle=StageTime>1.5f?.55f:0;V->TestBrake=StageTime<1.5f?1:0;
+    if(StageTime>8){
+      const float Distance=FVector::Dist2D(Start,V->GetActorLocation())/100;
+      if(Stage==30){
+        StockUpgradeSpeed=V->Speed;StockUpgradeDistance=Distance;
+        V->SetUpgrade(TerraSim::Engine,3,false);V->TeleportZone(1);Start=V->GetActorLocation();Next(31);
+      }else{
+        UE_LOG(LogTemp,Display,TEXT("TERRA_UPGRADE_DRIVE stock_speed=%.3f tuned_speed=%.3f stock_distance=%.3f tuned_distance=%.3f"),StockUpgradeSpeed,V->Speed,StockUpgradeDistance,Distance);
+        Check(TEXT("engine upgrade changes packaged driving performance"),V->Speed>StockUpgradeSpeed*1.12f&&Distance>StockUpgradeDistance*1.08f,V->Speed);
+        V->TestThrottle=0;V->TestBrake=1;V->ResetUpgrades(false);V->TeleportZone(0);Next(32);
+      }
+    }
+  } else if(Stage==32){
+    if(StageTime>.8f&&!Captured){
+      V->SetGarage(true);
+      Check(TEXT("garage freezes vehicle and exposes cursor"),V->Garage&&!V->Chassis->IsSimulatingPhysics()&&GetWorld()->GetFirstPlayerController()->bShowMouseCursor);
+      Captured=true;
+    }
+    if(StageTime>1.6f&&StageTime<1.7f)Capture(TEXT("native-vehicle-menu.png"));
+    if(StageTime>2){
+      V->SetGarage(false);
+      Check(TEXT("leaving garage resumes native driving"),!V->Garage&&V->Chassis->IsSimulatingPhysics()&&!GetWorld()->GetFirstPlayerController()->bShowMouseCursor);
       FinishValidation();
     }
   }

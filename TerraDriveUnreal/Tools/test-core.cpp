@@ -1,4 +1,5 @@
 #include "../Source/TerraDrive/TerraSimCore.h"
+#include "../Source/TerraDrive/TerraUpgrades.h"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -6,6 +7,28 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    TerraSim::UpgradeSetup build;
+    auto stock=TerraSim::Tune(build,false,true);
+    check(stock.Power==1&&stock.Mass==1&&stock.Travel==0&&stock.Grip==1,"stock tuning preserves the baseline");
+    for(int stage=1;stage<=3;++stage){
+        for(int &s:build.Stage)s=stage;
+        auto t=TerraSim::Tune(build,false,true);
+        check(t.Power>stock.Power&&t.Grip>stock.Grip&&t.Travel>stock.Travel,"every stage adds power traction and articulation");
+        check(t.Damping>stock.Damping&&t.WheelInertia<stock.WheelInertia,"every stage changes suspension damping and wheel response");
+        check(t.Damage<stock.Damage&&t.Drag<stock.Drag&&t.Mass<stock.Mass,"every stage improves impact survival and power to weight");
+        check(t.Winch>stock.Winch&&t.WaterDepth>stock.WaterDepth,"electrical stages improve actual recovery and water limits");
+        stock=t;
+    }
+    build={};build.Stage[TerraSim::Electrical]=3;
+    auto ev=TerraSim::Tune(build,true,true),ice=TerraSim::Tune(build,false,true),unsupported=TerraSim::Tune(build,false,false);
+    check(ev.ElectricalPower>1.25f&&ice.ElectricalPower==1,"EV inverter upgrades affect propulsion without adding ICE horsepower");
+    check(unsupported.Winch==1&&unsupported.WaterDepth==.25f,"unsupported electrical upgrades do not alter the vehicle");
+    build={};build.Stage[TerraSim::Engine]=3;
+    auto engine=TerraSim::Tune(build,false,true);
+    check(engine.Power>1.6f&&engine.Grip==1&&engine.Damage==1,"one category does not secretly upgrade unrelated systems");
+    build.Stage[TerraSim::Engine]=999;build.Stage[TerraSim::Tires]=-8;
+    auto sanitized=TerraSim::Tune(build,false,true);
+    check(sanitized.Power==engine.Power&&sanitized.Grip==1,"out of range saved stages are clamped safely");
     check(TerraSim::ValidSupport(.25f,-.3f,.57f,1),"upright support within suspension travel");
     check(!TerraSim::ValidSupport(-1,-.3f,.57f,1),"ground behind the suspension cannot support a rolled car");
     check(!TerraSim::ValidSupport(5,-.3f,.57f,1),"airborne wheel cannot reach distant ground");

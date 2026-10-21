@@ -1,5 +1,6 @@
 {
   "date": "2026-10-20",
+  "verifiedAt": "2026-10-21T02:14:49.601Z",
   "configuration": "Windows Development",
   "graphics": {
     "api": "DirectX 12 SM6",
@@ -7,11 +8,10 @@
     "automatedResolution": [
       1280,
       720
-    ],
-    "shadows": "Conventional dynamic shadows"
+    ]
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "a4cf1de60afcbf4b9ea627061518add3bc8a7786d18810608f3c535f189bc260",
+  "executableSHA256": "f4fc0f1392b02b8e8c9adae1a6e036e940e80681c15e58b405f4c7a3108f5518",
   "engine": "5.8.3",
   "tests": [
     {
@@ -76,8 +76,8 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 55.182,
-      "speedMS": 18.766,
+      "distanceM": 66.854,
+      "speedMS": 21.025,
       "pass": true
     },
     {
@@ -98,8 +98,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 14.897,
-      "yawDegrees": 91.293,
+      "speedMS": 15.313,
+      "yawDegrees": 90.572,
       "pass": true
     },
     {
@@ -110,7 +110,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 506.382,
+      "clearanceCM": 510.147,
       "rollDegrees": 0,
       "pass": true
     },
@@ -122,7 +122,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 503.753,
+      "clearanceCM": 506.965,
       "rollDegrees": 0,
       "pass": true
     },
@@ -134,7 +134,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 637.74,
+      "clearanceCM": 640.697,
       "rollDegrees": 0,
       "pass": true
     },
@@ -146,7 +146,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 605.815,
+      "clearanceCM": 609.158,
       "rollDegrees": 0,
       "pass": true
     },
@@ -158,7 +158,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 523.143,
+      "clearanceCM": 524.908,
       "rollDegrees": 0,
       "pass": true
     },
@@ -170,7 +170,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 669.815,
+      "clearanceCM": 673.95,
       "rollDegrees": 0,
       "pass": true
     },
@@ -182,7 +182,7 @@
     },
     {
       "case": "region 6 camera",
-      "clearanceCM": 512.177,
+      "clearanceCM": 515.995,
       "rollDegrees": 0,
       "pass": true
     },
@@ -194,7 +194,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 24.99,
+      "clearanceCM": 25.628,
       "rollDegrees": 0,
       "pass": true
     },
@@ -205,12 +205,12 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 0.0916,
+      "value": 0.2644,
       "pass": true
     },
     {
       "case": "rolled vehicle camera stays above terrain",
-      "value": 521.9029,
+      "value": 521.9025,
       "pass": true
     },
     {
@@ -220,17 +220,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 26685.2637,
+      "value": 28733.3633,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 403,
+      "value": 410,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 6447.5151,
+      "value": 6731.4272,
       "pass": true
     },
     {
@@ -240,7 +240,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 1.3358,
+      "value": 1.9201,
       "pass": true
     },
     {
@@ -250,7 +250,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 2.7875,
+      "value": 2.5656,
       "pass": true
     },
     {
@@ -295,45 +295,140 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 526.5664,
+      "value": 526.4896,
       "pass": true
     },
     {
       "case": "inverted loop retains physical wheel support",
-      "value": 3,
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "body upgrade reduces actual rigid body mass",
+      "value": 1837.7396,
+      "pass": true
+    },
+    {
+      "case": "frame upgrade changes Chaos damping and impact survival",
+      "value": 0.2028,
+      "pass": true
+    },
+    {
+      "case": "tire upgrade changes rendered size and friction budget",
+      "value": 1.46,
+      "pass": true
+    },
+    {
+      "case": "wheel upgrade reduces rotating inertia",
+      "value": 1.5,
+      "pass": true
+    },
+    {
+      "case": "suspension upgrade extends contact travel",
+      "value": 0.67,
+      "pass": true
+    },
+    {
+      "case": "engine stage three increases usable power",
+      "value": 478.8,
+      "pass": true
+    },
+    {
+      "case": "auxiliary electrical upgrades improve recovery and sealing",
+      "value": 1.9,
+      "pass": true
+    },
+    {
+      "case": "garage setup saved atomically",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle builds remain independent",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "all seven upgrade categories survive save reload",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "invalid save cannot erase an existing build",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "unfitted electrical upgrade stays unavailable",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "EV battery inverter stage increases propulsion power",
+      "value": 1062.4,
+      "pass": true
+    },
+    {
+      "case": "engine upgrade changes packaged driving performance",
+      "value": 21.0585,
+      "pass": true
+    },
+    {
+      "case": "garage freezes vehicle and exposes cursor",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "leaving garage resumes native driving",
+      "value": 0,
       "pass": true
     }
   ],
+  "coreChecks": 41,
+  "assets": {
+    "meshSources": 144,
+    "sourceMaterials": 295,
+    "terrainMaterials": 7,
+    "textureAssets": 26,
+    "challengeRoutes": 8
+  },
+  "preservedBrowserFiles": 189,
   "observations": {
-    "spray": {
-      "emitted": 430,
-      "expired": 403,
-      "rendered": 27,
-      "speedMS": 3.652
+    "engineComparison": {
+      "stockSpeedMS": 13.953,
+      "stageThreeSpeedMS": 21.059,
+      "stockDistanceM": 40.177,
+      "stageThreeDistanceM": 73.749
     },
-    "climb": {
-      "openProgressM": 8.746,
-      "lockedProgressM": 10.081
+    "spray": {
+      "emitted": 434,
+      "expired": 410,
+      "rendered": 24
     },
     "interactiveControls": [
-      "7 Summit park",
-      "9 Granite Trials",
-      "L low range",
-      "Z rear locker",
-      "U front locker",
-      "K descent assist",
-      "J next route",
-      "R restart",
-      "Escape exit"
+      "mouse vehicle selection and all seven visible upgrade rows",
+      "Bronco engine II: 330 to 462 hp",
+      "stage II engine retained after full restart",
+      "Wrangler stock build remained independent",
+      "Bronco tire II: 35.3 in and +28% grip",
+      "Reset to Stock restored 330 hp and 32.7 in",
+      "Let's Drive, Tab and Escape",
+      "test setups restored to stock and game closed"
     ]
   },
   "sourceSHA256": {
-    "TerraGameMode.cpp": "33f3ba1ba2cc6322e4826e4addcecef2eab301ea6f37a64d86feb580de810c76",
-    "TerraGameMode.h": "5c210d3d8b189a76e67e88da5c1e375ea4be55734fd8272383a549eb4c377466",
+    "TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
+    "TerraGameMode.cpp": "51f2cc6d2a1ba9fd44eb768b027ef0a5f3059ad116c0cfae931e9f428eebf443",
+    "TerraGameMode.h": "1cdb558819a0b709f2a512b91eff09ce09fe31655201f295eb9a8b496a625bdc",
+    "TerraGarage.cpp": "e6c99ac4f5c00ff239f4c09712a41da53742ed5fcf14482a0dcfc89148bb2529",
+    "TerraGarage.h": "25bc3fefe193be3cc3857de4a6dcd82ac9eba46488999fe029a67ed8abe6ed6c",
     "TerraSimCore.h": "d23a80502d75a3343f0b91abb015fc088d1d7733e41637d61d71d9883d37abdb",
-    "TerraVehicle.cpp": "b032fa4f2d29b3567795d1b2a1ee60d03d402237b5d777c9cfd1509e19dee2a1",
-    "TerraVehicle.h": "6609dc9cbf0337a1b03b99efec4885f42cb6651d5161eaee427e517de6234807",
+    "TerraUpgrades.h": "3c398825c6f568cb83ddb0e0bb20be0d2bbf618d80611b278c21e307142ec320",
+    "TerraVehicle.cpp": "eb65dfa6c6ddbcdaa437ae3fedc94ffe7177417a4683790cf180ab97c16343e7",
+    "TerraVehicle.h": "db5b17585c3c3a32f0d0129bebd3c7ab4a43368bf23046e8722174a93ebac3e5",
+    "TerraVehicleGarage.cpp": "3a25aeadfd15187608350a2bf6db575e01c0bb4b9f8f61bb7b5029f6edb09ab3",
     "TerraWorld.cpp": "824459b40b7a93c40e0456408a491d6c3d7c8bf253b6df018718a59eaa6cc307",
-    "TerraWorld.h": "d1c6f19f287a97d246390b30cb0939cfa866364e90af3b7be031f5427eb3b610"
+    "TerraWorld.h": "d1c6f19f287a97d246390b30cb0939cfa866364e90af3b7be031f5427eb3b610",
+    "terrain-surface.hlsl": "0bb6e0a5f34e1d09d7501caa166348de433d5c0350610f25d791948ff675631e"
   }
 }
