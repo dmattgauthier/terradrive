@@ -1,6 +1,7 @@
 #include "TerraVehicle.h"
 #include "TerraSimCore.h"
 #include "TerraContact.h"
+#include "TerraDriving.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -59,6 +60,8 @@ ATerraVehicle::ATerraVehicle() {
     W->SetupAttachment(Chassis);
     W->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Wheels.Add(W);
+    auto *Rim=CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("FactoryRim%d"),I));
+    Rim->SetupAttachment(Chassis);Rim->SetCollisionEnabled(ECollisionEnabled::NoCollision);Rims.Add(Rim);
   }
   CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("ChaseArm"));
   CameraArm->SetupAttachment(Chassis);
@@ -150,13 +153,15 @@ void ATerraVehicle::SelectVehicle(int Index) {
   Damage = 0;
   Gear = 0;
   Direction = 1;
+  ReverseReleaseRequired=false;ReverseHold=0;
   Steer = 0;
   Tracks = false;
   FrontLocked = RearLocked = DescentAssist = LowRange = false;
   FourDrive = VehicleIndex != 2 && VehicleIndex != 3;
   for (auto W : Wheels)
     W->SetStaticMesh(LoadObject<UStaticMesh>(
-        nullptr, *(TEXT("/Game/Meshes/") + Asset + TEXT("_wheel"))));
+        nullptr, *(TEXT("/Game/Meshes/") + Asset + TEXT("_tire"))));
+  for(auto Rim:Rims)Rim->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Asset+TEXT("_rim"))));
   if(SuspensionParts.Num()==20){
     auto *SpringMesh=LoadObject<UStaticMesh>(nullptr,VehicleIndex==4?TEXT("/Game/Meshes/detail_airstrut"):TEXT("/Game/Meshes/detail_coil"));
     for(int I=0;I<4;++I)SuspensionParts[I*4+2]->SetStaticMesh(SpringMesh);
@@ -167,6 +172,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   Notice = VehicleName;
   if(PreviousRoute>=0)TeleportRoute(PreviousRoute);else TeleportZone(Zone);
   if(Garage)ApplyUpgrades();
+  if(Garage)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
   if(!AutoTest&&Initialized)SaveGarage(GaragePath());
 }
 void ATerraVehicle::SetTracks(bool Enabled) {
@@ -185,7 +191,7 @@ void ATerraVehicle::SetTracks(bool Enabled) {
   for (auto W : Wheels)
     W->SetStaticMesh(LoadObject<UStaticMesh>(
         nullptr, *(TEXT("/Game/Meshes/") + Asset +
-                   (Tracks ? TEXT("_track") : TEXT("_wheel")))));
+                   (Tracks ? TEXT("_track") : TEXT("_tire")))));
   Chassis->SetMassOverrideInKg(NAME_None, Mass + (Tracks ? 380 : 0));
   ApplyUpgrades();
   Notice =
@@ -266,8 +272,10 @@ void ATerraVehicle::Input(float Dt) {
   if (!PC)
     return;
   if (AutoTest) {
-    Throttle = TestThrottle;
-    Brake = TestBrake;
+    if(TestDriverInput){
+      const auto Demand=TerraSim::DriverControls(Direction,TestForward,TestReverse,0,0,TestStop,Speed,Dt,ReverseHold,ReverseReleaseRequired);
+      Throttle=Demand.Throttle;Brake=Demand.Brake;
+    }else{Throttle = TestThrottle;Brake = TestBrake;}
     Steer = FMath::FInterpTo(Steer, TestSteer, Dt, 5);
     return;
   }
@@ -351,15 +359,9 @@ void ATerraVehicle::Input(float Dt) {
     Brake = 1;
     return;
   }
-  bool Opposite = (Direction == 1 && S) || (Direction == -1 && W);
-  int NextDirection = TerraSim::RequestedDirection(Direction,W,S,Speed,Dt,ReverseHold);
-  if (NextDirection != Direction) { Direction=NextDirection; Brake=0; }
-  else if (Opposite) { Brake=1; }
-  else {
-    Throttle = (Direction == 1 ? W : S) ? 1 : RT;
-  }
-  if (Down(EKeys::SpaceBar) || Down(EKeys::Gamepad_FaceButton_Bottom))
-    Brake = 1;
+  const auto Demand=TerraSim::DriverControls(Direction,W,S,RT,LT,
+      Down(EKeys::SpaceBar)||Down(EKeys::Gamepad_FaceButton_Bottom),Speed,Dt,ReverseHold,ReverseReleaseRequired);
+  Throttle=Demand.Throttle;Brake=Demand.Brake;
   float MX = 0, MY = 0;
   PC->GetInputMouseDelta(MX, MY);
   if (Down(EKeys::RightMouseButton)) {
@@ -440,8 +442,10 @@ void ATerraVehicle::Simulate(float Dt) {
     const bool Front = I < 2;
     const float StaticLoad = Mass * 9.81f * (Front ? FrontWeight : 1-FrontWeight) * .5f;
     const float Preload = StaticLoad / Spring;
+    // Mount geometry belongs to the stock body. Extra spring length and tire
+    // radius must raise the body, matching the garage, rather than lower it.
     const FVector Local(Wheelbase * (Front ? 1-FrontWeight : -FrontWeight)*100,
-        (I%2 ? 1:-1)*Track*50, (Radius+Rest-CG-Preload+Tuning.Lift)*100);
+        (I%2 ? 1:-1)*Track*50, (Number(TEXT("tireRadius"),.42f)+Rest-CG-Preload-Tuning.Lift)*100);
     const FVector Mount = GetActorTransform().TransformPosition(Local);
     W.Angle = Front ? SteerAngle : Electric ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : 0;
     const FVector WF = FQuat(Up,W.Angle).RotateVector(Forward);
@@ -523,18 +527,16 @@ void ATerraVehicle::Simulate(float Dt) {
             FMath::Clamp(Stiffness[B]*(Direction*WheelRevLimit*R-WheelState[B].LongSpeed),-LongLimit[B],LongLimit[B]));
         Drive=TerraSim::RevLimitedTorque(Drive,Previous,Inertia*2,Dt,WheelRevLimit,Reaction,DragTorque);
       }
-      float Free=Previous+(Drive-DragTorque)*Dt/(Inertia*2);
-      if((EffectiveBrake>.1f||Throttle==0)&&Free*Previous<0)Free=0;
-      WheelState[A].Omega=WheelState[B].Omega=TerraSim::LimitedAxleOmega(Free,Stiffness[A],Stiffness[B],
-          WheelState[A].LongSpeed,WheelState[B].LongSpeed,LongLimit[A],LongLimit[B],R,Dt,Inertia*2);
+      const float Free=Previous+Drive*Dt/(Inertia*2);
+      WheelState[A].Omega=WheelState[B].Omega=TerraSim::BrakedAxleOmega(Free,Stiffness[A],Stiffness[B],
+          WheelState[A].LongSpeed,WheelState[B].LongSpeed,LongLimit[A],LongLimit[B],R,Dt,Inertia*2,Drag[A]+Drag[B]);
     }else for(int I=A;I<=B;++I){
       auto &W=WheelState[I];
       const float DragTorque=FMath::Sign(W.Omega)*Drag[I];
       const float Reaction=R*FMath::Clamp(Stiffness[I]*(Direction*WheelRevLimit*R-W.LongSpeed),-LongLimit[I],LongLimit[I]);
       const float Drive=Electric?Drives[I]:TerraSim::RevLimitedTorque(Drives[I],W.Omega,Inertia,Dt,WheelRevLimit,Reaction,DragTorque);
-      float Free=W.Omega+(Drive-DragTorque)*Dt/Inertia;
-      if((EffectiveBrake>.1f||Throttle==0)&&Free*W.Omega<0)Free=0;
-      W.Omega=TerraSim::LimitedWheelOmega(Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I]);
+      const float Free=W.Omega+Drive*Dt/Inertia;
+      W.Omega=TerraSim::BrakedWheelOmega(Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I],Drag[I]);
     }
   }
   for (int I=0;I<4;++I) {
@@ -542,6 +544,15 @@ void ATerraVehicle::Simulate(float Dt) {
     const float C=Stiffness[I];
     float FX=FMath::Clamp(C*(W.Omega*R-W.LongSpeed),-LongLimit[I],LongLimit[I]);
     float FY=Lateral[I];
+    if(EffectiveBrake>.05f&&FMath::Abs(W.LongSpeed)<1.f&&W.ContactValid&&W.Load>50){
+      // Static friction opposes the remaining contact velocity and the gravity
+      // component along the slope. This is still bounded by brake torque and
+      // the same combined tire grip; it never freezes an airborne chassis.
+      const float Share=Mass*(I<2?FrontWeight:1-FrontWeight)*.5f;
+      const float HoldLimit=FMath::Min(LongLimit[I],Drag[I]/R);
+      FX=FMath::Clamp(Share*(-W.LongSpeed/FMath::Max(Dt,.008f)+9.81f*W.ForceForward.Z),-HoldLimit,HoldLimit);
+      FY=FMath::Clamp(Share*(-W.LateralSpeed/FMath::Max(Dt,.008f)+9.81f*W.ForceSide.Z),-W.Grip*W.Load,W.Grip*W.Load);
+    }
     const float Scale=TerraSim::FrictionScale(FX,FY,W.Grip,W.Load);
     FX*=Scale; FY*=Scale;
     W.Slip=(W.Omega*R-W.LongSpeed)/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
@@ -554,10 +565,8 @@ void ATerraVehicle::Simulate(float Dt) {
       if (Water>.01f) Chassis->AddForceAtLocation((-W.PointVelocity*Water*260+FVector::UpVector*Water*350)*100,W.Contact);
     }
     W.Rotation+=W.Omega*Dt; W.Pressure=Pressure;
-    FQuat Q=FQuat(Up,Overturned?0.f:W.Angle)*GetActorQuat();
-    if (!Tracks) Q=Q*FQuat(FVector::RightVector,-W.Rotation);
-    Wheels[I]->SetWorldLocationAndRotation(W.Center,Q);
   }
+  UpdateWheelVisuals();
   UpdateVisualDetails();
   if (SoilTimer >= .025f)
     SoilTimer = 0;
@@ -681,9 +690,9 @@ void ATerraVehicle::Tick(float Dt) {
     UpdateRoute(Dt);
   }else{
     CameraArm->bEnableCameraLag=false;
-    CameraArm->TargetArmLength=1050;
-    CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,70));
-    CameraArm->SetWorldRotation(FRotator(-12,GetActorRotation().Yaw+145,0));
+    CameraArm->TargetArmLength=GarageDistance;
+    CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,-15));
+    CameraArm->SetWorldRotation(FRotator(GaragePitch,GetActorRotation().Yaw+GarageYaw,0));
     return;
   }
   SpawnCooldown = FMath::Max(0.f, SpawnCooldown - Dt);

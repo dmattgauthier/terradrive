@@ -8,6 +8,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "HAL/PlatformMisc.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
@@ -57,7 +58,7 @@ void ATerraHUD::DrawHUD() {
       FLinearColor(.93,.82,.54),24,204);
   if (!V->RouteStatus.IsEmpty()) DrawText(V->RouteStatus,FLinearColor::White,24,232);
   DrawRect(FLinearColor(.015, .025, .028, .83), 18, H - 112, W - 36, 94);
-  DrawText(TEXT("W/S  Accelerate / brake, hold at rest to reverse     A/D  "
+  DrawText(TEXT("W/S  Drive / brake; release and hold opposite key at rest to reverse     A/D  "
                 "Steer     Space  Brake     RMB + mouse  Camera"),
            FLinearColor(.85, .88, .88), 30, H - 80);
   DrawText(TEXT("1-9 Regions    J Next challenge    V Garage    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
@@ -73,7 +74,7 @@ void ATerraGameMode::Tick(float Dt) {
   if (!FParse::Param(FCommandLine::Get(), TEXT("TerraValidate")))
     return;
   TestTime += Dt;
-  if (TestTime > 240) {
+  if (TestTime > 360) {
     Results.Add(TEXT("{\"case\":\"validation timeout or missing world\",\"pass\":false}"));
     FinishValidation();
     return;
@@ -103,6 +104,12 @@ void ATerraGameMode::Tick(float Dt) {
           I, Loaded ? TEXT("true") : TEXT("false")));
       Check(FString::Printf(TEXT("vehicle %d articulated suspension and upgrade models"),I),
           V->SuspensionParts.Num()==20&&V->Protection->GetStaticMesh()&&V->TrailEquipment->GetStaticMesh());
+      bool SplitLoaded=V->Rims.Num()==4&&V->HubDetails.Num()==16;
+      for(auto Rim:V->Rims)SplitLoaded&=Rim->GetStaticMesh()!=nullptr;
+      for(int Wheel=0;Wheel<4;++Wheel)SplitLoaded&=V->HubDetails[Wheel*4+2]->GetStaticMesh()!=nullptr;
+      const auto VehicleSpec=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[I]->AsObject();
+      for(int TireStage=1;TireStage<=3;++TireStage)SplitLoaded&=LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/Meshes/%s_tire_%d"),*VehicleSpec->GetStringField(TEXT("asset")),TireStage))!=nullptr;
+      Check(FString::Printf(TEXT("vehicle %d factory rims, upgraded tires and stationary brakes"),I),SplitLoaded);
     }
     Check(TEXT("imperial garage measurements"),V->UpgradeEffect(TerraSim::Body).Contains(TEXT(" lb"))&&
       V->UpgradeEffect(TerraSim::Suspension).Contains(TEXT(" in"))&&V->UpgradeEffect(TerraSim::Tires).Contains(TEXT(" in width")));
@@ -126,6 +133,21 @@ void ATerraGameMode::Tick(float Dt) {
       { FVector P(5799.999999999999,22200,472), N(1.6328623988631378e-16,2.728720282763563e-17,1); const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V); Check(TEXT("loop contact 4"),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance); }
     { const auto S=V->Terrain->CastSupport(FVector(500,18300,860),FVector::UpVector,42,-30,57,V); Check(TEXT("jump gap has no hidden support"),!S.Hit); }
     V->SelectVehicle(0);
+    for(int I=0;I<4;++I){
+      V->WheelState[I].Center=V->Wheels[I]->GetComponentLocation();V->WheelState[I].Angle=0;
+      V->WheelState[I].Rotation=.12f;
+    }
+    V->UpdateWheelVisuals();
+    for(int I=0;I<4;++I){
+      const auto Bottom=V->GetActorQuat().UnrotateVector(V->Wheels[I]->GetComponentQuat().RotateVector(FVector(0,0,-1)));
+      Check(FString::Printf(TEXT("wheel %d forward rotation carries bottom tread rearward"),I),Bottom.X<-.10f,Bottom.X);
+      V->WheelState[I].Rotation=-.12f;
+    }
+    V->UpdateWheelVisuals();
+    for(int I=0;I<4;++I){
+      const auto Bottom=V->GetActorQuat().UnrotateVector(V->Wheels[I]->GetComponentQuat().RotateVector(FVector(0,0,-1)));
+      Check(FString::Printf(TEXT("wheel %d reverse rotation carries bottom tread forward"),I),Bottom.X>.10f,Bottom.X);
+    }
     V->TeleportZone(1);
     Start = V->GetActorLocation();
     Stage = 1;
@@ -334,7 +356,8 @@ void ATerraGameMode::Tick(float Dt) {
     Check(TEXT("upgrade armor becomes visible on the vehicle"),V->Protection->IsVisible());
     Check(TEXT("frame upgrade changes Chaos damping and impact survival"),V->Chassis->GetAngularDamping()>1&&V->ImpactDamage(10000000)<StockImpact*.6f,V->ImpactDamage(10000000));
     V->SetUpgrade(TerraSim::Tires,3,false);
-    Check(TEXT("tire upgrade changes rendered size and friction budget"),V->Wheels[0]->GetRelativeScale3D().X>1.1f&&V->GripMultiplier()>1.4f,V->GripMultiplier());
+    Check(TEXT("tire upgrade changes rendered size and friction budget"),V->Wheels[0]->GetRelativeScale3D().X>1.1f&&V->GripMultiplier()>1.4f&&V->Wheels[0]->GetStaticMesh()&&V->Wheels[0]->GetStaticMesh()->GetName().EndsWith(TEXT("_tire_3")),V->GripMultiplier());
+    Check(TEXT("larger tires retain factory rim and brake rotor diameter"),FMath::Abs(V->Rims[0]->GetComponentScale().X-1)<.001f,V->Rims[0]->GetComponentScale().X);
     V->SetUpgrade(TerraSim::Wheels,3,false);
     Check(TEXT("wheel upgrade reduces rotating inertia"),V->WheelInertia()<1.6f,V->WheelInertia());
     V->SetUpgrade(TerraSim::Suspension,3,false);
@@ -413,7 +436,118 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("modeled deadwood provides physical tire support"),LogSupport.Hit&&LogSupport.Constructed,LogSupport.Distance);
       Check(TEXT("visible suspension follows live wheel travel"),FVector::Dist(V->SuspensionParts[0]->GetComponentLocation(),V->Wheels[0]->GetComponentLocation())<90&&V->SuspensionParts[2]->GetComponentScale().Z>.1f);
       Capture(TEXT("native-tire-ruts.png"));
-      V->Pressure=37;FinishValidation();
+      V->Pressure=37;V->TestDriverInput=true;V->TestForward=V->TestReverse=V->TestStop=false;
+      BrakeVehicle=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);Next(34);
+    }
+  } else if(Stage==34){
+    V->TestDriverInput=true;V->TestStop=false;V->TestReverse=false;V->TestForward=StageTime>.6f;
+    if(StageTime>4){
+      BrakeEntrySpeed=V->Chassis->GetPhysicsLinearVelocity().Size2D()/100;
+      Check(FString::Printf(TEXT("vehicle %d launches through shared W input"),BrakeVehicle),BrakeEntrySpeed>2,BrakeEntrySpeed);
+      Start=V->GetActorLocation();V->TestStop=true;Next(35);
+    }
+  } else if(Stage==35){
+    V->TestForward=true;V->TestStop=true;V->TestReverse=false;
+    if(StageTime>5){
+      const float ActualSpeed=V->Chassis->GetPhysicsLinearVelocity().Size2D()/100;
+      Check(FString::Printf(TEXT("vehicle %d Space stops and holds against held throttle"),BrakeVehicle),
+          ActualSpeed<.15f&&V->Throttle==0&&V->Brake==1,ActualSpeed);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_SPACE vehicle=%d entry=%.3f stopped=%.4f distance=%.3f"),BrakeVehicle,BrakeEntrySpeed,ActualSpeed,FVector::Dist2D(Start,V->GetActorLocation())/100);
+      if(++BrakeVehicle<5){V->SelectVehicle(BrakeVehicle);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestStop=false;Next(34);}
+      else{V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestStop=false;Next(36);}
+    }
+  } else if(Stage==36){
+    V->TestForward=StageTime>.5f;V->TestReverse=V->TestStop=false;
+    if(StageTime>4){
+      Check(TEXT("W launch before S brake check"),V->Speed>3,V->Speed);
+      V->TestForward=false;V->TestReverse=true;Next(37);
+    }
+  } else if(Stage==37){
+    V->TestForward=false;V->TestReverse=true;V->TestStop=false;
+    if(StageTime>5){
+      const float ActualSpeed=V->Chassis->GetPhysicsLinearVelocity().Size2D()/100;
+      Check(TEXT("held S reaches a stop and does not become reverse throttle"),ActualSpeed<.15f&&V->Direction==1&&V->Throttle==0,ActualSpeed);
+      V->TestReverse=false;Next(38);
+    }
+  } else if(Stage==38){
+    V->TestReverse=StageTime>.35f;V->TestForward=V->TestStop=false;
+    if(StageTime>4){
+      Check(TEXT("release and reapply S selects physical reverse drive"),V->Direction==-1&&V->Speed<-2,V->Speed);
+      V->TestStop=true;Next(39);
+    }
+  } else if(Stage==39){
+    V->TestReverse=true;V->TestStop=true;
+    if(StageTime>4){
+      const float ActualSpeed=V->Chassis->GetPhysicsLinearVelocity().Size2D()/100;
+      Check(TEXT("Space stops and holds while S requests reverse"),ActualSpeed<.15f&&V->Throttle==0,ActualSpeed);
+      V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestReverse=false;
+      const FVector Origin(-22000,20000,V->Terrain->Height(-22000,20000)+700);
+      const FRotator Rotation(12,0,0);const FVector Normal=Rotation.RotateVector(FVector::UpVector);
+      BrakeRamp=NewObject<UBoxComponent>(V->Terrain);BrakeRamp->SetupAttachment(V->Terrain->GetRootComponent());
+      BrakeRamp->InitBoxExtent(FVector(1200,500,20));BrakeRamp->SetCollisionProfileName(TEXT("BlockAll"));BrakeRamp->ComponentTags.Add(TEXT("TerraRock"));
+      BrakeRamp->RegisterComponent();BrakeRamp->SetWorldLocationAndRotation(Origin-Normal*20,Rotation);
+      V->SetActorLocationAndRotation(Origin+Normal*V->ExpectedRideHeight()*100,Rotation,false,nullptr,ETeleportType::TeleportPhysics);
+      V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);Next(40);
+    }
+  } else if(Stage==40){
+    V->TestStop=true;V->TestForward=V->TestReverse=false;
+    if(StageTime>1.5f&&!Captured){Start=V->GetActorLocation();Captured=true;}
+    if(StageTime>4.5f){
+      const float ActualSpeed=V->Chassis->GetPhysicsLinearVelocity().Size()/100,Drift=FVector::Dist(Start,V->GetActorLocation())/100;
+      Check(TEXT("Space holds contact speed on a twelve degree incline"),ActualSpeed<.12f&&V->ContactCount>=3,ActualSpeed);
+      Check(TEXT("brake holding friction prevents sustained downhill creep"),Drift<.18f,Drift);
+      BrakeRamp->DestroyComponent();BrakeRamp=nullptr;
+      V->TestDriverInput=false;V->TestBrake=1;V->TestThrottle=V->TestSteer=0;V->SelectVehicle(4);V->ResetUpgrades(false);V->TeleportZone(1);Next(41);
+    }
+  } else if(Stage==41){
+    if(StageTime>3){
+      const auto P=V->GetActorLocation();StockRideHeight=(P.Z-V->Terrain->Height(P.X,P.Y))/100;
+      Check(TEXT("Hummer stock suspension settles at its intended ride height"),FMath::Abs(StockRideHeight-V->ExpectedRideHeight())<.065f&&V->ContactCount>=3,StockRideHeight);
+      V->SetUpgrade(TerraSim::Suspension,3,false);V->TeleportZone(1);Next(42);
+    }
+  } else if(Stage==42){
+    if(StageTime>3){
+      const auto P=V->GetActorLocation();const float Height=(P.Z-V->Terrain->Height(P.X,P.Y))/100;
+      Check(TEXT("Hummer stage III suspension physically raises the body"),Height>StockRideHeight+.075f,Height-StockRideHeight);
+      const float Expected=V->ExpectedRideHeight();
+      Check(TEXT("Hummer lifted driving height matches garage target"),FMath::Abs(Height-Expected)<.065f,Height-Expected);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_RIDE stock=%.4f lifted=%.4f target=%.4f"),StockRideHeight,Height,Expected);
+      for(int Part=0;Part<TerraSim::PartCount;++Part)V->SetUpgrade(Part,3,false);
+      V->TeleportZone(1);Next(43);
+    }
+  } else if(Stage==43){
+    if(StageTime>3&&!Captured){
+      const auto P=V->GetActorLocation();const float Height=(P.Z-V->Terrain->Height(P.X,P.Y))/100;
+      Check(TEXT("Hummer tire and lift combination retains intended driving height"),FMath::Abs(Height-V->ExpectedRideHeight())<.065f,Height-V->ExpectedRideHeight());
+      V->SetGarage(true);V->SetGarageView(2);Capture(TEXT("native-hummer-lifted.png"));Captured=true;
+    }
+    if(StageTime>3.6f){
+      ModelVehicle=0;ModelView=0;Next(44);
+      V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarageView(1);
+    }
+  } else if(Stage==44){
+    if(StageTime>.55f&&!Captured){
+      Capture(*FString::Printf(TEXT("native-model-%d-view-%d.png"),ModelVehicle,ModelView));Captured=true;
+      const float Error=FMath::Abs(FMath::FindDeltaAngleDegrees(V->Camera->GetComponentRotation().Yaw,V->GetActorRotation().Yaw+V->GarageViewState().X));
+      Check(FString::Printf(TEXT("vehicle %d garage view %d persists without camera reset"),ModelVehicle,ModelView),Error<1,Error);
+    }
+    if(StageTime>1.05f){
+      if(++ModelView==3){ModelView=0;++ModelVehicle;}
+      if(ModelVehicle==5){GarageCameraBefore=V->GarageViewState();V->OrbitGarageCamera(92,-17);V->ZoomGarageCamera(2);Next(45);}
+      else{V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarageView(ModelView+1);Next(44);}
+    }
+  } else if(Stage==45){
+    if(StageTime>.6f){
+      const auto State=V->GarageViewState();
+      const float Error=FMath::Abs(FMath::FindDeltaAngleDegrees(V->Camera->GetComponentRotation().Yaw,V->GetActorRotation().Yaw+State.X));
+      Check(TEXT("garage orbit changes the real camera and survives later ticks"),FMath::Abs(State.X-GarageCameraBefore.X)>50&&Error<1,Error);
+      Check(TEXT("garage zoom changes the real camera boom"),State.Z<GarageCameraBefore.Z*.9f&&FMath::Abs(V->CameraArm->TargetArmLength-State.Z)<1,State.Z);
+      Capture(TEXT("native-garage-orbit.png"));
+      V->OrbitGarageCamera(0,10000);V->ZoomGarageCamera(1000);
+      Check(TEXT("garage orbit pitch and near zoom remain bounded"),V->GarageViewState().Y<=12&&V->GarageViewState().Z>=300);
+      V->OrbitGarageCamera(0,-20000);V->ZoomGarageCamera(-1000);
+      Check(TEXT("garage lower pitch and far zoom remain bounded"),V->GarageViewState().Y>=-52&&V->GarageViewState().Z<=1800);
+      V->SetGarage(false);FinishValidation();
     }
   }
 

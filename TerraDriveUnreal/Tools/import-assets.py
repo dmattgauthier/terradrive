@@ -34,12 +34,15 @@ def load_texture(filename, mask=False):
     return texture
 
 def material(name, color, roughness=.8, metallic=0, opacity=1,
-             sky=False, texture=None, alpha=None, clip=.38, instance_tint=False):
+             sky=False, texture=None, alpha=None, clip=.38, instance_tint=False,
+             clearcoat=0, coat_roughness=.15, emissive=None, role=''):
+    emissive = emissive or [0,0,0]
     dest = '/Game/Materials/' + name
     signature = hashlib.sha256(json.dumps([
-        5 if instance_tint else 3, color, roughness, metallic, opacity, sky,
+        5 if instance_tint else 4, color, roughness, metallic, opacity, sky,
         texture.get_path_name() if texture else None,
-        alpha.get_path_name() if alpha else None, clip
+        alpha.get_path_name() if alpha else None, clip,
+        clearcoat, coat_roughness, emissive, role
     ]).encode()).hexdigest()
     if lib.does_asset_exist(dest):
         m = lib.load_asset(dest)
@@ -50,6 +53,16 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         m = tools.create_asset(name, '/Game/Materials', unreal.Material, unreal.MaterialFactoryNew())
     m.set_editor_property('two_sided', True)
     m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_OPAQUE)
+    coated = clearcoat > 0 and opacity >= .95 and not sky
+    m.set_editor_property('use_material_attributes', coated)
+    attributes = edit.create_material_expression(m, unreal.MaterialExpressionMakeMaterialAttributes, 200, 0) if coated else None
+    def connect(node, prop, pin):
+        if attributes:
+            ok = edit.connect_material_expressions(node, '', attributes, pin)
+        else:
+            ok = edit.connect_material_property(node, '', prop)
+        if not ok:
+            raise RuntimeError('Could not connect '+name+' '+pin)
     c = edit.create_material_expression(m, unreal.MaterialExpressionConstant3Vector, -500, 0)
     c.set_editor_property('constant', unreal.LinearColor(*color, 1))
     output = c
@@ -82,11 +95,28 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         edit.connect_material_expressions(output,'',tint,'A')
         edit.connect_material_expressions(interpolated,'',tint,'B')
         output=tint
-    edit.connect_material_property(output, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR if sky else unreal.MaterialProperty.MP_BASE_COLOR)
-    for prop, value in [(unreal.MaterialProperty.MP_ROUGHNESS, roughness), (unreal.MaterialProperty.MP_METALLIC, metallic)]:
+    connect(output, unreal.MaterialProperty.MP_EMISSIVE_COLOR if sky else unreal.MaterialProperty.MP_BASE_COLOR, 'EmissiveColor' if sky else 'BaseColor')
+    for prop, value, pin in [(unreal.MaterialProperty.MP_ROUGHNESS, roughness, 'Roughness'), (unreal.MaterialProperty.MP_METALLIC, metallic, 'Metallic')]:
         node = edit.create_material_expression(m, unreal.MaterialExpressionConstant, -180, 280)
         node.set_editor_property('r', value)
-        edit.connect_material_property(node, '', prop)
+        connect(node, prop, pin)
+    if coated:
+        m.set_editor_property('shading_model',unreal.MaterialShadingModel.MSM_CLEAR_COAT)
+        # UE keeps MP_CustomData0/1 hidden from Python. MakeMaterialAttributes
+        # exposes the engine's ClearCoat/ClearCoatRoughness inputs by name.
+        for pin,value in [('ClearCoat',clearcoat),('ClearCoatRoughness',coat_roughness)]:
+            node=edit.create_material_expression(m,unreal.MaterialExpressionConstant,-160,340)
+            node.set_editor_property('r',value)
+            if not edit.connect_material_expressions(node,'',attributes,pin):
+                raise RuntimeError('Could not connect '+name+' '+pin)
+        if not edit.connect_material_property(attributes,'',unreal.MaterialProperty.MP_MATERIAL_ATTRIBUTES):
+            raise RuntimeError('Could not connect material attributes: '+name)
+    elif not sky:
+        m.set_editor_property('shading_model',unreal.MaterialShadingModel.MSM_DEFAULT_LIT)
+    if not sky and max(emissive)>0:
+        node=edit.create_material_expression(m,unreal.MaterialExpressionConstant3Vector,-160,500)
+        node.set_editor_property('constant',unreal.LinearColor(*emissive,1))
+        connect(node,unreal.MaterialProperty.MP_EMISSIVE_COLOR,'EmissiveColor')
     if sky:
         m.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
         m.set_editor_property('is_sky', True)
@@ -99,6 +129,9 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         edit.connect_material_property(mask, 'R', unreal.MaterialProperty.MP_OPACITY_MASK)
     elif opacity < .95:
         m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
+        if role in ('glass','lens'):
+            m.set_editor_property('translucency_lighting_mode',unreal.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
+            m.set_editor_property('screen_space_reflections',True)
         node = edit.create_material_expression(m, unreal.MaterialExpressionConstant, -180, 400)
         node.set_editor_property('r', opacity)
         edit.connect_material_property(node, '', unreal.MaterialProperty.MP_OPACITY)
@@ -113,7 +146,9 @@ for d in data['materials']:
     color = [c*t for c, t in zip(d['color'], d.get('vertexTint', [1, 1, 1]))]
     materials[d['id']] = material(d['id'], color, d['roughness'], d['metallic'], d['opacity'],
         texture=load_texture(d.get('diffuse')), alpha=load_texture(d.get('alpha'), True),
-        clip=d.get('alphaTest') or .38, instance_tint=d.get('instanceTint',False))
+        clip=d.get('alphaTest') or .38, instance_tint=d.get('instanceTint',False),
+        clearcoat=d.get('clearcoat',0),coat_roughness=d.get('coatRoughness',.15),
+        emissive=d.get('emissive'),role=d.get('role',''))
 texture_names = {'dirt':'forest_ground_04_diff_2k.jpg', 'asphalt':'asphalt_02_diff_1k.jpg',
     'mud':'brown_mud_02_diff_2k.jpg', 'wetland':'brown_mud_02_diff_2k.jpg',
     'rock':'mossy_rock_diff_1k.jpg', 'sand':'sand_03_diff_1k.jpg'}

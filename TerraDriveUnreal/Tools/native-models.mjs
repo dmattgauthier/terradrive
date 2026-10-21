@@ -58,10 +58,14 @@ export function vehicleAdditions(spec){
 
 export function suspensionModels(){
   class Helix extends THREE.Curve {getPoint(t,target=new THREE.Vector3()){const a=t*Math.PI*16;return target.set(Math.cos(a)*.067,t-.5,Math.sin(a)*.067);}}
-  const coil=new THREE.Group();add(coil,new THREE.TubeGeometry(new Helix(),160,.0085,6,false),amber);
+  const coil=new THREE.Group();add(coil,new THREE.TubeGeometry(new Helix(),160,.0085,8,false),steel);
   const air=new THREE.Group();
-  for(let i=0;i<10;i++)add(air,new THREE.TorusGeometry(.074,.019,8,20),rubber,[0,-.45+i*.1,0]).rotation.x=Math.PI/2;
-  rod(air,chrome,[0,-.5,0],[0,.5,0],.026);
+  const profile=[[.031,-.50],[.043,-.46],[.060,-.43]];
+  for(let i=0;i<6;i++){const y=-.42+i*.09;profile.push([.071,y],[.077,y+.025],[.066,y+.058],[.064,y+.083]);}
+  profile.push([.052,.15],[.033,.19],[.033,.22]);
+  add(air,new THREE.LatheGeometry(profile.map(p=>new THREE.Vector2(...p)),32),rubber);
+  rod(air,chrome,[0,.16,0],[0,.48,0],.018);
+  for(const y of [-.48,.48])add(air,new THREE.CylinderGeometry(.038,.038,.04,24),steel,[0,y,0]);
   return {coil,air};
 }
 

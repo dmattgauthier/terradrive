@@ -2,6 +2,7 @@
 #include "../Source/TerraDrive/TerraUpgrades.h"
 #include "../Source/TerraDrive/TerraContact.h"
 #include "../Source/TerraDrive/TerraUnits.h"
+#include "../Source/TerraDrive/TerraDriving.h"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -9,6 +10,38 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    for(float dt:{1.f/30,1.f/60,1.f/120}){
+        float locked=24,backward=-24,axle=24;
+        for(float time=0;time<.2f;time+=dt){
+            locked=TerraSim::BrakedWheelOmega(locked,22000,10,.42f,dt,3,4200,9000);
+            backward=TerraSim::BrakedWheelOmega(backward,22000,-10,.42f,dt,3,4200,9000);
+            axle=TerraSim::BrakedAxleOmega(axle,22000,18000,10,9,4200,3800,.42f,dt,6,18000);
+        }
+        check(locked==0,"service brake holds a wheel against the full moving-road contact reaction");
+        check(backward==0,"braking holds in reverse without creating reverse wheel torque");
+        check(axle==0,"locked differential brakes both contacts together");
+        const float coast=TerraSim::LimitedWheelOmega(24,22000,10,.42f,dt,3,4200);
+        check(std::abs(TerraSim::BrakedWheelOmega(24,22000,10,.42f,dt,3,4200,0)-coast)<.00001f,"zero braking retains the existing rolling solver");
+    }
+    {
+        int direction=1;float held=0;bool release=false;TerraSim::DriverDemand demand;
+        for(int i=0;i<60;++i)demand=TerraSim::DriverControls(direction,false,true,0,0,false,8,1.f/60,held,release);
+        check(direction==1&&demand.Brake==1&&demand.Throttle==0,"S is a full brake while traveling forward");
+        for(int i=0;i<180;++i)demand=TerraSim::DriverControls(direction,false,true,0,0,false,0,1.f/60,held,release);
+        check(direction==1&&demand.Brake==1&&demand.Throttle==0,"holding S after stopping holds instead of silently accelerating backward");
+        TerraSim::DriverControls(direction,false,false,0,0,false,0,1.f/60,held,release);
+        for(int i=0;i<40;++i)demand=TerraSim::DriverControls(direction,false,true,0,0,false,0,1.f/60,held,release);
+        check(direction==-1&&demand.Throttle==1&&demand.Brake==0,"release then hold S at rest deliberately selects reverse");
+        demand=TerraSim::DriverControls(direction,false,true,0,0,true,-5,1.f/60,held,release);
+        check(demand.Brake==1&&demand.Throttle==0,"Space overrides reverse throttle");
+        demand=TerraSim::DriverControls(direction,true,false,0,0,false,-5,1.f/60,held,release);
+        check(direction==-1&&demand.Brake==1&&demand.Throttle==0,"W brakes while reversing");
+        direction=1;release=false;
+        demand=TerraSim::DriverControls(direction,true,false,1,0,true,15,1.f/60,held,release);
+        check(demand.Brake==1&&demand.Throttle==0,"Space overrides held W and the accelerator trigger");
+        demand=TerraSim::DriverControls(direction,false,false,1,.7f,false,15,1.f/60,held,release);
+        check(demand.Brake==.7f&&demand.Throttle==0,"gamepad pedal brake has priority over drive");
+    }
     for(float dt:{1.f/30,1.f/60,1.f/120}){
         const float drive=TerraSim::RevLimitedTorque(10000,3,3,dt,9,420,200);
         const float omega=TerraSim::LimitedWheelOmega(3+(drive-200)*dt/3,20000,0,.42f,dt,3,1000);

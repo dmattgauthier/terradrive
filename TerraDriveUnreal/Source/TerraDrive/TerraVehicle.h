@@ -10,6 +10,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInstancedStaticMeshComponent;
 class STerraGarage;
+class URectLightComponent;
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35;
@@ -51,6 +52,9 @@ public:
   UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
   UPROPERTY() TObjectPtr<ATerraWorld> Terrain;
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Wheels;
+  UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Rims;
+  UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> HubDetails;
+  UPROPERTY() TArray<TObjectPtr<URectLightComponent>> GarageLights;
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> SprayMeshes;
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> SuspensionParts;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> Protection;
@@ -73,6 +77,7 @@ public:
       LiftUpgrade = 0;
   bool AutoTest = false, Initialized = false;
   float TestThrottle = 0, TestSteer = 0, TestBrake = 0;
+  bool TestDriverInput=false, TestForward=false, TestReverse=false, TestStop=false;
   void SetTracks(bool Enabled);
   void SetGarage(bool Open);
   void SetUpgrade(int Part, int Stage, bool Persist = true);
@@ -92,6 +97,12 @@ public:
   float GripMultiplier() const { return Tuning.Grip; }
   float WheelInertia() const { return 3*Tuning.WheelInertia; }
   float ImpactDamage(float Impulse) const;
+  void OrbitGarageCamera(float YawDelta,float PitchDelta);
+  void ZoomGarageCamera(float Steps);
+  void SetGarageView(int View);
+  void UpdateWheelVisuals();
+  FVector GarageViewState() const { return FVector(GarageYaw,GaragePitch,GarageDistance); }
+  float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
   TerraSim::UpgradeSetup Builds[5];
   TerraSim::UpgradeTuning Tuning;
 
@@ -101,6 +112,8 @@ private:
   FVector Anchor;
   FVector PreviousRoutePosition;
   bool NearCamera = false;
+  bool ReverseReleaseRequired=false;
+  float GarageYaw=145,GaragePitch=-12,GarageDistance=1050;
   TSharedPtr<STerraGarage> GarageWidget;
   int LastVehicle = 0;
   float TireVisualScale = 1, WidthVisualScale = 1, Droop = .16f;

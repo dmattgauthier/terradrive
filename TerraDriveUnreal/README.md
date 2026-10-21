@@ -26,7 +26,7 @@ After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows
 .\Tools\verify-native.ps1
 ```
 
-The verifier requires a fresh JSON report, a successful game exit, and all 87 checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, eight challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
+The verifier requires a fresh JSON report, a successful game exit, and all 140 checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, eight challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
 
@@ -34,7 +34,7 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 
 | Input | Action |
 |---|---|
-| W / S or arrows | Accelerate / service brake; hold opposite direction at rest to change forward/reverse |
+| W / S or arrows | Drive; opposite input brakes and holds. After stopping, release and hold the opposite key again to change direction |
 | A / D or arrows | Progressive steering |
 | Space | Brake |
 | Right mouse + mouse | Orbit camera |
@@ -50,7 +50,9 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 | + / - | Tire pressure |
 | X / Q | Attach/detach nearest standing-tree anchor / reel winch |
 | Tab | Open vehicle and upgrade garage while stopped; return to driving |
-| Mouse in garage | Select a vehicle, category stage, reset to stock, or drive |
+| Drag / scroll over garage vehicle | Orbit / zoom; Front, Side, Rear and Reset buttons select views |
+| Arrow keys / Page Up / Page Down in garage | Orbit / zoom with the keyboard |
+| Mouse on garage buttons | Select a vehicle, category stage, reset to stock, or drive |
 | Escape in garage | Return to driving |
 | P | Dry/rain response |
 | R | Recover at current region or restart current challenge route |
@@ -66,3 +68,5 @@ See [offroad-challenges.md](docs/offroad-challenges.md) for route descriptions, 
 The game opens in the vehicle garage. Stock plus three upgrade stages are available immediately and saved independently for each vehicle. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [garage-and-terrain.md](docs/garage-and-terrain.md) for stages, persistence and material reproduction.
 
 Player-facing measurements use mph, feet/inches, pounds, PSI, horsepower and pounds-force. The new tire-contact and model pass is described in [terrain-interaction-and-models.md](docs/terrain-interaction-and-models.md). Run `Tools/test-core.cmd` for the standalone simulation checks.
+
+Native controls and researched model refinements are described in [vehicle-model-research.md](docs/vehicle-model-research.md). The extended suite covers brake input/holding for all five vehicles, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling.

@@ -15,13 +15,14 @@ import {createChallengeCourse} from '../../TerraDrive-v1.13/dist/src/challenge-c
 import {createChallengeView} from '../../TerraDrive-v1.13/dist/src/challenge-view.js';
 import {buildRockCourses,challengeCollisionMesh,inQuarry} from './offroad-courses.mjs';
 import {vehicleAdditions,suspensionModels,environmentModels} from './native-models.mjs';
+import {refineVehicle,brakeCaliperModel} from './vehicle-fidelity.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeData');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
 globalThis.document={createElement(){return {width:0,height:0,getContext:()=>({fillRect(){},fillText(){},putImageData(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})})}}};
 const mats=[],matIds=new Map(),assets=[],tints=new Map();
-function matId(m){if(matIds.has(m.uuid))return matIds.get(m.uuid);const id='M_'+String(mats.length).padStart(3,'0');matIds.set(m.uuid,id);mats.push({id,color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors,diffuse:m.map?.userData?.source||null,alpha:m.alphaMap?.userData?.source||null,alphaTest:m.alphaTest||0});return id;}
-function exportObj(name,group){
+function matId(m){if(matIds.has(m.uuid))return matIds.get(m.uuid);const id='M_'+String(mats.length).padStart(3,'0');matIds.set(m.uuid,id);mats.push({id,color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors,diffuse:m.map?.userData?.source||null,alpha:m.alphaMap?.userData?.source||null,alphaTest:m.alphaTest||0,clearcoat:m.clearcoat||0,coatRoughness:m.clearcoatRoughness??.15,emissive:m.emissive?.toArray().map(v=>v*(m.emissiveIntensity??1))||[0,0,0],role:m.userData.nativeRole||''});return id;}
+function exportObj(name,group,excludeCanvas=false){
  group.updateMatrixWorld(true);let lines=['# Converted directly from Terra Drive 1.15 source. Metres baked to Unreal centimetres.'],offset=1,slots=[];
  group.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;const n=obj.isInstancedMesh?obj.count:1;
  for(let instance=0;instance<n;instance++){
@@ -34,7 +35,11 @@ function exportObj(name,group){
  for(let i=0;i<pa.count;i++)lines.push(`vt ${uv?uv.getX(i):0} ${uv?uv.getY(i):0}`);
  const materials=Array.isArray(obj.material)?obj.material:[obj.material],idx=geo.index;
  const groups=Array.isArray(obj.material)&&geo.groups.length?geo.groups:[{start:0,count:idx?idx.count:pa.count,materialIndex:0}];
- for(const g of groups){const mat=materials[g.materialIndex]||materials[0],mid=matId(mat);if(!slots.includes(mid))slots.push(mid);lines.push('usemtl '+mid);for(let k=g.start;k<g.start+g.count;k+=3){const ids=[0,1,2].map(t=>offset+(idx?idx.getX(k+t):k+t));lines.push('f '+ids.map(i=>`${i}/${i}/${i}`).join(' '));
+ for(const g of groups){const mat=materials[g.materialIndex]||materials[0];
+ // Browser-generated canvas lettering has no pixels in this one-way exporter.
+ // Exclude unavailable raster planes; native lettering is real geometry.
+ if(excludeCanvas&&mat.map?.isCanvasTexture&&!mat.map?.userData?.source)continue;
+ const mid=matId(mat);if(!slots.includes(mid))slots.push(mid);lines.push('usemtl '+mid);for(let k=g.start;k<g.start+g.count;k+=3){const ids=[0,1,2].map(t=>offset+(idx?idx.getX(k+t):k+t));lines.push('f '+ids.map(i=>`${i}/${i}/${i}`).join(' '));
  // OBJ has no vertex-color stream in this importer. Preserve the source's
  // mean tint per material instead of turning white-base foliage white.
  if(mat.vertexColors&&geo.attributes.color){const c=geo.attributes.color,s=tints.get(mid)||[0,0,0,0];for(const id of ids){const j=id-offset;s[0]+=c.getX(j);s[1]+=c.getY(j);s[2]+=c.getZ(j);s[3]++;}tints.set(mid,s);}
@@ -43,10 +48,36 @@ function exportObj(name,group){
  }});
  const obj=lines.join('\n');fs.writeFileSync(path.join(out,name+'.obj'),obj);assets.push({name,slots,sha256:crypto.createHash('sha256').update(obj).digest('hex')});return name;
 }
+// Compensate the component's radial scale at the bead. The outer tread still
+// reaches the upgraded physical radius; only sidewall height grows, not the
+// wheel's seating diameter. Transform normals with the radial Jacobian too.
+function exportTireStages(prefix,spec){
+ const base=assets.find(a=>a.name===prefix+'_tire'),lines=fs.readFileSync(path.join(out,base.name+'.obj'),'utf8').split('\n');
+ const positions=lines.filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
+ const bead=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100,outer=spec.tireRadius*100;
+ for(let stage=1;stage<=3;stage++){
+  const scale=1+.04*stage,k=(outer*scale-bead)/(outer-bead);let vi=0,ni=0;
+  const obj=lines.map(line=>{
+   if(line.startsWith('v ')){
+    const [x,y,z]=positions[vi++],r=Math.hypot(x,z),radial=(r<bead?r:bead+(r-bead)*k)/scale;
+    return `v ${x*radial/r} ${y} ${z*radial/r}`;
+   }
+   if(line.startsWith('vn ')){
+    const [x,,z]=positions[ni++],r=Math.hypot(x,z),erx=x/r,erz=z/r;
+    const radial=(r<bead?r:bead+(r-bead)*k)/scale,a=(r<bead?1:k)/scale,b=radial/r;
+    const n=line.slice(3).split(' ').map(Number),dot=n[0]*erx+n[2]*erz;
+    const nx=(n[0]-dot*erx)/b+dot*erx/a,nz=(n[2]-dot*erz)/b+dot*erz/a,len=Math.hypot(nx,n[1],nz);
+    return `vn ${nx/len} ${n[1]/len} ${nz/len}`;
+   }return line;
+  }).join('\n');
+  const name=prefix+'_tire_'+stage;fs.writeFileSync(path.join(out,name+'.obj'),obj);
+  assets.push({name,slots:[...base.slots],sha256:crypto.createHash('sha256').update(obj).digest('hex')});
+ }
+}
 const terrain=new Terrain(),surfaces=['dirt','asphalt','mud','wetland','rock','sand','snow'];
 const n=1601,step=.5,bytes=Buffer.alloc(16+n*n*9);bytes.writeUInt32LE(0x54445256,0);bytes.writeUInt32LE(n,4);bytes.writeFloatLE(step,8);bytes.writeFloatLE(-400,12);
 if(!fs.existsSync(path.join(data,'terrain.bin'))){let offset=16;for(let row=0;row<n;row++){for(let col=0;col<n;col++){const z=-400+row*step,x=400-col*step,s=terrain.sample(x,z);bytes.writeFloatLE(s.height,offset);bytes.writeFloatLE(s.waterDepth,offset+4);bytes[offset+8]=surfaces.indexOf(s.surface);offset+=9;}if(row%400===0)console.log('Terrain row',row,'/',n);}fs.writeFileSync(path.join(data,'terrain.bin'),bytes);}
-const vehicles=[];for(const spec of VEHICLES){const view=new VehicleView(new THREE.Scene(),spec);const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root);exportObj(prefix+'_wheel',view.wheels[0].root);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix});view.dispose();console.log('Vehicle exported',spec.name);}
+const vehicles=[];for(const spec of VEHICLES){const view=new VehicleView(new THREE.Scene(),spec),parts=refineVehicle(view,spec);const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix,nativeModel:{...view.root.userData.nativeFidelity,upgradeTireBeads:true}});view.dispose();console.log('Vehicle exported',spec.name);}
 // Export the actual shared scenery geometry and original placements.
 const world=Object.create(OffroadWorld.prototype);Object.assign(world,{terrain,scene:new THREE.Scene(),groundMeshes:new Map(),spec:VEHICLES[0],clock:0,_textureLoader:{load(url){return new THREE.Texture();}}});
 terrain.obstacles=[];world._createVegetation();world._createLandmarks();world.scene.updateMatrixWorld(true);
@@ -75,12 +106,13 @@ const routes=[
 ];
 for(const spec of VEHICLES){const prefix=spec.id.replaceAll('-','_'),parts=vehicleAdditions(spec);exportObj(prefix+'_armor',parts.armor);exportObj(prefix+'_equipment',parts.equipment);}
 const suspension=suspensionModels();exportObj('detail_coil',suspension.coil);exportObj('detail_airstrut',suspension.air);
+exportObj('detail_brake_caliper',brakeCaliperModel());
 const environment=environmentModels(terrain,routes,terrain.zones);for(const a of environment.assets)exportObj(a.name,a.group);
 const tinted=new Set();
 for(const g of [...placements,...environment.placements])if(g.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
 for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);m.instanceTint=tinted.has(m.id);}
-const manifest={version:'1.15.0',nativeRevision:'imperial-contact-models-1',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base};
+const manifest={version:'1.15.0',nativeRevision:'vehicle-fidelity-controls-2',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));

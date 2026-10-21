@@ -3,6 +3,7 @@
 #include "TerraUnits.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/RectLightComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Framework/Application/SlateApplication.h"
@@ -14,6 +15,19 @@
 #include "Serialization/JsonSerializer.h"
 
 FString ATerraVehicle::GaragePath() const { return FPaths::ProjectSavedDir()/TEXT("garage-builds.json"); }
+void ATerraVehicle::OrbitGarageCamera(float YawDelta,float PitchDelta){
+  if(!Garage)return;
+  GarageYaw=FMath::UnwindDegrees(GarageYaw+YawDelta);
+  GaragePitch=FMath::Clamp(GaragePitch+PitchDelta,-52.f,12.f);
+}
+void ATerraVehicle::ZoomGarageCamera(float Steps){
+  if(Garage)GarageDistance=FMath::Clamp(GarageDistance*FMath::Pow(.88f,Steps),Number(TEXT("length"),4.8f)*85,1800.f);
+}
+void ATerraVehicle::SetGarageView(int View){
+  GarageYaw=View==1?180:View==2?90:View==3?0:145;
+  GaragePitch=View==0?-12:-8;
+  if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
+}
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
   auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),1);
   Root->SetNumberField(TEXT("vehicle"),VehicleIndex);
@@ -73,6 +87,12 @@ void ATerraVehicle::ApplyUpgrades(){
   Chassis->SetMassOverrideInKg(NAME_None,Mass+(Tracks?380:0));
   Chassis->SetAngularDamping(.6f*Tuning.Stability);
   Chassis->SetCenterOfMass(FVector(0,0,-2.f*Builds[VehicleIndex].Stage[TerraSim::Frame]));
+  if(!Tracks){
+    const int Stage=UpgradeStage(TerraSim::Tires);
+    const FString Name=Spec->GetStringField(TEXT("asset"))+TEXT("_tire")+(Stage?FString::Printf(TEXT("_%d"),Stage):TEXT(""));
+    auto *Mesh=LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Name));
+    for(auto W:Wheels)W->SetStaticMesh(Mesh);
+  }
   for(auto W:Wheels)W->SetRelativeScale3D(Tracks?FVector::OneVector:FVector(TireVisualScale,WidthVisualScale,TireVisualScale));
   if(Garage){
     const FVector P=GetActorLocation();
@@ -108,6 +128,7 @@ void ATerraVehicle::SetGarage(bool Open){
   Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);
   Chassis->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
   if(Open){
+    SetGarageView(0);
     if(RouteIndex>=0)TeleportRoute(RouteIndex);else TeleportZone(Zone);
     Chassis->SetSimulatePhysics(false);
     ApplyUpgrades();
@@ -127,6 +148,7 @@ void ATerraVehicle::SetGarage(bool Open){
     FSlateApplication::Get().SetAllUserFocusToGameViewport();
     if(!AutoTest)SaveGarage(GaragePath());
   }
+  for(auto Light:GarageLights)Light->SetVisibility(Garage);
 }
 FString ATerraVehicle::UpgradeName(int Part) const{
   const TCHAR *Names[]={TEXT("SUSPENSION"),TEXT("ENGINE POWER"),TEXT("TIRES"),TEXT("WHEELS"),TEXT("FRAME"),TEXT("BODY"),TEXT("ELECTRICAL")};

@@ -10,6 +10,7 @@ public:
   void Construct(const FArguments &Args);
   virtual bool SupportsKeyboardFocus() const override { return true; }
   virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent &Event) override;
+  virtual FReply OnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent &Event) override;
 private:
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TSharedPtr<SWidgetSwitcher> Pages;

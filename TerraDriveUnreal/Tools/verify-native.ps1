@@ -22,7 +22,7 @@ if (!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWr
 }
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $failed=@($result.tests | Where-Object { !$_.pass })
-if ($game.ExitCode -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt 87) {
+if ($game.ExitCode -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt 140) {
     $failed | Format-Table | Out-String | Write-Output
     throw "Native checks failed (exit $($game.ExitCode)). Inspect $report and $log"
 }

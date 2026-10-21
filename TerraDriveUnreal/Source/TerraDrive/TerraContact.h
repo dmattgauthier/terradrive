@@ -61,4 +61,23 @@ inline float LimitedAxleOmega(float freeOmega,float c0,float c1,float v0,float v
     }
     return (lo+hi)*.5f;
 }
+// Solve brake holding torque together with the tire reaction. Clamping the
+// free wheel to zero before the tire solve lets road contact spin it back up.
+// At zero angular speed the brake supplies any torque inside its holding band.
+inline float BrakedWheelOmega(float freeOmega,float stiffness,float speed,float radius,
+                              float dt,float inertia,float forceLimit,float brakeTorque) {
+    const float impulse=std::max(0.f,brakeTorque)*dt/inertia;
+    const float reactionAtRest=std::clamp(-stiffness*speed,-forceLimit,forceLimit)*radius*dt/inertia;
+    const float tendency=freeOmega-reactionAtRest;
+    if(std::abs(tendency)<=impulse)return 0;
+    return LimitedWheelOmega(freeOmega-std::copysign(impulse,tendency),stiffness,speed,radius,dt,inertia,forceLimit);
+}
+inline float BrakedAxleOmega(float freeOmega,float c0,float c1,float v0,float v1,
+                             float limit0,float limit1,float radius,float dt,float inertia,float brakeTorque) {
+    const float impulse=std::max(0.f,brakeTorque)*dt/inertia;
+    const float reactionAtRest=(std::clamp(-c0*v0,-limit0,limit0)+std::clamp(-c1*v1,-limit1,limit1))*radius*dt/inertia;
+    const float tendency=freeOmega-reactionAtRest;
+    if(std::abs(tendency)<=impulse)return 0;
+    return LimitedAxleOmega(freeOmega-std::copysign(impulse,tendency),c0,c1,v0,v1,limit0,limit1,radius,dt,inertia);
+}
 }

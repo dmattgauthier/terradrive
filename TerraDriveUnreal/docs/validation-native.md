@@ -6,31 +6,48 @@ Verified October 21, 2026 with Unreal Engine 5.8.3 on Windows x64, DirectX 12 SM
 
 | Check | Result |
 |---|---|
-| Final compile, import, full cook and Windows staging | Successful; process exit 0 |
-| Packaged game | All 87 checks passed with a fresh JSON report and successful game exit |
-| Standalone simulation | All 63 checks passed, including imperial conversions, footprint area across grid phases and redline limits at 30/60/120 Hz; the light-bar follow-up leaves this C++ source unchanged |
-| Assets | 163 mesh sources, 305 source materials, seven terrain materials and 26 textures |
-| Scenery | 2,645 added detail instances, including 645 solid rocks/logs; 13 materials use individual instance colors |
+| Final editor/runtime compile, import, full cook and Windows staging | Successful; process exit 0 |
+| Packaged game | All 140 checks passed with a fresh JSON report and successful game exit |
+| Standalone simulation | All 82 checks passed, including shared driver controls and wheel/axle braking at 30/60/120 Hz |
+| Assets | 189 mesh sources, 302 source materials, seven terrain materials and 26 textures |
+| Scenery | 2,645 detail instances, including 645 solid rocks/logs; 13 materials retain instance colors |
 | Browser source | All 189 reference files unchanged; 53 existing vendor/binary files preserved |
-| Display units | mph, feet/inches, pounds, pounds-force, PSI and horsepower; raw diagnostics retain SI where named |
-| Pressure comparison | 37 to 16 PSI changed mean contact length from 3.94 to 6.39 in and mean grip from 0.4803 to 0.5565 |
-| Low-range wheelspin | 6426 RPM at the sampled point; powered rotation is constrained by delivered torque at redline |
-| Contact geometry | Rigid support outside the tread width rejected; boulders and deadwood supply physical support |
-| Ruts | Depth-dependent resistance and continuous deformation across tile seams passed |
-| Engine comparison | Stock 31.2 mph / 131.6 ft; stage III 47.1 mph / 241.6 ft at identical throttle and duration |
-| Vehicle models | All five vehicles load articulated suspension and upgrade models; armor visibility and live wheel-travel positions passed |
-| Light-bar mounts | Eight brackets intersect the exported roofs across four applicable vehicles; corrected Wrangler inspected live in the garage and driving views |
-| Existing behavior | Rollover/airborne control suppression, moving/expiring debris, locker comparison, controlled descent, loop/gap probes, eight route starts, upgrades, persistence and garage entry/exit passed |
+| Display units | mph, feet/inches, pounds, pounds-force, PSI and horsepower |
+| Wheel direction | Actual wheel component orientation gives the correct forward/reverse tread direction on all four wheels |
+| Braking input | Space overrides throttle on all five vehicles; held S stops and holds; release/reapply deliberately selects reverse |
+| Incline | Space holds the physical chassis on a twelve-degree contact surface without sustained downhill creep |
+| Hummer suspension | Stock and lifted physical heights pass; measured stage III rise 4.13 in; larger tire/lift combination matches the garage target |
+| Garage camera | Fifteen persistent preset views plus actual camera orbit, zoom and bounds passed; drag/scroll/presets checked live |
+| Model upgrades | Separate fixed-diameter rims/rotors, stationary calipers, loaded stage-specific tires; export verifies seated beads at every stage |
+| Existing behavior | Rollover/airborne suppression, moving/expiring debris, locker comparison, controlled descent, loop/gap probes, all eight route starts, upgrades, persistence, pressure response, rut continuity and scenery support passed |
 
-The pressure and engine comparisons are game regressions, not real-vehicle setup recommendations or manufacturer calibration. The values above are from the fresh native run after the light-bar asset correction. The machine-readable report records every case, source hashes, the executable hash and the cooked-content hashes. Test saves use a separate Validation folder.
+## Measured braking
 
-## Rendered inspection
+The shared input resolver is exercised with W held while Space brakes. After five seconds the chassis is held at the speeds below. Distance is measured from brake application, including the held interval. These are simulator regressions, not real-vehicle braking ratings.
 
-Native engine captures were inspected for mph in the driving HUD, pounds/inches in the vehicle menu, detailed boulders/deadwood, revised vegetation, textured terrain and the loop view. Shrub geometry was refined from oversized shapes to thin curved leaves before the final package. Individual source instance colors are preserved through a vertex-interpolated path on the 13 scenery materials that use them.
+| Vehicle | Entry speed | Held speed | Distance |
+|---|---|---|---|
+| Wrangler Rubicon | 31.3 mph | 0.000 mph | 32.8 ft |
+| Bronco Badlands | 40.5 mph | 0.000 mph | 54.4 ft |
+| Civic Sport | 10.0 mph | 0.000 mph | 3.4 ft |
+| Sprinter 2500 | 26.7 mph | 0.000 mph | 23.8 ft |
+| Hummer EV SUV | 51.0 mph | 0.000 mph | 85.7 ft |
 
-Live desktop inspection completed at 1920x1080 after Windows was unlocked. The vehicle menu displays pounds and inches, and all seven upgrade rows fit. Suspension, tire, body and electrical stage III selections updated the Wrangler preview. Let's Drive, Tab and Escape returned correctly between the garage and driving. The first driving view exposed a light bar projecting ahead of the SUV roof. The generator now uses each model's actual roof position and body-to-CG offset, with visible mounting feet and brackets. After reimport and a full cook, the corrected Wrangler bar was inspected in both the garage and rear driving view and the complete 87-check native suite passed again. Eight roof intersections also verify bracket support across the Wrangler, Bronco, Sprinter and Hummer geometry; those other three corrected models were not separately inspected live. The original player garage was restored byte-for-byte after normal game exit. Live captures are Saved/live-imperial-mounted-vehicle.jpg and Saved/live-imperial-mounted-driving.jpg.
+S is checked separately: it stops a forward-moving vehicle and continues braking instead of becoming reverse throttle. After releasing and holding S again at rest, physical reverse drive is required. Space must then stop the reversing vehicle too. The incline check uses contact forces bounded by tire grip and brake torque; it does not freeze chassis velocity. Hummer height measurements refer to the chassis/body reference above terrain, not underbody ground clearance.
 
-Final build and runtime logs contain no fatal or material-compilation errors. Existing SSGI deprecation, Enhanced Input notices and numeric-conversion compiler warnings remain non-fatal. This is not a frame-time benchmark or a long-session stability claim.
+## Rendered and interactive inspection
+
+The first passing package exposed excessive garage fill light and a toolbar covering part of the front wheel. Both were corrected before the final package. All fifteen final front/side/rear preset captures were inspected. The live JPEGs provide the visual evidence for free orbit and the upgraded Hummer. Paint, glass, lamps, wheel geometry, air struts, body stance and toolbar legibility were reviewed. The queued native-garage-orbit.png samples the closing driving frame, and the first-frame native-hummer-lifted.png clips some Slate text; those two automated images are not used as UI evidence. The corresponding live JPEGs show the settled garage correctly.
+
+Live desktop checks exercised left-drag orbit, scroll zoom, view buttons, vehicle selection and Hummer suspension stages. Arrow orbit and Page Down zoom were checked after clicking a child button; preview-key handling fixes the child-focus interception found during inspection. The original player garage was reselected before normal game exit and verified byte-for-byte afterward: selected Hummer, stock suspension, all other categories III. Automated saves use a separate Validation folder. See the interactive observations and screenshot paths in native-validation.json.
+
+The model/reference decisions and manufacturer links are in [vehicle-model-research.md](vehicle-model-research.md). New geometry is authored from reference. No new manufacturer photograph or commercial mesh is distributed.
+
+## Other simulation observations
+
+At the matched throttle/duration, the stock engine reached 31.2 mph / 131.7 ft and stage III reached 47.1 mph / 242.0 ft. Reducing the sampled pressure from 37 to 16 PSI changed mean patch length from 3.94 to 6.44 in and mean grip from 0.4794 to 0.5561. These are model measurements, not setup advice or manufacturer calibration.
+
+Final build/runtime logs contain no fatal or material-compilation errors. Non-fatal numeric-conversion, SSGI deprecation, input and procedural-mesh tangent notices remain. The machine-readable report records the executable, cooked-content and source hashes.
 
 ## Reproduce
 
@@ -38,12 +55,12 @@ Final build and runtime logs contain no fatal or material-compilation errors. Ex
     .\Tools\build-native.ps1 -ImportAssets -Package
     .\Tools\verify-native.ps1
 
-Run Unreal in a normal Windows process context. Full material/model changes need a cook; code-only changes can reuse a valid cook with -SkipCook. The importer checks per-mesh source hashes, fresh completion and saved map. It waits for the commandlet process directly and rejects failed imports. Upload preparation checks the explicit source allowlist for credential-like values.
+Run Unreal in a normal Windows process context. A restricted process can exit before logging. Full material/model changes need a cook; code-only changes can reuse a valid cook with -SkipCook. Import and export reject missing/empty geometry and require fresh completion. Publication preparation checks the explicit source allowlist for credential-like values.
 
-Final logs: Saved/package-lightbar-mount-console.log, Saved/verify-lightbar-mount-console.log, Saved/core-imperial-console.log and Saved/Validation/packaged-game.log. Captures: Build/Windows/TerraDrive/Saved/Screenshots and the live capture paths above. Generated assets, builds, local saves and private configuration are excluded from publication.
+Final logs: Saved/package-vehicle-refinement-release3-console.log (full asset cook), Saved/package-vehicle-refinement-keyboard-console.log (final keyboard-focus correction), Saved/verify-vehicle-refinement-final-console.log, Saved/core-vehicle-refinement-console.log and Saved/Validation/packaged-game.log. Captures: Build/Windows/TerraDrive/Saved/Screenshots and the live paths in the JSON report. The earlier 140-case pass is retained under Saved/Validation/vehicle-refinement-first-pass.*; use the final fresh report for this release. Generated assets, builds, local saves, research PDF copies and private configuration are excluded from publication.
 
 ## Practical limits
 
-This remains a playable migration preview. Tire/soil coefficients, chassis parameters, recovery hardware and upgrade stages are simulator tuning. Contact uses finite analytical/mesh queries, not a fully deformable tire or flexible frame. Scenery rocks/logs are fixed solid obstacles; vegetation is nonblocking. Vehicle details are procedural additions to the preserved reference bodies.
+This remains a playable migration preview. Tire/soil coefficients, chassis parameters, spring rates, recovery hardware and upgrades are simulator tuning. Tire contact uses finite analytical/mesh queries; flexible tire carcasses and frames are approximations. Solid rocks/logs are fixed; vegetation is nonblocking. Bodies, small badges, fonts, interiors and trim-specific stampings remain procedural approximations.
 
-Full browser parity, every complete rocky route, uninterrupted full-loop traversal, factory driveline/calibration fidelity, detailed track animation, all sign lettering, gamepad hardware and long-session stability/performance remain unproven. The tests verify collision, starts and selected driving segments. Historical browser results are reference evidence; no fresh full browser-suite pass is claimed.
+Full browser parity, every complete rocky route, uninterrupted full-loop traversal, factory driveline/calibration fidelity, detailed track animation, complete sign lettering, gamepad hardware and long-session performance/stability remain unproven. The tests verify starts and selected driving segments. Historical browser results are reference evidence; no fresh full browser-suite pass is claimed.

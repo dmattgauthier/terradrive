@@ -32,11 +32,32 @@ const zoneSamples=data.zones.map(zone=>{
  assert.ok(Math.abs(b.readFloatLE(offset)-reference.height)<1e-4,zone.name+' height');
  return {name:zone.name,unrealXM:ux,unrealYM:uy,surface:reference.surface,heightM:reference.height};
 });
-for(const a of data.assets){const obj=fs.readFileSync(path.join(root,'SourceAssets',a.name+'.obj'));assert.ok(obj.length>50);assert.equal(crypto.createHash('sha256').update(obj).digest('hex'),a.sha256);for(const slot of a.slots)assert.ok(data.materials.some(m=>m.id===slot));}
+for(const a of data.assets){const obj=fs.readFileSync(path.join(root,'SourceAssets',a.name+'.obj'));assert.ok(obj.length>50);assert.ok(/^f /m.test(obj.toString()),a.name+' contains renderable triangles');assert.ok(!/\b(?:NaN|Infinity)\b/.test(obj.toString()),a.name+' has finite geometry');assert.ok(a.slots.length>0,a.name+' has material slots');assert.equal(crypto.createHash('sha256').update(obj).digest('hex'),a.sha256);for(const slot of a.slots)assert.ok(data.materials.some(m=>m.id===slot));}
 for(const group of data.placements)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 for(const t of data.trees)for(const p of t.parts){assert.ok(data.placements[p.group].instances.some(i=>i.index===p.index));}
 assert.equal(data.displayUnits,'imperial');
 for(const v of data.vehicles)for(const part of ['armor','equipment'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
+for(const v of data.vehicles){
+ assert.equal(v.nativeModel.version,2);assert.equal(v.nativeModel.splitTireAndRim,true);
+ for(const part of ['tire','rim'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
+ const rimRadius=Number(v.tireSize.match(/R(\d+)/)[1])*.0254*.5*100;
+ const vertices=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_rim.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
+ const maximum=vertices.reduce((maximum,p)=>Math.max(maximum,Math.hypot(p[0],p[2])),0);
+ assert.ok(maximum>rimRadius*.97&&maximum<rimRadius*1.06,v.name+' rim matches its factory diameter');
+ assert.equal(v.nativeModel.upgradeTireBeads,true);
+ const stockTire=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
+ const stockMin=stockTire.reduce((n,p)=>Math.min(n,Math.hypot(p[0],p[2])),Infinity),stockMax=stockTire.reduce((n,p)=>Math.max(n,Math.hypot(p[0],p[2])),0);
+ for(let stage=1;stage<=3;stage++){
+  const scale=1+.04*stage,upgraded=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire_'+stage+'.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
+  const minimum=upgraded.reduce((n,p)=>Math.min(n,Math.hypot(p[0],p[2])*scale),Infinity),maximum=upgraded.reduce((n,p)=>Math.max(n,Math.hypot(p[0],p[2])*scale),0);
+  assert.ok(Math.abs(minimum-stockMin)<.05,v.name+' upgraded bead stays seated at stage '+stage);
+  assert.ok(Math.abs(maximum/stockMax-scale)<.005,v.name+' tread reaches physical size at stage '+stage);
+ }
+}
+assert.ok(data.assets.some(a=>a.name==='detail_brake_caliper'));
+assert.ok(data.materials.filter(m=>m.role==='paint'&&m.clearcoat>0).length>=5);
+assert.ok(data.materials.filter(m=>m.role==='glass'&&m.opacity<.95).length>=10);
+assert.ok(data.materials.some(m=>m.emissive?.some(v=>v>0)));
 for(const group of [...data.placements,...data.nativeDetails])for(const i of group.instances){assert.equal(i.color.length,3);assert.ok(i.color.every(c=>Number.isFinite(c)&&c>=0));}
 const details=data.nativeDetails.reduce((n,g)=>n+g.instances.length,0),solid=data.nativeDetails.filter(g=>g.solid).reduce((n,g)=>n+g.instances.length,0);
 const tinted=new Set();for(const group of [...data.placements,...data.nativeDetails])

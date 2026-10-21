@@ -39,6 +39,43 @@ const TCHAR* Notes[]={TEXT("Solid axles, low range and front/rear lockers.\nA de
  TEXT("Long wheelbase and rear-wheel drive.\nManage clearance and choose wide approaches."),
  TEXT("Electric all-wheel drive and rear steering.\nImmediate torque meets substantial weight.")};
 }
+class STerraVehiclePreview : public SCompoundWidget {
+public:
+  SLATE_BEGIN_ARGS(STerraVehiclePreview){} SLATE_ARGUMENT(ATerraVehicle*,Vehicle) SLATE_END_ARGS()
+  void Construct(const FArguments &Args){
+    Vehicle=Args._Vehicle;
+    auto Views=SNew(SHorizontalBox);
+    const TCHAR* Names[]={TEXT("RESET"),TEXT("FRONT"),TEXT("SIDE"),TEXT("REAR")};
+    for(int I=0;I<4;++I)Views->AddSlot().FillWidth(1).Padding(2)
+      [SNew(SButton).ButtonStyle(&ButtonStyle()).ButtonColorAndOpacity(FLinearColor(.14,.22,.20)).ContentPadding(FMargin(5,8)).HAlign(HAlign_Center)
+        .OnClicked_Lambda([this,I]{if(Vehicle.IsValid())Vehicle->SetGarageView(I);return FReply::Handled();})[Label(Names[I],9,Mint,true)]];
+    ChildSlot[SNew(SOverlay)
+      +SOverlay::Slot()[SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("NoBrush"))[SNew(SSpacer)]]
+      +SOverlay::Slot().VAlign(VAlign_Bottom)
+      [SNew(SBorder).BorderImage(&Panel).Padding(10)
+        [SNew(SVerticalBox)
+          +SVerticalBox::Slot().AutoHeight()[Label(TEXT("DRAG TO ORBIT  /  SCROLL TO ZOOM"),10,Mint,true)]
+          +SVerticalBox::Slot().AutoHeight().Padding(0,6,0,0)[Views]]]];
+  }
+  virtual FReply OnMouseButtonDown(const FGeometry&,const FPointerEvent &E) override{
+    if(E.GetEffectingButton()==EKeys::LeftMouseButton||E.GetEffectingButton()==EKeys::RightMouseButton)
+      return FReply::Handled().CaptureMouse(AsShared());
+    return FReply::Unhandled();
+  }
+  virtual FReply OnMouseButtonUp(const FGeometry&,const FPointerEvent&) override{
+    return HasMouseCapture()?FReply::Handled().ReleaseMouseCapture():FReply::Unhandled();
+  }
+  virtual FReply OnMouseMove(const FGeometry&,const FPointerEvent &E) override{
+    if(!HasMouseCapture())return FReply::Unhandled();
+    if(Vehicle.IsValid())Vehicle->OrbitGarageCamera(-E.GetCursorDelta().X*.30f,-E.GetCursorDelta().Y*.24f);
+    return FReply::Handled();
+  }
+  virtual FReply OnMouseWheel(const FGeometry&,const FPointerEvent &E) override{
+    if(Vehicle.IsValid())Vehicle->ZoomGarageCamera(E.GetWheelDelta());return FReply::Handled();
+  }
+private:
+  TWeakObjectPtr<ATerraVehicle> Vehicle;
+};
 void STerraGarage::Construct(const FArguments &Args) {
   Vehicle=Args._Vehicle;
   ChildSlot[
@@ -78,10 +115,20 @@ void STerraGarage::Construct(const FArguments &Args) {
               [Label(TEXT("LET'S DRIVE   >"),14,FLinearColor(.025,.06,.04),true)]]]]
       ]]];
 }
+FReply STerraGarage::OnPreviewKeyDown(const FGeometry& Geometry,const FKeyEvent &Event){
+  // Camera keys must work after a child button acquires keyboard focus.
+  return OnKeyDown(Geometry,Event);
+}
 FReply STerraGarage::OnKeyDown(const FGeometry&,const FKeyEvent &Event) {
   if(Event.GetKey()==EKeys::Tab||Event.GetKey()==EKeys::Escape){
     if(Vehicle.IsValid())Vehicle->SetGarage(false);
     return FReply::Handled();
+  }
+  if(Vehicle.IsValid()){
+    const auto K=Event.GetKey();
+    if(K==EKeys::Left||K==EKeys::Right){Vehicle->OrbitGarageCamera(K==EKeys::Left?15:-15,0);return FReply::Handled();}
+    if(K==EKeys::Up||K==EKeys::Down){Vehicle->OrbitGarageCamera(0,K==EKeys::Up?-8:8);return FReply::Handled();}
+    if(K==EKeys::PageUp||K==EKeys::PageDown){Vehicle->ZoomGarageCamera(K==EKeys::PageUp?1:-1);return FReply::Handled();}
   }
   return FReply::Unhandled();
 }
@@ -108,9 +155,8 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
   }
   return SNew(SHorizontalBox)
     +SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(322)[List]]
-    +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Bottom).Padding(20)
-      [SNew(SBorder).BorderImage(&Panel).Padding(14)
-        [Label(TEXT("Live vehicle preview"),11,Mint)]]
+    +SHorizontalBox::Slot().FillWidth(1).Padding(20,0)
+      [SNew(STerraVehiclePreview).Vehicle(Vehicle.Get())]
     +SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(285)
       [SNew(SBorder).BorderImage(&Panel).Padding(24)
         [SNew(SVerticalBox)

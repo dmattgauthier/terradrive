@@ -3,6 +3,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/HUD.h"
 #include "TerraGameMode.generated.h"
+class UBoxComponent;
 UCLASS()
 class TERRADRIVE_API ATerraHUD : public AHUD {
   GENERATED_BODY()
@@ -25,6 +26,10 @@ private:
   float StockUpgradeSpeed = 0, StockUpgradeDistance = 0;
   float StockFootprint = 0, StockTerrainGrip = 0;
   bool InvertedContactSeen = false;
+  int BrakeVehicle=0,ModelVehicle=0,ModelView=0;
+  float BrakeEntrySpeed=0,StockRideHeight=0;
+  UPROPERTY() TObjectPtr<UBoxComponent> BrakeRamp;
+  FVector GarageCameraBefore;
   TArray<FString> Results;
   bool Captured = false;
   void FinishValidation();
