@@ -4,9 +4,15 @@ Executed by import-assets.py with its editor helpers in scope.
 """
 with open(os.path.join(root, 'Tools', 'terrain-surface.hlsl'), encoding='utf8') as stream:
     terrain_code = stream.read()
+trail_points=data.get('quarryTrail',{}).get('samples',[])[::6]
+if trail_points:
+    literal=','.join('float2(%.5f,%.5f)'%(p['x'],p['y']) for p in trail_points)
+    terrain_code=terrain_code.replace('/*QUARRY_TRAIL*/','float2 trail[%d]={%s}; float trailDistance=1e9; for(int ti=1;ti<%d;++ti){float2 a=trail[ti-1],d=trail[ti]-a; float t=saturate(dot(p.xy-a,d)/dot(d,d));trailDistance=min(trailDistance,length(p.xy-a-d*t));} float path=1-smoothstep(2.25,3.8,trailDistance);b*=1-path;c=lerp(c,.15,path);'%(len(trail_points),literal,len(trail_points)))
+else:
+    terrain_code=terrain_code.replace('/*QUARRY_TRAIL*/','')
 
 def terrain_map(stem, kind):
-    filename = stem + '_' + kind + '_1k.jpg'
+    filename = ('native/'+stem+'/'+stem+'_'+kind+'_2k.jpg') if stem in ['dry_ground_rocks','rocks_ground_05'] else stem+'_'+kind+'_1k.jpg'
     texture = load_texture(filename)
     if kind != 'diff':
         texture.set_editor_property('srgb', False)
@@ -78,11 +84,11 @@ def terrain_material(name, stems, biome, wetness):
     return m
 
 terrain_specs = [
-    ('dirt',('forest_ground_04','sparse_grass','gravel_floor_02'),.32),
+    ('dirt',('dry_ground_rocks','sparse_grass','rocks_ground_05'),.32),
     ('asphalt',('asphalt_02','gravel_ground_01','brown_mud_02'),.15),
     ('mud',('brown_mud_02','dry_riverbed_rock','forest_ground_04'),.8),
     ('wetland',('brown_mud_02','leafy_grass','forest_ground_04'),.95),
-    ('rock',('dry_riverbed_rock','mossy_rock','gravel_ground_01'),.12),
+    ('rock',('rocks_ground_05','mossy_rock','dry_ground_rocks'),.12),
     ('sand',('sand_03','gravel_floor_02','dry_riverbed_rock'),.08),
     ('snow',('sand_03','mossy_rock','dry_riverbed_rock'),0)]
 for biome, (surface, stems, wetness) in enumerate(terrain_specs):

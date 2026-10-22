@@ -6,7 +6,7 @@ import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {inQuarry} from './offroad-courses.mjs';
 export function scannedEnvironment(root,terrain,routes){
  const assets=[],placements=[];
- for(const id of ['rock_moss_set_02','shrub_sorrel_01']){
+ for(const id of ['rock_moss_set_02','shrub_sorrel_01','mountainside','boulder_01','grass_medium_01']){
   const folder=path.join(root,'Vendor/Environment',id),d=JSON.parse(fs.readFileSync(path.join(folder,id+'_1k.gltf')));
   const buffers=d.buffers.map(b=>fs.readFileSync(path.join(folder,b.uri)));
   const ct={5126:Float32Array,5125:Uint32Array,5123:Uint16Array,5121:Uint8Array};
@@ -15,7 +15,7 @@ export function scannedEnvironment(root,terrain,routes){
   const materials=d.materials.map(s=>{const p=s.pbrMetallicRoughness||{},m=new T.MeshStandardMaterial({color:new T.Color(...(p.baseColorFactor||[1,1,1]).slice(0,3)),roughness:p.roughnessFactor??1,metalness:p.metallicFactor??0,map:texture(p.baseColorTexture?.index),alphaTest:s.alphaMode==='MASK'?s.alphaCutoff||.5:0,side:T.DoubleSide});m.normalMap=texture(s.normalTexture?.index);m.roughnessMap=texture(p.metallicRoughnessTexture?.index);m.userData.nativeRole='scan';return m;});
   const nodes=d.nodes.map(n=>{const g=new T.Group();g.name=n.name||'';if(n.matrix)g.applyMatrix4(new T.Matrix4().fromArray(n.matrix));else{if(n.translation)g.position.fromArray(n.translation);if(n.rotation)g.quaternion.fromArray(n.rotation);if(n.scale)g.scale.fromArray(n.scale);}if(n.mesh!==undefined)for(const p of d.meshes[n.mesh].primitives){const geo=new T.BufferGeometry();for(const [key,attr]of Object.entries(p.attributes)){const name={POSITION:'position',NORMAL:'normal',TEXCOORD_0:'uv'}[key];if(name){const a=accessor(attr);geo.setAttribute(name,new T.BufferAttribute(a.array,a.arity));}}if(p.indices!==undefined)geo.setIndex(new T.BufferAttribute(accessor(p.indices).array,1));if(!geo.attributes.normal)geo.computeVertexNormals();g.add(new T.Mesh(geo,materials[p.material]));}return g;});
   d.nodes.forEach((n,i)=>n.children?.forEach(j=>nodes[i].add(nodes[j])));
-  for(const i of d.scenes[d.scene||0].nodes){const group=nodes[i],name='scan_'+id+'_'+i;group.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(group);group.position.y-=bounds.min.y;group.position.x-=(bounds.min.x+bounds.max.x)*.5;group.position.z-=(bounds.min.z+bounds.max.z)*.5;assets.push({name,group});placements.push({asset:name,solid:id.startsWith('rock'),surface:4,instances:[]});}
+  for(const i of d.scenes[d.scene||0].nodes){const group=nodes[i],name='scan_'+id+'_'+i;group.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(group);group.position.y-=bounds.min.y;group.position.x-=(bounds.min.x+bounds.max.x)*.5;group.position.z-=(bounds.min.z+bounds.max.z)*.5;assets.push({name,group});placements.push({asset:name,solid:id.startsWith('rock')||id==='mountainside'||id==='boulder_01',surface:4,instances:[]});}
  }
  const hash=(i,s)=>{const v=Math.sin(i*127.1+s*311.7)*43758.5453;return v-Math.floor(v);};
  for(let i=0;i<3600;i++){
@@ -27,7 +27,7 @@ export function scannedEnvironment(root,terrain,routes){
   if(routes.some(r=>{const ps=[r.spawn,...r.gates].map(p=>[p[0]/100,p[1]/100]);return ps.some((p,i)=>i&&nearSegment([z,-x],ps[i-1],p)<16);} ))continue;
   const forest=hash(Math.floor(x/18)+Math.floor(z/18)*79,11),rock=s.surface==='rock'||hash(i,3)>.86;
   if(!rock&&forest<.45)continue;
-  const options=placements.filter(p=>p.solid===rock),p=options[Math.floor(hash(i,4)*options.length)];
+  const options=placements.filter(p=>rock?p.asset.startsWith('scan_rock_moss_set_02'):p.asset.startsWith('scan_shrub_sorrel_01')),p=options[Math.floor(hash(i,4)*options.length)];
   const count=rock?1:8;
   for(let j=0;j<count;j++){
    const scale=rock?.45+hash(i,5)*1.8:3+hash(i+j*19,5)*4,a=hash(i+j*7,6)*Math.PI*2;

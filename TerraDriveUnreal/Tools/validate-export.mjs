@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {Terrain} from '../../TerraDrive-v1.13/dist/src/terrain.js';
+import {Terrain} from './native-terrain.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const b=fs.readFileSync(path.join(root,'Content/NativeData/terrain.bin'));
 const data=JSON.parse(fs.readFileSync(path.join(root,'SourceAssets/import.json')));
@@ -13,7 +13,7 @@ assert.equal(data.loopFrames.length,25);
 for(const f of data.loopFrames){assert.ok(Math.abs(Math.hypot(f.p[0]-5800,f.p[2]-2472)-2000)<1e-6);assert.ok(Math.abs(Math.hypot(...f.n)-1)<1e-6);}
 assert.ok(Math.abs(data.loopFrames[6].p[0]-7800)<1e-6);
 assert.ok(Math.abs(data.loopFrames[18].p[0]-3800)<1e-6);
-assert.equal(data.vehicles[5].nativeModel.bodyShape.version,2);
+assert.equal(data.vehicles[5].nativeModel.bodyShape.version,3);
 assert.equal(data.vehicles[5].nativeModel.bodyShape.landmarks.wheelbase,3.006);
 for(const v of data.vehicles.slice(0,5)){assert.ok(v.nativeModel.bodyShape.vertices>10000);assert.ok(v.nativeModel.bodyShape.maximumSurfaceChangeM>.01&&v.nativeModel.bodyShape.maximumSurfaceChangeM<.12);}
 assert.equal(data.fabScenery.groups.length,8);
@@ -29,7 +29,22 @@ for(let i=0;i<1000;i++){
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
 assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,6);assert.equal(data.zones.length,9);
-assert.equal(data.routes.length,8);assert.equal(data.constructed.length,2);
+assert.equal(data.routes.length,9);assert.equal(data.constructed.length,2);
+assert.ok(data.quarryTrail.lengthM>280&&data.quarryTrail.lengthM<420);
+assert.equal(data.quarryTrail.routeIndex,8);assert.equal(data.routes[8].gates.length,20);
+assert.ok(data.quarryTrail.assetCounts.cliffs>=20&&data.quarryTrail.assetCounts.boulders>=400&&data.quarryTrail.assetCounts.grass>2000);
+const trailReference=new Terrain();
+for(const p of data.quarryTrail.samples){assert.ok([p.x,p.y,p.z,p.tx,p.ty,p.d].every(Number.isFinite));assert.ok(Math.abs(p.z-trailReference.heightAt(-p.y,p.x))<1e-5);}
+// Cover the narrow graded corridor explicitly: the broad random sample can
+// miss it, and physics reads terrain.bin rather than route metadata.
+assert.equal(data.terrainGrade,'slate-rim-heightfield-1');
+let gradedSamples=0;
+for(const p of data.quarryTrail.samples)for(const side of [-2,0,2]){
+ const row=Math.round((p.x-p.ty*side+400)*2),col=Math.round((p.y+p.tx*side+400)*2);
+ const ux=-400+row*.5,uy=-400+col*.5,offset=16+(row*1601+col)*9;
+ assert.ok(Math.abs(b.readFloatLE(offset)-terrain.heightAt(-uy,ux))<1e-4,'staged quarry grade');
+ gradedSamples++;
+}
 assert.equal(data.routes[0].gateDirections[2],-1);assert.ok(data.routes[0].gates[2][2]>4400);
 for(const route of data.routes){assert.ok(route.spawn.every(Number.isFinite));assert.ok(route.gates.length>=3);assert.ok(route.gates.every(g=>g.every(Number.isFinite)));}
 for(const id of ['loop','tabletop','gap-launch','gap-landing'])assert.ok(data.challengeFeatures.some(f=>f.id===id&&f.triangles>0),id);
@@ -77,4 +92,5 @@ for(const m of data.materials)assert.equal(m.instanceTint,tinted.has(m.id));
 assert.ok(details>500&&solid>20);
 for(const group of data.nativeDetails)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(i.s.every(s=>s>0));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};
+report.gradedTrailSamples=gradedSamples;report.terrainGrade=data.terrainGrade;
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});fs.writeFileSync(path.join(root,'docs/export-validation.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

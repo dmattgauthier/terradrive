@@ -34,12 +34,15 @@ if(Biome==0||Biome==3) b=saturate((b+.13)*saturate((n.z-.35)*1.8));
 if(Biome==4) { b*=saturate(n.z*.85+.15);c=max(c,saturate(1-n.z)*.5); }
 if(Biome==1) { b*=.22;c*=.16; }
 if(Biome==5) { b*=.48;c*=.26; }
-float3 aColor=f.tri(Primary,PrimarySampler,p/2.1,w,0);
+if(Biome==0){ /*QUARRY_TRAIL*/ }
+float aScale=Biome==0?4:Biome==4?3:2.1;
+float cScale=Biome==0?3:Biome==4?4:1.55;
+float3 aColor=f.tri(Primary,PrimarySampler,p/aScale,w,0);
 float3 bColor=f.tri(Secondary,SecondarySampler,p/2.7,w,4);
-float3 cColor=f.tri(Accent,AccentSampler,p/1.55,w,11);
+float3 cColor=f.tri(Accent,AccentSampler,p/cScale,w,11);
 // These photographs have different albedo ranges. The pale gravel source
 // needs soil staining or its large patches read as snow after tonemapping.
-if(Biome==0) cColor*=float3(.30,.27,.22);
+if(Biome==0) cColor*=float3(.88,.85,.79);
 if(Biome==5) bColor*=float3(.38,.34,.27);
 float3 color=lerp(lerp(aColor,bColor,b),cColor,c);
 float broad=lerp(.73,1.15,smoothstep(.15,.85,macro));
@@ -60,15 +63,15 @@ if(Biome==0){
 }
 if(Biome==2||Biome==3)color*=1-packed*.24;
 if(Biome==5)color=lerp(color,color*1.09,packed);
-float2 uv=p.xy/2.1;
-if(w.x>w.z&&w.x>w.y)uv=p.yz/2.1;
-else if(w.y>w.z)uv=p.xz/2.1;
+float2 uv=p.xy/aScale;
+if(w.x>w.z&&w.x>w.y)uv=p.yz/aScale;
+else if(w.y>w.z)uv=p.xz/aScale;
 float rough=Texture2DSample(RoughMap,RoughMapSampler,uv).r;
 // Soil stays rough. Very low values turn photographic patches into broad
 // white sky/sun reflections, visually resembling snow on ordinary ground.
 Roughness=clamp(lerp(.78+rough*.20,.52,wet),.52,.99);
 float3 detail=Texture2DSample(NormalMap,NormalMapSampler,uv).xyz*2-1;
-detail=normalize(lerp(lerp(detail,Texture2DSample(SecondaryNormal,SecondaryNormalSampler,uv*.778).xyz*2-1,b),Texture2DSample(AccentNormal,AccentNormalSampler,uv*1.355).xyz*2-1,c));
+detail=normalize(lerp(lerp(detail,Texture2DSample(SecondaryNormal,SecondaryNormalSampler,uv*aScale/2.7).xyz*2-1,b),Texture2DSample(AccentNormal,AccentNormalSampler,uv*aScale/cScale).xyz*2-1,c));
 detail.y=-detail.y; // The supplied photographic maps use OpenGL green.
 detail.xy*=.38;
 // Packed material loses fluffy microrelief. Large groove/berm normals are

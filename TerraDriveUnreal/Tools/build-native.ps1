@@ -7,7 +7,7 @@ $env:UBA_ROOT=Join-Path $projectRoot 'Saved\UBA'
 $env:uebp_LogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
 $env:uebp_FinalLogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
 if (!$SkipBuild) {
-    & "$engineRoot\Engine\Build\BatchFiles\Build.bat" TerraDriveEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE -NoUBA
+    & "$engineRoot\Engine\Build\BatchFiles\Build.bat" TerraDriveEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE -NoUBA -MaxParallelActions=2
     if ($LASTEXITCODE) { throw 'Editor compilation failed' }
 }
 if ($ImportAssets) {
@@ -43,7 +43,7 @@ if ($Package) {
         $cookArgument='-skipcook'
     }
     $packageStarted=Get-Date
-    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive "-archivedirectory=$projectRoot\Build" -unattended -utf8output '-UbtArgs=-NoUBA'
+    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive "-archivedirectory=$projectRoot\Build" -unattended -utf8output '-UbtArgs=-NoUBA -MaxParallelActions=2'
     if ($LASTEXITCODE) { throw 'Packaging failed' }
     if (!$SkipCook) {
         $cookLogs=@(Get-ChildItem -LiteralPath $env:uebp_LogFolder -Filter 'Cook-*.txt' | Where-Object { $_.LastWriteTime -ge $packageStarted })

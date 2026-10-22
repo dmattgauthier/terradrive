@@ -1,4 +1,4 @@
-param([string]$Executable='', [int]$TimeoutSeconds=600)
+param([string]$Executable='', [int]$TimeoutSeconds=900)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 if (!$Executable) { $Executable=Join-Path $projectRoot 'Build\Windows\TerraDrive\Binaries\Win64\TerraDrive.exe' }
@@ -11,19 +11,30 @@ $started=Get-Date
 $arguments=@('-unattended','-windowed','-RenderOffscreen','-ResX=1280','-ResY=720',
     '-NoSound','-TerraValidate','-TerraCapture',('-TerraReport="'+$report+'"'),
     ('-abslog="'+$log+'"'))
-$game=Start-Process -FilePath $Executable -ArgumentList $arguments -WindowStyle Hidden -PassThru
+$startInfo=[System.Diagnostics.ProcessStartInfo]::new()
+$startInfo.FileName=$Executable
+$startInfo.Arguments=$arguments -join ' '
+$startInfo.UseShellExecute=$false
+$startInfo.CreateNoWindow=$true
+$startInfo.WindowStyle=[System.Diagnostics.ProcessWindowStyle]::Hidden
+$game=[System.Diagnostics.Process]::new()
+$game.StartInfo=$startInfo
+if(!$game.Start()){throw 'Native game could not start'}
 if (!$game.WaitForExit($TimeoutSeconds*1000)) {
     $game.Kill()
     throw "Native validation timed out. Inspect $log"
 }
-$game.Refresh()
+$gameExit=$game.ExitCode
+if($null -eq $gameExit){throw 'Native process exit code is unavailable'}
 if (!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWriteTime -lt $started) {
-    throw "Game did not write a fresh validation report (exit $($game.ExitCode)). Inspect $log"
+    throw "Game did not write a fresh validation report (exit $gameExit). Inspect $log"
 }
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+$renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
+if($renderErrors.Count){throw "Native mesh/render diagnostics failed. Inspect $log"}
 $failed=@($result.tests | Where-Object { !$_.pass })
-if ($game.ExitCode -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt 243) {
+if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt 256) {
     $failed | Format-Table | Out-String | Write-Output
-    throw "Native checks failed (exit $($game.ExitCode)). Inspect $report and $log"
+    throw "Native checks failed (exit $gameExit). Inspect $report and $log"
 }
 Write-Output "PASS $(@($result.tests).Count) packaged native checks. Report: $report"

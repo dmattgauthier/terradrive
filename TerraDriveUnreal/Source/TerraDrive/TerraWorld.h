@@ -102,6 +102,7 @@ public:
 private:
   TArray<float> Heights, Water;
   TArray<uint8> Surfaces;
+  TArray<FVector2D> QuarryTrailPolyline;
   int32 N = 0;
   float Step = .5f, Origin = -400, VisualTimer = 0;
   TMap<FIntPoint, FTerraTile> Detail;

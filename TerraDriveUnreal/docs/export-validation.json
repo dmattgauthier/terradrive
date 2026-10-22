@@ -68,15 +68,17 @@
       "heightM": 12.272045612335205
     }
   ],
-  "meshSources": 217,
+  "meshSources": 238,
   "constructedGroups": 2,
-  "challengeRoutes": 8,
+  "challengeRoutes": 9,
   "quarryDeckHeightM": 26.172911834716796,
-  "trees": 412,
-  "placements": 10975,
-  "detailInstances": 13161,
-  "solidDetailInstances": 1073,
-  "tintedMaterials": 13,
+  "trees": 409,
+  "placements": 10948,
+  "detailInstances": 16133,
+  "solidDetailInstances": 1511,
+  "tintedMaterials": 15,
   "preservedInstanceColors": true,
-  "pass": true
+  "pass": true,
+  "gradedTrailSamples": 363,
+  "terrainGrade": "slate-rim-heightfield-1"
 }

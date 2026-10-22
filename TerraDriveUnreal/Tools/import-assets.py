@@ -42,7 +42,7 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         5 if instance_tint else 4, color, roughness, metallic, opacity, sky,
         texture.get_path_name() if texture else None,
         alpha.get_path_name() if alpha else None, clip,
-        clearcoat, coat_roughness, emissive, role, 7, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
+        clearcoat, coat_roughness, emissive, role, 9 if role=='carbon' else 8, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
     ]).encode()).hexdigest()
     if lib.does_asset_exist(dest):
         m = lib.load_asset(dest)
@@ -95,6 +95,15 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         edit.connect_material_expressions(output,'',tint,'A')
         edit.connect_material_expressions(interpolated,'',tint,'B')
         output=tint
+    if role == 'carbon':
+        position=edit.create_material_expression(m,unreal.MaterialExpressionPreSkinnedPosition,-780,80)
+        weave=edit.create_material_expression(m,unreal.MaterialExpressionCustom,-450,40)
+        weave.set_editor_property('code','float2 q=float2(Local.x+Local.z*.31,Local.y+Local.z*.87)*5.5;float2 cell=floor(q);float parity=fmod(cell.x+cell.y,2);float strand=sin((parity<1?q.x:q.y)*6.283185);float sheen=.58+.30*strand*strand;return float3(.028,.033,.037)*sheen;')
+        weave.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
+        item=unreal.CustomInput();item.set_editor_property('input_name','Local');weave.set_editor_property('inputs',[item])
+        interpolator=edit.create_material_expression(m,unreal.MaterialExpressionVertexInterpolator,-600,100)
+        if not edit.connect_material_expressions(position,'',interpolator,'VS') or not edit.connect_material_expressions(interpolator,'',weave,'Local'):raise RuntimeError('Carbon local-space interpolation failed')
+        output=weave
     connect(output, unreal.MaterialProperty.MP_EMISSIVE_COLOR if sky else unreal.MaterialProperty.MP_BASE_COLOR, 'EmissiveColor' if sky else 'BaseColor')
     for prop, value, pin in [(unreal.MaterialProperty.MP_ROUGHNESS, roughness, 'Roughness'), (unreal.MaterialProperty.MP_METALLIC, metallic, 'Metallic')]:
         node = edit.create_material_expression(m, unreal.MaterialExpressionConstant, -180, 280)
@@ -218,6 +227,16 @@ for i, asset in enumerate(data['assets']):
         if mesh.get_material(index) != materials[mid]:
             mesh.set_material(index, materials[mid])
     body = mesh.get_editor_property('body_setup')
+    if asset['name'] in ['scan_mountainside_0','scan_boulder_01_0'] and lib.get_metadata_tag(mesh,'TerraNaniteRevision')!='1':
+        # The editor subsystem is not instantiated in Python commandlets.
+        # Editor property writes run the mesh's property-change/build path.
+        nanite=mesh.get_editor_property('nanite_settings')
+        nanite.set_editor_property('enabled',True)
+        nanite.set_editor_property('fallback_relative_error',0.)
+        nanite.set_editor_property('fallback_percent_triangles',1.)
+        mesh.set_editor_property('nanite_settings',nanite)
+        if body:body.set_editor_property('double_sided_geometry',True)
+        lib.set_metadata_tag(mesh,'TerraNaniteRevision','1')
     if body and body.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE:
         body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
     lib.set_metadata_tag(mesh, 'TerraMeshSchema', str(data['meshSchema']))

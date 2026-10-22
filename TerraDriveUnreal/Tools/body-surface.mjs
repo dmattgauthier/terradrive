@@ -10,10 +10,10 @@ export function box(g,m,p,s,r=0){
  sh.moveTo(-x,-y);sh.lineTo(x,-y);sh.lineTo(x,y);sh.lineTo(-x,y);sh.closePath();
  const geo=new T.ExtrudeGeometry(sh,{depth:s[2]-r*2,steps:1,bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelSegments:4});geo.translate(0,0,-s[2]/2+r);return mesh(g,geo,m,p);
 }
-export function surface(g,m,nu,nv,sample,flip=false){
+export function surface(g,m,nu,nv,sample,flip=false,cutout=null){
  const p=[],uv=[],ix=[];
  for(let j=0;j<=nv;j++)for(let i=0;i<=nu;i++){p.push(...sample(i/nu,j/nv));uv.push(i/nu,j/nv);}
- for(let j=0;j<nv;j++)for(let i=0;i<nu;i++){const a=j*(nu+1)+i,b=a+1,c=a+nu+1,d=c+1;ix.push(...(flip?[a,c,b,b,c,d]:[a,b,c,b,d,c]));}
+ for(let j=0;j<nv;j++)for(let i=0;i<nu;i++){if(cutout?.((i+.5)/nu,(j+.5)/nv))continue;const a=j*(nu+1)+i,b=a+1,c=a+nu+1,d=c+1;ix.push(...(flip?[a,c,b,b,c,d]:[a,b,c,b,d,c]));}
  const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(p,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(ix);geo.computeVertexNormals();return mesh(g,geo,m);
 }
 // Concave sheet boundaries and real openings require contour triangulation.

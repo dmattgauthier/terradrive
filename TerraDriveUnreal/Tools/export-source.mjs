@@ -5,13 +5,14 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
-import {Terrain} from '../../TerraDrive-v1.13/dist/src/terrain.js';
+import {Terrain} from './native-terrain.mjs';
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {VEHICLES} from './native-vehicles.mjs';
 import {urusView} from './urus-body.mjs';
 import {bodyRefinement} from './body-refinement.mjs';
 import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
+import {quarryTrail} from './quarry-trail.mjs';
 import {OffroadWorld} from '../../TerraDrive-v1.13/dist/src/world.js';
 import {createTrackModule} from '../../TerraDrive-v1.13/dist/src/track-view.js';
 import {SURFACE_RESPONSE_PROFILES} from '../../TerraDrive-v1.13/dist/src/surface-response.js';
@@ -81,6 +82,14 @@ function exportTireStages(prefix,spec){
 const terrain=new Terrain(),surfaces=['dirt','asphalt','mud','wetland','rock','sand','snow'];
 const n=1601,step=.5,bytes=Buffer.alloc(16+n*n*9);bytes.writeUInt32LE(0x54445256,0);bytes.writeUInt32LE(n,4);bytes.writeFloatLE(step,8);bytes.writeFloatLE(-400,12);
 if(!fs.existsSync(path.join(data,'terrain.bin'))){let offset=16;for(let row=0;row<n;row++){for(let col=0;col<n;col++){const z=-400+row*step,x=400-col*step,s=terrain.sample(x,z);bytes.writeFloatLE(s.height,offset);bytes.writeFloatLE(s.waterDepth,offset+4);bytes[offset+8]=surfaces.indexOf(s.surface);offset+=9;}if(row%400===0)console.log('Terrain row',row,'/',n);}fs.writeFileSync(path.join(data,'terrain.bin'),bytes);}
+// Rewrite only the native trail's height band, including its feathered edges.
+// Existing surfaces/water and all samples outside this band remain unchanged.
+const field=fs.readFileSync(path.join(data,'terrain.bin'));
+for(let row=940;row<=1400;row++)for(let col=50;col<=520;col++){
+ const ux=-400+row*.5,uy=-400+col*.5;
+ field.writeFloatLE(terrain.heightAt(-uy,ux),16+(row*n+col)*9);
+}
+fs.writeFileSync(path.join(data,'terrain.bin'),field);
 const vehicles=[];for(const spec of VEHICLES){const view=spec.bodyStyle==='urus'?urusView(spec):new VehicleView(new THREE.Scene(),spec);bodyRefinement(view,spec);const parts=refineVehicle(view,spec);const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix,lamps:assets.find(a=>a.name===prefix+'_body').slots.filter(id=>['brake','reverse'].includes(mats.find(m=>m.id===id).role)).map(id=>({material:id,role:mats.find(m=>m.id===id).role})),nativeModel:{...view.root.userData.nativeFidelity,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?view.root.userData.visualModel:view.root.userData.bodyRefinement}});view.dispose();console.log('Vehicle exported',spec.name);}
 // Export the actual shared scenery geometry and original placements.
 const world=Object.create(OffroadWorld.prototype);Object.assign(world,{terrain,scene:new THREE.Scene(),groundMeshes:new Map(),spec:VEHICLES[0],clock:0,_textureLoader:{load(url){return new THREE.Texture();}}});
@@ -111,12 +120,22 @@ const routes=[
 for(const spec of VEHICLES){const prefix=spec.id.replaceAll('-','_'),parts=vehicleAdditions(spec);exportObj(prefix+'_armor',parts.armor);exportObj(prefix+'_equipment',parts.equipment);}
 const suspension=suspensionModels();exportObj('detail_coil',suspension.coil);exportObj('detail_airstrut',suspension.air);
 exportObj('detail_brake_caliper',brakeCaliperModel());
-const environment=environmentModels(terrain,routes,terrain.zones),scans=scannedEnvironment(root,terrain,routes);environment.assets.push(...scans.assets);environment.placements.push(...scans.placements);for(const a of environment.assets)exportObj(a.name,a.group);
+const environment=environmentModels(terrain,routes,terrain.zones),scans=scannedEnvironment(root,terrain,routes),trail=quarryTrail(terrain,scans,quarry.base);routes.push(trail.route);environment.assets.push(...scans.assets);environment.placements.push(...scans.placements);for(const a of environment.assets)exportObj(a.name,a.group);
+const trailDistance=p=>Math.min(...trail.samples.map(s=>Math.hypot(s.x*100-p[0],s.y*100-p[1])));
+for(let i=trees.length-1;i>=0;--i)if(trailDistance(trees[i].p)<340+trees[i].radius){
+ for(const part of trees[i].parts)placements[part.group].instances=placements[part.group].instances.filter(p=>p.index!==part.index);
+ trees.splice(i,1);
+}
+for(const group of placements)if(group.crushable)group.instances=group.instances.filter(p=>trailDistance(p.p)>300);
+for(const group of environment.placements)if(!/^scan_(?:mountainside|boulder_01|grass_medium_01)_/.test(group.asset))group.instances=group.instances.filter(p=>trailDistance(p.p)>(group.solid?500:300));
 const tinted=new Set();
 for(const g of [...placements,...environment.placements])if(g.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
 for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);m.instanceTint=tinted.has(m.id);}
 const manifest={version:'1.15.0',nativeRevision:'body-circle-fab-2',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base,fabScenery:fabScenery(root,terrain,routes,quarry.base),loopFrames:Array.from({length:25},(_,i)=>{const f=challengeLoopFrame(i*Math.PI*2/24),p=f.point,n=f.normal,t=f.tangent;return {p:[p.z*100,-p.x*100,p.y*100],n:[n.z,-n.x,n.y],t:[t.z,-t.x,t.y]};})};
+manifest.nativeRevision='urus-slate-rim-3';
+manifest.terrainGrade=terrain.gradeVersion;
+manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,assetCounts:trail.assetCounts,routeIndex:8};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));

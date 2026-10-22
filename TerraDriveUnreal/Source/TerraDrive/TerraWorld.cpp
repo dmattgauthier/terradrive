@@ -13,6 +13,7 @@
 #include "Engine/SkyLight.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "Engine/TextureCube.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -77,7 +78,16 @@ float ATerraWorld::LooseDirt(float X,float Y) const {
   // Broad continuous loose-soil pockets, shared by physics and vertex material
   // data. Firm trails and loose dirt can coexist inside the dirt biome.
   const float Field=.5f+.5f*FMath::Sin(X*.0017f+FMath::Cos(Y*.0013f))*FMath::Sin(Y*.0019f-.8f);
-  return Smooth(.65f,.92f,Field);
+  float Loose=Smooth(.65f,.92f,Field);
+  if(X>8000&&X<29000&&Y> -36000&&Y< -15000&&QuarryTrailPolyline.Num()>1){
+    const FVector2D P(X,Y);float Distance=FLT_MAX;
+    for(int I=1;I<QuarryTrailPolyline.Num();++I){const FVector2D A=QuarryTrailPolyline[I-1],D=QuarryTrailPolyline[I]-A;
+      const float T=FMath::Clamp(FVector2D::DotProduct(P-A,D)/D.SizeSquared(),0.,1.);Distance=FMath::Min(Distance,float((P-A-D*T).Size()));}
+    // The pale quarry track is compacted earth. Loose shoulders remain soft;
+    // the same 7.4-to-12.5-foot transition is used by the ground shader.
+    Loose*=FMath::Lerp(.08f,1.f,Smooth(225,380,Distance));
+  }
+  return Loose;
 }
 float ATerraWorld::Height(float X, float Y) const {
   FIntPoint K(FMath::FloorToInt(X / TileCM), FMath::FloorToInt(Y / TileCM));
@@ -292,11 +302,13 @@ void ATerraWorld::BeginPlay() {
   Bounce->GetLightComponent()->SetCastShadows(false);
   auto *Sky = GetWorld()->SpawnActor<ASkyLight>();
   Sky->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-  Sky->GetLightComponent()->SetIntensity(1.1f);
+  Sky->GetLightComponent()->SetIntensity(.45f);
+  Sky->GetLightComponent()->SourceType=SLS_SpecifiedCubemap;
+  Sky->GetLightComponent()->SetCubemap(LoadObject<UTextureCube>(nullptr,TEXT("/Game/Textures/kloofendal_48d_partly_cloudy_puresky_1k")));
   // Ground bounce keeps downward-facing surfaces readable inside the loop.
   // The default black lower hemisphere makes the inverted car disappear.
   Sky->GetLightComponent()->SetLowerHemisphereColor(FLinearColor(.16f,.14f,.11f));
-  Sky->GetLightComponent()->bRealTimeCapture = true;
+  Sky->GetLightComponent()->bRealTimeCapture = false;
   auto *Fog = GetWorld()->SpawnActor<AExponentialHeightFog>();
   Fog->GetComponent()->SetFogDensity(.006f);
   Fog->GetComponent()->SetFogInscatteringColor(FLinearColor(.48, .61, .72));
@@ -400,7 +412,7 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
       T.Vertices.Add(FVector(X, Y, BaseHeight(X, Y)));
       T.Normals.Add(FVector::UpVector);
       T.UV.Add(FVector2D(X / 350, Y / 350));
-      T.Colors.Add(FLinearColor::White);
+      T.Colors.Add(FLinearColor(1,LooseDirt(X,Y),1));
     }
   FTerraTile &New = Detail.Add(Key, MoveTemp(T));
   UpdateTile(New);
@@ -416,33 +428,40 @@ void ATerraWorld::ActivateSoil(FVector P,float RadiusCM){
 void ATerraWorld::UpdateTile(FTerraTile &T) {
   TArray<FVector> V = T.Vertices;
   TArray<TArray<int32>> Idx;
-  Idx.SetNum(7);
+  const bool Create=T.Mesh->GetNumSections()==0;
+  if(Create)Idx.SetNum(7);
+  for(int A=0;A<V.Num();++A)V[A].Z+=T.Delta[A];
   for (int J = 0; J <= Div; J++)
     for (int I = 0; I <= Div; I++) {
       int A = J * (Div + 1) + I;
-      V[A].Z += T.Delta[A];
       float X = V[A].X, Y = V[A].Y;
-      T.Normals[A] = FVector(Height(X - 5, Y) - Height(X + 5, Y),
-                             Height(X, Y - 5) - Height(X, Y + 5), 10)
+      // At grid nodes the old short probes interpolated these same adjacent
+      // heights. Read local vertices directly; only boundary probes need the
+      // neighbouring tile. The loose-soil field depends on XY and is cached.
+      const float Left=I>0?V[A-1].Z:Height(X-CellCM,Y),Right=I<Div?V[A+1].Z:Height(X+CellCM,Y);
+      const float Down=J>0?V[A-Div-1].Z:Height(X,Y-CellCM),Up=J<Div?V[A+Div+1].Z:Height(X,Y+CellCM);
+      T.Normals[A] = FVector(Left-Right,Down-Up,CellCM*2)
                          .GetSafeNormal();
-      float Shade = 1 - T.Packing[A];
-      T.Colors[A] = FLinearColor(Shade, LooseDirt(X,Y), 1);
+      T.Colors[A].R=1-T.Packing[A];
     }
-  for (int J = 0; J < Div; J++)
+  if(Create)for (int J = 0; J < Div; J++)
     for (int I = 0; I < Div; I++) {
       int A = J * (Div + 1) + I;
       uint8 S = SurfaceAt(V[A].X + 6, V[A].Y + 6);
       Idx[S].Append({A, A + Div + 1, A + 1, A + 1, A + Div + 1, A + Div + 2});
     }
   for (int S = 0; S < 7; S++) {
-    if (Idx[S].IsEmpty()) continue;
+    auto *Section=T.Mesh->GetProcMeshSection(S);
+    if(Section&&Section->ProcVertexBuffer.IsEmpty())Section=nullptr;
+    if (!Section&&(!Create||Idx[S].IsEmpty())) continue;
     // Topology is fixed. Update both render and collision vertices in place;
     // repeatedly cooking new bodies for every rut wastes memory and CPU.
-    if (T.Mesh->GetProcMeshSection(S))
+    if (Section)
       T.Mesh->UpdateMeshSection_LinearColor(S,V,T.Normals,T.UV,T.Colors,{});
-    else
+    else{
       T.Mesh->CreateMeshSection_LinearColor(S,V,Idx[S],T.Normals,T.UV,T.Colors,{},true);
-    T.Mesh->SetMaterial(S, Materials[S]);
+      T.Mesh->SetMaterial(S, Materials[S]);
+    }
   }
   T.Dirty = false;
 }
@@ -561,6 +580,12 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
     }
 }
 void ATerraWorld::LoadScenery() {
+  QuarryTrailPolyline.Empty();
+  const TSharedPtr<FJsonObject>* Trail=nullptr;
+  if(Data->TryGetObjectField(TEXT("quarryTrail"),Trail)){
+    const auto Samples=(*Trail)->GetArrayField(TEXT("samples"));
+    for(int I=0;I<Samples.Num();I+=6){const auto P=Samples[I]->AsObject();QuarryTrailPolyline.Add(FVector2D(P->GetNumberField(TEXT("x"))*100,P->GetNumberField(TEXT("y"))*100));}
+  }
   const TArray<TSharedPtr<FJsonValue>> *Built = nullptr;
   if (Data->TryGetArrayField(TEXT("constructed"), Built)) for (auto V : *Built) {
     auto O = V->AsObject();

@@ -7,10 +7,12 @@
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "Engine/Texture2D.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "HAL/PlatformMisc.h"
+#include "HAL/IConsoleManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
@@ -30,6 +32,9 @@ ATerraGameMode::ATerraGameMode() {
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
+  // Create visible vehicle proxies while their PSOs warm; delaying proxies
+  // can otherwise show only wheels on the first cold vehicle selection.
+  if(auto *Strategy=IConsoleManager::Get().FindConsoleVariable(TEXT("r.PSOPrecache.ProxyCreationStrategy")))Strategy->Set(0,ECVF_SetByCode);
   GetWorld()->SpawnActor<ATerraWorld>();
 }
 void ATerraHUD::DrawHUD() {
@@ -78,7 +83,7 @@ void ATerraGameMode::Tick(float Dt) {
   if (!FParse::Param(FCommandLine::Get(), TEXT("TerraValidate")))
     return;
   TestTime += Dt;
-  if (TestTime > 450) {
+  if (TestTime > 750) {
     Results.Add(TEXT("{\"case\":\"validation timeout or missing world\",\"pass\":false}"));
     FinishValidation();
     return;
@@ -96,6 +101,12 @@ void ATerraGameMode::Tick(float Dt) {
       FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
   };
   auto Next = [&](int NewStage) { Stage=NewStage; StageTime=0; Captured=false; MaxProgress=0; };
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))Next(61);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly")))Next(64);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){
+    BrakeVehicle=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
+    V->TestDriverInput=true;V->TestForward=V->TestReverse=V->TestStop=false;V->TestSteer=0;Next(34);
+  }
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraVisualOnly"))){
     V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);V->SetGarage(true);V->SetGarageView(1);ModelVehicle=0;ModelView=0;Stage=44;StageTime=0;
     GarageCameraBefore=V->Camera->GetComponentLocation();
@@ -134,7 +145,7 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("tire tread rejects rigid support outside its width"),!Narrow.Hit&&Wide.Hit&&Wide.Constructed);
       Edge->DestroyComponent();
     }
-    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==8,V->Terrain->ConstructedMeshCount);
+    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==9,V->Terrain->ConstructedMeshCount);
     const auto LoopFrames=V->Terrain->Data->GetArrayField(TEXT("loopFrames"));
     for(int I=0;I<5;++I){
       const auto Frame=LoopFrames[I*6]->AsObject();
@@ -527,6 +538,7 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("Space holds contact speed on a twelve degree incline"),ActualSpeed<.12f&&V->ContactCount>=3,ActualSpeed);
       Check(TEXT("brake holding friction prevents sustained downhill creep"),Drift<.18f,Drift);
       BrakeRamp->DestroyComponent();BrakeRamp=nullptr;
+      if(FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){FinishValidation();return;}
       V->TestDriverInput=false;V->TestBrake=1;V->TestThrottle=V->TestSteer=0;V->SelectVehicle(4);V->ResetUpgrades(false);V->TeleportZone(1);Next(41);
     }
   } else if(Stage==41){
@@ -741,7 +753,90 @@ void ATerraGameMode::Tick(float Dt) {
     const FVector Target(22900,-28300,V->Terrain->Data->GetNumberField(TEXT("quarryBaseM"))*100+300),Eye=Target+FVector(2200,3600,1800);
     SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
     if(StageTime>1&&!Captured){Capture(TEXT("native-fab-slate-quarry.png"));Captured=true;}
-    if(StageTime>1.5f)FinishValidation();
+    if(StageTime>1.5f){if(FParse::Param(FCommandLine::Get(),TEXT("TerraVisualOnly")))FinishValidation();else Next(61);}
+  }else if(Stage==61){
+    if(!Captured){
+      V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(8);
+      V->TestDriverInput=false;V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;
+      TrailClosestSample=0;TrailMaximumError=0;Captured=true;
+      UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
+      if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
+      Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==3);
+      int ScanRockHits=0,GrassCount=0;
+      TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
+      for(auto *C:Components)if(C->GetStaticMesh()){
+        const FString Name=C->GetStaticMesh()->GetName();
+        if(Name.StartsWith(TEXT("scan_grass_medium_01")))GrassCount+=C->GetInstanceCount();
+        if((Name.StartsWith(TEXT("scan_mountainside"))||Name.StartsWith(TEXT("scan_boulder_01")))&&C->GetInstanceCount()>0){
+          FTransform T;C->GetInstanceTransform(0,T,true);const FVector P=T.TransformPosition(C->GetStaticMesh()->GetBoundingBox().GetCenter());
+          FHitResult Hit;FCollisionQueryParams Q(SCENE_QUERY_STAT(TerraTrailRock),true,V);
+          if(GetWorld()->LineTraceSingleByChannel(Hit,P+FVector(0,0,2000),P-FVector(0,0,2000),ECC_Visibility,Q)&&Hit.GetComponent()==C)++ScanRockHits;
+        }
+      }
+      Check(TEXT("new scanned quarry rocks supply native collision"),ScanRockHits==2,ScanRockHits);
+      Check(TEXT("varied meadow grass instances load along the quarry trail"),GrassCount>2000,GrassCount);
+      bool GroundTextures=true;
+      for(const TCHAR *Stem:{TEXT("dry_ground_rocks"),TEXT("rocks_ground_05")})for(const TCHAR *Map:{TEXT("diff"),TEXT("nor_gl"),TEXT("rough")})
+        GroundTextures&=LoadObject<UTexture2D>(nullptr,*FString::Printf(TEXT("/Game/Textures/%s_%s_2k"),Stem,Map))!=nullptr;
+      Check(TEXT("both new quarry ground sets are present in the cooked game"),GroundTextures);
+    }
+    if(StageTime>2){Check(TEXT("stock Urus settles upright at the trail entrance"),V->ContactCount>=2&&V->GetActorUpVector().Z>.8f,V->ContactCount);Start=V->GetActorLocation();V->TestBrake=0;Next(62);}
+  }else if(Stage==62){
+    if(int(StageTime)!=int(StageTime-Dt)){
+      float Load=0,Rut=0,Slip=0;for(const auto &W:V->WheelState){Load+=W.Load;Rut=FMath::Max(Rut,W.RutDepth);Slip=FMath::Max(Slip,FMath::Abs(W.Slip));}
+      UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_PROGRESS t=%.1f gate=%d sample=%d speed=%.2f gear=%d rpm=%.0f load=%.0f wheels=%.0f/%.0f/%.0f/%.0f force=%.0f rut=%.3f slip=%.2f yaw=%.1f steer=%.2f throttle=%.2f brake=%.2f velocity=%s position=%s"),StageTime,V->GateIndex,TrailClosestSample,V->Speed,V->Gear,V->RPM,Load,V->WheelState[0].Load,V->WheelState[1].Load,V->WheelState[2].Load,V->WheelState[3].Load,V->LastTireForceN,Rut,Slip,V->GetActorRotation().Yaw,V->Steer,V->Throttle,V->Brake,*V->Chassis->GetPhysicsLinearVelocity().ToString(),*V->GetActorLocation().ToString());
+    }
+    const auto Samples=V->Terrain->Data->GetObjectField(TEXT("quarryTrail"))->GetArrayField(TEXT("samples"));
+    const FVector P=V->GetActorLocation();float Best=FLT_MAX;int Closest=TrailClosestSample;
+    auto Point=[&](int I){const auto S=Samples[I]->AsObject();return FVector(S->GetNumberField(TEXT("x"))*100,S->GetNumberField(TEXT("y"))*100,S->GetNumberField(TEXT("z"))*100);};
+    for(int I=FMath::Max(0,TrailClosestSample-3);I<FMath::Min(Samples.Num(),TrailClosestSample+12);++I){const float D=FVector::DistSquared2D(P,Point(I));if(D<Best){Best=D;Closest=I;}}
+    TrailClosestSample=FMath::Max(TrailClosestSample,Closest);TrailMaximumError=FMath::Max(TrailMaximumError,FMath::Sqrt(Best));
+    FVector Target=Point(FMath::Min(Closest+3,Samples.Num()-1));
+    if(Closest>=Samples.Num()-4){const auto S=Samples.Last()->AsObject();Target+=FVector(S->GetNumberField(TEXT("tx")),S->GetNumberField(TEXT("ty")),0)*1000;}
+    const float Error=FMath::FindDeltaAngleDegrees(V->GetActorRotation().Yaw,(Target-P).Rotation().Yaw);
+    // Pure pursuit expresses the required curvature as a front wheel angle;
+    // a heading-only gain overcorrects when climbing uneven soft shoulders.
+    const float Lookahead=FMath::Max(3.f,FVector::Dist2D(Target,P)/100);
+    const float Wheelbase=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetNumberField(TEXT("wheelbase"));
+    const float WheelAngle=FMath::Atan2(2*Wheelbase*FMath::Sin(FMath::DegreesToRadians(Error)),Lookahead);
+    V->TestSteer=FMath::Clamp(WheelAngle/FMath::DegreesToRadians(34)*(1+FMath::Abs(V->Speed)*.025f),-.75f,.75f);
+    const float Desired=FMath::Abs(Error)>25?2.6f:4.0f;
+    V->TestThrottle=FMath::Clamp((Desired-V->Speed)*.18f,.02f,.55f);V->TestBrake=V->Speed>Desired+.6f?.32f:0;
+    if(StageTime>12&&!Captured){Capture(TEXT("native-urus-quarry-driving.png"));Captured=true;}
+    if(V->GateIndex==20||StageTime>165||V->Overturned){
+      Check(TEXT("stock Urus drives the entire Slate Rim trail through every gate"),V->GateIndex==20,V->GateIndex);
+      Check(TEXT("Urus quarry drive stays upright with a controlled trail line"),V->GetActorUpVector().Z>.7f&&TrailMaximumError<450,TrailMaximumError);
+      Check(TEXT("native quarry drive covers more than 700 feet without teleporting"),V->RouteTime>25&&TrailClosestSample>115,TrailClosestSample);
+      V->TestThrottle=0;V->TestSteer=0;V->TestBrake=1;Next(63);
+    }
+  }else if(Stage==63){
+    if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
+    if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;}
+    const auto S=V->Terrain->Data->GetObjectField(TEXT("quarryTrail"))->GetArrayField(TEXT("samples"))[40]->AsObject();
+    const FVector Target(S->GetNumberField(TEXT("x"))*100,S->GetNumberField(TEXT("y"))*100,S->GetNumberField(TEXT("z"))*100+180),Eye=Target+FVector(-2500,2200,1000);
+    SoilCamera->GetCameraComponent()->SetFieldOfView(58);SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
+    if(StageTime>1&&!Captured){Capture(TEXT("native-slate-rim-trail.png"));Captured=true;}
+    if(StageTime>1.6f)Next(64);
+  }else if(Stage==64){
+    if(!Captured){
+      V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
+      V->TestDriverInput=false;V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;
+      if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
+      if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;}
+      Captured=true;
+    }
+    if(StageTime>5){ModelView=0;Next(65);}
+  }else if(Stage==65){
+    const FVector Target=V->GetActorLocation()+FVector(0,0,18),F=V->GetActorForwardVector(),S=V->GetActorRightVector();
+    const FVector Offsets[]={F*850+FVector(0,0,160),S*900+FVector(0,0,90),-F*850+FVector(0,0,150),F*650+S*560+FVector(0,0,280)};
+    const FVector Eye=Target+Offsets[ModelView];SoilCamera->GetCameraComponent()->SetFieldOfView(40);
+    SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
+    if(StageTime>2&&!Captured){
+      Check(FString::Printf(TEXT("Urus body renders in close photo view %d"),ModelView),V->Body->WasRecentlyRendered(.4f));
+      Capture(*FString::Printf(TEXT("native-urus-hero-%d.png"),ModelView));Captured=true;
+    }
+    if(StageTime>2.5f){if(++ModelView==4)FinishValidation();else Next(65);}
   }
 
 }

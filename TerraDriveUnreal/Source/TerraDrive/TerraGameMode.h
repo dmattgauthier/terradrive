@@ -34,6 +34,8 @@ private:
   TArray<FString> Results;
   bool Captured = false;
   int SoilScenario=0;
+  float TrailMaximumError=0;
+  int TrailClosestSample=0;
   TArray<FVector> SoilProbes;
   UPROPERTY() TObjectPtr<ACameraActor> SoilCamera;
   void FinishValidation();

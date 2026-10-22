@@ -2,7 +2,7 @@
 
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
-The latest native model/scenery changes are documented in [body-shapes-and-fab.md](docs/body-shapes-and-fab.md): reconstructed V8 Urus Performante body surfaces, model-specific refinements of the other five bodies, a circular Summit loop and acquired African Slate Quarry scenery. Optional Fab content is imported from your own Epic cache; raw licensed assets are excluded from this public source.
+The latest native model/scenery changes are documented in [urus-slate-rim.md](docs/urus-slate-rim.md): sculpted V8 Urus Performante body/cabin surfaces and the 1,065-foot Slate Rim quarry trail, with matching CC0 cliff, boulder, grass and ground scans. It is the ninth challenge, selectable with J. The previous [body-shapes-and-fab.md](docs/body-shapes-and-fab.md) round retains the other five body refinements, circular Summit loop and African Slate Quarry scenery. Optional Fab content is imported from your own Epic cache; raw licensed assets are excluded from this public source.
 
 ## Build
 
@@ -28,7 +28,7 @@ After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows
 .\Tools\verify-native.ps1
 ```
 
-The verifier requires a fresh JSON report, a successful game exit, and all expanded checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, eight challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
+The verifier requires a fresh JSON report, a successful game exit, and all expanded checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, nine challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
 
@@ -42,7 +42,7 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 | Right mouse + mouse | Orbit camera |
 | C | Near/far chase camera |
 | 1–9 | Trail, tarmac, rock, mud, marsh, sand, Summit park, snow, Granite Trials |
-| J | Cycle eight challenge routes |
+| J | Cycle nine challenge routes |
 | V | Open vehicle selection while stopped |
 | T | Equip/remove flotation tracks while stopped; Civic excluded |
 | F / L | 2WD/4WD / low range on supported vehicles |
@@ -76,3 +76,4 @@ Native controls and researched model refinements are described in [vehicle-model
 See [lighting-tracks-urus.md](docs/lighting-tracks-urus.md) for the original V8 Urus Performante, brake/reverse lights, CC0 scan sources and photographic sky. Vendored native sources are under Vendor/Environment. Run Tools/fetch-environment-assets.py only to recover missing source downloads; normal builds use the included offline copies.
 
 The corrective [surface deformation round](docs/surface-deformation.md) replaces dark off-road tread ribbons with physical grooves, raised shoulders, compacted snow, light dusty dirt trails and bent grass instances. Rubber skidmarks are restricted to pavement traction loss. Backspace repairs terrain, plants and marks. The same document records the inspected Fab library, the downloaded quarry pack and additional free asset candidates.
+

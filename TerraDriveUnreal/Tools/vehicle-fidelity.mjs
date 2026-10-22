@@ -60,11 +60,11 @@ function text(g,value,width,height,material){
 
 function factoryRim(spec){
   const g=new THREE.Group(),style=spec.bodyStyle,rimInches=Number(spec.tireSize.match(/R(\d+)/)[1]),r=rimInches*.0254*.5,w=spec.tireWidth;
-  const rimMaterial=style==='sedan'||style==='urus'?new THREE.MeshPhysicalMaterial({color:'#171c21',metalness:.58,roughness:.20,clearcoat:1,clearcoatRoughness:.10}):style==='van'?alloy:graphite;
+  const rimMaterial=style==='urus'?new THREE.MeshPhysicalMaterial({color:'#9ba2a5',metalness:.86,roughness:.29,clearcoat:.35,clearcoatRoughness:.18}):style==='sedan'?new THREE.MeshPhysicalMaterial({color:'#171c21',metalness:.58,roughness:.20,clearcoat:1,clearcoatRoughness:.10}):style==='van'?alloy:graphite;
   const barrel=mesh(g,new THREE.LatheGeometry([[r*.85,-w*.43],[r*.97,-w*.44],[r,-w*.38],[r*.93,-w*.32],[r*.93,w*.32],[r,w*.38],[r*.97,w*.44],[r*.85,w*.43]].map(p=>new THREE.Vector2(...p)),96),rimMaterial);barrel.rotation.z=Math.PI/2;
   for(const side of [-1,1]){
     const face=side*w*.43;
-    disc(g,rotorMetal,face*.62,r*.735,.020);disc(g,castMetal,face*.76,r*.31,.035);
+    disc(g,style==='urus'?black:rotorMetal,face*.62,r*.735,.020);disc(g,castMetal,face*.76,r*.31,.035);
     for(let i=0;i<40;i++){
       const a=i*Math.PI/20;rod(g,black,[face*.62-side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],[face*.62+side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],.003);
     }
@@ -177,6 +177,7 @@ export function refineVehicle(view,spec){
   return {tire:wheel.tireShape,rim:wheel.rimSpin};
 }
 
+export {text as geometryText};
 export function brakeCaliperModel(){
   const g=new THREE.Group();
   // Local hub coordinates: +X is forward and Y points outward after import.

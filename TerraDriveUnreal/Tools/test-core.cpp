@@ -10,6 +10,13 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    check(TerraSim::AutomaticGear(0,7,7000,100,6800)==0,"stationary wheelspin cannot shift first gear into a cruising ratio");
+    check(TerraSim::AutomaticGear(3,7,3500,100,6800)==2,"hill stall downshifts despite spinning wheels");
+    check(TerraSim::AutomaticGear(0,7,6000,6000,6800)==1,"road-speed acceleration still upshifts normally");
+    check(TerraSim::AutomaticGear(1,7,6500,4200,6800)==1,"large wheelspin cannot trigger a road-speed upshift");
+    check(TerraSim::AutomaticGear(7,7,6000,6000,6800)==7,"automatic transmission respects its top ratio");
+    check(TerraSim::AutomaticGear(2,7,1400,1400,6800)==1,"low road speed requests a normal downshift");
+    check(TerraSim::AutomaticGear(0,7,700,700,6800)==0,"automatic transmission retains first at idle");
     for(float dt:{1.f/30,1.f/60,1.f/120}){
         float locked=24,backward=-24,axle=24;
         for(float time=0;time<.2f;time+=dt){
@@ -153,5 +160,60 @@ int main(){
     check(d==1,"brief opposite input at rest does not reverse");
     for(int i=0;i<10;i++)d=TerraSim::RequestedDirection(d,false,true,0,1.f/60,held);
     check(d==-1,"held opposite input changes direction after stopping");
+    check(TerraSim::ConverterEngineRPM(0,750,0,2300)==750,"automatic idles with no launch demand");
+    check(TerraSim::ConverterEngineRPM(0,750,1,2300)==2300,"automatic engine can reach converter stall at zero road speed");
+    check(TerraSim::ConverterEngineRPM(500,750,.5f,2300)==1525,"partial launch demand has a bounded engine speed");
+    check(TerraSim::ConverterEngineRPM(4000,750,1,2300)==4000,"coupled shaft speed takes over above stall");
+    check(TerraSim::ConverterEngineRPM(0,750,-1,2300)==750,"negative demand cannot lower idle");
+    check(TerraSim::ConverterEngineRPM(0,750,2,2300)==2300,"launch demand cannot exceed configured stall");
+    for(float dt:{1.f/120,1.f/30,.1f}){
+        const float mass=562.5f,load=mass*9.81f;
+        check(std::abs(TerraSim::SuspensionForce(load/47000,0,47000,5100,mass,1,dt)-load)<.01f,"implicit suspension preserves static support across frame times");
+        const float c=TerraSim::ContactStiffness(14000,mass,dt);
+        check(c>0&&c*dt/mass<1,"contact damping cannot reverse a supported mass in one frame");
+    }
+    check(TerraSim::SuspensionForce(.12f,1,47000,5100,562.5f,1,.1f)<TerraSim::SuspensionForce(.12f,-1,47000,5100,562.5f,1,.1f),"suspension damps compression and rebound in the proper direction");
+    check(TerraSim::TractionControlledTorque(1000,50,5,.4f,3,.03f,3000,3000,30,1)<0,"traction control brakes an overspeeding driven wheel");
+    check(TerraSim::TractionControlledTorque(1000,0,0,.4f,3,.03f,3000,3000,30,1)>0,"traction control permits launch torque");
+    check(TerraSim::TractionControlledTorque(1000,50,5,.4f,3,.03f,0,0,0,1)==0,"traction control creates no airborne tire torque");
+    check(TerraSim::TractionControlledTorque(-1000,-50,-5,.4f,3,.03f,3000,3000,30,-1)>0,"traction control bounds reverse wheelspin too");
+    for(float dt:{.01f,.05f,.1f}){
+        const float c=TerraSim::ContactStiffness(14000,562.5f,dt),limit=3900,r=.4f,inertia=3,speed=5,omega=speed/r;
+        const float drive=TerraSim::TractionControlledTorque(3000,omega,speed,r,inertia,dt,c,limit,60,1);
+        const float solved=TerraSim::BrakedWheelOmega(omega+drive*dt/inertia,c,speed,r,dt,inertia,limit,60);
+        const float force=c*(solved*r-speed);
+        check(force>limit*.6f&&force<=limit,"traction control retains useful bounded drive through the real tire solver across frame times");
+    }
+    for(float dt:{1.f/30,.1f}){
+        float angle=.02f,rate=.05f,peak=.02f;const float mass=2250,share=mass*.25f,load=share*9.81f,inertia=703.13f;
+        for(int frame=0;frame<int(6/dt);++frame){
+            float torque=0;
+            for(float y:{-.84f,.84f})for(int axle=0;axle<2;++axle){
+                const float f=TerraSim::SuspensionForce(load/47000-angle*y,rate*y,47000,5100,share,1,dt);
+                const float lateral=-TerraSim::ContactStiffness(load*5.5f/2,share,dt)*rate*.65f;
+                torque+=(f-load)*y+lateral*.65f;
+            }
+            rate+=torque/inertia*dt;angle+=rate*dt;peak=std::max(peak,std::abs(angle));
+        }
+        check(std::isfinite(angle)&&peak<.15f&&std::abs(angle)<.01f,"combined tire and suspension roll response decays at normal and long frame intervals");
+    }
+    check(TerraSim::EffectiveContactMass(2250,703,3800,4200,0,0,0)==2250,"zero lever arm uses translational contact mass");
+    check(TerraSim::EffectiveContactMass(2445,650,5000,5500,1.03f,0,1.83f)<2445*.25f,"high contact lever arms account for body rotation");
+    check(std::isfinite(TerraSim::EffectiveContactMass(0,0,0,0,1,1,1)),"degenerate mass data cannot create an infinite brake impulse");
+    struct BrakeBody {float mass,cg,track,width,length,spring,damping;};
+    const BrakeBody brakeBodies[]={{2250,.77f,1.651f,1.938f,4.810f,35000,4300},{2445,1.03f,1.711f,2.024f,6.10f,50000,4900},{4000,.78f,1.863f,2.197f,5.25f,70000,6900}};
+    for(const BrakeBody b:brakeBodies)for(float dt:{1.f/60,.1f}){
+        const float share=b.mass*.25f,load=share*9.81f,ix=b.mass*(std::pow(b.width*.84f,2)+.44f*.44f)/12,iz=b.mass*(std::pow(b.width*.84f,2)+std::pow(b.length*.86f,2))/12;
+        float angle=.02f,rate=.05f,peak=.02f;
+        for(int frame=0;frame<int(6/dt);++frame){float torque=0;
+            for(float side:{-1.f,1.f})for(float end:{-1.f,1.f}){
+                const float y=side*b.track*.5f,pointMass=TerraSim::EffectiveContactMass(b.mass,ix,iz,iz,b.cg,0,end*b.length*.3f)/4;
+                const float f=TerraSim::SuspensionForce(load/b.spring-angle*y,rate*y,b.spring,b.damping,share,1,dt);
+                const float lateral=-pointMass*rate*b.cg/dt;torque+=(f-load)*y+lateral*b.cg;
+            }
+            rate+=torque/ix*dt;angle+=rate*dt;peak=std::max(peak,std::abs(angle));
+        }
+        check(std::isfinite(angle)&&peak<.15f&&std::abs(angle)<.01f,"brake holding and suspension settle together for tall vehicles across frame times");
+    }
     std::cout<<"PASS "<<count<<" native simulation core checks\n";
 }

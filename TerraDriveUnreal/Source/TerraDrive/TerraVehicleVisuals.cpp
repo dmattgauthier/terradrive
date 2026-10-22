@@ -44,6 +44,7 @@ void ATerraVehicle::CreateVisualDetails(){
     L->SetIntensityUnits(ELightUnits::Lumens);L->SetIntensity(I==0?45:30);
     L->SetLightColor(I==0?FLinearColor(.95,.98,1):FLinearColor(1,.94,.85));
     L->SetCastShadows(false);L->SetVisibility(false);L->RegisterComponent();GarageLights.Add(L);
+    L->SetSpecularScale(.20f);
   }
 }
 void ATerraVehicle::UpdateVisualDetails(){
