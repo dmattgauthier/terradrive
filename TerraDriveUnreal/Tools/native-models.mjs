@@ -24,7 +24,7 @@ export function vehicleAdditions(spec){
     for(const z of [a,b])add(armor,new THREE.CylinderGeometry(.018,.018,.014,6),chrome,[side*half*.55,low-.03,z]);
   }
   const bash=box(armor,chrome,[0,low+.17,front-.29],[half*1.22,.045,.38]);bash.rotation.x=-.35;
-  if(spec.bodyStyle!=='sedan'){
+  if(spec.bodyStyle!=='sedan'&&spec.bodyStyle!=='urus'){
     // A real fairlead, drum, end plates and recovery shackles replace a blank bumper.
     const y=.66-datum,z=front+.06;
     box(equipment,steel,[0,y-.06,z-.12],[.62,.055,.30]);

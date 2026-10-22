@@ -1,6 +1,7 @@
 {
   "date": "2026-10-21",
-  "verifiedAt": "2026-10-21T22:57:39.797Z",
+  "verifiedAt": "2026-10-22T00:15:01.451Z",
+  "engine": "5.8.3",
   "configuration": "Windows Development",
   "displayUnits": "imperial",
   "diagnosticUnits": "SI except explicitly named fields; player displays use imperial units",
@@ -13,8 +14,7 @@
     ]
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "2996d9aaa555b94a7b1c498f39db93ad83ae0e4a34135fbd126b6de81447bc3d",
-  "engine": "5.8.3",
+  "executableSHA256": "01c82118c7afc372bdcb1f81691e2b14038e1437c26876eb778b80c245a92777",
   "tests": [
     {
       "case": "native world data",
@@ -92,13 +92,27 @@
       "pass": true
     },
     {
+      "case": "vehicle 5 meshes",
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 articulated suspension and upgrade models",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 factory rims, upgraded tires and stationary brakes",
+      "value": 0,
+      "pass": true
+    },
+    {
       "case": "imperial garage measurements",
       "value": 0,
       "pass": true
     },
     {
       "case": "detailed scenery models and solid obstacles",
-      "value": 2645,
+      "value": 13161,
       "pass": true
     },
     {
@@ -183,8 +197,8 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 66.322,
-      "speedMS": 20.97,
+      "distanceM": 66.599,
+      "speedMS": 21.002,
       "pass": true
     },
     {
@@ -205,8 +219,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 12.856,
-      "yawDegrees": 90.603,
+      "speedMS": 13.026,
+      "yawDegrees": 90.051,
       "pass": true
     },
     {
@@ -217,7 +231,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.574,
+      "clearanceCM": 510.607,
       "rollDegrees": 0,
       "pass": true
     },
@@ -229,7 +243,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.777,
+      "clearanceCM": 506.781,
       "rollDegrees": 0,
       "pass": true
     },
@@ -241,7 +255,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 639.722,
+      "clearanceCM": 639.613,
       "rollDegrees": 0,
       "pass": true
     },
@@ -253,7 +267,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 616.349,
+      "clearanceCM": 616.472,
       "rollDegrees": 0,
       "pass": true
     },
@@ -265,7 +279,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 532.696,
+      "clearanceCM": 532.791,
       "rollDegrees": 0,
       "pass": true
     },
@@ -277,7 +291,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 677.979,
+      "clearanceCM": 678.153,
       "rollDegrees": 0,
       "pass": true
     },
@@ -301,7 +315,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 33.983,
+      "clearanceCM": 33.692,
       "rollDegrees": 0,
       "pass": true
     },
@@ -312,12 +326,12 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 0.2152,
+      "value": 4.4901,
       "pass": true
     },
     {
       "case": "rolled vehicle camera stays above terrain",
-      "value": 521.903,
+      "value": 521.9029,
       "pass": true
     },
     {
@@ -327,17 +341,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 51613.7383,
+      "value": 53012.8594,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 463,
+      "value": 456,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 6405.3555,
+      "value": 6600.002,
       "pass": true
     },
     {
@@ -347,7 +361,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 2.4052,
+      "value": 2.4096,
       "pass": true
     },
     {
@@ -357,7 +371,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 2.5573,
+      "value": 2.5259,
       "pass": true
     },
     {
@@ -402,12 +416,12 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 526.5397,
+      "value": 526.5406,
       "pass": true
     },
     {
       "case": "inverted loop retains physical wheel support",
-      "value": 4,
+      "value": 2,
       "pass": true
     },
     {
@@ -487,7 +501,7 @@
     },
     {
       "case": "engine upgrade changes packaged driving performance",
-      "value": 21.0615,
+      "value": 21.0603,
       "pass": true
     },
     {
@@ -502,17 +516,17 @@
     },
     {
       "case": "lower pressure enlarges the live soil footprint",
-      "value": 1.6356,
+      "value": 1.6309,
       "pass": true
     },
     {
       "case": "lower pressure improves live loose terrain grip",
-      "value": 1.1599,
+      "value": 1.159,
       "pass": true
     },
     {
       "case": "deformed ruts add depth dependent rolling resistance",
-      "value": 0.1169,
+      "value": 0.118,
       "pass": true
     },
     {
@@ -537,27 +551,27 @@
     },
     {
       "case": "vehicle 0 launches through shared W input",
-      "value": 14.0124,
+      "value": 14.0303,
       "pass": true
     },
     {
       "case": "vehicle 0 Space stops and holds against held throttle",
-      "value": 0.0002,
+      "value": 0.0004,
       "pass": true
     },
     {
       "case": "vehicle 1 launches through shared W input",
-      "value": 18.1055,
+      "value": 18.1309,
       "pass": true
     },
     {
       "case": "vehicle 1 Space stops and holds against held throttle",
-      "value": 0,
+      "value": 0.0005,
       "pass": true
     },
     {
       "case": "vehicle 2 launches through shared W input",
-      "value": 4.4904,
+      "value": 4.5056,
       "pass": true
     },
     {
@@ -567,7 +581,7 @@
     },
     {
       "case": "vehicle 3 launches through shared W input",
-      "value": 11.9251,
+      "value": 11.9225,
       "pass": true
     },
     {
@@ -577,7 +591,7 @@
     },
     {
       "case": "vehicle 4 launches through shared W input",
-      "value": 22.8095,
+      "value": 22.836,
       "pass": true
     },
     {
@@ -586,23 +600,33 @@
       "pass": true
     },
     {
+      "case": "vehicle 5 launches through shared W input",
+      "value": 23.1873,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 Space stops and holds against held throttle",
+      "value": 0,
+      "pass": true
+    },
+    {
       "case": "W launch before S brake check",
-      "value": 14.3822,
+      "value": 14.3685,
       "pass": true
     },
     {
-      "case": "held S reaches a stop and does not become reverse throttle",
-      "value": 0.0007,
+      "case": "held S brakes then selects physical reverse without a release",
+      "value": -7.1053,
       "pass": true
     },
     {
-      "case": "release and reapply S selects physical reverse drive",
-      "value": -8.7259,
+      "case": "S maintains physical reverse drive after reapplication",
+      "value": -20.7337,
       "pass": true
     },
     {
       "case": "Space stops and holds while S requests reverse",
-      "value": 0.0037,
+      "value": 0.0021,
       "pass": true
     },
     {
@@ -612,27 +636,27 @@
     },
     {
       "case": "brake holding friction prevents sustained downhill creep",
-      "value": 0.0004,
+      "value": 0.0005,
       "pass": true
     },
     {
       "case": "Hummer stock suspension settles at its intended ride height",
-      "value": 0.7803,
+      "value": 0.7799,
       "pass": true
     },
     {
       "case": "Hummer stage III suspension physically raises the body",
-      "value": 0.1049,
+      "value": 0.1054,
       "pass": true
     },
     {
       "case": "Hummer lifted driving height matches garage target",
-      "value": 0.0002,
+      "value": 0.0004,
       "pass": true
     },
     {
       "case": "Hummer tire and lift combination retains intended driving height",
-      "value": 0.0006,
+      "value": 0.0002,
       "pass": true
     },
     {
@@ -711,13 +735,28 @@
       "pass": true
     },
     {
+      "case": "vehicle 5 garage view 0 persists without camera reset",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 garage view 1 persists without camera reset",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 garage view 2 persists without camera reset",
+      "value": 0,
+      "pass": true
+    },
+    {
       "case": "garage orbit changes the real camera and survives later ticks",
       "value": 0,
       "pass": true
     },
     {
       "case": "garage zoom changes the real camera boom",
-      "value": 874.134,
+      "value": 855.29,
       "pass": true
     },
     {
@@ -729,157 +768,403 @@
       "case": "garage lower pitch and far zoom remain bounded",
       "value": 0,
       "pass": true
+    },
+    {
+      "case": "vehicle 0 brake material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 reverse material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 brake material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 reverse material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 brake material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 reverse material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 brake material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 reverse material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 brake material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 reverse material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 brake material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 reverse material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 brake material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 reverse material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 brake material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 reverse material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 brake material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 reverse material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 brake material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 reverse material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 brake material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 reverse material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 brake material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 reverse material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 brake material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 reverse material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 brake material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 reverse material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 brake material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 reverse material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 brake material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 reverse material state 0",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 brake material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 reverse material state 1",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 brake material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 reverse material state 2",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "normally rolling pavement tires leave no rubber skidmarks",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "pavement traction loss creates persistent skid geometry",
+      "value": 118,
+      "pass": true
+    },
+    {
+      "case": "airborne tires add no skidmarks",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "tire marks remain rendered after contact ends",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "soft ground records tread impressions with physical ruts",
+      "value": 118,
+      "pass": true
+    },
+    {
+      "case": "teleports do not draw a tire ribbon across the world",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "soil repair clears tire marks and physical deformation",
+      "value": 0,
+      "pass": true
     }
   ],
-  "coreChecks": 82,
-  "assets": {
-    "meshSources": 189,
-    "sourceMaterials": 302,
-    "terrainMaterials": 7,
-    "textureAssets": 26,
-    "detailInstances": 2645,
-    "solidDetailInstances": 645,
-    "tintedMaterials": 13,
-    "challengeRoutes": 8
+  "core": {
+    "checks": 97,
+    "pass": true,
+    "frameRates": [
+      30,
+      60,
+      120
+    ]
   },
-  "preservedBrowserFiles": 189,
-  "observations": {
-    "engineComparison": {
-      "stockMPH": 31.203024338502896,
-      "stageThreeMPH": 47.1143521842102,
-      "stockDistanceFT": 131.69947506509,
-      "stageThreeDistanceFT": 242.04724409352
-    },
-    "pressureComparison": {
-      "stockPSI": 37,
-      "lowPSI": 16,
-      "stockPatchIN": 3.937007874,
-      "lowPatchIN": 6.440944881864,
-      "stockGrip": 0.4794,
-      "lowGrip": 0.5561
-    },
-    "braking": [
+  "assets": {
+    "terrainSamples": 1000,
+    "maximumHeightExportErrorM": 0.0000019073486328125,
+    "vehicles": 6,
+    "zones": 9,
+    "zoneSamples": [
       {
-        "vehicle": "Wrangler Rubicon",
-        "entryMPH": 31.3439513249052,
-        "heldMPH": 0.00044738725841999996,
-        "stopDistanceFT": 32.765748031365
+        "name": "Pine Ridge Trail",
+        "unrealXM": -44,
+        "unrealYM": 3,
+        "surface": "dirt",
+        "heightM": 3.189868927001953
       },
       {
-        "vehicle": "Bronco Badlands",
-        "entryMPH": 40.499731568470494,
-        "heldMPH": 0,
-        "stopDistanceFT": 54.438976377735
+        "name": "Tarmac Straight",
+        "unrealXM": -186,
+        "unrealYM": 108,
+        "surface": "asphalt",
+        "heightM": 3.5850000381469727
       },
       {
-        "vehicle": "Civic Sport",
-        "entryMPH": 10.043843951529,
-        "heldMPH": 0,
-        "stopDistanceFT": 3.3792650918500002
+        "name": "Granite Steps",
+        "unrealXM": 42,
+        "unrealYM": -112,
+        "surface": "rock",
+        "heightM": 7.3324785232543945
       },
       {
-        "vehicle": "Sprinter 2500",
-        "entryMPH": 26.6754652832925,
-        "heldMPH": 0,
-        "stopDistanceFT": 23.84514435686
+        "name": "Rutted Hollow",
+        "unrealXM": -163,
+        "unrealYM": -48,
+        "surface": "mud",
+        "heightM": 3.332014560699463
       },
       {
-        "vehicle": "Hummer EV SUV",
-        "entryMPH": 51.02451682280099,
-        "heldMPH": 0,
-        "stopDistanceFT": 85.66272965845
+        "name": "Willow Marsh",
+        "unrealXM": 77,
+        "unrealYM": 24,
+        "surface": "dirt",
+        "heightM": 4.690649509429932
+      },
+      {
+        "name": "Copper Dunes",
+        "unrealXM": -178,
+        "unrealYM": -195,
+        "surface": "sand",
+        "heightM": 11.039977312088013
+      },
+      {
+        "name": "Summit Challenge Park",
+        "unrealXM": -169,
+        "unrealYM": 236,
+        "surface": "dirt",
+        "heightM": 4.599999904632568
+      },
+      {
+        "name": "Boreal Snow Basin",
+        "unrealXM": 230,
+        "unrealYM": 218,
+        "surface": "snow",
+        "heightM": 7.0382914543151855
+      },
+      {
+        "name": "Granite Trials Arena",
+        "unrealXM": 126,
+        "unrealYM": -281,
+        "surface": "dirt",
+        "heightM": 12.272045612335205
       }
     ],
-    "hummerRideHeight": {
-      "stockBodyReferenceIN": 30.720472440821997,
-      "liftedBodyReferenceIN": 34.850393700648,
-      "liftedTargetIN": 34.8425196849,
-      "measuredLiftIN": 4.129921259825999,
-      "description": "Chassis/body reference height above local terrain; this is not ground clearance."
-    },
-    "playerGarageUnchanged": true,
-    "interactiveControls": [
-      "Live garage inspected at 1920x1080; fixed lighting preserves dark roof/tires and the toolbar clears the full vehicle",
-      "Left-drag changes camera yaw/pitch; mouse-wheel zoom changes vehicle framing",
-      "Front and Side presets work; arrow-key orbit works after clicking a preset; Page Down zoom works after child-button focus",
-      "Hummer suspension stock versus III visibly changes wheel-arch clearance and extends the struts, with other categories unchanged",
-      "Wrangler selection works; selected Hummer and original stages reselected before normal exit; byte-identical save verified after exit"
-    ],
-    "liveScreenshots": [
-      "Saved/live-vehicle-refinement-hummer-before.jpg",
-      "Saved/live-vehicle-refinement-orbit.jpg",
-      "Saved/live-vehicle-refinement-zoom.jpg",
-      "Saved/live-vehicle-refinement-hummer-suspension-stock.jpg",
-      "Saved/live-vehicle-refinement-hummer-suspension-III.jpg",
-      "Saved/live-vehicle-refinement-keyboard-orbit.jpg",
-      "Saved/live-vehicle-refinement-wrangler.jpg"
-    ],
-    "playerGarageState": {
-      "selectedVehicle": 4,
-      "description": "Hummer suspension stock; all six other categories stage III; other four vehicles stock"
-    },
-    "garageKeyboardFocusFix": true,
-    "renderedInspection": {
-      "presetCapturesInspected": 15,
-      "vehicles": 5,
-      "views": [
-        "front",
-        "side",
-        "rear"
-      ],
-      "freeOrbitEvidence": "Saved/live-vehicle-refinement-orbit.jpg",
-      "suspensionComparison": [
-        "Saved/live-vehicle-refinement-hummer-suspension-stock.jpg",
-        "Saved/live-vehicle-refinement-hummer-suspension-III.jpg"
-      ],
-      "captureLimitations": [
-        "native-garage-orbit.png records the closing driving frame; use the live orbit JPEG",
-        "native-hummer-lifted.png has first-frame Slate text clipping; use the settled live suspension comparison JPEGs"
-      ]
-    }
+    "meshSources": 217,
+    "constructedGroups": 2,
+    "challengeRoutes": 8,
+    "quarryDeckHeightM": 26.172911834716796,
+    "trees": 412,
+    "placements": 10975,
+    "detailInstances": 13161,
+    "solidDetailInstances": 1073,
+    "tintedMaterials": 13,
+    "preservedInstanceColors": true,
+    "pass": true,
+    "sourceMaterials": 318,
+    "textureAssets": 42,
+    "scannedInstances": 10516
+  },
+  "garage": {
+    "originalBytesPreserved": true,
+    "isolatedLiveSave": true,
+    "legacyFiveVehicleMigration": true
+  },
+  "interactive": [
+    "Live six-vehicle selection and Urus stock appearance checked at 1600x900.",
+    "Mouse drag orbit and scroll zoom changed the real garage camera.",
+    "All three Urus engine stages selected in the menu: 775, 920 and 1104 hp from 657 hp stock. These are simulator upgrade values.",
+    "Stage III suspension and tires changed stance and tire diameter; the selected build survived a normal exit/restart.",
+    "The legacy five-vehicle save loaded, preserved its original builds and added a stock Urus; the original player save remained byte-for-byte unchanged."
+  ],
+  "renderedInspection": [
+    "All eighteen final front/side/rear model captures reviewed.",
+    "All eighteen off/brake/reverse captures reviewed on the six-vehicle lamp sheet.",
+    "Urus panel closure, Y guides, mirrors, wheel wells, roof, interior silhouettes and quad exhaust reviewed.",
+    "Hummer lifted ride-height capture and free-orbit capture reviewed.",
+    "Pavement rubber, soft-ground tread/ruts, scanned rocks/plant clumps and photographic HDR clouds visible in final captures."
+  ],
+  "browser": {
+    "referenceFiles": 189,
+    "unchanged": true
+  },
+  "packagedContentSHA256": {
+    "global.ucas": "9de4b5cec4b89e8edbe7675cc42f9064fcce79829d4b0794af7b40c9bfc71631",
+    "global.utoc": "89e25c926368c8f06557107c344589ed6d84157d2518309963ff7bd18c8e9a89",
+    "TerraDrive-Windows.pak": "89c0ff4c2a9580f97a9096de1771d51702104838a44110331121aaa6a062b0b7",
+    "TerraDrive-Windows.ucas": "d71b7ef66ff69ae69d40d75f5a5860698721f7a0965bdcb3ddee0ab1b8d841af",
+    "TerraDrive-Windows.utoc": "b0a3d51ea2549a872abd98912983eee9bd28071ab694cc9f6c640e7fb88a0c1b"
   },
   "sourceSHA256": {
-    "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
     "Source/TerraDrive/TerraContact.h": "eebefcf6e4b07f8602d7dd6d881bb14e50794befb1047befa369a54e17ec00d1",
     "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
     "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
-    "Source/TerraDrive/TerraDriving.h": "7d907b9c5b4b6ebf6494cba38b696e97179f4d69de1ac7fdc462bd5db8fc7439",
-    "Source/TerraDrive/TerraGameMode.cpp": "3a52ddf059386393b87db3f053c37ce996ac50925a5944c630bd5d1389c5149a",
+    "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
+    "Source/TerraDrive/TerraGameMode.cpp": "ccd58b326f39bd9df5d922ad1ab4599fab4240cd1bf3bb926360c0525fa8232a",
     "Source/TerraDrive/TerraGameMode.h": "c32c7a0fb9199459a143c05fbde39e43a1decc62fff30a135e6bc90e7af63250",
-    "Source/TerraDrive/TerraGarage.cpp": "4f2456f03d5b001f742917887f79147c1dbbbe4426e3c8026ecf6e4e041446fc",
+    "Source/TerraDrive/TerraGarage.cpp": "9992957178f45405bb2667fe46a6dd905ee96a468aa6af65feb61990977cd049",
     "Source/TerraDrive/TerraGarage.h": "35e4eaa7188968df3493497dedc68368c28e24d28a9bf32ff7b0de56006c6849",
     "Source/TerraDrive/TerraSimCore.h": "d23a80502d75a3343f0b91abb015fc088d1d7733e41637d61d71d9883d37abdb",
+    "Source/TerraDrive/TerraTireMarks.cpp": "41b7284ee8637a6d225a0b72cc8dfc904a5feda3b210971ea9afd589295e545d",
     "Source/TerraDrive/TerraUnits.h": "253f36297c9a94020eb6c5556042b05b2433e8e7d8ba2a3b2f72828dc1488914",
     "Source/TerraDrive/TerraUpgrades.h": "3c398825c6f568cb83ddb0e0bb20be0d2bbf618d80611b278c21e307142ec320",
-    "Source/TerraDrive/TerraVehicle.cpp": "33209f3f90564b851769dd9453475c5fbf0ee4837effb55f7e491224a175acaf",
-    "Source/TerraDrive/TerraVehicle.h": "494178217058afcb77b848080db8d54602795d1fd0a0887aeb20ceea0f096f2b",
-    "Source/TerraDrive/TerraVehicleGarage.cpp": "643d2d5235461bb30a9c92f35302ecac82e3f569dd82485f2454c4646ee9cf06",
-    "Source/TerraDrive/TerraVehicleVisuals.cpp": "91d00a78a8a930e982bcdc22479369ee8769999c57f1a857c919ba93b4d31b1b",
-    "Source/TerraDrive/TerraWorld.cpp": "404ada2d88789f3ed4f4b17f0c9df578166ef025a08952354b51a61248097995",
-    "Source/TerraDrive/TerraWorld.h": "cf25d6e2bdeea28a52bb4bc7a441fe87c0948ce77fc10d54740a5505ab59cd86",
+    "Source/TerraDrive/TerraVehicle.cpp": "2cf07d646f63cce941eedbed875ad916968f1e42b740e8f5ffd5458d84c6a0f3",
+    "Source/TerraDrive/TerraVehicle.h": "2cd8dde1a9024ae9061394c66d94726b384e52ae1b7aed182da73882bafffd6c",
+    "Source/TerraDrive/TerraVehicleGarage.cpp": "f899b3c0ce40b86a2ed1669ecd623d91495bfd6d321cd39bd2dc5e38f777d5f9",
+    "Source/TerraDrive/TerraVehicleLamps.cpp": "ee679571f1f2b9cb4094c894c4286ea32db118d0e19a97272a5c7a2027493969",
+    "Source/TerraDrive/TerraVehicleVisuals.cpp": "663962c4e41c79b53f943c63739c35855ba24f260ae04d369d21418ea661189f",
+    "Source/TerraDrive/TerraWorld.cpp": "b4dac32582494b145f1d459bf8941b73f2d91b2fe039ea2d5363984f4ece6fd3",
+    "Source/TerraDrive/TerraWorld.h": "3ef62e5bdd5be63fab9831fe9de4c28d27e3835b1bce14ca82c6c70331fadcd6",
+    "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
     "Source/TerraDriveEditor.Target.cs": "57232ee6bc870cca86e6f7bdd83daa4674607633d9d8791c7671481d29edf534",
-    "Tools/build-native.ps1": "985f7905be5d270977a89ec621949d6b531457fa3b3a61e12c950fa7ecaf52e7",
-    "Tools/export-source.mjs": "d3b6999a68304b60ee880456544c6b562dd6fad2ec146f639fcc052d52e722c5",
-    "Tools/import-assets.py": "839d65f9ae075ec589a09e5bfbf9e2736ba4cf22fde496d29cd6c64a3a0483df",
-    "Tools/native-models.mjs": "71bab2a25177809228d460dee3b653d8593308956292b60551e6cdd2456537f1",
+    "Tools/build-native.ps1": "abef31f28b1594091953665d168bd23872129ec84daffffa37cbfe2c0d28c737",
+    "Tools/export-source.mjs": "4a96a86f4f9d39128d673a32f579830d7a26cb3d3021140c1f1a719a0960af2e",
+    "Tools/fetch-environment-assets.py": "fad970dd8c0bfcd97f28c9368076df445ad61de9290336882579986799a3446d",
+    "Tools/import-assets.py": "0c88e2441936a67712d0826a49e1cf9b2fbcbd2893b9051e4368a0ec9ac867dd",
+    "Tools/native-models.mjs": "960f49361a4383aa335b0e031fc32272dc21296b4981d4b8082b87d08f2d485d",
+    "Tools/native-vehicles.mjs": "f1d75f05dcc8cd1cd8f8e6fa43a942547f39182b5aea735ce4c7e2a7b362d761",
     "Tools/offroad-courses.mjs": "cdb11b0ee7f16c88a36a08dfa38cbd76276c49ecba2ac72ac7650b53ca48c178",
-    "Tools/prepare-github.mjs": "34b6088aa4d4d853d1a1bdacdad7cea308fdf3324ea705d2fa2e9155d5e8cd32",
-    "Tools/terrain-materials.py": "c1b6dfa0d5b044567ea066dd4b8c78f805dc8fe2f443d58a21f472407fc67c22",
-    "Tools/terrain-surface.hlsl": "273942328f98d7c3d531e24c2b05ebd37a06921efd5d51d273ed900577d4fdf0",
+    "Tools/prepare-github.mjs": "0785dc1688947dfb6b46cbcd16e4f47adb533b68cc637bc40fdadfac1fbd7421",
+    "Tools/scanned-environment.mjs": "9474b94b3eb0253994ea2589ff30a6c630b10f264e09c8bd44ca913580897dd0",
+    "Tools/sky-material.py": "f2e9c58393ae51fc31e07512fd64b8b286a007758a0ff6651ad8654192554925",
+    "Tools/terrain-materials.py": "ee3228ea5a3731ebf7c68fd8f2f095cc5a8ab7638b87625bd397cb756164a663",
+    "Tools/terrain-surface.hlsl": "0d1798585f71b7989988287eded0210a48a09b8c221176a0417bb0052e9bd9be",
     "Tools/test-core.cmd": "06f3e8dbde5ccdfa032422eff1fbccc0b777e0ec9a67f61c411333c11e0b72ad",
-    "Tools/test-core.cpp": "bb10400b18810dbb29c1dba4a4d4ed74f3a5d13975862a6eb1b2f94d4573a6eb",
-    "Tools/validate-export.mjs": "f3ca3922ced4fa2b0aec9202162cbcf739f3566f437fe9fa4148f95efbd72388",
-    "Tools/vehicle-fidelity.mjs": "9e8fd7acbd4e5758382517c575cc83d952c149d39dccc47aaa557f9b30058446",
-    "Tools/verify-native.ps1": "91e32e0b6db04b6551ab2ef4bc31b20ed90aad0cec789fe37c519a9aab2c4f30"
+    "Tools/test-core.cpp": "371fc6989314ecf8990bd37faea72de7f4612dfcd26e25bf9683642144efd64b",
+    "Tools/tire-mark-materials.py": "9d28390c9c4aea23effbdddfea18411a5a39756ae362be1c643fe27270188617",
+    "Tools/urus-model.mjs": "47694bc2f72fe8c7becb75dc51fce131023bfca7df0751a3733f34923ae69203",
+    "Tools/validate-export.mjs": "084f1b51918801ff0b0658dabf0be46c99753d585a229acd01e0e1e235c183f3",
+    "Tools/vehicle-fidelity.mjs": "9c899ddc3362edbaa35a249e377862691348ea7557c58d73071a8ce53cb68206",
+    "Tools/verify-native.ps1": "4ae0e3cca4e3038c2af28ddcfa7c02369fedc2ed5c50da808c16c63f3d549092",
+    "Config/DefaultEngine.ini": "c943691c8e82a74bfbec3ffced88cd02dbae2cb5220bc6af4d1751036aad5bf6",
+    "Config/DefaultGame.ini": "3b5d9c96fcabf0ab86816f114cdafd3baf902f8056c73cb5edcc14fc8dacdb7c",
+    "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f"
   },
-  "nativeReportWrittenAt": "2026-10-21T22:56:39.527Z",
-  "packageContentSHA256": {
-    "TerraDrive-Windows.pak": "f46f6cd94ff4a88650345598f9c4c25c15b32046e6653d5ed93a698de24b8c02",
-    "TerraDrive-Windows.ucas": "bc2766a3e21094e3411035e87349c4383315e1c5e919316a93f8ca104edf17d7",
-    "TerraDrive-Windows.utoc": "9fb9e7529ec9c1f43f8a5289bcfd38456e7cdf0b7a858b2594b8604e2bfcbb38",
-    "global.ucas": "9de4b5cec4b89e8edbe7675cc42f9064fcce79829d4b0794af7b40c9bfc71631",
-    "global.utoc": "89e25c926368c8f06557107c344589ed6d84157d2518309963ff7bd18c8e9a89"
-  },
-  "coreVerification": "82 standalone core checks passed, including shared brake controls and wheel/axle braking at 30/60/120 Hz",
-  "playerGarageUnchanged": true
+  "logs": [
+    "Saved/package-lights-tracks-urus-sky-console.log",
+    "Saved/package-lights-tracks-urus-final-console.log",
+    "Saved/verify-lights-tracks-urus-final-console.log",
+    "Saved/Validation/packaged-game.log",
+    "Saved/core-lights-tracks-urus.log"
+  ],
+  "limits": [
+    "Procedural vehicle approximations; simulator coefficients are not factory calibration.",
+    "Marks retain up to 4096 segments in the current session; oldest segments are reused. Physical soil deformation remains separately bounded by its tile pool.",
+    "Gamepad demand logic tested at 30/60/120 Hz; controller hardware not exercised.",
+    "Complete browser parity, full uninterrupted course traversal and long-session stability/performance remain unproven."
+  ]
 }

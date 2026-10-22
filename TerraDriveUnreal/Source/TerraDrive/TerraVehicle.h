@@ -11,6 +11,7 @@ class UCameraComponent;
 class UInstancedStaticMeshComponent;
 class STerraGarage;
 class URectLightComponent;
+class UMaterialInstanceDynamic;
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35;
@@ -78,6 +79,7 @@ public:
   bool AutoTest = false, Initialized = false;
   float TestThrottle = 0, TestSteer = 0, TestBrake = 0;
   bool TestDriverInput=false, TestForward=false, TestReverse=false, TestStop=false;
+  bool TestMarkCamera=false;
   void SetTracks(bool Enabled);
   void SetGarage(bool Open);
   void SetUpgrade(int Part, int Stage, bool Persist = true);
@@ -103,7 +105,13 @@ public:
   void UpdateWheelVisuals();
   FVector GarageViewState() const { return FVector(GarageYaw,GaragePitch,GarageDistance); }
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
-  TerraSim::UpgradeSetup Builds[5];
+  static constexpr int VehicleCount=6;
+  TerraSim::UpgradeSetup Builds[VehicleCount];
+  UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> BrakeLamps;
+  UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> ReverseLamps;
+  float BrakeLampLevel=0,ReverseLampLevel=0;
+  void UpdateLamps();
+  void ConfigureLamps();
   TerraSim::UpgradeTuning Tuning;
 
 private:

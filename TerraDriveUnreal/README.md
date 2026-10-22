@@ -26,7 +26,7 @@ After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows
 .\Tools\verify-native.ps1
 ```
 
-The verifier requires a fresh JSON report, a successful game exit, and all 140 checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, eight challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
+The verifier requires a fresh JSON report, a successful game exit, and all expanded checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, eight challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
 
@@ -34,9 +34,9 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 
 | Input | Action |
 |---|---|
-| W / S or arrows | Drive; opposite input brakes and holds. After stopping, release and hold the opposite key again to change direction |
+| W / S or arrows | Drive; keep opposite input held through a full stop for 0.65 seconds to select reverse/forward |
 | A / D or arrows | Progressive steering |
-| Space | Brake |
+| Space | Brake and hold; does not select reverse |
 | Right mouse + mouse | Orbit camera |
 | C | Near/far chase camera |
 | 1–9 | Trail, tarmac, rock, mud, marsh, sand, Summit park, snow, Granite Trials |
@@ -56,10 +56,10 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 | Escape in garage | Return to driving |
 | P | Dry/rain response |
 | R | Recover at current region or restart current challenge route |
-| Backspace | Repair/reset deformed soil |
+| Backspace | Repair deformed soil and clear tire marks |
 | Esc | Quit |
 
-Gamepad left stick steers, right trigger drives, left trigger and bottom face button brake.
+Gamepad left stick steers. Right/left triggers request forward/reverse; opposite input brakes before selecting direction. The bottom face button is a dedicated brake/hold.
 
 This is a migration preview. Browser regression results are reference evidence, not proof of native parity. See `docs/validation-native.md` for observed native results and remaining limits.
 
@@ -69,4 +69,6 @@ The game opens in the vehicle garage. Stock plus three upgrade stages are availa
 
 Player-facing measurements use mph, feet/inches, pounds, PSI, horsepower and pounds-force. The new tire-contact and model pass is described in [terrain-interaction-and-models.md](docs/terrain-interaction-and-models.md). Run `Tools/test-core.cmd` for the standalone simulation checks.
 
-Native controls and researched model refinements are described in [vehicle-model-research.md](docs/vehicle-model-research.md). The extended suite covers brake input/holding for all five vehicles, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling.
+Native controls and researched model refinements are described in [vehicle-model-research.md](docs/vehicle-model-research.md). The extended suite covers brake input/holding for all six vehicles, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling.
+
+See [lighting-tracks-urus.md](docs/lighting-tracks-urus.md) for the original V8 Urus Performante, brake/reverse lights, persistent tread and skid geometry, CC0 scan sources and photographic sky. Vendored native sources are under Vendor/Environment. Run Tools/fetch-environment-assets.py only to recover missing source downloads; normal builds use the included offline copies.

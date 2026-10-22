@@ -16,6 +16,8 @@
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "ProceduralMeshComponent.h"
 #include "TerraWorld.h"
 #include "TerraUnits.h"
 #include "TerraContact.h"
@@ -31,6 +33,7 @@ void ATerraGameMode::BeginPlay() {
 }
 void ATerraHUD::DrawHUD() {
   Super::DrawHUD();
+  if(!bShowHUD)return;
   auto *V = Cast<ATerraVehicle>(GetOwningPawn());
   if (!V || !Canvas || V->Garage)
     return;
@@ -58,7 +61,7 @@ void ATerraHUD::DrawHUD() {
       FLinearColor(.93,.82,.54),24,204);
   if (!V->RouteStatus.IsEmpty()) DrawText(V->RouteStatus,FLinearColor::White,24,232);
   DrawRect(FLinearColor(.015, .025, .028, .83), 18, H - 112, W - 36, 94);
-  DrawText(TEXT("W/S  Drive / brake; release and hold opposite key at rest to reverse     A/D  "
+  DrawText(TEXT("W/S  Drive / brake; hold opposite input through a stop to reverse     A/D  "
                 "Steer     Space  Brake     RMB + mouse  Camera"),
            FLinearColor(.85, .88, .88), 30, H - 80);
   DrawText(TEXT("1-9 Regions    J Next challenge    V Garage    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
@@ -74,7 +77,7 @@ void ATerraGameMode::Tick(float Dt) {
   if (!FParse::Param(FCommandLine::Get(), TEXT("TerraValidate")))
     return;
   TestTime += Dt;
-  if (TestTime > 360) {
+  if (TestTime > 450) {
     Results.Add(TEXT("{\"case\":\"validation timeout or missing world\",\"pass\":false}"));
     FinishValidation();
     return;
@@ -95,7 +98,7 @@ void ATerraGameMode::Tick(float Dt) {
   if (Stage == 0) {
     Results.Add(FString::Printf(TEXT("{\"case\":\"native world data\",\"zones\":%d,\"pass\":%s}"),
         V->Terrain->Spawns.Num(), V->Terrain->Spawns.Num() == 9 ? TEXT("true") : TEXT("false")));
-    for (int I = 0; I < 5; ++I) {
+    for (int I = 0; I < ATerraVehicle::VehicleCount; ++I) {
       V->SelectVehicle(I);
       bool Loaded = V->Body->GetStaticMesh() != nullptr;
       for (auto Wheel : V->Wheels)
@@ -453,7 +456,7 @@ void ATerraGameMode::Tick(float Dt) {
       Check(FString::Printf(TEXT("vehicle %d Space stops and holds against held throttle"),BrakeVehicle),
           ActualSpeed<.15f&&V->Throttle==0&&V->Brake==1,ActualSpeed);
       UE_LOG(LogTemp,Display,TEXT("TERRA_SPACE vehicle=%d entry=%.3f stopped=%.4f distance=%.3f"),BrakeVehicle,BrakeEntrySpeed,ActualSpeed,FVector::Dist2D(Start,V->GetActorLocation())/100);
-      if(++BrakeVehicle<5){V->SelectVehicle(BrakeVehicle);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestStop=false;Next(34);}
+      if(++BrakeVehicle<ATerraVehicle::VehicleCount){V->SelectVehicle(BrakeVehicle);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestStop=false;Next(34);}
       else{V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestStop=false;Next(36);}
     }
   } else if(Stage==36){
@@ -466,13 +469,13 @@ void ATerraGameMode::Tick(float Dt) {
     V->TestForward=false;V->TestReverse=true;V->TestStop=false;
     if(StageTime>5){
       const float ActualSpeed=V->Chassis->GetPhysicsLinearVelocity().Size2D()/100;
-      Check(TEXT("held S reaches a stop and does not become reverse throttle"),ActualSpeed<.15f&&V->Direction==1&&V->Throttle==0,ActualSpeed);
+      Check(TEXT("held S brakes then selects physical reverse without a release"),V->Direction==-1&&V->Speed<-1,V->Speed);
       V->TestReverse=false;Next(38);
     }
   } else if(Stage==38){
     V->TestReverse=StageTime>.35f;V->TestForward=V->TestStop=false;
     if(StageTime>4){
-      Check(TEXT("release and reapply S selects physical reverse drive"),V->Direction==-1&&V->Speed<-2,V->Speed);
+      Check(TEXT("S maintains physical reverse drive after reapplication"),V->Direction==-1&&V->Speed<-2,V->Speed);
       V->TestStop=true;Next(39);
     }
   } else if(Stage==39){
@@ -519,9 +522,10 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>3&&!Captured){
       const auto P=V->GetActorLocation();const float Height=(P.Z-V->Terrain->Height(P.X,P.Y))/100;
       Check(TEXT("Hummer tire and lift combination retains intended driving height"),FMath::Abs(Height-V->ExpectedRideHeight())<.065f,Height-V->ExpectedRideHeight());
-      V->SetGarage(true);V->SetGarageView(2);Capture(TEXT("native-hummer-lifted.png"));Captured=true;
+      V->SetGarage(true);V->SetGarageView(2);ModelView=0;Captured=true;
     }
-    if(StageTime>3.6f){
+    if(StageTime>3.45f&&Captured&&ModelView==0){Capture(TEXT("native-hummer-lifted.png"));ModelView=1;}
+    if(StageTime>3.9f){
       ModelVehicle=0;ModelView=0;Next(44);
       V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarageView(1);
     }
@@ -533,7 +537,7 @@ void ATerraGameMode::Tick(float Dt) {
     }
     if(StageTime>1.05f){
       if(++ModelView==3){ModelView=0;++ModelVehicle;}
-      if(ModelVehicle==5){GarageCameraBefore=V->GarageViewState();V->OrbitGarageCamera(92,-17);V->ZoomGarageCamera(2);Next(45);}
+      if(ModelVehicle==ATerraVehicle::VehicleCount){GarageCameraBefore=V->GarageViewState();V->OrbitGarageCamera(92,-17);V->ZoomGarageCamera(2);Next(45);}
       else{V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarageView(ModelView+1);Next(44);}
     }
   } else if(Stage==45){
@@ -543,12 +547,68 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("garage orbit changes the real camera and survives later ticks"),FMath::Abs(State.X-GarageCameraBefore.X)>50&&Error<1,Error);
       Check(TEXT("garage zoom changes the real camera boom"),State.Z<GarageCameraBefore.Z*.9f&&FMath::Abs(V->CameraArm->TargetArmLength-State.Z)<1,State.Z);
       Capture(TEXT("native-garage-orbit.png"));
-      V->OrbitGarageCamera(0,10000);V->ZoomGarageCamera(1000);
-      Check(TEXT("garage orbit pitch and near zoom remain bounded"),V->GarageViewState().Y<=12&&V->GarageViewState().Z>=300);
-      V->OrbitGarageCamera(0,-20000);V->ZoomGarageCamera(-1000);
-      Check(TEXT("garage lower pitch and far zoom remain bounded"),V->GarageViewState().Y>=-52&&V->GarageViewState().Z<=1800);
-      V->SetGarage(false);FinishValidation();
+      Next(46);
     }
+  }
+  else if(Stage==46&&StageTime>.8f){
+    // Allow the queued orbit capture to finish before closing its garage.
+    V->OrbitGarageCamera(0,10000);V->ZoomGarageCamera(1000);
+    Check(TEXT("garage orbit pitch and near zoom remain bounded"),V->GarageViewState().Y<=12&&V->GarageViewState().Z>=300);
+    V->OrbitGarageCamera(0,-20000);V->ZoomGarageCamera(-1000);
+    Check(TEXT("garage lower pitch and far zoom remain bounded"),V->GarageViewState().Y>=-52&&V->GarageViewState().Z<=1800);
+    V->SetGarage(false);V->TestDriverInput=false;V->TestThrottle=V->TestSteer=V->TestBrake=0;
+    ModelVehicle=0;ModelView=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);Next(47);
+  }else if(Stage==47){
+    V->TestBrake=ModelView==1?1:0;V->Direction=ModelView==2?-1:1;
+    if(StageTime>.7f&&!Captured){
+      bool BrakeOK=!V->BrakeLamps.IsEmpty(),ReverseOK=!V->ReverseLamps.IsEmpty();
+      for(auto Lamp:V->BrakeLamps)BrakeOK&=FMath::Abs(Lamp->K2_GetScalarParameterValue(TEXT("TerraLamp"))-(ModelView==1?5.f:0.f))<.001f;
+      for(auto Lamp:V->ReverseLamps)ReverseOK&=FMath::Abs(Lamp->K2_GetScalarParameterValue(TEXT("TerraLamp"))-(ModelView==2?4.f:0.f))<.001f;
+      Check(FString::Printf(TEXT("vehicle %d brake material state %d"),ModelVehicle,ModelView),BrakeOK);
+      Check(FString::Printf(TEXT("vehicle %d reverse material state %d"),ModelVehicle,ModelView),ReverseOK);
+      Capture(*FString::Printf(TEXT("native-lamps-%d-state-%d.png"),ModelVehicle,ModelView));Captured=true;
+    }
+    if(StageTime>1.05f){
+      if(++ModelView==3){ModelView=0;++ModelVehicle;if(ModelVehicle<ATerraVehicle::VehicleCount){V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->TeleportZone(1);}}
+      if(ModelVehicle==ATerraVehicle::VehicleCount){V->SelectVehicle(0);V->TeleportZone(1);V->Terrain->ResetSoil();Next(48);}else Next(47);
+    }
+  }else if(Stage==48){
+    V->TestMarkCamera=true;
+    if(auto *PC=Cast<APlayerController>(V->GetController()))if(auto *HUD=PC->GetHUD())HUD->bShowHUD=false;
+    if(StageTime>.5f&&!Captured){
+      auto *T=V->Terrain.Get();const FVector P=T->Spawns[1]-FVector(700,0,0);
+      T->BreakTireMarks();const int Before=T->TireMarkCount();
+      for(int I=0;I<20;++I)T->TireMark(0,P+FVector(I*10,0,0),FVector::ForwardVector,.285f,0,5,0,true,false,.025f);
+      Check(TEXT("normally rolling pavement tires leave no rubber skidmarks"),T->TireMarkCount()==Before);
+      for(int W=0;W<2;++W)for(int I=0;I<60;++I)T->TireMark(W,P+FVector(I*10,W?80:-80,0),FVector::ForwardVector,.285f,.9f,5,0,true,false,.025f);
+      const int Added=T->TireMarkCount();Check(TEXT("pavement traction loss creates persistent skid geometry"),Added>Before+50,Added);
+      for(int I=0;I<20;++I)T->TireMark(0,P+FVector(I*10,0,500),FVector::ForwardVector,.285f,2,5,0,false,false,.025f);
+      Check(TEXT("airborne tires add no skidmarks"),T->TireMarkCount()==Added);
+      T->BreakTireMarks();Captured=true;
+    }
+    if(StageTime>1.1f){
+      Check(TEXT("tire marks remain rendered after contact ends"),V->Terrain->TireMarkMesh&&V->Terrain->TireMarkCount()>50);
+      Capture(TEXT("native-pavement-skidmarks.png"));V->TestBrake=1;Next(49);
+    }
+  }else if(Stage==49&&StageTime>.5f){
+    V->TeleportZone(3);V->Terrain->BreakTireMarks();Next(50);
+  }else if(Stage==50){
+    if(StageTime>.5f&&!Captured){
+      auto *T=V->Terrain.Get();const FVector P=T->Spawns[3]-FVector(600,0,0);const int Before=T->SoftMarkCount;
+      for(int W=0;W<2;++W)for(int I=0;I<60;++I){
+        const FVector Q=P+FVector(I*10,W?80:-80,0);
+        T->Deform(Q,FVector::ForwardVector,5500,24,.285f,.28f,.7f,2,.1f);
+        T->TireMark(W,Q,FVector::ForwardVector,.285f,.7f,2,0,true,false,.025f);
+      }
+      Check(TEXT("soft ground records tread impressions with physical ruts"),T->SoftMarkCount>Before+50&&T->Sample(P+FVector(300,80,0)).RutDepth>.001f,T->SoftMarkCount-Before);
+      const int Count=T->TireMarkCount();T->TireMark(0,P+FVector(4000,0,0),FVector::ForwardVector,.285f,1,3,0,true,false,.025f);
+      Check(TEXT("teleports do not draw a tire ribbon across the world"),T->TireMarkCount()==Count);
+      Captured=true;
+    }
+    if(StageTime>1.2f){Capture(TEXT("native-soft-tread-ruts.png"));Next(51);}
+  }else if(Stage==51&&StageTime>.6f){
+    V->Terrain->ResetSoil();Check(TEXT("soil repair clears tire marks and physical deformation"),V->Terrain->TireMarkCount()==0&&V->Terrain->DetailCount()==0);
+    FinishValidation();
   }
 
 }

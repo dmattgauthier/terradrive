@@ -1,0 +1,11 @@
+These asset files are supplied by Poly Haven under CC0 1.0 Universal.
+License: https://creativecommons.org/publicdomain/zero/1.0/
+Provider license: https://polyhaven.com/license
+
+The included manifest.json identifies every original download URL and SHA-256.
+Assets: rock_moss_set_02, shrub_sorrel_01,
+kloofendal_48d_partly_cloudy_puresky.
+
+Credit: Poly Haven and its contributing artists. Terra Drive is not endorsed
+by Poly Haven. The native game uses local assets and makes no live API calls.
+The optional download tool identifies itself to the public API as TerraDrive.

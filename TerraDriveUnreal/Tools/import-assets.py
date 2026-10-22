@@ -20,7 +20,7 @@ def load_texture(filename, mask=False):
     texture = lib.load_asset(dest) if lib.does_asset_exist(dest) else None
     if texture is None:
         task = unreal.AssetImportTask()
-        task.filename = os.path.join(texture_root, filename)
+        task.filename = os.path.join(root,'Vendor','Environment',filename[7:]) if filename.startswith('native/') else os.path.join(texture_root, filename)
         task.destination_path = '/Game/Textures'
         task.automated = True
         task.save = True
@@ -34,7 +34,7 @@ def load_texture(filename, mask=False):
     return texture
 
 def material(name, color, roughness=.8, metallic=0, opacity=1,
-             sky=False, texture=None, alpha=None, clip=.38, instance_tint=False,
+             sky=False, texture=None, alpha=None, clip=.38, instance_tint=False, normal=None, rough_map=None,
              clearcoat=0, coat_roughness=.15, emissive=None, role=''):
     emissive = emissive or [0,0,0]
     dest = '/Game/Materials/' + name
@@ -42,7 +42,7 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         5 if instance_tint else 4, color, roughness, metallic, opacity, sky,
         texture.get_path_name() if texture else None,
         alpha.get_path_name() if alpha else None, clip,
-        clearcoat, coat_roughness, emissive, role
+        clearcoat, coat_roughness, emissive, role, 7, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
     ]).encode()).hexdigest()
     if lib.does_asset_exist(dest):
         m = lib.load_asset(dest)
@@ -113,10 +113,28 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
             raise RuntimeError('Could not connect material attributes: '+name)
     elif not sky:
         m.set_editor_property('shading_model',unreal.MaterialShadingModel.MSM_DEFAULT_LIT)
-    if not sky and max(emissive)>0:
+    if not sky and (max(emissive)>0 or role in ('brake','reverse')):
         node=edit.create_material_expression(m,unreal.MaterialExpressionConstant3Vector,-160,500)
         node.set_editor_property('constant',unreal.LinearColor(*emissive,1))
+        if role in ('brake','reverse'):
+            node.set_editor_property('constant',unreal.LinearColor(1,.008,.003,1) if role=='brake' else unreal.LinearColor(.85,.94,1,1))
+            gain=edit.create_material_expression(m,unreal.MaterialExpressionScalarParameter,-350,550)
+            gain.set_editor_property('parameter_name','TerraLamp');gain.set_editor_property('default_value',0)
+            mul=edit.create_material_expression(m,unreal.MaterialExpressionMultiply,0,500)
+            edit.connect_material_expressions(node,'',mul,'A');edit.connect_material_expressions(gain,'',mul,'B');node=mul
         connect(node,unreal.MaterialProperty.MP_EMISSIVE_COLOR,'EmissiveColor')
+    if normal:
+        normal.set_editor_property('srgb',False)
+        normal.set_editor_property('compression_settings',unreal.TextureCompressionSettings.TC_NORMALMAP)
+        normal.set_editor_property('flip_green_channel',True);lib.save_loaded_asset(normal)
+        sample=edit.create_material_expression(m,unreal.MaterialExpressionTextureSample,-450,700)
+        sample.set_editor_property('texture',normal);sample.set_editor_property('sampler_type',unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+        connect(sample,unreal.MaterialProperty.MP_NORMAL,'Normal')
+    if rough_map:
+        rough_map.set_editor_property('srgb',False);lib.save_loaded_asset(rough_map)
+        sample=edit.create_material_expression(m,unreal.MaterialExpressionTextureSample,-450,850)
+        sample.set_editor_property('texture',rough_map);sample.set_editor_property('sampler_type',unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
+        edit.connect_material_property(sample,'G',unreal.MaterialProperty.MP_ROUGHNESS)
     if sky:
         m.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
         m.set_editor_property('is_sky', True)
@@ -126,7 +144,7 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         mask = edit.create_material_expression(m, unreal.MaterialExpressionTextureSample, -500, 450)
         mask.set_editor_property('texture', alpha)
         mask.set_editor_property('sampler_type', unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
-        edit.connect_material_property(mask, 'R', unreal.MaterialProperty.MP_OPACITY_MASK)
+        edit.connect_material_property(mask, 'A' if role=='scan' else 'R', unreal.MaterialProperty.MP_OPACITY_MASK)
     elif opacity < .95:
         m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
         if role in ('glass','lens'):
@@ -145,7 +163,7 @@ materials = {}
 for d in data['materials']:
     color = [c*t for c, t in zip(d['color'], d.get('vertexTint', [1, 1, 1]))]
     materials[d['id']] = material(d['id'], color, d['roughness'], d['metallic'], d['opacity'],
-        texture=load_texture(d.get('diffuse')), alpha=load_texture(d.get('alpha'), True),
+        texture=load_texture(d.get('diffuse')), alpha=load_texture(d.get('alpha'), True),normal=load_texture(d.get('normal')),rough_map=load_texture(d.get('roughMap'),True),
         clip=d.get('alphaTest') or .38, instance_tint=d.get('instanceTint',False),
         clearcoat=d.get('clearcoat',0),coat_roughness=d.get('coatRoughness',.15),
         emissive=d.get('emissive'),role=d.get('role',''))
@@ -158,6 +176,8 @@ with open(terrain_script, encoding='utf8') as terrain_stream:
 for name, color in [('mud',[.19,.12,.07]), ('water',[.40,.60,.68]), ('snow',[.90,.95,1]), ('sand',[.69,.50,.26])]:
     material('Spray_'+name, color, .3 if name == 'water' else .94)
 material('M_Sky', [.38,.58,.78], sky=True)
+exec(compile(open(os.path.join(root,'Tools','sky-material.py'),encoding='utf8').read(),'sky-material.py','exec'),globals())
+exec(compile(open(os.path.join(root,'Tools','tire-mark-materials.py'),encoding='utf8').read(),'tire-mark-materials.py','exec'),globals())
 material('Native_SuspensionSteel',[.035,.05,.055],.48,.72)
 material('Native_Chrome',[.45,.53,.57],.25,.88)
 

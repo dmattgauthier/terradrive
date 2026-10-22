@@ -2,6 +2,8 @@
 
 Research and implementation: October 21, 2026. Configurations follow the existing US-market catalogue: MY2024 Wrangler Rubicon four-door, Bronco Badlands four-door, Civic Sport sedan, HUMMER EV SUV 3X with Extreme Off-Road Package, and MY2016 Sprinter 2500 Crew 144-inch wheelbase/standard roof. Geometry is authored from reference; no manufacturer CAD or downloaded commercial mesh is used. The browser source is preserved.
 
+The later sixth-vehicle and input changes are in [lighting-tracks-urus.md](lighting-tracks-urus.md). This page records the preceding five-vehicle model refinement.
+
 ## Reference decisions
 
 | Vehicle | Reference observations that guide the model |
@@ -45,7 +47,7 @@ These changes improve the existing reference-built bodies rather than claiming a
 
 Garage preview: drag the vehicle view to orbit, scroll to zoom, or use Front/Side/Rear/Reset. Arrow keys adjust the view and Page Up/Page Down zoom. Preview-key handling keeps those camera commands working after a child button takes focus. Other UI button actions retain their handling. Camera pitch and distance are bounded, and the camera is no longer reset each frame.
 
-The native wheel's exported axle is Unreal Y. Positive forward angular speed now gives the bottom tread a rearward tangent; reverse gives the opposite motion. Brake holding torque is solved with tire contact, with a friction-limited low-speed holding force. Space overrides throttle. S brakes a forward-moving vehicle and continues to hold it; release and hold S again at rest to deliberately select reverse. W behaves symmetrically while reversing.
+The native wheel's exported axle is Unreal Y. Positive forward angular speed now gives the bottom tread a rearward tangent; reverse gives the opposite motion. Brake holding torque is solved with tire contact, with a friction-limited low-speed holding force. Space overrides throttle. S brakes a forward-moving vehicle, then selects reverse when kept held at a full stop for 0.65 seconds. W behaves symmetrically while reversing. Space remains a dedicated brake and hold.
 
 Suspension mounting uses the stock tire/body hardpoints and subtracts added spring length. A lift and larger tire therefore raise the driving body consistently with the frozen garage pose. Hummer stock, suspension III and combined tire/lift stages are checked by measured ride height, not only by upgraded parameter values.
 

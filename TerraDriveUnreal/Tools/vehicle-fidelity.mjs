@@ -91,7 +91,7 @@ function factoryRim(spec){
     if(style==='van'){
       ring(g,alloy,face+side*.052,r*.115,.0018);
       for(let i=0;i<3;i++){const a=i*Math.PI*2/3;rod(g,alloy,[face+side*.054,0,0],[face+side*.054,Math.cos(a)*r*.115,Math.sin(a)*r*.115],.002);}
-    }else if(style!=='bronco'){
+    }else if(style!=='bronco'&&style!=='urus'){
       const cap=text(g,style==='hummer'?'GMC':style==='sedan'?'H':'JEEP',r*.25,r*.095,alloy);
       cap.position.set(face+side*.052,-r*.047,0);cap.rotation.y=side*Math.PI/2;
     }
@@ -102,8 +102,27 @@ function factoryRim(spec){
 export function refineVehicle(view,spec){
   for(const [key,m]of Object.entries(view.materials)){
     if(!m?.isMaterial)continue;
-    m.userData.nativeRole=key==='paint'||key==='glossBlack'?'paint':m.userData.vehicleGlass?'glass':m.userData.vehicleLampLens?'lens':key==='rubber'||key==='tread'?'rubber':'';
+    m.userData.nativeRole=key==='red'?'brake':key==='reverse'?'reverse':key==='paint'||key==='glossBlack'?'paint':m.userData.vehicleGlass?'glass':m.userData.vehicleLampLens?'lens':key==='rubber'||key==='tread'?'rubber':'';
   }
+  // Hummer roof clearance markers share the browser's red material. Only
+  // actual rear emitters get a dynamic brake material in the native export.
+  view.root.updateMatrixWorld(true);
+  const extras=[];
+  view.body.traverse(o=>{
+    if(!o.isMesh||o.material!==view.materials.red)return;
+    const geo=o.geometry,pa=geo.attributes.position,ix=geo.index,on=[],off=[];
+    for(let i=0;i<(ix?ix.count:pa.count);i+=3){
+      const ids=[0,1,2].map(k=>ix?ix.getX(i+k):i+k);
+      const z=ids.reduce((sum,j)=>sum+new THREE.Vector3().fromBufferAttribute(pa,j).applyMatrix4(o.matrixWorld).z,0)/3;
+      (z< -spec.wheelbase*.25?on:off).push(...ids);
+    }
+    if(off.length){
+      const other=o.clone();other.geometry=geo.clone();other.geometry.setIndex(off);
+      other.material=o.material.clone();other.material.userData.nativeRole='';other.material.emissiveIntensity=.04;
+      extras.push([o.parent,other]);geo.setIndex(on);
+    }
+  });
+  for(const [parent,extra]of extras)parent.add(extra);
   // Replace lost canvas text with real geometry, and keep native body identity
   // independent of any font/HTML renderer in the shipped game.
   if(spec.bodyStyle==='jeep')for(const side of [-1,1]){
@@ -130,7 +149,7 @@ export function refineVehicle(view,spec){
       if(m?.userData.vehicleGlass&&p.z< -spec.wheelbase*.25){p.z-=.001;return p.toArray();}
     }return null;
   };
-  if(spec.bodyStyle!=='sedan')for(let i=0;i<8;i++){
+  if(rear&&spec.bodyStyle!=='sedan')for(let i=0;i<8;i++){
     const y=THREE.MathUtils.lerp(rear[1],rear[2],i/7),a=glassPoint(-rear[3],y),b=glassPoint(rear[3],y);
     if(a&&b&&Math.abs(a[2]-b[2])<.05)rod(view.body,heater,a,b,.0007);
   }

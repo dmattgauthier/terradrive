@@ -45,6 +45,11 @@ struct FTerraTree {
   TArray<TPair<UInstancedStaticMeshComponent *, int32>> Parts;
   TArray<FTransform> Original;
 };
+struct FTerraTireMark {
+  FVector A,B,Side;
+  float Width=28,Phase=0;
+  uint8 Surface=0;
+};
 UCLASS()
 class TERRADRIVE_API ATerraWorld : public AActor {
   GENERATED_BODY()
@@ -63,6 +68,12 @@ public:
   void HitTree(UPrimitiveComponent *Component, FVector Impulse, FVector Point);
   void SetRain(bool Enabled);
   void ResetSoil();
+  void TireMark(int Wheel,FVector Point,FVector Forward,float Width,float Slip,
+      float LongSpeed,float LateralSpeed,bool Grounded,bool Constructed,float Dt);
+  void BreakTireMarks();
+  int TireMarkCount() const { return TireMarks.Num(); }
+  int SkidMarkCount=0,SoftMarkCount=0;
+  UPROPERTY() TObjectPtr<UProceduralMeshComponent> TireMarkMesh;
   TSharedPtr<FJsonObject> Data;
   TArray<FTerraTree> Trees;
   TArray<FVector> Spawns;
@@ -92,4 +103,10 @@ private:
   void RebuildGround(FIntPoint Key);
   void UpdateTile(FTerraTile &Tile);
   void LoadScenery();
+  TArray<FTerraTireMark> TireMarks;
+  FVector LastMark[4];
+  bool MarkConnected[4]={false,false,false,false},MarksDirty=false;
+  float MarkPhase[4]={0,0,0,0};
+  int NextMark=0,ThrottleMarkRefresh=0;
+  void RebuildTireMarks();
 };

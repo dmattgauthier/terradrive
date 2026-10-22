@@ -30,14 +30,14 @@ FSlateFontInfo Font(int Size, bool Bold=false) { return FCoreStyle::GetDefaultFo
 TSharedRef<STextBlock> Label(const FString &S,int Size=12,FLinearColor Color=White,bool Bold=false) {
   return SNew(STextBlock).Text(FText::FromString(S)).Font(Font(Size,Bold)).ColorAndOpacity(Color);
 }
-const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV")};
+const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV"),TEXT("URUS")};
 const TCHAR* Roles[]={TEXT("RUBICON  /  TECHNICAL CRAWLER"),TEXT("BADLANDS  /  ALL-TERRAIN"),
- TEXT("SPORT  /  LIGHT & AGILE"),TEXT("2500  /  EXPEDITION VAN"),TEXT("3X SUV  /  ELECTRIC TORQUE")};
+ TEXT("SPORT  /  LIGHT & AGILE"),TEXT("2500  /  EXPEDITION VAN"),TEXT("3X SUV  /  ELECTRIC TORQUE"),TEXT("PERFORMANTE  /  V8 SUPER SUV")};
 const TCHAR* Notes[]={TEXT("Solid axles, low range and front/rear lockers.\nA deliberate line is your best tool."),
  TEXT("Independent front suspension and locking axles.\nBuilt for speed between the obstacles."),
  TEXT("Lightweight front-wheel drive.\nFind the smooth line and keep momentum."),
  TEXT("Long wheelbase and rear-wheel drive.\nManage clearance and choose wide approaches."),
- TEXT("Electric all-wheel drive and rear steering.\nImmediate torque meets substantial weight.")};
+ TEXT("Electric all-wheel drive and rear steering.\nImmediate torque meets substantial weight."),TEXT("Twin-turbo V8, steel coils and road tires.\nChoose flowing trails over deep rock steps.")};
 }
 class STerraVehiclePreview : public SCompoundWidget {
 public:
@@ -141,9 +141,9 @@ TSharedRef<SWidget> STerraGarage::Metric(const FString &Name,TAttribute<FText> V
 TSharedRef<SWidget> STerraGarage::VehiclePage() {
   auto List=SNew(SVerticalBox);
   List->AddSlot().AutoHeight().Padding(4,0,0,12)[Label(TEXT("CHOOSE YOUR VEHICLE"),12,Mint,true)];
-  for(int I=0;I<5;++I) {
+  for(int I=0;I<ATerraVehicle::VehicleCount;++I) {
     List->AddSlot().AutoHeight().Padding(0,0,0,8)
-    [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(18,15))
+    [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(18,10))
       .ButtonColorAndOpacity_Lambda([this,I]{return Vehicle.IsValid()&&Vehicle->VehicleIndex==I?FLinearColor(.19,.33,.26):Ink;})
       .OnClicked_Lambda([this,I]{if(Vehicle.IsValid())Vehicle->SelectVehicle(I);return FReply::Handled();})
       [SNew(SVerticalBox)

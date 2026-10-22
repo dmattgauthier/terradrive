@@ -57,7 +57,8 @@ void ATerraVehicle::UpdateVisualDetails(){
     Rims[I]->SetWorldLocationAndRotation(Wheels[I]->GetComponentLocation(),Wheels[I]->GetComponentQuat());
     // Tire diameter changes sidewall height. It must not inflate the factory
     // 16/17/18-inch rim or brake rotor along with the rubber.
-    Rims[I]->SetWorldScale3D(FVector(1,Tuning.TireWidth,1));
+    const float AxleWidth=I>=2?Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))/Number(TEXT("tireWidth"),.285f):1.f;
+    Rims[I]->SetWorldScale3D(FVector(1,Tuning.TireWidth*AxleWidth,1));
   }
   auto Link=[&](int I,FVector A,FVector B,float RadiusCM){
     const FVector D=B-A;
@@ -92,7 +93,7 @@ void ATerraVehicle::UpdateVisualDetails(){
       const FVector D=Joint-A;Part->SetWorldLocationAndRotation((A+Joint)*.5,FRotationMatrix::MakeFromZ(D).ToQuat());
       Part->SetWorldScale3D(FVector(.040,.040,D.Size()/100));
     }
-    const float RimRadius=VehicleIndex==3?20.32f:VehicleIndex<2?21.59f:22.86f;
+    const float RimRadius=VehicleIndex==5?27.94f:VehicleIndex==3?20.32f:VehicleIndex<2?21.59f:22.86f;
     auto *Caliper=HubDetails[I*4+2].Get();Caliper->SetVisibility(!Tracks);
     Caliper->SetWorldLocationAndRotation(Hub+Steering.RotateVector(FVector(-RimRadius*.60f,Side*Width*16,0)),Steering);
     auto *Knuckle=HubDetails[I*4+3].Get();Knuckle->SetVisibility(!Tracks&&!Type.Contains(TEXT("solid")));

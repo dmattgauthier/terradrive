@@ -10,8 +10,10 @@ The native preview includes the Summit loop/jump/articulation park and a Granite
 
 The native garage provides direct vehicle selection, a live model preview and seven upgrade categories with stock plus three stages. Per-vehicle builds are saved locally. Terrain uses layered photographic ground, slope-aware patches, normal/roughness maps and world-space variation. See `TerraDriveUnreal/docs/garage-and-terrain.md` for details.
 
-Drag the garage preview to orbit, scroll to zoom, or choose front/side/rear views. Braking overrides throttle, held opposite input stops and holds, and upgraded Hummer suspension raises the body consistently in the garage and driving. Vehicle refinements include separate factory-diameter rims, seated upgrade tires, stationary brake hardware and restored physical materials. Manufacturer reference decisions are documented in [vehicle-model-research.md](TerraDriveUnreal/docs/vehicle-model-research.md).
+Drag the garage preview to orbit, scroll to zoom, or choose front/side/rear views. Braking overrides throttle, held opposite input brakes to a stop and then selects reverse after a short dwell, and upgraded Hummer suspension raises the body consistently in the garage and driving. Vehicle refinements include separate factory-diameter rims, seated upgrade tires, stationary brake hardware and restored physical materials. Manufacturer reference decisions are documented in [vehicle-model-research.md](TerraDriveUnreal/docs/vehicle-model-research.md).
 
 Third-party asset attribution is retained in `TerraDrive-v1.13/dist/assets/terrain/manifest.json` and adjacent source/license records. Unreal Engine itself is not included.
 
 The native game uses imperial displays and includes pressure-sensitive tire footprints, traction-limited wheelspin, rut resistance and seamless soil deformation. Articulated suspension and upgrade equipment accompany additional physical boulders/deadwood and varied vegetation. See `TerraDriveUnreal/docs/terrain-interaction-and-models.md`.
+
+The sixth native vehicle is the original V8 Lamborghini Urus Performante. Brake and reverse emitters, persistent soft-ground tread impressions and pavement skidmarks accompany scanned CC0 rocks/vegetation and a photographic HDR sky. See [lighting-tracks-urus.md](TerraDriveUnreal/docs/lighting-tracks-urus.md) for controls, asset licenses and model references.

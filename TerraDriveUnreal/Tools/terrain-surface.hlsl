@@ -30,7 +30,7 @@ float grit=.40*f.noise(p.xy*.09-46)+.28*f.noise(p.xy*.31+17)
           +.20*f.noise(p.xy*.9)+.12*f.noise(p.xy*2.1);
 float c=smoothstep(.46,.68,grit)*(1-b*.7);
 // Moss/vegetation prefers upward faces; rock becomes exposed on steep ground.
-if(Biome==0||Biome==3) b*=saturate((n.z-.35)*1.8);
+if(Biome==0||Biome==3) b=saturate((b+.13)*saturate((n.z-.35)*1.8));
 if(Biome==4) { b*=saturate(n.z*.85+.15);c=max(c,saturate(1-n.z)*.5); }
 if(Biome==1) { b*=.22;c*=.16; }
 if(Biome==5) { b*=.48;c*=.26; }
@@ -58,6 +58,7 @@ float rough=Texture2DSample(RoughMap,RoughMapSampler,uv).r;
 // white sky/sun reflections, visually resembling snow on ordinary ground.
 Roughness=clamp(lerp(.78+rough*.20,.52,wet),.52,.99);
 float3 detail=Texture2DSample(NormalMap,NormalMapSampler,uv).xyz*2-1;
+detail=normalize(lerp(lerp(detail,Texture2DSample(SecondaryNormal,SecondaryNormalSampler,uv*.778).xyz*2-1,b),Texture2DSample(AccentNormal,AccentNormalSampler,uv*1.355).xyz*2-1,c));
 detail.y=-detail.y; // The supplied photographic maps use OpenGL green.
 detail.xy*=.38;
 detail.z=sqrt(saturate(1-dot(detail.xy,detail.xy)));

@@ -283,7 +283,7 @@ void ATerraWorld::BeginPlay() {
   Sky->GetLightComponent()->SetLowerHemisphereColor(FLinearColor(.16f,.14f,.11f));
   Sky->GetLightComponent()->bRealTimeCapture = true;
   auto *Fog = GetWorld()->SpawnActor<AExponentialHeightFog>();
-  Fog->GetComponent()->SetFogDensity(.009f);
+  Fog->GetComponent()->SetFogDensity(.006f);
   Fog->GetComponent()->SetFogInscatteringColor(FLinearColor(.48, .61, .72));
   // A native sky dome gives the skylight something to capture.
   auto *Dome = GetWorld()->SpawnActor<AStaticMeshActor>();
@@ -387,7 +387,7 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
       T.Normals[A] = FVector(Height(X - 5, Y) - Height(X + 5, Y),
                              Height(X, Y - 5) - Height(X, Y + 5), 10)
                          .GetSafeNormal();
-      float Shade = 1 - T.Packing[A] * .17f;
+      float Shade = 1 - T.Packing[A] * .32f;
       T.Colors[A] = FLinearColor(Shade, Shade, Shade);
     }
   for (int J = 0; J < Div; J++)
@@ -672,6 +672,7 @@ void ATerraWorld::Tick(float Dt) {
   VisualTimer += Dt;
   if (VisualTimer > .08f) {
     VisualTimer = 0;
+    if(MarksDirty||(!TireMarks.IsEmpty()&&ThrottleMarkRefresh++%4==0))RebuildTireMarks();
     int Count = 0;
     for (auto &Pair : Detail)
       if (Pair.Value.Dirty && Count++ < 8)
@@ -725,6 +726,8 @@ void ATerraWorld::ResetSoil() {
     P.Value.Mesh->DestroyComponent();
   }
   Detail.Empty();
+  TireMarks.Empty();NextMark=0;SkidMarkCount=SoftMarkCount=0;BreakTireMarks();
+  if(TireMarkMesh)TireMarkMesh->ClearAllMeshSections();
   for (auto &P : Ground)
     RebuildGround(P.Key);
   DepressedVolume = DisplacedVolume = CompactedVolume = 0;

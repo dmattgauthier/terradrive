@@ -11,10 +11,12 @@
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
-FString ATerraVehicle::GaragePath() const { return FPaths::ProjectSavedDir()/TEXT("garage-builds.json"); }
+FString ATerraVehicle::GaragePath() const { FString Path=FPaths::ProjectSavedDir()/TEXT("garage-builds.json");FParse::Value(FCommandLine::Get(),TEXT("TerraGarage="),Path);return Path; }
 void ATerraVehicle::OrbitGarageCamera(float YawDelta,float PitchDelta){
   if(!Garage)return;
   GarageYaw=FMath::UnwindDegrees(GarageYaw+YawDelta);
@@ -29,7 +31,7 @@ void ATerraVehicle::SetGarageView(int View){
   if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
 }
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
-  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),1);
+  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),2);
   Root->SetNumberField(TEXT("vehicle"),VehicleIndex);
   TArray<TSharedPtr<FJsonValue>> Cars;
   for(const auto &Build:Builds){
@@ -50,10 +52,10 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())return false;
   double Version=0,Selected=0;
   const TArray<TSharedPtr<FJsonValue>> *Cars=nullptr;
-  if(!Root->TryGetNumberField(TEXT("version"),Version)||Version!=1||
-      !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=5)return false;
-  TerraSim::UpgradeSetup Loaded[5];
-  for(int I=0;I<5;++I){
+  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2)||
+      !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=(Version==1?5:VehicleCount))return false;
+  TerraSim::UpgradeSetup Loaded[VehicleCount];
+  for(int I=0;I<Cars->Num();++I){
     const TArray<TSharedPtr<FJsonValue>> *Stages=nullptr;
     if(!(*Cars)[I]->TryGetArray(Stages)||Stages->Num()!=TerraSim::PartCount)return false;
     for(int P=0;P<TerraSim::PartCount;++P){
@@ -62,9 +64,9 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
     }
     Loaded[I].Sanitize(I!=2);
   }
-  for(int I=0;I<5;++I)Builds[I]=Loaded[I];
+  for(int I=0;I<VehicleCount;++I)Builds[I]=Loaded[I];
   Root->TryGetNumberField(TEXT("vehicle"),Selected);
-  LastVehicle=FMath::IsFinite(Selected)?int(FMath::Clamp(Selected,0.,4.)):0;
+  LastVehicle=FMath::IsFinite(Selected)?int(FMath::Clamp(Selected,0.,double(VehicleCount-1))):0;
   return true;
 }
 void ATerraVehicle::ApplyUpgrades(){
@@ -93,7 +95,10 @@ void ATerraVehicle::ApplyUpgrades(){
     auto *Mesh=LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Name));
     for(auto W:Wheels)W->SetStaticMesh(Mesh);
   }
-  for(auto W:Wheels)W->SetRelativeScale3D(Tracks?FVector::OneVector:FVector(TireVisualScale,WidthVisualScale,TireVisualScale));
+  for(int I=0;I<Wheels.Num();++I){
+    const float AxleWidth=I>=2?Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))/Number(TEXT("tireWidth"),.285f):1.f;
+    Wheels[I]->SetRelativeScale3D(Tracks?FVector::OneVector:FVector(TireVisualScale,WidthVisualScale*AxleWidth,TireVisualScale));
+  }
   if(Garage){
     const FVector P=GetActorLocation();
     const float Raised=Tuning.Lift+(Radius-Number(TEXT("tireRadius"),.42f));

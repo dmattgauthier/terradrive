@@ -3,24 +3,26 @@
 
 namespace TerraSim {
 struct DriverDemand { float Throttle=0, Brake=0; };
-// Opposite input stops and holds the car. Release it after braking, then hold
-// it at rest to select the other direction; braking cannot silently become drive.
+// S/Down/LT brakes, then selects reverse after a continuous 0.65s stop.
+// Space is a dedicated hold: it never changes gear or applies drive torque.
 inline DriverDemand DriverControls(int &direction,bool forward,bool reverse,
     float trigger,float pedal,bool stop,float speed,float dt,float &held,bool &releaseRequired) {
     DriverDemand out;
-    out.Brake=std::clamp(pedal,0.f,1.f);
-    const bool opposite=direction>0?reverse:forward;
-    if(!opposite){releaseRequired=false;held=0;}
-    if(forward&&reverse){out.Brake=1;held=0;return out;}
-    if(opposite){
-        if(std::abs(speed)>.22f){releaseRequired=true;held=0;}
-        if(releaseRequired){out.Brake=1;return out;}
-        const int next=RequestedDirection(direction,forward,reverse,speed,dt,held);
-        if(next==direction)out.Brake=1;
-        else direction=next;
+    releaseRequired=false;
+    trigger=std::clamp(trigger,0.f,1.f);pedal=std::clamp(pedal,0.f,1.f);
+    const float ahead=forward?1.f:trigger,back=reverse?1.f:pedal;
+    if(stop||(ahead>.05f&&back>.05f)){
+        out.Brake=stop?1.f:back;held=0;return out;
     }
-    if(stop)out.Brake=1;
-    out.Throttle=out.Brake>.01f?0.f:((direction>0?forward:reverse)?1.f:std::clamp(trigger,0.f,1.f));
+    const float opposite=direction>0?back:ahead,drive=direction>0?ahead:back;
+    if(opposite>.05f){
+        out.Brake=std::max(.35f,opposite);
+        if(std::abs(speed)>.22f)held=0;
+        else held+=std::max(0.f,dt);
+        if(held>=.65f){direction=-direction;held=0;}
+        return out; // Shift frame stays braked; torque begins on the next frame.
+    }
+    held=0;out.Throttle=drive;
     return out;
 }
 }

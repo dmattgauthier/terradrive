@@ -15,6 +15,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/ConfigCacheIni.h"
 #include "Misc/Parse.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 float ATerraVehicle::Number(const TCHAR *Name, float Default) const {
   double N = Default;
@@ -120,12 +121,14 @@ void ATerraVehicle::SelectVehicle(int Index) {
     return;
   auto &List = Terrain->Data->GetArrayField(TEXT("vehicles"));
   const int PreviousRoute = RouteIndex;
+  Terrain->BreakTireMarks();
   VehicleIndex = (Index + List.Num()) % List.Num();
   Spec = List[VehicleIndex]->AsObject();
   VehicleName = Spec->GetStringField(TEXT("name"));
   FString Asset = Spec->GetStringField(TEXT("asset"));
   Body->SetStaticMesh(LoadObject<UStaticMesh>(
       nullptr, *(TEXT("/Game/Meshes/") + Asset + TEXT("_body"))));
+  ConfigureLamps();
   Protection->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Asset+TEXT("_armor"))));
   TrailEquipment->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Asset+TEXT("_equipment"))));
   Mass = Number(TEXT("mass"), 2100);
@@ -143,7 +146,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   Pressure = Number(TEXT("stockPSI"), 35);
   Chassis->SetBoxExtent(
       FVector(Number(TEXT("bodyLength"), Number(TEXT("length"), 4.8)) * .43f,
-              Number(TEXT("width"), 1.8) * .42f, .22f) *
+              Number(TEXT("width"), 1.8) * .42f, VehicleIndex==5?CG-Number(TEXT("clearance"),.158f):.22f) *
       100);
   Chassis->SetMassOverrideInKg(NAME_None, Mass);
   RoofCollision->SetBoxExtent(FVector(Number(TEXT("length"),4.8)*.30f,
@@ -201,6 +204,7 @@ void ATerraVehicle::SetTracks(bool Enabled) {
 void ATerraVehicle::TeleportZone(int Index) {
   if (!Terrain || Terrain->Spawns.IsEmpty())
     return;
+  Terrain->BreakTireMarks();
   Zone = (Index + Terrain->Spawns.Num()) % Terrain->Spawns.Num();
   RouteIndex = -1;
   RouteStatus.Empty();
@@ -447,9 +451,10 @@ void ATerraVehicle::Simulate(float Dt) {
     const FVector Local(Wheelbase * (Front ? 1-FrontWeight : -FrontWeight)*100,
         (I%2 ? 1:-1)*Track*50, (Number(TEXT("tireRadius"),.42f)+Rest-CG-Preload-Tuning.Lift)*100);
     const FVector Mount = GetActorTransform().TransformPosition(Local);
-    W.Angle = Front ? SteerAngle : Electric ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : 0;
+    W.Angle = Front ? SteerAngle : Electric ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
     const FVector WF = FQuat(Up,W.Angle).RotateVector(Forward);
-    const auto Support = Terrain->CastTireSupport(Mount,Up,WF,Radius*100,Width*100,-30,(Rest+Droop)*100,this);
+    const float AxleWidth=Front?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth;
+    const auto Support = Terrain->CastTireSupport(Mount,Up,WF,Radius*100,AxleWidth*100,-30,(Rest+Droop)*100,this);
     W.ContactValid = Support.Hit;
     W.Constructed = Support.Constructed;
     W.Distance = Support.Hit ? Support.Distance/100 : Rest+Droop;
@@ -475,7 +480,7 @@ void ATerraVehicle::Simulate(float Dt) {
     W.ForceSide = FVector::CrossProduct(Normal,W.ForceForward).GetSafeNormal();
     W.LongSpeed = FVector::DotProduct(W.PointVelocity,W.ForceForward);
     W.LateralSpeed = FVector::DotProduct(W.PointVelocity,W.ForceSide);
-    W.Footprint=TerraSim::FootprintLength(W.Load,Pressure,Tracks?.48f:Width,Radius,Tracks);
+    W.Footprint=TerraSim::FootprintLength(W.Load,Pressure,Tracks?.48f:AxleWidth,Radius,Tracks);
     W.RutDepth=W.Constructed?0:W.Ground.RutDepth;
     W.Grip=TerraSim::TerrainGrip(W.Ground.Mu,W.Load,StaticLoad,Pressure,Number(TEXT("stockPSI"),35),
         W.Ground.MaxSink>0,Tracks,W.Ground.Packing,W.Slip,W.Ground.Water/100,W.LongSpeed)*Tuning.Grip*
@@ -489,13 +494,14 @@ void ATerraVehicle::Simulate(float Dt) {
     const bool Driven = FourDrive || (VehicleIndex==2 ? Axle==0 : Axle==1);
     if (!Driven) continue;
     const int A=Axle*2;
-    const auto Split=TerraSim::SplitAxleTorque(TotalTorque/(FourDrive?2:1),
+    const auto Split=TerraSim::SplitAxleTorque(TotalTorque*(FourDrive?(VehicleIndex==5?(Axle==0?.40f:.60f):.5f):1.f),
         Capacities[A],Capacities[A+1],Axle==0?FrontLocked:RearLocked);
     Drives[A]=Split.left; Drives[A+1]=Split.right;
   }
   const float AssistBrake = DescentAssist && Throttle<.05f
       ? FMath::Clamp((FMath::Abs(Speed)-2.f)*.45f,0.f,.8f) : 0.f;
   const float EffectiveBrake = FMath::Max(Brake,AssistBrake);
+  if(AssistBrake>Brake){BrakeLampLevel=5;for(auto Lamp:BrakeLamps)Lamp->SetScalarParameterValue(TEXT("TerraLamp"),5);}
   const float Inertia=Tracks?24.f:3.f*Tuning.WheelInertia, R=Radius;
   const float WheelRevLimit=Electric?0:float(Spec->GetObjectField(TEXT("engine"))->GetNumberField(TEXT("redlineRPM")))*2*PI/
       (60*FMath::Max(.1f,Ratio*Final*Low));
@@ -560,10 +566,12 @@ void ATerraVehicle::Simulate(float Dt) {
       Chassis->AddForceAtLocation((W.Ground.Normal*W.Load+W.ForceForward*FX+W.ForceSide*FY)*100,W.Contact);
       LastTireForceN+=FMath::Abs(FX)+FMath::Abs(FY);
       if (SoilTimer>=.025f && !W.Constructed)
-        Terrain->Deform(W.Contact,W.ForceForward,W.Load,Pressure,Tracks?.48f:Width,W.Footprint,W.Slip,W.LongSpeed,SoilTimer);
+        Terrain->Deform(W.Contact,W.ForceForward,W.Load,Pressure,Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth),W.Footprint,W.Slip,W.LongSpeed,SoilTimer);
       const float Water=W.Ground.Water/100;
       if (Water>.01f) Chassis->AddForceAtLocation((-W.PointVelocity*Water*260+FVector::UpVector*Water*350)*100,W.Contact);
     }
+    Terrain->TireMark(I,W.Contact,W.ForceForward,Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth),W.Slip,W.LongSpeed,W.LateralSpeed,
+        W.ContactValid&&W.Load>50&&!Overturned,W.Constructed,Dt);
     W.Rotation+=W.Omega*Dt; W.Pressure=Pressure;
   }
   UpdateWheelVisuals();
@@ -683,6 +691,7 @@ void ATerraVehicle::Tick(float Dt) {
   }
   Dt = FMath::Min(Dt, .1f);
   Input(Dt);
+  UpdateLamps();
   if(!Garage){
     SoilTimer += Dt;
     Simulate(Dt);
@@ -693,6 +702,7 @@ void ATerraVehicle::Tick(float Dt) {
     CameraArm->TargetArmLength=GarageDistance;
     CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,-15));
     CameraArm->SetWorldRotation(FRotator(GaragePitch,GetActorRotation().Yaw+GarageYaw,0));
+    UpdateLamps();
     return;
   }
   SpawnCooldown = FMath::Max(0.f, SpawnCooldown - Dt);
@@ -706,7 +716,7 @@ void ATerraVehicle::Tick(float Dt) {
   CameraArm->TargetArmLength = NearCamera ? 340 : InvertedSupport ? 500 : 1150;
   CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,InvertedSupport?-75:110));
   CameraArm->SetWorldRotation(
-      FRotator(InvertedSupport?-CameraPitch:CameraPitch, GetActorRotation().Yaw + CameraYaw, 0));
+      FRotator(AutoTest&&TestMarkCamera?-48:InvertedSupport?-CameraPitch:CameraPitch, GetActorRotation().Yaw + CameraYaw, 0));
   SurfaceName =
       Terrain->Data
           ->GetArrayField(TEXT("surfaces"))[WheelState[0].Ground.Surface]

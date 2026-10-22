@@ -42,8 +42,15 @@ if ($Package) {
         }
         $cookArgument='-skipcook'
     }
+    $packageStarted=Get-Date
     & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive "-archivedirectory=$projectRoot\Build" -unattended -utf8output '-UbtArgs=-NoUBA'
     if ($LASTEXITCODE) { throw 'Packaging failed' }
+    if (!$SkipCook) {
+        $cookLogs=@(Get-ChildItem -LiteralPath $env:uebp_LogFolder -Filter 'Cook-*.txt' | Where-Object { $_.LastWriteTime -ge $packageStarted })
+        if (!$cookLogs.Count) { throw 'Full cook did not leave a fresh shader diagnostic log.' }
+        $shaderFailures=@($cookLogs | Select-String -Pattern 'Failed to compile Material|doesn.t have a valid ShaderMap')
+        if ($shaderFailures.Count) { throw "Cook substituted invalid material shaders. Inspect $($cookLogs[0].FullName)." }
+    }
     if (!(Test-Path -LiteralPath (Join-Path $projectRoot 'Build\Windows\TerraDrive.exe'))) {
         throw 'AutomationTool returned success but the packaged launcher is missing.'
     }

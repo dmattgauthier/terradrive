@@ -1,0 +1,106 @@
+{
+  "provider": "Poly Haven",
+  "license": "CC0-1.0",
+  "licenseURL": "https://polyhaven.com/license",
+  "files": [
+    {
+      "path": "rock_moss_set_02/rock_moss_set_02_1k.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/rock_moss_set_02/rock_moss_set_02_1k.gltf",
+      "bytes": 11608,
+      "sha256": "c3b992a7622e94f7d8da97a47277a2a5177a513af0312a127ec908d4056c97db",
+      "asset": "rock_moss_set_02",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/rock_moss_set_02"
+    },
+    {
+      "path": "rock_moss_set_02/textures/rock_moss_set_02_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_02/rock_moss_set_02_nor_gl_1k.jpg",
+      "bytes": 273527,
+      "sha256": "dd2503789089fb72ef469efd14364d393e769c0de8781a251475cac7e0b6f51d",
+      "asset": "rock_moss_set_02",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/rock_moss_set_02"
+    },
+    {
+      "path": "rock_moss_set_02/textures/rock_moss_set_02_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_02/rock_moss_set_02_diff_1k.jpg",
+      "bytes": 194307,
+      "sha256": "91dd2cc77d5198b067d77e5bdb3fa8ee7b8950aeff5aec2c1ccaddb76dcca481",
+      "asset": "rock_moss_set_02",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/rock_moss_set_02"
+    },
+    {
+      "path": "rock_moss_set_02/textures/rock_moss_set_02_rough_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_02/rock_moss_set_02_rough_1k.jpg",
+      "bytes": 146226,
+      "sha256": "12252219a98a560940359973e83af831abdcfab0ead3f0a2a7b135a0143105f1",
+      "asset": "rock_moss_set_02",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/rock_moss_set_02"
+    },
+    {
+      "path": "rock_moss_set_02/rock_moss_set_02.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/rock_moss_set_02/rock_moss_set_02.bin",
+      "bytes": 1316572,
+      "sha256": "2df9d8eaaca4207529b0f613d4886d3962d0b9ffc0cdfd2bc4bf35dbcd391cb5",
+      "asset": "rock_moss_set_02",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/rock_moss_set_02"
+    },
+    {
+      "path": "shrub_sorrel_01/shrub_sorrel_01_1k.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/shrub_sorrel_01/shrub_sorrel_01_1k.gltf",
+      "bytes": 17428,
+      "sha256": "97e2c9b564610a1077de9e15de07acbf19f2e66619016aeebb7987e191ad3ce1",
+      "asset": "shrub_sorrel_01",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/shrub_sorrel_01"
+    },
+    {
+      "path": "shrub_sorrel_01/textures/shrub_sorrel_01_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_sorrel_01/shrub_sorrel_01_nor_gl_1k.jpg",
+      "bytes": 470891,
+      "sha256": "0bb2e2aba7831a4e642ad6b1985ad82b0a574930ec6982f9a1a66ad8b41a94b3",
+      "asset": "shrub_sorrel_01",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/shrub_sorrel_01"
+    },
+    {
+      "path": "shrub_sorrel_01/shrub_sorrel_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/shrub_sorrel_01/shrub_sorrel_01.bin",
+      "bytes": 110936,
+      "sha256": "725f46bf6d330486bf22d4b897fa1d8ef01cdc77a72f1400a3939f86740b4e5d",
+      "asset": "shrub_sorrel_01",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/shrub_sorrel_01"
+    },
+    {
+      "path": "shrub_sorrel_01/textures/shrub_sorrel_01_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_sorrel_01/shrub_sorrel_01_arm_1k.jpg",
+      "bytes": 201949,
+      "sha256": "a1b49322e2b0ea988336fca959145dbb53b483b8f9ff2ec5f23dda20c486bdb8",
+      "asset": "shrub_sorrel_01",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/shrub_sorrel_01"
+    },
+    {
+      "path": "shrub_sorrel_01/textures/shrub_sorrel_01_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/shrub_sorrel_01/shrub_sorrel_01_diff_1k.jpg",
+      "bytes": 385129,
+      "sha256": "9aa62e57767f5b964b8d52e6406ebadb0205fa469d5a369a946fba13a3bc950f",
+      "asset": "shrub_sorrel_01",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/shrub_sorrel_01"
+    },
+    {
+      "path": "kloofendal_48d_partly_cloudy_puresky_1k.hdr",
+      "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloofendal_48d_partly_cloudy_puresky_1k.hdr",
+      "bytes": 1435119,
+      "sha256": "fd94c84997b8a3c353b62c2125a9b44e19509956986a126e472684432a02d798",
+      "asset": "kloofendal_48d_partly_cloudy_puresky",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky"
+    }
+  ]
+}

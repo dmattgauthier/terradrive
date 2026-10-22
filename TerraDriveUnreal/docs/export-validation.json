@@ -1,7 +1,7 @@
 {
   "terrainSamples": 1000,
   "maximumHeightExportErrorM": 0.0000019073486328125,
-  "vehicles": 5,
+  "vehicles": 6,
   "zones": 9,
   "zoneSamples": [
     {
@@ -68,14 +68,14 @@
       "heightM": 12.272045612335205
     }
   ],
-  "meshSources": 189,
+  "meshSources": 217,
   "constructedGroups": 2,
   "challengeRoutes": 8,
   "quarryDeckHeightM": 26.172911834716796,
   "trees": 412,
   "placements": 10975,
-  "detailInstances": 2645,
-  "solidDetailInstances": 645,
+  "detailInstances": 13161,
+  "solidDetailInstances": 1073,
   "tintedMaterials": 13,
   "preservedInstanceColors": true,
   "pass": true

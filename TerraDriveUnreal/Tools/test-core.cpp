@@ -28,10 +28,10 @@ int main(){
         for(int i=0;i<60;++i)demand=TerraSim::DriverControls(direction,false,true,0,0,false,8,1.f/60,held,release);
         check(direction==1&&demand.Brake==1&&demand.Throttle==0,"S is a full brake while traveling forward");
         for(int i=0;i<180;++i)demand=TerraSim::DriverControls(direction,false,true,0,0,false,0,1.f/60,held,release);
-        check(direction==1&&demand.Brake==1&&demand.Throttle==0,"holding S after stopping holds instead of silently accelerating backward");
+        check(direction==-1&&demand.Throttle==1&&demand.Brake==0,"holding S after stopping selects reverse without releasing");
         TerraSim::DriverControls(direction,false,false,0,0,false,0,1.f/60,held,release);
         for(int i=0;i<40;++i)demand=TerraSim::DriverControls(direction,false,true,0,0,false,0,1.f/60,held,release);
-        check(direction==-1&&demand.Throttle==1&&demand.Brake==0,"release then hold S at rest deliberately selects reverse");
+        check(direction==-1&&demand.Throttle==1&&demand.Brake==0,"continued S maintains reverse drive");
         demand=TerraSim::DriverControls(direction,false,true,0,0,true,-5,1.f/60,held,release);
         check(demand.Brake==1&&demand.Throttle==0,"Space overrides reverse throttle");
         demand=TerraSim::DriverControls(direction,true,false,0,0,false,-5,1.f/60,held,release);
@@ -43,6 +43,19 @@ int main(){
         check(demand.Brake==.7f&&demand.Throttle==0,"gamepad pedal brake has priority over drive");
     }
     for(float dt:{1.f/30,1.f/60,1.f/120}){
+        int direction=1;float held=0;bool release=false;TerraSim::DriverDemand demand;
+        for(int i=0;i<int(.5f/dt);++i)demand=TerraSim::DriverControls(direction,false,false,0,.6f,false,0,dt,held,release);
+        check(direction==1&&demand.Brake>.5f&&demand.Throttle==0,"left trigger holds a stopped vehicle during reverse dwell");
+        for(int i=0;i<int(.3f/dt)+1;++i)demand=TerraSim::DriverControls(direction,false,false,0,.6f,false,0,dt,held,release);
+        demand=TerraSim::DriverControls(direction,false,false,0,.6f,false,0,dt,held,release);
+        check(direction==-1&&std::abs(demand.Throttle-.6f)<.001f,"left trigger selects proportional reverse at every tested frame rate");
+        for(int i=0;i<int(1.f/dt);++i)demand=TerraSim::DriverControls(direction,true,false,1,0,true,0,dt,held,release);
+        check(direction==-1&&demand.Brake==1&&demand.Throttle==0,"Space suppresses gear selection while opposite input remains held");
+        for(int i=0;i<int(.8f/dt)+1;++i)demand=TerraSim::DriverControls(direction,true,false,1,0,false,0,dt,held,release);
+        check(direction==1&&demand.Throttle==1,"forward selection is symmetric after reverse stops");
+        direction=1;held=.60f;
+        demand=TerraSim::DriverControls(direction,false,true,0,0,false,.3f,dt,held,release);
+        check(direction==1&&held==0,"rolling beyond the stop threshold resets reverse dwell");
         const float drive=TerraSim::RevLimitedTorque(10000,3,3,dt,9,420,200);
         const float omega=TerraSim::LimitedWheelOmega(3+(drive-200)*dt/3,20000,0,.42f,dt,3,1000);
         check(omega<=9.00001f&&omega>8.99f,"powered wheelspin reaches but cannot overshoot redline at different frame rates");

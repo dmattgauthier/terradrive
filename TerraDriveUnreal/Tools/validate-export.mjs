@@ -17,7 +17,7 @@ for(let i=0;i<1000;i++){
  assert.equal(data.surfaces[b[offset+8]],s.surface);
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
-assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,5);assert.equal(data.zones.length,9);
+assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,6);assert.equal(data.zones.length,9);
 assert.equal(data.routes.length,8);assert.equal(data.constructed.length,2);
 assert.equal(data.routes[0].gateDirections[2],-1);assert.ok(data.routes[0].gates[2][2]>4400);
 for(const route of data.routes){assert.ok(route.spawn.every(Number.isFinite));assert.ok(route.gates.length>=3);assert.ok(route.gates.every(g=>g.every(Number.isFinite)));}
