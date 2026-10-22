@@ -1,6 +1,6 @@
 {
   "date": "2026-10-22",
-  "verifiedAt": "2026-10-22T17:38:43.100Z",
+  "verifiedAt": "2026-10-22T23:09:20.242Z",
   "engine": "5.8.3",
   "configuration": "Windows Development",
   "displayUnits": "imperial",
@@ -14,7 +14,7 @@
     ]
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "70417e36ee6d0ba70642ba17631637394b4fd6dc5d9657a968023a248915aa77",
+  "executableSHA256": "61a555f05b4fa2cc71baa12bb854fcd7051a570e6bd7eb56796faf98052709c5",
   "tests": [
     {
       "case": "native world data",
@@ -217,8 +217,8 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 81.663,
-      "speedMS": 22.762,
+      "distanceM": 82.391,
+      "speedMS": 22.834,
       "pass": true
     },
     {
@@ -239,8 +239,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 15.832,
-      "yawDegrees": 85.755,
+      "speedMS": 13.579,
+      "yawDegrees": 92.615,
       "pass": true
     },
     {
@@ -251,7 +251,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.32,
+      "clearanceCM": 510.289,
       "rollDegrees": 0,
       "pass": true
     },
@@ -263,7 +263,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.976,
+      "clearanceCM": 506.987,
       "rollDegrees": 0,
       "pass": true
     },
@@ -275,7 +275,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 639.819,
+      "clearanceCM": 639.867,
       "rollDegrees": 0,
       "pass": true
     },
@@ -287,7 +287,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 612.669,
+      "clearanceCM": 613.078,
       "rollDegrees": 0,
       "pass": true
     },
@@ -299,7 +299,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 528.937,
+      "clearanceCM": 528.829,
       "rollDegrees": 0,
       "pass": true
     },
@@ -311,7 +311,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 674.679,
+      "clearanceCM": 673.834,
       "rollDegrees": 0,
       "pass": true
     },
@@ -323,7 +323,7 @@
     },
     {
       "case": "region 6 camera",
-      "clearanceCM": 515.997,
+      "clearanceCM": 515.996,
       "rollDegrees": 0,
       "pass": true
     },
@@ -335,7 +335,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 452.818,
+      "clearanceCM": 473.186,
       "rollDegrees": 0,
       "pass": true
     },
@@ -346,12 +346,12 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 0.0898,
+      "value": 2.1404,
       "pass": true
     },
     {
       "case": "rolled vehicle camera stays above terrain",
-      "value": 521.9017,
+      "value": 521.903,
       "pass": true
     },
     {
@@ -361,17 +361,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 70048.1562,
+      "value": 60318.7305,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 490,
+      "value": 469,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 4880.5352,
+      "value": 6600.002,
       "pass": true
     },
     {
@@ -381,7 +381,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 1.8066,
+      "value": 2.3206,
       "pass": true
     },
     {
@@ -391,7 +391,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 2.5006,
+      "value": 2.5186,
       "pass": true
     },
     {
@@ -436,7 +436,7 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 527.917,
+      "value": 526.3158,
       "pass": true
     },
     {
@@ -521,7 +521,7 @@
     },
     {
       "case": "engine upgrade changes packaged driving performance",
-      "value": 22.616,
+      "value": 22.5626,
       "pass": true
     },
     {
@@ -536,12 +536,12 @@
     },
     {
       "case": "lower pressure enlarges the live soil footprint",
-      "value": 1.554,
+      "value": 1.6072,
       "pass": true
     },
     {
       "case": "lower pressure improves live loose terrain grip",
-      "value": 1.1564,
+      "value": 1.1587,
       "pass": true
     },
     {
@@ -571,17 +571,17 @@
     },
     {
       "case": "vehicle 0 launches through shared W input",
-      "value": 16.8971,
+      "value": 16.8393,
       "pass": true
     },
     {
       "case": "vehicle 0 Space stops and holds against held throttle",
-      "value": 0.0003,
+      "value": 0,
       "pass": true
     },
     {
       "case": "vehicle 1 launches through shared W input",
-      "value": 19.7943,
+      "value": 19.8208,
       "pass": true
     },
     {
@@ -591,7 +591,7 @@
     },
     {
       "case": "vehicle 2 launches through shared W input",
-      "value": 9.2686,
+      "value": 9.3108,
       "pass": true
     },
     {
@@ -601,7 +601,7 @@
     },
     {
       "case": "vehicle 3 launches through shared W input",
-      "value": 13.804,
+      "value": 13.7894,
       "pass": true
     },
     {
@@ -611,7 +611,7 @@
     },
     {
       "case": "vehicle 4 launches through shared W input",
-      "value": 22.7237,
+      "value": 22.7215,
       "pass": true
     },
     {
@@ -621,42 +621,42 @@
     },
     {
       "case": "vehicle 5 launches through shared W input",
-      "value": 25.5362,
+      "value": 25.4578,
       "pass": true
     },
     {
       "case": "vehicle 5 Space stops and holds against held throttle",
-      "value": 0.0003,
-      "pass": true
-    },
-    {
-      "case": "W launch before S brake check",
-      "value": 17.1562,
-      "pass": true
-    },
-    {
-      "case": "held S brakes then selects physical reverse without a release",
-      "value": -12.6967,
-      "pass": true
-    },
-    {
-      "case": "S maintains physical reverse drive after reapplication",
-      "value": -20.8146,
-      "pass": true
-    },
-    {
-      "case": "Space stops and holds while S requests reverse",
-      "value": 0.0012,
-      "pass": true
-    },
-    {
-      "case": "Space holds contact speed on a twelve degree incline",
       "value": 0,
       "pass": true
     },
     {
+      "case": "W launch before S brake check",
+      "value": 17.122,
+      "pass": true
+    },
+    {
+      "case": "held S brakes then selects physical reverse without a release",
+      "value": -12.7433,
+      "pass": true
+    },
+    {
+      "case": "S maintains physical reverse drive after reapplication",
+      "value": -20.818,
+      "pass": true
+    },
+    {
+      "case": "Space stops and holds while S requests reverse",
+      "value": 0.0003,
+      "pass": true
+    },
+    {
+      "case": "Space holds contact speed on a twelve degree incline",
+      "value": 0.0004,
+      "pass": true
+    },
+    {
       "case": "brake holding friction prevents sustained downhill creep",
-      "value": 0.0018,
+      "value": 0.0019,
       "pass": true
     },
     {
@@ -1036,12 +1036,12 @@
     },
     {
       "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.0196,
+      "value": 0.0212,
       "pass": true
     },
     {
       "case": "hard dirt actual driven pass compacts contact footprints",
-      "value": 0.9982,
+      "value": 0.9959,
       "pass": true
     },
     {
@@ -1051,27 +1051,27 @@
     },
     {
       "case": "hard dirt driven path advances beyond stationary footprint",
-      "value": 1494.9153,
+      "value": 1476.2274,
       "pass": true
     },
     {
       "case": "hard dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.0137,
+      "value": 0.0136,
       "pass": true
     },
     {
       "case": "mud actual driven pass leaves loaded terrain deformation",
-      "value": 0.1971,
+      "value": 0.2043,
       "pass": true
     },
     {
       "case": "mud actual driven pass compacts contact footprints",
-      "value": 0.9977,
+      "value": 0.9985,
       "pass": true
     },
     {
       "case": "mud actual driven pass pushes up side berms",
-      "value": 0.1713,
+      "value": 0.1404,
       "pass": true
     },
     {
@@ -1081,27 +1081,27 @@
     },
     {
       "case": "mud driven path advances beyond stationary footprint",
-      "value": 1472.0319,
+      "value": 1463.4827,
       "pass": true
     },
     {
       "case": "mud displaced and compacted volumes conserve excavated soil",
-      "value": 4.0328,
+      "value": 3.9443,
       "pass": true
     },
     {
       "case": "snow actual driven pass leaves loaded terrain deformation",
-      "value": 0.4677,
+      "value": 0.4316,
       "pass": true
     },
     {
       "case": "snow actual driven pass compacts contact footprints",
-      "value": 0.9978,
+      "value": 0.9907,
       "pass": true
     },
     {
       "case": "snow actual driven pass pushes up side berms",
-      "value": 0.093,
+      "value": 0.0967,
       "pass": true
     },
     {
@@ -1111,27 +1111,27 @@
     },
     {
       "case": "snow driven path advances beyond stationary footprint",
-      "value": 538.6483,
+      "value": 616.0573,
       "pass": true
     },
     {
       "case": "snow displaced and compacted volumes conserve excavated soil",
-      "value": 1.8186,
+      "value": 1.9155,
       "pass": true
     },
     {
       "case": "wetland actual driven pass leaves loaded terrain deformation",
-      "value": 0.2506,
+      "value": 0.2615,
       "pass": true
     },
     {
       "case": "wetland actual driven pass compacts contact footprints",
-      "value": 0.9985,
+      "value": 0.9967,
       "pass": true
     },
     {
       "case": "wetland actual driven pass pushes up side berms",
-      "value": 0.1748,
+      "value": 0.1741,
       "pass": true
     },
     {
@@ -1141,27 +1141,27 @@
     },
     {
       "case": "wetland driven path advances beyond stationary footprint",
-      "value": 1504.649,
+      "value": 1503.1544,
       "pass": true
     },
     {
       "case": "wetland displaced and compacted volumes conserve excavated soil",
-      "value": 4.3981,
+      "value": 4.2277,
       "pass": true
     },
     {
       "case": "sand actual driven pass leaves loaded terrain deformation",
-      "value": 0.1803,
+      "value": 0.1963,
       "pass": true
     },
     {
       "case": "sand actual driven pass compacts contact footprints",
-      "value": 0.9985,
+      "value": 0.9971,
       "pass": true
     },
     {
       "case": "sand actual driven pass pushes up side berms",
-      "value": 0.119,
+      "value": 0.1577,
       "pass": true
     },
     {
@@ -1171,27 +1171,27 @@
     },
     {
       "case": "sand driven path advances beyond stationary footprint",
-      "value": 1592.9761,
+      "value": 1553.8038,
       "pass": true
     },
     {
       "case": "sand displaced and compacted volumes conserve excavated soil",
-      "value": 2.3299,
+      "value": 2.3336,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.1723,
+      "value": 0.1652,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass compacts contact footprints",
-      "value": 0.9976,
+      "value": 0.9963,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass pushes up side berms",
-      "value": 0.1138,
+      "value": 0.0954,
       "pass": true
     },
     {
@@ -1201,12 +1201,12 @@
     },
     {
       "case": "soft dirt driven path advances beyond stationary footprint",
-      "value": 1479.3826,
+      "value": 1477.4911,
       "pass": true
     },
     {
       "case": "soft dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.3609,
+      "value": 0.3436,
       "pass": true
     },
     {
@@ -1281,7 +1281,7 @@
     },
     {
       "case": "Urus quarry drive stays upright with a controlled trail line",
-      "value": 143.3448,
+      "value": 143.5953,
       "pass": true
     },
     {
@@ -1308,6 +1308,101 @@
       "case": "Urus body renders in close photo view 3",
       "value": 0,
       "pass": true
+    },
+    {
+      "case": "Axlebreaker cooked rock supports banked and compressed tires",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 regains solid support after banked compression",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 tires stay above the hard quarry floor",
+      "value": 0.0002,
+      "pass": true
+    },
+    {
+      "case": "vehicle 0 can reverse out of the quarry compression",
+      "value": 14.6797,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 regains solid support after banked compression",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 tires stay above the hard quarry floor",
+      "value": 0.0002,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 can reverse out of the quarry compression",
+      "value": 31.7098,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 regains solid support after banked compression",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 tires stay above the hard quarry floor",
+      "value": 0.0002,
+      "pass": true
+    },
+    {
+      "case": "vehicle 2 can reverse out of the quarry compression",
+      "value": 11.502,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 regains solid support after banked compression",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 tires stay above the hard quarry floor",
+      "value": 0.0001,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 can reverse out of the quarry compression",
+      "value": 17.8708,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 regains solid support after banked compression",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 tires stay above the hard quarry floor",
+      "value": 0.0001,
+      "pass": true
+    },
+    {
+      "case": "vehicle 4 can reverse out of the quarry compression",
+      "value": 28.9503,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 regains solid support after banked compression",
+      "value": 4,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 tires stay above the hard quarry floor",
+      "value": 0.0002,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 can reverse out of the quarry compression",
+      "value": 26.2553,
+      "pass": true
     }
   ],
   "core": {
@@ -1318,7 +1413,7 @@
       60,
       120
     ],
-    "log": "Saved/core-hero-quarry.log",
+    "log": "Saved/ground-core-test.log",
     "contactRegressionFrameTimesSeconds": [
       0.008333333333333333,
       0.01,
@@ -1420,7 +1515,8 @@
   "garage": {
     "originalBytesPreserved": true,
     "automatedSaveIsolation": true,
-    "legacyFiveVehicleMigration": true
+    "legacyFiveVehicleMigration": true,
+    "playerSaveSHA256": "6eb2c4d1e6f5c0fc680bb8af8b603241aeed3612db11b7f719944cdb7f55fa67"
   },
   "interactive": {
     "performed": false,
@@ -1479,7 +1575,7 @@
     "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
     "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
     "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
-    "Source/TerraDrive/TerraGameMode.cpp": "dd5b01cf735dd58d745e77d4892c5f304d6dc5fc8ade03e1a63dabecd29a9eb9",
+    "Source/TerraDrive/TerraGameMode.cpp": "f933a5c628a18540f32d61562ef7a76ac53fc87499e6fdc752a27c67fccba55b",
     "Source/TerraDrive/TerraGameMode.h": "04b497d508bf47ca2a4e908da57f09dce65f1b4cb14a61cbc7766596862b1bb7",
     "Source/TerraDrive/TerraGarage.cpp": "9992957178f45405bb2667fe46a6dd905ee96a468aa6af65feb61990977cd049",
     "Source/TerraDrive/TerraGarage.h": "35e4eaa7188968df3493497dedc68368c28e24d28a9bf32ff7b0de56006c6849",
@@ -1492,8 +1588,8 @@
     "Source/TerraDrive/TerraVehicleGarage.cpp": "f899b3c0ce40b86a2ed1669ecd623d91495bfd6d321cd39bd2dc5e38f777d5f9",
     "Source/TerraDrive/TerraVehicleLamps.cpp": "ee679571f1f2b9cb4094c894c4286ea32db118d0e19a97272a5c7a2027493969",
     "Source/TerraDrive/TerraVehicleVisuals.cpp": "3abfd71e2a695e5fb9981bb520eaabc2af572ba41f372e281c97ae29677f5bd7",
-    "Source/TerraDrive/TerraWorld.cpp": "74b1e5aafeee7c52271eeb4f7334757cbe8c12422183a08d93e03c4d8f66dc55",
-    "Source/TerraDrive/TerraWorld.h": "dc0820768b4c51022bb6e5317f8f89ce189a31ebce758fef9c2c3f764f2a56b6",
+    "Source/TerraDrive/TerraWorld.cpp": "f1e8ac6d600581da6b277f92ce219a26c459b03c44425a8731526fe65b6d0b0c",
+    "Source/TerraDrive/TerraWorld.h": "0e617334c31c358bb8fe9ae601d6355c4962dd95272167f8a46e3557b6d5137d",
     "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
     "Source/TerraDriveEditor.Target.cs": "57232ee6bc870cca86e6f7bdd83daa4674607633d9d8791c7671481d29edf534",
     "Tools/body-refinement.mjs": "8da7597ba30633618e4648e657278ea524e27b77add985ed3b69b745cbfd838e",
@@ -1524,19 +1620,18 @@
     "Tools/urus-model.mjs": "dc7e9c69574d582c9e8beabcf108d367578b921a9899d32378aa05934986215b",
     "Tools/validate-export.mjs": "062b2b2131791e0168656ce3e0be705cb220d8bc5d5e6c3bcfdc310b680ede9d",
     "Tools/vehicle-fidelity.mjs": "437c4744b14b8ba68b85ea2bef477300549f1618434982d0aced30827782c761",
-    "Tools/verify-native.ps1": "8020b19ae2142d3dc920b73da81125ac0b5a219c0a453b5272bebf31aace82c8",
+    "Tools/verify-native.ps1": "36ca9dd5beb9b3c551e932528a4d926988eab20b79e3543573ed33411fc43ef1",
     "Config/DefaultEngine.ini": "051c43c515d4d3007bdc7a04c99908ec158d02192e3e33332a747be728a2e967",
     "Config/DefaultGame.ini": "3b5d9c96fcabf0ab86816f114cdafd3baf902f8056c73cb5edcc14fc8dacdb7c",
     "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f"
   },
   "logs": [
-    "Saved/hero-quarry-build-8-console.log",
-    "Saved/hero-quarry-build-18-console.log",
-    "Saved/verify-hero-quarry-final.log",
+    "Saved/ground-fix-build.log",
+    "Saved/ground-full-test-console.log",
     "Saved/Validation/packaged-game.log",
-    "Saved/core-hero-quarry.log",
-    "Saved/Validation/focused-BrakeOnly.log",
-    "Saved/validate-export-hero-quarry.log"
+    "Saved/ground-core-test.log",
+    "Saved/Validation/ground-contact.log",
+    "Saved/hero-quarry-build-8-console.log"
   ],
   "limits": [
     "Vehicle bodies and cabin are authored manufacturer-reference approximations, not OEM CAD/scans or certified Forza-equivalent models.",
@@ -1554,87 +1649,87 @@
     "soilCases": [
       {
         "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-        "value": 0.0196,
+        "value": 0.0212,
         "pass": true
       },
       {
         "case": "hard dirt actual driven pass compacts contact footprints",
-        "value": 0.9982,
+        "value": 0.9959,
         "pass": true
       },
       {
         "case": "mud actual driven pass leaves loaded terrain deformation",
-        "value": 0.1971,
+        "value": 0.2043,
         "pass": true
       },
       {
         "case": "mud actual driven pass compacts contact footprints",
-        "value": 0.9977,
+        "value": 0.9985,
         "pass": true
       },
       {
         "case": "mud actual driven pass pushes up side berms",
-        "value": 0.1713,
+        "value": 0.1404,
         "pass": true
       },
       {
         "case": "snow actual driven pass leaves loaded terrain deformation",
-        "value": 0.4677,
+        "value": 0.4316,
         "pass": true
       },
       {
         "case": "snow actual driven pass compacts contact footprints",
-        "value": 0.9978,
+        "value": 0.9907,
         "pass": true
       },
       {
         "case": "snow actual driven pass pushes up side berms",
-        "value": 0.093,
+        "value": 0.0967,
         "pass": true
       },
       {
         "case": "wetland actual driven pass leaves loaded terrain deformation",
-        "value": 0.2506,
+        "value": 0.2615,
         "pass": true
       },
       {
         "case": "wetland actual driven pass compacts contact footprints",
-        "value": 0.9985,
+        "value": 0.9967,
         "pass": true
       },
       {
         "case": "wetland actual driven pass pushes up side berms",
-        "value": 0.1748,
+        "value": 0.1741,
         "pass": true
       },
       {
         "case": "sand actual driven pass leaves loaded terrain deformation",
-        "value": 0.1803,
+        "value": 0.1963,
         "pass": true
       },
       {
         "case": "sand actual driven pass compacts contact footprints",
-        "value": 0.9985,
+        "value": 0.9971,
         "pass": true
       },
       {
         "case": "sand actual driven pass pushes up side berms",
-        "value": 0.119,
+        "value": 0.1577,
         "pass": true
       },
       {
         "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-        "value": 0.1723,
+        "value": 0.1652,
         "pass": true
       },
       {
         "case": "soft dirt actual driven pass compacts contact footprints",
-        "value": 0.9976,
+        "value": 0.9963,
         "pass": true
       },
       {
         "case": "soft dirt actual driven pass pushes up side berms",
-        "value": 0.1138,
+        "value": 0.0954,
         "pass": true
       }
     ],
@@ -1897,7 +1992,10 @@
     "checks": 18,
     "frameRateCap": 20,
     "exitCode": 0,
-    "log": "Saved/Validation/focused-BrakeOnly.log"
+    "log": "Saved/Validation/focused-BrakeOnly.log",
+    "historical": true,
+    "executableSHA256": "70417e36ee6d0ba70642ba17631637394b4fd6dc5d9657a968023a248915aa77",
+    "note": "Previous accepted executable; braking cases also run in the current full native suite."
   },
   "profilingDiagnostic": {
     "accepted": false,
@@ -2904,5 +3002,25 @@
       "scan_boulder_01_0"
     ],
     "collisionFallback": "Full source resolution"
+  },
+  "renderedInspectionContext": {
+    "previousArtRoundExecutableSHA256": "70417e36ee6d0ba70642ba17631637394b4fd6dc5d9657a968023a248915aa77",
+    "note": "The prior 34-image art review remains historical evidence. This physics-only round additionally inspected the HUMMER floor-rest and Wrangler locked-ledge captures.",
+    "currentRound": {
+      "native-ground-contact-4.png": "4f5fa50e779fc963b4be60f029635becbedad67b470ac13bcadd918ab5f5fdb8",
+      "native-locked-climb.png": "8d5d0f51496acfb7491fd284dba504202b2b268d1dd093c3e9ad041f6e81f5ea"
+    }
+  },
+  "groundContact": {
+    "beforeMissingContacts": 84,
+    "afterMissingContacts": 0,
+    "minimumProbeCount": 901,
+    "focusedChecks": 19,
+    "focusedFrameRateCap": 20,
+    "focusedExitCode": 0,
+    "fullExitCode": 0,
+    "report": "Saved/Validation/ground-contact.json",
+    "log": "Saved/Validation/ground-contact.log",
+    "scope": "Cooked Axlebreaker ledge contact grid; all six vehicles settle and reverse out of a tilted compression on the flat quarry approach. Not full Axlebreaker traversal."
   }
 }

@@ -66,7 +66,8 @@ public:
   virtual void Tick(float Dt) override;
   FTerraSample Sample(FVector P) const;
   FTerraSupport CastSupport(FVector Mount, FVector Up, float RadiusCM,
-                            float MinCM, float MaxCM, const AActor *Ignore) const;
+                            float MinCM, float MaxCM, const AActor *Ignore,
+                            bool *RigidEncountered=nullptr) const;
   FTerraSupport CastTireSupport(FVector Mount,FVector Up,FVector Forward,
       float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const;
   float Height(float X, float Y) const;

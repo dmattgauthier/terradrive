@@ -1,16 +1,17 @@
-param([string]$Executable='', [int]$TimeoutSeconds=900)
+param([string]$Executable='', [int]$TimeoutSeconds=900, [switch]$GroundOnly)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 if (!$Executable) { $Executable=Join-Path $projectRoot 'Build\Windows\TerraDrive\Binaries\Win64\TerraDrive.exe' }
 if (!(Test-Path -LiteralPath $Executable)) { throw "Packaged executable missing: $Executable" }
 $output=Join-Path $projectRoot 'Saved\Validation'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
-$report=Join-Path $output 'native-validation.json'
-$log=Join-Path $output 'packaged-game.log'
+$report=Join-Path $output $(if($GroundOnly){'ground-contact.json'}else{'native-validation.json'})
+$log=Join-Path $output $(if($GroundOnly){'ground-contact.log'}else{'packaged-game.log'})
 $started=Get-Date
 $arguments=@('-unattended','-windowed','-RenderOffscreen','-ResX=1280','-ResY=720',
     '-NoSound','-TerraValidate','-TerraCapture',('-TerraReport="'+$report+'"'),
     ('-abslog="'+$log+'"'))
+if($GroundOnly){$arguments+=@('-TerraGroundOnly','-ExecCmds="t.MaxFPS 20"')}
 $startInfo=[System.Diagnostics.ProcessStartInfo]::new()
 $startInfo.FileName=$Executable
 $startInfo.Arguments=$arguments -join ' '
@@ -33,7 +34,8 @@ $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
 if($renderErrors.Count){throw "Native mesh/render diagnostics failed. Inspect $log"}
 $failed=@($result.tests | Where-Object { !$_.pass })
-if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt 256) {
+$minimumChecks=if($GroundOnly){19}else{275}
+if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt $minimumChecks) {
     $failed | Format-Table | Out-String | Write-Output
     throw "Native checks failed (exit $gameExit). Inspect $report and $log"
 }

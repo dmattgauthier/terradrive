@@ -103,6 +103,7 @@ void ATerraGameMode::Tick(float Dt) {
   auto Next = [&](int NewStage) { Stage=NewStage; StageTime=0; Captured=false; MaxProgress=0; };
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))Next(61);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly")))Next(64);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraGroundOnly")))Next(66);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){
     BrakeVehicle=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
     V->TestDriverInput=true;V->TestForward=V->TestReverse=V->TestStop=false;V->TestSteer=0;Next(34);
@@ -836,7 +837,50 @@ void ATerraGameMode::Tick(float Dt) {
       Check(FString::Printf(TEXT("Urus body renders in close photo view %d"),ModelView),V->Body->WasRecentlyRendered(.4f));
       Capture(*FString::Printf(TEXT("native-urus-hero-%d.png"),ModelView));Captured=true;
     }
-    if(StageTime>2.5f){if(++ModelView==4)FinishValidation();else Next(65);}
+    if(StageTime>2.5f){if(++ModelView==4){if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);}else Next(65);}
+  }else if(Stage==66){
+    // Query the actual cooked rock course, including compressed and banked
+    // tire poses. A mesh-load or spawn check cannot catch missing wheel support.
+    int Missing=0,Tested=0;
+    for(float X=12800;X<=14600;X+=50)for(float Y:{-28180.f,-28100.f,-28020.f}){
+      FHitResult H;FCollisionQueryParams Q(SCENE_QUERY_STAT(TerraGroundRegression),true,V);
+      if(!GetWorld()->LineTraceSingleByChannel(H,FVector(X,Y,7000),FVector(X,Y,0),ECC_Visibility,Q)||!H.GetComponent()->ComponentHasTag(TEXT("TerraConstructed")))continue;
+      for(float Roll:{-18.f,0.f,18.f})for(float D:{-20.f,15.f,45.f}){
+        const FVector U=FRotator(0,0,Roll).RotateVector(FVector::UpVector);
+        const FVector Mount=H.ImpactPoint+H.ImpactNormal*44.21f+U*D;
+        const auto S=V->Terrain->CastTireSupport(Mount,U,FVector::ForwardVector,44.21f,32.5f,-30,67,V);
+        ++Tested;if(!S.Hit||!S.Constructed){++Missing;if(Missing<=12)UE_LOG(LogTemp,Display,TEXT("TERRA_MISSING_SUPPORT point=%s roll=%.0f distance=%.0f hit=%d constructed=%d"),*H.ImpactPoint.ToString(),Roll,D,S.Hit,S.Constructed);}
+      }
+    }
+    Check(TEXT("Axlebreaker cooked rock supports banked and compressed tires"),Tested>900&&Missing==0,Missing);
+    ModelVehicle=0;Next(67);
+  }else if(Stage==67){
+    V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(4);
+    V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
+    const FVector Floor=V->Terrain->Routes[4].Spawn+FVector(400,0,0);
+    V->SetActorLocationAndRotation(Floor+FVector(0,0,V->ExpectedRideHeight()*100-24),FRotator(0,0,18),false,nullptr,ETeleportType::TeleportPhysics);
+    Start=Floor;Next(68);
+  }else if(Stage==68){
+    if(StageTime>3&&!Captured){
+      float Buried=0;int Solid=0;
+      for(const auto &W:V->WheelState){
+        FHitResult H;FCollisionQueryParams Q(SCENE_QUERY_STAT(TerraWheelBurial),true,V);
+        if(GetWorld()->LineTraceSingleByChannel(H,W.Center+FVector(0,0,150),W.Center-FVector(0,0,180),ECC_Visibility,Q)){
+          const float TireRadius=V->TireDiameter()*2.54f*.5f;
+          Buried=FMath::Max(Buried,float(H.ImpactPoint.Z-(W.Center.Z-TireRadius)));
+        }
+        if(W.ContactValid&&W.Constructed&&W.Load>50)++Solid;
+        UE_LOG(LogTemp,Display,TEXT("TERRA_GROUND vehicle=%d center=%s distance=%.3f load=%.0f valid=%d solid=%d"),ModelVehicle,*W.Center.ToString(),W.Distance,W.Load,W.ContactValid,W.Constructed);
+      }
+      Check(FString::Printf(TEXT("vehicle %d regains solid support after banked compression"),ModelVehicle),Solid>=3&&V->GetActorUpVector().Z>.9f,Solid);
+      Check(FString::Printf(TEXT("vehicle %d tires stay above the hard quarry floor"),ModelVehicle),Buried<7,Buried);
+      Capture(*FString::Printf(TEXT("native-ground-contact-%d.png"),ModelVehicle));Captured=true;
+      V->TestBrake=0;V->TestThrottle=.5f;V->Direction=-1;Start=V->GetActorLocation();
+    }
+    if(StageTime>7){
+      Check(FString::Printf(TEXT("vehicle %d can reverse out of the quarry compression"),ModelVehicle),V->GetActorLocation().X<Start.X-150, (Start.X-V->GetActorLocation().X)/100);
+      if(++ModelVehicle<ATerraVehicle::VehicleCount)Next(67);else FinishValidation();
+    }
   }
 
 }

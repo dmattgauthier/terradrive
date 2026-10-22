@@ -2,6 +2,8 @@
 
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
+The latest physics correction restores finite-tread support on uneven rigid ledges after the sphere query rejects a side contact. See [ground-contact.md](docs/ground-contact.md) and run `Tools/verify-native.ps1 -GroundOnly` for the focused regression. Current bodies remain procedural approximations; [vehicle-art-production.md](docs/vehicle-art-production.md) describes the recommended mesh, material and reference-review pipeline for a substantial visual improvement.
+
 The latest native model/scenery changes are documented in [urus-slate-rim.md](docs/urus-slate-rim.md): sculpted V8 Urus Performante body/cabin surfaces and the 1,065-foot Slate Rim quarry trail, with matching CC0 cliff, boulder, grass and ground scans. It is the ninth challenge, selectable with J. The previous [body-shapes-and-fab.md](docs/body-shapes-and-fab.md) round retains the other five body refinements, circular Summit loop and African Slate Quarry scenery. Optional Fab content is imported from your own Epic cache; raw licensed assets are excluded from this public source.
 
 ## Build

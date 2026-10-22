@@ -174,7 +174,7 @@ FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM
   return Result;
 }
 FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM,
-    float MinCM, float MaxCM, const AActor *Ignore) const {
+    float MinCM, float MaxCM, const AActor *Ignore, bool *RigidEncountered) const {
   Up=Up.GetSafeNormal();
   auto Result=GroundSupport(Mount,Up,RadiusCM,MinCM,MaxCM);
   FCollisionQueryParams Params(SCENE_QUERY_STAT(TerraSuspension), true, Ignore);
@@ -182,7 +182,9 @@ FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM
   GetWorld()->SweepMultiByChannel(Hits, Mount - Up * MinCM, Mount - Up * MaxCM,
       FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(RadiusCM), Params);
   for (const auto &Hit : Hits) {
-    if (!Hit.Component.IsValid() || Hit.Component->ComponentHasTag(TEXT("TerraGround")) || Hit.bStartPenetrating) continue;
+    if (!Hit.Component.IsValid() || Hit.Component->ComponentHasTag(TEXT("TerraGround"))) continue;
+    if(RigidEncountered)*RigidEncountered=true;
+    if(Hit.bStartPenetrating)continue;
     const float D = MinCM + Hit.Distance;
     if (!TerraSim::ValidSupport(D, MinCM, MaxCM, FVector::DotProduct(Up, Hit.ImpactNormal))) continue;
     if (!Result.Hit || D < Result.Distance) {
@@ -197,7 +199,9 @@ FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM
 }
 FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forward,
     float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const {
-  auto Central=CastSupport(Mount,Up,RadiusCM,MinCM,MaxCM,Ignore);
+  Up=Up.GetSafeNormal();
+  bool RigidEncountered=false;
+  auto Central=CastSupport(Mount,Up,RadiusCM,MinCM,MaxCM,Ignore,&RigidEncountered);
   FTerraSupport Best;
   const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
   // A sphere is useful for rolling contact, but it is wider than a real tire.
@@ -221,6 +225,26 @@ FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forw
         FVector::DotProduct(Shoulder.ImpactNormal,Up)>.15f&&!Shoulder.Component->ComponentHasTag(TEXT("TerraGround"))){
       Central.Point=Shoulder.ImpactPoint;Central.Normal=Shoulder.ImpactNormal;Central.Distance=Distance;
     }else Central=FTerraSupport();
+  }
+  if(RigidEncountered&&(!Central.Hit||!Central.Constructed)){
+    // A rejected sphere side-hit is not evidence that the real tread has no
+    // floor. On an articulated rock ledge that erased suspension support.
+    // Trace points on a finite cylindrical tire instead. Starting above the
+    // upper tread also handles an initial sphere overlap without accepting
+    // an overlap normal or extending the permitted suspension travel.
+    FCollisionQueryParams Q(SCENE_QUERY_STAT(TerraRigidTread),true,Ignore);
+    for(float L:{-.8f,-.4f,0.f,.4f,.8f})for(float W:{-.45f,0.f,.45f}){
+      const float Arc=RadiusCM*FMath::Sqrt(1-L*L);
+      const FVector Offset=Forward*(RadiusCM*L)+Side*(WidthCM*W);
+      FHitResult H;
+      if(!GetWorld()->LineTraceSingleByChannel(H,Mount+Offset+Up*(RadiusCM-MinCM+4),
+          Mount+Offset-Up*(MaxCM+Arc),ECC_Visibility,Q)||!H.Component.IsValid()||
+          H.Component->ComponentHasTag(TEXT("TerraGround")))continue;
+      const float D=FVector::DotProduct(Mount+Offset-H.ImpactPoint,Up)-Arc;
+      if(!TerraSim::ValidSupport(D,MinCM,MaxCM,FVector::DotProduct(Up,H.ImpactNormal)))continue;
+      if(!Central.Hit||!Central.Constructed||D<Central.Distance)
+        Central={H.ImpactPoint,H.ImpactNormal,D,true,true,uint8(H.Component->ComponentHasTag(TEXT("TerraRock"))?4:1)};
+    }
   }
   // A circular rolling envelope at three points across the real tread width.
   // The shoulder/front samples can bridge a narrow rut or meet a bump before
