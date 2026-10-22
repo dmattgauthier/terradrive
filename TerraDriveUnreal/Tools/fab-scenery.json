@@ -1,0 +1,16 @@
+{
+  "pack": "African Slate Quarry",
+  "publisher": "Quixel Megascans",
+  "cacheFolder": "African_Slate_Quarry-578d0ceb/fbx/mid/south_african_slate_quar_extracted",
+  "license": "Fab Standard License; acquired through the player's Epic library. Raw files excluded from public source.",
+  "assets": [
+    {"id":"xcghcfe","kind":"outcrop","scale":1},
+    {"id":"xckjagi","kind":"outcrop","scale":1},
+    {"id":"xckifaf","kind":"outcrop","scale":1},
+    {"id":"xbrdfck","kind":"ledge","scale":1},
+    {"id":"xbkgdbu","kind":"boulder","scale":1},
+    {"id":"xbkndhe","kind":"boulder","scale":1},
+    {"id":"xckjajs","kind":"rubble","scale":1},
+    {"id":"xbsfdip","kind":"stone","scale":1}
+  ]
+}

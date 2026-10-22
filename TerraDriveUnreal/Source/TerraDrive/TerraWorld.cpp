@@ -676,6 +676,47 @@ void ATerraWorld::LoadScenery() {
     }
   }
   const TArray<TSharedPtr<FJsonValue>> *Details=nullptr;
+  const TSharedPtr<FJsonObject> *Fab=nullptr;
+  if(Data->TryGetObjectField(TEXT("fabScenery"),Fab)&&(*Fab)->GetBoolField(TEXT("enabled"))){
+    for(auto Group:(*Fab)->GetArrayField(TEXT("groups"))){
+      const auto O=Group->AsObject();
+      auto *Mesh=LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/FabScenery/Meshes/")+O->GetStringField(TEXT("asset"))));
+      if(!ensureMsgf(Mesh,TEXT("Enabled Fab scenery mesh is missing")))continue;
+      auto *C=NewObject<UInstancedStaticMeshComponent>(this);C->SetupAttachment(RootComponent);C->SetStaticMesh(Mesh);
+      C->SetCollisionProfileName(TEXT("BlockAll"));C->ComponentTags.Add(TEXT("TerraConstructed"));C->ComponentTags.Add(TEXT("TerraRock"));
+      C->ComponentTags.Add(TEXT("TerraFabScenery"));
+      C->SetCullDistances(16000,36000);C->RegisterComponent();Scenery.Add(C);++FabAssetCount;
+      const FBox Bounds=Mesh->GetBoundingBox();
+      const FVector Anchor(Bounds.GetCenter().X,Bounds.GetCenter().Y,Bounds.Min.Z);
+      int Snapped=0,Traced=0;
+      for(auto Instance:O->GetArrayField(TEXT("instances"))){
+        const auto A=Instance->AsObject();const auto Q=A->GetArrayField(TEXT("q"));
+        FTransform T(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Vec(A->GetArrayField(TEXT("p"))),Vec(A->GetArrayField(TEXT("s"))));
+        FHitResult FabGroundHit;FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraFabGround),true);
+        for(auto Ignore:Scenery)Query.AddIgnoredComponent(Ignore.Get());
+        for(const auto &Tree:Trees)Query.AddIgnoredComponent(Tree.Collider);
+        FVector P=T.GetLocation();
+        const FTerraSample Natural=Sample(P);float GroundZ=Natural.Height;FVector GroundNormal=Natural.Normal;
+        // Distant coarse terrain collision is streamed. Its native triangle
+        // height remains available even when there is no loaded query mesh.
+        // Rigid quarry approaches/courses override that natural height.
+        if(GetWorld()->LineTraceSingleByChannel(FabGroundHit,P+FVector(0,0,10000),P-FVector(0,0,10000),ECC_Visibility,Query)){
+          GroundZ=FabGroundHit.ImpactPoint.Z;GroundNormal=FabGroundHit.ImpactNormal;++Traced;
+        }
+        const FVector Forward=FVector::VectorPlaneProject(T.GetRotation().GetForwardVector(),GroundNormal).GetSafeNormal();
+        if(!Forward.IsNearlyZero())T.SetRotation(FRotationMatrix::MakeFromXZ(Forward,GroundNormal).ToQuat());
+        const FString Kind=O->GetStringField(TEXT("kind"));
+        const float Fraction=Kind==TEXT("outcrop")||Kind==TEXT("ledge")?.38f:Kind==TEXT("rubble")?.24f:.14f;
+        P.Z=GroundZ-FMath::Max(2.f,float(Bounds.GetSize().Z*T.GetScale3D().Z)*Fraction);T.SetLocation(P);++Snapped;
+        // Source pivots differ. Place the bottom-centre of each imported mesh
+        // on the authored ground anchor, with its slope/yaw/scale applied.
+        T.AddToTranslation(-T.TransformVector(Anchor));
+        C->AddInstance(T);++FabInstanceCount;++DetailInstanceCount;++SolidDetailCount;
+      }
+      UE_LOG(LogTemp,Display,TEXT("TERRA_FAB_GROUNDED %s %d/%d"),*O->GetStringField(TEXT("asset")),Snapped,O->GetArrayField(TEXT("instances")).Num());
+      UE_LOG(LogTemp,Display,TEXT("TERRA_FAB_TRACED %s %d"),*O->GetStringField(TEXT("asset")),Traced);
+    }
+  }
   if(Data->TryGetArrayField(TEXT("nativeDetails"),Details))for(auto V:*Details){
     auto O=V->AsObject();auto *C=NewObject<UInstancedStaticMeshComponent>(this);
     C->SetupAttachment(RootComponent);

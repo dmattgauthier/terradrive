@@ -60,7 +60,7 @@ function text(g,value,width,height,material){
 
 function factoryRim(spec){
   const g=new THREE.Group(),style=spec.bodyStyle,rimInches=Number(spec.tireSize.match(/R(\d+)/)[1]),r=rimInches*.0254*.5,w=spec.tireWidth;
-  const rimMaterial=style==='sedan'?new THREE.MeshPhysicalMaterial({color:'#171c21',metalness:.48,roughness:.20,clearcoat:1,clearcoatRoughness:.10}):style==='van'?alloy:graphite;
+  const rimMaterial=style==='sedan'||style==='urus'?new THREE.MeshPhysicalMaterial({color:'#171c21',metalness:.58,roughness:.20,clearcoat:1,clearcoatRoughness:.10}):style==='van'?alloy:graphite;
   const barrel=mesh(g,new THREE.LatheGeometry([[r*.85,-w*.43],[r*.97,-w*.44],[r,-w*.38],[r*.93,-w*.32],[r*.93,w*.32],[r,w*.38],[r*.97,w*.44],[r*.85,w*.43]].map(p=>new THREE.Vector2(...p)),96),rimMaterial);barrel.rotation.z=Math.PI/2;
   for(const side of [-1,1]){
     const face=side*w*.43;
@@ -68,7 +68,19 @@ function factoryRim(spec){
     for(let i=0;i<40;i++){
       const a=i*Math.PI/20;rod(g,black,[face*.62-side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],[face*.62+side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],.003);
     }
-    if(style==='van'){
+    if(style==='urus'){
+      // 22-inch Helianthus: five closed polygonal openings around the hub.
+      // The previous generic split spokes resembled neither this wheel nor
+      // the separate optional 23-inch designs in Lamborghini's brochure.
+      const shape=new THREE.Shape();shape.absarc(0,0,r*.963,0,Math.PI*2,false);
+      for(let i=0;i<5;i++){
+        const hole=new THREE.Path(),a=i*Math.PI*2/5+Math.PI/5;
+        const contour=[[.38,0],[.53,-.43],[.88,-.42],[.94,0],[.88,.42],[.53,.43]];
+        contour.forEach(([rad,angle],j)=>hole[j?'lineTo':'moveTo'](Math.cos(a+angle)*r*rad,Math.sin(a+angle)*r*rad));hole.closePath();shape.holes.push(hole);
+      }
+      const geo=new THREE.ExtrudeGeometry(shape,{depth:.012,bevelEnabled:true,bevelSize:.0035,bevelThickness:.003,bevelSegments:3,curveSegments:80}),p=geo.attributes.position;
+      for(let i=0;i<p.count;i++){const yy=p.getX(i),zz=p.getY(i),rr=Math.hypot(yy,zz)/r;p.setXYZ(i,face+side*(.014+.023*(1-rr*rr)+p.getZ(i)),yy,zz);}geo.computeVertexNormals();mesh(g,geo,rimMaterial);
+    }else if(style==='van'){
       const shape=new THREE.Shape();shape.absarc(0,0,r*.94,0,Math.PI*2,false);
       for(let i=0;i<12;i++){const a=i*Math.PI/6,h=new THREE.Path();h.absarc(Math.cos(a)*r*.74,Math.sin(a)*r*.74,r*.091,0,Math.PI*2,true);shape.holes.push(h);}
       const geo=new THREE.ExtrudeGeometry(shape,{depth:.008,bevelEnabled:true,bevelSize:.002,bevelThickness:.002,bevelSegments:2,curveSegments:64});

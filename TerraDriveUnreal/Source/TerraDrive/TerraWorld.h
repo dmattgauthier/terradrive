@@ -90,6 +90,7 @@ public:
   TArray<FTerraRoute> Routes;
   int ConstructedMeshCount = 0;
   int DetailInstanceCount = 0, SolidDetailCount = 0;
+  int FabAssetCount = 0, FabInstanceCount = 0;
   double DepressedVolume = 0, DisplacedVolume = 0, CompactedVolume = 0;
   bool Rain = false, Ready = false;
   int32 DetailCount() const { return Detail.Num(); }

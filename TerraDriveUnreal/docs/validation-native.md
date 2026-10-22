@@ -1,72 +1,52 @@
 # Native migration validation
 
-Verified October 21, 2026 with Unreal Engine 5.8.3, Windows Development, DirectX 12 SM6 and NVIDIA GeForce RTX 4060 Laptop GPU. Launch Build/Windows/TerraDrive.exe and keep the entire Windows directory together.
-
-## Current results
+Verified October 21, 2026, Unreal Engine 5.8.3, Windows Development, DX12 SM6, NVIDIA GeForce RTX 4060 Laptop GPU. Launch Build/Windows/TerraDrive.exe with the complete Windows folder.
 
 | Check | Result |
 |---|---|
-| Native editor/runtime C++ compilation and Windows packaging | Successful |
-| Revised terrain material import and full cook | Successful; no invalid material shader fallbacks |
-| Final cache code package | Successful; reuses the completed valid material cook |
-| Packaged native driving and rendering checks | All 233 passed; fresh report and exit 0 |
-| Standalone simulation checks | All 105 passed |
-| Export | 1,000 terrain samples, finite meshes and tire beads verified |
-| Assets | 217 mesh sources, 318 materials, 42 textures and seven layered terrain materials |
-| Environment | 13,161 detail instances, including 1,073 solid and 10,516 scanned rock/plant instances |
-| Preserved browser reference | All 189 files unchanged |
-| Player garage save | Original bytes preserved; automated test saves isolated |
+| Editor/runtime compile, full import/cook and Windows package | Successful; no invalid material shader fallback |
+| Packaged native checks | All 243 pass, fresh report, exit 0 |
+| Standalone simulation checks | All 105 pass |
+| Export | 1,000 terrain samples, finite geometry, upgraded tire beads and circular loop profile pass |
+| Generated meshes/materials | 217 source-derived meshes; 324 source materials |
+| Epic library scenery | Eight acquired meshes, 24 PBR textures, 282 solid placements |
+| Existing environment detail | 13,161 instances, including 1,073 solid and 10,516 scanned rock/plant instances |
+| Browser reference | All 189 files preserved |
+| Player garage | Original bytes preserved; automated saves isolated |
 
-Final executable SHA-256: 34b25774d815d75f1405a65495d2d4f4f1dccf41a2bccc4d2568c9bad319a86e.
-The machine-readable [native-validation.json](native-validation.json) contains the full test results and source/cooked-content hashes.
+Executable SHA-256: 9f2cfc81e4e520eefe73a61c327535813ef52706a8589bf69d02eb37207f0e13. Full cases, source hashes and cooked-content hashes are in [native-validation.json](native-validation.json).
 
-## Surface behavior and observed measurements
+## Rendered inspection
 
-The prior dark soft-surface tread ribbons are removed. Rubber geometry is limited to pavement traction loss. Hard dirt has a light dusty trail; loose dirt pockets, mud and sand excavate grooves and raised shoulders; snow compresses under load and piles beside the tire. Ground vegetation bends and loses height under the loaded footprint. The continuous loose-dirt field also drives its ground tint. Backspace repairs terrain, vegetation and rubber geometry.
+All six vehicles were inspected from front, side, rear and three-quarter views in fresh packaged captures. The Urus now uses compound body surfaces with a rising belt, tapered greenhouse, bonnet crown, shaped quarters, 22-inch Helianthus wheel faces and individual intake openings. A first render exposed side-sheet overlaps obscuring front/rear details; those sheets were trimmed to the wrapped fascia edges, and canopy rails/bonnet/hatch joins were closed. Other bodies receive continuous model-specific crown/taper/door refinements; the Civic splitter is fitted to its bumper rather than floating ahead of it. These are reference-based approximations, not OEM CAD replicas.
 
-These maxima were measured from actual wheel-driven scripted passes. They depend on load, pressure, tire slip and position; they are not universal soil depths or calibrated factory results.
+The Summit loop has an exact 131.2-foot circular side elevation, with separated entry/exit. A clean stationary side capture verifies the whole loop; native casts verify physical support around the curve and existing inverted tire contact still passes.
 
-| Surface | Deepest loaded groove | Highest sampled side berm |
+African Slate Quarry scenery is now actually imported and placed. Render review checks its PBR appearance and ground contact. A first placement pass exposed floating objects near the quarry approach; native terrain heights and collision traces now establish the slope and buried base, including streamed areas. The packaged suite checks all eight meshes, placement counts and an actual world collision ray. See [body-shapes-and-fab.md](body-shapes-and-fab.md) for research, geometry decisions and acquisition requirements.
+
+Captures are under Build/Windows/TerraDrive/Saved/Screenshots: native-model-{0..5}-view-{0..3}.png, native-round-loop.png, native-fab-slate-quarry.png, native-inverted-loop-contact.png and the retained light/terrain cases. This round uses native automated input and game-generated renders; no fresh live desktop driving or controller hardware session was performed.
+
+## Terrain and driving regressions
+
+Pavement traction loss alone produces black skidmarks. Hard dirt leaves a light shallow trail; loose dirt, mud and sand excavate grooves/berms; snow compacts; grass bends and flattens. Actual scripted driving measures the following maxima, which depend on position, load, pressure and slip and are not calibrated universal soil depths:
+
+| Surface | Deepest groove | Highest sampled berm |
 |---|---:|---:|
-| hard dirt | 0.74 in | shallow trail |
-| soft dirt | 6.59 in | 3.00 in |
-| mud | 9.70 in | 7.14 in |
-| wetland | 8.51 in | 7.34 in |
-| sand | 5.84 in | 5.39 in |
-| snow | 23.41 in | 4.48 in |
+| hard dirt | 0.80 in | shallow trail |
+| soft dirt | 5.24 in | 2.39 in |
+| mud | 7.84 in | 5.79 in |
+| wetland | 8.99 in | 6.86 in |
+| sand | 7.65 in | 4.13 in |
+| snow | 18.87 in | 4.21 in |
 
-Each pass verifies persistent depth, packing, vehicle advance, absence of rubber ribbons and soil-volume accounting. Soft surfaces also require positive side berms. The finite footprint is swept between loaded contacts. Unsupported tires, rigid obstacles and teleports break contact continuity. Existing flotation, rut rolling resistance and tile-seam checks pass.
+Contact continuity, unsupported tires, rigid surfaces, tile seams, cache overflow/return/repair and volume accounting pass. History remains session-only and bounded. Existing checks retain braking/hold/reverse, all six vehicles and lights, wheel rotation, Hummer ride height, upgrades, garage orbit, save migration, lockers, descent, rollover, moving debris and eight challenge starts. S/Down and gamepad left trigger brake then select reverse after a 0.65-second full-stop dwell; Space holds.
 
-The render pool now streams far tiles into an offscreen state cache instead of disabling new deformation when full. A deliberately reduced eight-tile test budget fills the pool, requires new ruts to keep appearing, verifies retained offscreen depth, revisits a cached rut and checks complete repair. Production limits are 768 active tiles and 8,192 cached states.
-
-## Rendered review and Fab assets
-
-Reviewed final captures: native-driven-dirt.png, native-driven-soft-dirt.png, native-driven-mud.png, native-driven-wetland.png, native-driven-sand.png, native-driven-snow.png, native-crushed-grass.png and native-pavement-skidmarks.png. Trail views use an oblique stationary camera after the driving pass. Screenshots are under Build/Windows/TerraDrive/Saved/Screenshots.
-
-The signed-in Fab library contains Automotive Winter Scene, African Slate Quarry and Electric Dreams Env. Quarry medium FBX was downloaded, with 129 FBX files and 707 textures, approximately 470 MiB extracted. No Fab library asset is imported or placed in this build. The winter sample import dialog found no available project. Additional free Snow, Soil Mud, Forest Floor and Megaplants candidates and licensing/source-publication constraints are documented in [surface-deformation.md](surface-deformation.md).
-
-Computer Use ended after Fab opened Firefox because URL policy enforcement was unsupported for that browser. No further desktop input was issued. This round's visual verification uses game-generated captures; live desktop driving and controller hardware were not exercised.
-
-## Existing game behavior retained
-
-The native suite still covers all six vehicles, Space braking/holding, S/Down brake-to-reverse demand, wheel orientation, Hummer ride height, upgrade effects, garage camera behavior, save migration, light emitters, rollover/airborne contact, moving debris, loop support, axle lockers, descent assist, region spawns and eight challenge starts. S/Down and gamepad left trigger select reverse after a continuous 0.65-second full-stop dwell; Space remains a hold brake.
-
-The Urus Performante remains an authored approximation with steel coils, staggered tires, 22-inch wheels and estimated chassis/operating-mass parameters. Earlier live garage/orbit/upgrade and exit/restart checks are historical evidence from the lighting/vehicle round, not a new live test in this round. CC0 scan sources, original model research and lighting references remain in [lighting-tracks-urus.md](lighting-tracks-urus.md).
-
-## Reproduce
+## Reproduce and limits
 
     .\Tools\test-core.cmd
     .\Tools\build-native.ps1 -ImportAssets -Package
     .\Tools\verify-native.ps1
 
-Use a normal Windows process context. Material or asset changes require a full cook; code-only changes may reuse a successful cook with -SkipCook. The build helper requires fresh import/cook diagnostics and rejects invalid material shader fallbacks. The verifier requires a fresh complete report and successful game exit. A targeted developer run can add -TerraSoilOnly to -TerraValidate; it does not replace the complete verifier.
+The verifier requires at least 243 passing checks and a fresh successful process/report. -TerraVisualOnly is a short model/loop/scenery capture mode, and -TerraSoilOnly is a short terrain mode; neither replaces the full verifier. Material/mesh changes require a full cook. Logs: Saved/package-body-assets-final-console.log (full cook), Saved/package-body-final-console.log (final code package), Saved/verify-body-final-console.log, Saved/Validation/packaged-game.log, Saved/core-body.log and Saved/validate-export-body.log.
 
-Final logs: Saved/package-surface-ruts-final-console.log, Saved/package-surface-ruts-verified-console.log, Saved/verify-surface-ruts-final-console.log and Saved/Validation/packaged-game.log. Core/export logs: Saved/core-surface-ruts.log and Saved/validate-export-surface-ruts.log. The earlier 223-case pass is retained as Saved/Validation/surface-first-pass-223.json and .log. The intermediate saturated-fixture failure is retained as Saved/Validation/surface-fixture-saturation.json and .log; the excavation test now starts on repaired soil.
-
-Public source uses an explicit allowlist and credential checks. Generated Unreal assets, Windows builds, local saves/logs/screenshots, private configuration, research copies and raw Fab downloads are excluded. Vendored CC0 sources remain included.
-
-## Practical limits
-
-Soil is a finite height-field simulation with estimated coefficients. It does not model liquid mud flow, individual grains, snow temperature or arbitrary overhangs. Ruts, plant crushing and skidmarks persist for the session, with no disk save. The farthest cached terrain history may be discarded at the cache limit; rubber history reuses the oldest of 4,096 segments. Rocks remain fixed scenery and plants are nonblocking.
-
-Vehicle models, factory chassis systems and driveline calibration remain approximate. Complete browser parity, every full rocky route, uninterrupted loop traversal, fine sign lettering, detailed track animation, controller hardware and long-session performance remain unproven. The earlier hard reboot has no established cause.
+Raw Fab files, generated assets/builds, research copies, saves, screenshots, logs and private configuration are excluded from public source. Optional Fab scenery requires the user's own acquired pack. Browser parity, every full route, uninterrupted loop traversal, fine lettering, controller hardware and long-session stability remain unproven. The previous hard reboot has no established cause.

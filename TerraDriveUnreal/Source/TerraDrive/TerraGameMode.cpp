@@ -96,6 +96,10 @@ void ATerraGameMode::Tick(float Dt) {
       FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
   };
   auto Next = [&](int NewStage) { Stage=NewStage; StageTime=0; Captured=false; MaxProgress=0; };
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraVisualOnly"))){
+    V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);V->SetGarage(true);V->SetGarageView(1);ModelVehicle=0;ModelView=0;Stage=44;StageTime=0;
+    GarageCameraBefore=V->Camera->GetComponentLocation();
+  }
   // These exercise the native Chaos world, not the historical JS tests.
   if (Stage == 0) {
     Results.Add(FString::Printf(TEXT("{\"case\":\"native world data\",\"zones\":%d,\"pass\":%s}"),
@@ -131,11 +135,29 @@ void ATerraGameMode::Tick(float Dt) {
       Edge->DestroyComponent();
     }
     Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==8,V->Terrain->ConstructedMeshCount);
-      { FVector P(5800,23600,472), N(0,0,1); const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V); Check(TEXT("loop contact 0"),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance); }
-      { FVector P(8000,23472.816920328652,2471.9999999999995), N(-0.9238105221531736,-0.06683810242528712,-0.3769705389327761); const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V); Check(TEXT("loop contact 1"),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance); }
-      { FVector P(5800,22900,4472), N(-1.4927753937936347e-16,-8.065097714605623e-17,-1); const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V); Check(TEXT("loop contact 2"),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance); }
-      { FVector P(3600,22327.183079671348,2472.0000000000005), N(0.9238105221531735,0.06683810242528718,-0.37697053893277616); const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V); Check(TEXT("loop contact 3"),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance); }
-      { FVector P(5799.999999999999,22200,472), N(1.6328623988631378e-16,2.728720282763563e-17,1); const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V); Check(TEXT("loop contact 4"),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance); }
+    const auto LoopFrames=V->Terrain->Data->GetArrayField(TEXT("loopFrames"));
+    for(int I=0;I<5;++I){
+      const auto Frame=LoopFrames[I*6]->AsObject();
+      const auto P0=Frame->GetArrayField(TEXT("p")),N0=Frame->GetArrayField(TEXT("n"));
+      const FVector P(P0[0]->AsNumber(),P0[1]->AsNumber(),P0[2]->AsNumber()),N(N0[0]->AsNumber(),N0[1]->AsNumber(),N0[2]->AsNumber());
+      const auto S=V->Terrain->CastSupport(P+N*65,N,42,-30,57,V);
+      Check(FString::Printf(TEXT("circular loop physical contact %d"),I),S.Hit&&S.Constructed&&FMath::Abs(S.Distance-23)<3,S.Distance);
+    }
+    float RadiusError=0;
+    for(auto F:LoopFrames){const auto P=F->AsObject()->GetArrayField(TEXT("p"));RadiusError=FMath::Max(RadiusError,float(FMath::Abs(FMath::Sqrt(FMath::Square(P[0]->AsNumber()-5800)+FMath::Square(P[2]->AsNumber()-2472))-2000)));}
+    Check(TEXT("loop side elevation is a 131-foot circle"),RadiusError<.01f,RadiusError);
+    const bool FabEnabled=V->Terrain->Data->GetObjectField(TEXT("fabScenery"))->GetBoolField(TEXT("enabled"));
+    Check(TEXT("acquired Fab slate meshes load in packaged game"),!FabEnabled||V->Terrain->FabAssetCount==8,V->Terrain->FabAssetCount);
+    Check(TEXT("acquired Fab scenery is placed with physical collision"),!FabEnabled||V->Terrain->FabInstanceCount>100,V->Terrain->FabInstanceCount);
+    int FabRayHits=0;
+    TArray<UInstancedStaticMeshComponent*> FabComponents;V->Terrain->GetComponents(FabComponents);
+    for(auto *C:FabComponents)if(C->ComponentHasTag(TEXT("TerraFabScenery"))&&C->GetInstanceCount()>0){
+      FTransform Instance;C->GetInstanceTransform(0,Instance,true);
+      const FVector P=Instance.TransformPosition(C->GetStaticMesh()->GetBoundingBox().GetCenter());
+      FHitResult Hit;FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraFabValidation),true,V);
+      if(GetWorld()->LineTraceSingleByChannel(Hit,P+FVector(0,0,1500),P-FVector(0,0,1500),ECC_Visibility,Query)&&Hit.GetComponent()==C)++FabRayHits;
+    }
+    Check(TEXT("imported Fab outcrops block a native world collision ray"),!FabEnabled||FabRayHits>0,FabRayHits);
     { const auto S=V->Terrain->CastSupport(FVector(500,18300,860),FVector::UpVector,42,-30,57,V); Check(TEXT("jump gap has no hidden support"),!S.Hit); }
     V->SelectVehicle(0);
     for(int I=0;I<4;++I){
@@ -331,7 +353,7 @@ void ATerraGameMode::Tick(float Dt) {
       Next(Stage+1);
       if(Stage==28){
         V->SelectVehicle(0);V->TeleportRoute(0);V->TestBrake=0;V->TestThrottle=.4f;
-        const FVector Tangent=FVector(-14,-4.4563384,0).GetSafeNormal();
+        const FVector Tangent=FVector(-20,-4.4563384,0).GetSafeNormal();
         V->SetActorLocationAndRotation(FVector(5800,22900,4396),FRotationMatrix::MakeFromXZ(Tangent,-FVector::UpVector).Rotator(),false,nullptr,ETeleportType::TeleportPhysics);
         V->Chassis->SetPhysicsLinearVelocity(Tangent*1800);
         Start=V->GetActorLocation();
@@ -541,9 +563,12 @@ void ATerraGameMode::Tick(float Dt) {
       Check(FString::Printf(TEXT("vehicle %d garage view %d persists without camera reset"),ModelVehicle,ModelView),Error<1,Error);
     }
     if(StageTime>1.05f){
-      if(++ModelView==3){ModelView=0;++ModelVehicle;}
-      if(ModelVehicle==ATerraVehicle::VehicleCount){GarageCameraBefore=V->GarageViewState();V->OrbitGarageCamera(92,-17);V->ZoomGarageCamera(2);Next(45);}
-      else{V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarageView(ModelView+1);Next(44);}
+      if(++ModelView==4){ModelView=0;++ModelVehicle;}
+      if(ModelVehicle==ATerraVehicle::VehicleCount){
+        if(FParse::Param(FCommandLine::Get(),TEXT("TerraVisualOnly"))){Next(59);}
+        else{GarageCameraBefore=V->GarageViewState();V->OrbitGarageCamera(92,-17);V->ZoomGarageCamera(2);Next(45);}
+      }
+      else{V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarageView((ModelView+1)%4);Next(44);}
     }
   } else if(Stage==45){
     if(StageTime>.6f){
@@ -703,7 +728,20 @@ void ATerraGameMode::Tick(float Dt) {
     Check(TEXT("returning to a cached rut restores its detailed geometry"),T->DetailCount()<=8&&FMath::Abs(T->Sample(P).RutDepth-Original)<.0001f,T->DetailCount());
     T->ActiveTileLimit=768;T->ResetSoil();
     Check(TEXT("soil repair clears both rendered and cached deformation"),T->DetailCount()==0&&T->CachedSoilCount()==0);
-    FinishValidation();
+    Next(59);
+  }else if(Stage==59){
+    V->SetGarage(false);V->TestThrottle=0;V->TestBrake=1;
+    if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
+    auto *PC=UGameplayStatics::GetPlayerController(this,0);PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;
+    const FVector Target(5800,22900,2472),Eye(5800,34900,2472);
+    SoilCamera->GetCameraComponent()->SetFieldOfView(49);SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
+    if(StageTime>1&&!Captured){Capture(TEXT("native-round-loop.png"));Captured=true;}
+    if(StageTime>1.5f)Next(60);
+  }else if(Stage==60){
+    const FVector Target(22900,-28300,V->Terrain->Data->GetNumberField(TEXT("quarryBaseM"))*100+300),Eye=Target+FVector(2200,3600,1800);
+    SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
+    if(StageTime>1&&!Captured){Capture(TEXT("native-fab-slate-quarry.png"));Captured=true;}
+    if(StageTime>1.5f)FinishValidation();
   }
 
 }

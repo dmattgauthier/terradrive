@@ -50,7 +50,15 @@ export function vehicleAdditions(spec){
     for(let i=0;i<12;i++)box(equipment,amber,[(i-5.5)*half*.10,lightY,lightZ+.058],[half*.075,.065,.018]);
   }else{
     // Sport sedan keeps road hardware: a shaped lower splitter and rear diffuser.
-    box(equipment,rubber,[0,.18-datum,front-.10],[half*1.9,.035,.23]);
+    if(spec.bodyStyle==='sedan'){
+      // Civic's lower bumper is at Y=.277 and nose Z=2.29. The old
+      // generic bar was below and ahead of it, visibly detached in the garage.
+      box(equipment,rubber,[0,.285-datum,2.272+offset],[half*1.86,.020,.070]);
+    }else for(let i=0;i<24;i++){
+      const x0=(i/24*2-1)*.93,x1=((i+1)/24*2-1)*.93;
+      const p=x=>[x,.282-datum,2.5685-.18*(Math.abs(x)/.99)**2+offset];
+      rod(equipment,rubber,p(x0),p(x1),.008,8);
+    }
     for(let i=-2;i<=2;i++)box(equipment,steel,[i*.19,.18-datum,-spec.length*.47],[.025,.10,.28]);
   }
   return {armor,equipment};

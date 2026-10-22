@@ -224,7 +224,10 @@ for i, asset in enumerate(data['assets']):
     lib.set_metadata_tag(mesh, 'TerraMeshHash', asset.get('sha256',''))
     lib.save_loaded_asset(mesh)
     unreal.log('TERRA_IMPORT %d/%d %s' % (i+1, len(data['assets']), asset['name']))
+    if i%8==7:
+        unreal.SystemLibrary.collect_garbage()
 
+exec(compile(open(os.path.join(root,'Tools','import-fab.py'),encoding='utf8').read(),'import-fab.py','exec'),globals())
 level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 if lib.does_asset_exist('/Game/Maps/ProvingGround'):
     ok = level.load_level('/Game/Maps/ProvingGround')

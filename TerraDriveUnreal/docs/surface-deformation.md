@@ -21,7 +21,7 @@ The session keeps up to 768 rendered fine tiles and 8,192 offscreen soil states.
 
 ## Fab library and additional free candidates
 
-The signed-in Epic Launcher library was inspected on October 21, 2026. It contains **Automotive Winter Scene**, **African Slate Quarry** and **Electric Dreams Env**. African Slate Quarry's medium FBX version was downloaded successfully through the Launcher (approximately 461 MB download, 470 MB shown on disk). It contains meshes, plant variants and 2K PBR maps. The downloaded library files are not yet imported or placed in Terra Drive.
+The signed-in Epic Launcher library was inspected on October 21, 2026. It contains **Automotive Winter Scene**, **African Slate Quarry** and **Electric Dreams Env**. African Slate Quarry's medium FBX version was downloaded through the Launcher (approximately 461 MB download, 470 MB on disk). It contains meshes, plant variants and 2K PBR maps. The later [body/scenery round](body-shapes-and-fab.md) integrates eight acquired slate meshes and 24 PBR textures in 282 placements; raw Fab files remain excluded from public source.
 
 Automotive Winter Scene's Add to Project dialog showed no available project, including with Show all projects enabled. Electric Dreams is a full sample with PCG and Substrate examples; its [official listing](https://www.fab.com/listings/d79688f5-29be-4fb2-a650-2d4a813f5306) identifies it as Unreal-only content. Neither full sample was added to this project during this corrective terrain round.
 

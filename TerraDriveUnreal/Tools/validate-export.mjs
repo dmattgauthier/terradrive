@@ -7,6 +7,17 @@ import {Terrain} from '../../TerraDrive-v1.13/dist/src/terrain.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const b=fs.readFileSync(path.join(root,'Content/NativeData/terrain.bin'));
 const data=JSON.parse(fs.readFileSync(path.join(root,'SourceAssets/import.json')));
+// Circularity is tested against a fixed centre/radius, independently of the
+// course generator. Both axial extrema and intermediate profile points matter.
+assert.equal(data.loopFrames.length,25);
+for(const f of data.loopFrames){assert.ok(Math.abs(Math.hypot(f.p[0]-5800,f.p[2]-2472)-2000)<1e-6);assert.ok(Math.abs(Math.hypot(...f.n)-1)<1e-6);}
+assert.ok(Math.abs(data.loopFrames[6].p[0]-7800)<1e-6);
+assert.ok(Math.abs(data.loopFrames[18].p[0]-3800)<1e-6);
+assert.equal(data.vehicles[5].nativeModel.bodyShape.version,2);
+assert.equal(data.vehicles[5].nativeModel.bodyShape.landmarks.wheelbase,3.006);
+for(const v of data.vehicles.slice(0,5)){assert.ok(v.nativeModel.bodyShape.vertices>10000);assert.ok(v.nativeModel.bodyShape.maximumSurfaceChangeM>.01&&v.nativeModel.bodyShape.maximumSurfaceChangeM<.12);}
+assert.equal(data.fabScenery.groups.length,8);
+assert.ok(data.fabScenery.groups.reduce((sum,g)=>sum+g.instances.length,0)>100);
 assert.equal(b.readUInt32LE(0),0x54445256);assert.equal(b.readUInt32LE(4),1601);
 assert.equal(b.length,16+1601*1601*9);
 const terrain=new Terrain();let maxError=0;

@@ -3,7 +3,7 @@ import {VEHICLES as BrowserVehicles} from '../../TerraDrive-v1.13/dist/src/vehic
 // peaks: Lamborghini brochure linked in docs/lighting-tracks-urus.md.
 export const URUS={
  ...BrowserVehicles[2],id:'urus-performante',name:'Lamborghini Urus Performante',brand:'Lamborghini',year:2024,
- trim:'4.0 twin-turbo V8 / 8-speed / steel coils',bodyStyle:'urus',color:'#d5df27',
+ trim:'4.0 twin-turbo V8 / 8-speed / steel coils',bodyStyle:'urus',color:'#e7c51b',
  powerHP:490000/745.699872,torqueNm:850,torqueLbFt:626.93,
  mass:2250,curbMass:2250,massStatus:'Simulation operating mass estimate; brochure dry mass is 2157 kg',
  length:5.137,width:2.026,height:1.618,wheelbase:3.006,track:1.695,
