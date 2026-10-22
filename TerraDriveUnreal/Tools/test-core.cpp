@@ -134,6 +134,16 @@ int main(){
         check(tracks>0&&tracks<tires*.5f,"tracks float better despite added mass");
     }
     check(TerraSim::SoilTarget(0,10000,.3f,.2f,1)==0,"rigid surfaces cannot excavate");
+    for(float speed:{1.f,4.f,12.f}){
+        const float passage=.20f/speed;
+        const float response=TerraSim::SoilResponse(passage,speed,.20f,0,0);
+        check(response>.94f,"a rolling footprint compacts soft ground during one passing contact");
+        float remaining=1;
+        for(int frame=0;frame<12;++frame)remaining*=1-TerraSim::SoilResponse(passage/12,speed,.20f,0,0);
+        check(std::abs((1-remaining)-response)<.00001f,"soil response is stable when the same contact is split into substeps");
+    }
+    check(TerraSim::SoilTarget(.6f,9000,.32f,.2f,0)>TerraSim::SoilTarget(.6f,3000,.32f,.2f,0),"heavy axles compact deeper snow than light axles without requiring tire spin");
+    check(TerraSim::SoilResponse(.04f,2,.2f,0,.9f)<TerraSim::SoilResponse(.04f,2,.2f,0,0),"previously packed ground resists further disturbance");
     float s=TerraSim::FrictionScale(5000,6000,.45f,5200);
     check(std::abs(std::hypot(5000*s,6000*s)-.45f*5200)<.001f,"steering and drive share a finite force budget");
     check(TerraSim::FrictionScale(1000,1000,.8f,0)==0,"airborne tire applies no grip");

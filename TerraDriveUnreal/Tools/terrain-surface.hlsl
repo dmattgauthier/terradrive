@@ -47,9 +47,19 @@ float mineral=f.noise(p.xy*.023+p.z*.017);
 color*=broad*lerp(float3(.91,.97,1.03),float3(1.07,1.02,.87),mineral);
 float wet=smoothstep(.50,.76,patches)*Wetness;
 color*=lerp(1,.56,wet);
-// The deforming terrain supplies packing in vertex color. Tire tracks expose
-// darker compressed soil rather than keeping the pristine photographic tint.
-color*=1-saturate(1-Wear)*1.6;
+// Persistent packed state comes from the actual loaded contact footprint.
+// Preserve each substrate's albedo: dust lightens, vegetation bends/yellows,
+// and wet excavated soil darkens moderately. No rubber tint on loose ground.
+float packed=saturate(1-Wear);
+if(Biome==0){
+  float loose=saturate(LooseSoil);
+  color*=lerp(1,.85,loose);
+  float3 dry=lerp(color,color*lerp(1.16,.90,loose)+float3(.022,.018,.009)*(1-loose),packed*.65);
+  float3 crushed=lerp(bColor,bColor*float3(1.23,1.04,.68),packed*.78);
+  color=lerp(dry,crushed,b*packed*.62);
+}
+if(Biome==2||Biome==3)color*=1-packed*.24;
+if(Biome==5)color=lerp(color,color*1.09,packed);
 float2 uv=p.xy/2.1;
 if(w.x>w.z&&w.x>w.y)uv=p.yz/2.1;
 else if(w.y>w.z)uv=p.xz/2.1;
@@ -61,6 +71,9 @@ float3 detail=Texture2DSample(NormalMap,NormalMapSampler,uv).xyz*2-1;
 detail=normalize(lerp(lerp(detail,Texture2DSample(SecondaryNormal,SecondaryNormalSampler,uv*.778).xyz*2-1,b),Texture2DSample(AccentNormal,AccentNormalSampler,uv*1.355).xyz*2-1,c));
 detail.y=-detail.y; // The supplied photographic maps use OpenGL green.
 detail.xy*=.38;
+// Packed material loses fluffy microrelief. Large groove/berm normals are
+// supplied by the deformed mesh and remain fully visible to the lighting.
+detail.xy*=1-packed*.66;
 detail.z=sqrt(saturate(1-dot(detail.xy,detail.xy)));
 float3 ref=abs(n.y)>.95?float3(1,0,0):float3(0,1,0);
 float3 tangent=normalize(cross(ref,n)),bitangent=cross(n,tangent);
@@ -68,7 +81,8 @@ SurfaceNormal=normalize(tangent*detail.x+bitangent*detail.y+n*detail.z);
 if(Biome==6){
   float frost=smoothstep(.18,.57,patches)*saturate(n.z+.4);
   float grain=dot(aColor,float3(.3,.59,.11));
-  color=lerp(cColor*.55,float3(.72,.82,.91)*( .82+grain*.35),frost*.86+.12);
-  Roughness=.89;SurfaceNormal=normalize(lerp(n,SurfaceNormal,.35));
+  color=float3(.79,.88,.97)*(.88+grain*.18)*lerp(.93,1.04,frost);
+  color=lerp(color,float3(.52,.66,.78)*(.94+grain*.10),packed*.72);
+  Roughness=lerp(.94,.66,packed);SurfaceNormal=normalize(lerp(n,SurfaceNormal,.35*(1-packed*.7)));
 }
 return max(color*.92,.008);

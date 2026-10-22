@@ -7,10 +7,12 @@ void ATerraWorld::TireMark(int Wheel,FVector P,FVector Forward,float Width,float
     float Speed,float Lateral,bool Grounded,bool Constructed,float Dt){
   if(Wheel<0||Wheel>3)return;
   const auto S=Sample(P);
-  const bool Road=S.Surface==1,Soft=S.MaxSink>.01f;
+  const bool Road=S.Surface==1;
   const bool Skidding=FMath::Abs(Slip)>.20f||FMath::Abs(Lateral)>1.1f;
   const bool Moving=FMath::Abs(Speed)>1.2f||FMath::Abs(Slip)>1.2f;
-  if(!Grounded||Constructed||(!Soft&&!Road)||(Road&&(!Skidding||!Moving))){MarkConnected[Wheel]=false;return;}
+  // Rubber is deposited only on pavement. All loose/vegetated surfaces are
+  // represented by the soil mesh and its packed material, never a dark decal.
+  if(!Grounded||Constructed||!Road||!Skidding||!Moving){MarkConnected[Wheel]=false;return;}
   if(!MarkConnected[Wheel]){LastMark[Wheel]=P;MarkConnected[Wheel]=true;return;}
   const float Distance=FVector::Dist2D(P,LastMark[Wheel]);
   if(Distance>180||FMath::Abs(P.Z-LastMark[Wheel].Z)>100){LastMark[Wheel]=P;return;}
@@ -24,7 +26,7 @@ void ATerraWorld::TireMark(int Wheel,FVector P,FVector Forward,float Width,float
   MarkPhase[Wheel]+=FVector::Dist(Mark.A,Mark.B)*.01f;
   if(TireMarks.Num()<4096)TireMarks.Add(Mark);
   else{TireMarks[NextMark]=Mark;NextMark=(NextMark+1)%4096;}
-  if(Road)++SkidMarkCount;else ++SoftMarkCount;
+  ++SkidMarkCount;
   LastMark[Wheel]=P;MarksDirty=true;
 }
 void ATerraWorld::RebuildTireMarks(){

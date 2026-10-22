@@ -91,7 +91,7 @@ world.scene.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;if(obj.name==='br
  // Conjugation by (old Z,-old X,old Y), including the handedness reversal.
  const color=new THREE.Color(1,1,1);if(obj.isInstancedMesh&&obj.instanceColor)obj.getColorAt(i,color);
  instances.push({index:i,p:[p.z*100,-p.x*100,p.y*100],q:[-q.z,q.x,-q.y,q.w],s:[s.z,s.x,s.y],color:color.toArray()});}
- const id=placements.length;obj.userData.nativeGroup=id;placements.push({asset,instances:instances.filter(i=>!inQuarry(i.p[0]/100,i.p[1]/100))});
+ const id=placements.length;obj.userData.nativeGroup=id;placements.push({asset,crushable:/grass|sedges|tussock|cattail/.test(obj.name),instances:instances.filter(i=>!inQuarry(i.p[0]/100,i.p[1]/100))});
 });
 const trees=(world.treeRecords||[]).filter(t=>!inQuarry(t.z,-t.x)).map(t=>({id:t.id,p:[t.z*100,-t.x*100,terrain.heightAt(t.x,t.z)*100],radius:t.obstacle.radius*100,height:t.height*100,parts:Object.values(t.meshes).filter(m=>m?.isMesh).map(m=>({group:m.userData.nativeGroup,index:t.meshes.index}))}));
 const course=createChallengeCourse(),view=createChallengeView(course),quarry=buildRockCourses(terrain);

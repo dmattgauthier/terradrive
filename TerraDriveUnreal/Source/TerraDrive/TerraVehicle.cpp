@@ -565,11 +565,21 @@ void ATerraVehicle::Simulate(float Dt) {
     if (W.Load>0 && W.ContactValid) {
       Chassis->AddForceAtLocation((W.Ground.Normal*W.Load+W.ForceForward*FX+W.ForceSide*FY)*100,W.Contact);
       LastTireForceN+=FMath::Abs(FX)+FMath::Abs(FY);
-      if (SoilTimer>=.025f && !W.Constructed)
-        Terrain->Deform(W.Contact,W.ForceForward,W.Load,Pressure,Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth),W.Footprint,W.Slip,W.LongSpeed,SoilTimer);
+      if (SoilTimer>=.025f && !W.Constructed){
+        const float TireWidth=Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth);
+        const float Travel=FVector::Dist2D(W.LastSoil,W.Contact);
+        const bool Connected=W.SoilConnected&&Travel<250&&FMath::Abs(W.LastSoil.Z-W.Contact.Z)<100;
+        const int Steps=Connected?FMath::Clamp(FMath::CeilToInt(Travel/FMath::Max(6.25f,W.Footprint*45)),1,48):1;
+        for(int Step=1;Step<=Steps;++Step){
+          const FVector Point=Connected?FMath::Lerp(W.LastSoil,W.Contact,float(Step)/Steps):W.Contact;
+          Terrain->Deform(Point,W.ForceForward,W.Load,Pressure,TireWidth,W.Footprint,W.Slip,W.LongSpeed,SoilTimer/Steps);
+        }
+        W.LastSoil=W.Contact;W.SoilConnected=true;
+      }
       const float Water=W.Ground.Water/100;
       if (Water>.01f) Chassis->AddForceAtLocation((-W.PointVelocity*Water*260+FVector::UpVector*Water*350)*100,W.Contact);
     }
+    if(!W.ContactValid||W.Load<50||W.Constructed)W.SoilConnected=false;
     Terrain->TireMark(I,W.Contact,W.ForceForward,Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth),W.Slip,W.LongSpeed,W.LateralSpeed,
         W.ContactValid&&W.Load>50&&!Overturned,W.Constructed,Dt);
     W.Rotation+=W.Omega*Dt; W.Pressure=Pressure;
@@ -693,6 +703,7 @@ void ATerraVehicle::Tick(float Dt) {
   Input(Dt);
   UpdateLamps();
   if(!Garage){
+    Terrain->ActivateSoil(GetActorLocation());
     SoilTimer += Dt;
     Simulate(Dt);
     UpdateSpray(Dt);

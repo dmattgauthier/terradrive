@@ -1,5 +1,6 @@
 #include "TerraGameMode.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraActor.h"
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -86,6 +87,7 @@ void ATerraGameMode::Tick(float Dt) {
   if (!V || !V->Terrain || !V->Terrain->Ready || !V->Initialized)
     return;
   StageTime += Dt;
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraSoilOnly"))){Stage=51;StageTime=0;}
   auto Check = [&](const FString &Name, bool Pass, float Value=0.f) {
     Results.Add(FString::Printf(TEXT("{\"case\":\"%s\",\"value\":%.4f,\"pass\":%s}"),*Name,Value,Pass?TEXT("true"):TEXT("false")));
   };
@@ -420,7 +422,10 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("lower pressure enlarges the live soil footprint"),Patch>StockFootprint*1.15f,Patch/StockFootprint);
       Check(TEXT("lower pressure improves live loose terrain grip"),Grip>StockTerrainGrip*1.05f,Grip/StockTerrainGrip);
       UE_LOG(LogTemp,Display,TEXT("TERRA_PRESSURE stock_patch=%.4f low_patch=%.4f stock_grip=%.4f low_grip=%.4f"),StockFootprint,Patch,StockTerrainGrip,Grip);
-      const auto P=V->WheelState[0].Contact;const float Before=V->Terrain->Height(P.X,P.Y);
+      const auto P=V->WheelState[0].Contact;
+      // Test new excavation on fresh soil. A settled live footprint may
+      // already be deeper than this fixture's target after fast compaction.
+      V->Terrain->ResetSoil();const float Before=V->Terrain->Height(P.X,P.Y);
       for(int I=0;I<100;++I)V->Terrain->Deform(P,FVector::ForwardVector,5500,16,.285f,.28f,.8f,1,.025f);
       const auto Soil=V->Terrain->Sample(P);
       Check(TEXT("deformed ruts add depth dependent rolling resistance"),Soil.RutDepth>.005f&&V->Terrain->Height(P.X,P.Y)<Before&&TerraSim::RutResistance(Soil.RutDepth,.42f,Soil.Softness,Soil.Packing,false)>0,Soil.RutDepth);
@@ -600,7 +605,7 @@ void ATerraGameMode::Tick(float Dt) {
         T->Deform(Q,FVector::ForwardVector,5500,24,.285f,.28f,.7f,2,.1f);
         T->TireMark(W,Q,FVector::ForwardVector,.285f,.7f,2,0,true,false,.025f);
       }
-      Check(TEXT("soft ground records tread impressions with physical ruts"),T->SoftMarkCount>Before+50&&T->Sample(P+FVector(300,80,0)).RutDepth>.001f,T->SoftMarkCount-Before);
+      Check(TEXT("soft ground uses physical grooves without rubber ribbons"),T->SoftMarkCount==Before&&T->Sample(P+FVector(300,80,0)).RutDepth>.025f,T->Sample(P+FVector(300,80,0)).RutDepth);
       const int Count=T->TireMarkCount();T->TireMark(0,P+FVector(4000,0,0),FVector::ForwardVector,.285f,1,3,0,true,false,.025f);
       Check(TEXT("teleports do not draw a tire ribbon across the world"),T->TireMarkCount()==Count);
       Captured=true;
@@ -608,6 +613,96 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>1.2f){Capture(TEXT("native-soft-tread-ruts.png"));Next(51);}
   }else if(Stage==51&&StageTime>.6f){
     V->Terrain->ResetSoil();Check(TEXT("soil repair clears tire marks and physical deformation"),V->Terrain->TireMarkCount()==0&&V->Terrain->DetailCount()==0);
+    V->SelectVehicle(0);V->ResetUpgrades(false);V->Direction=1;SoilScenario=0;Next(52);
+  }else if(Stage==52){
+    if(!Captured){
+      const int Zones[]={0,3,7,4,5,0};
+      V->Terrain->ResetSoil();V->TeleportZone(Zones[SoilScenario]);V->TestDriverInput=false;
+      if(SoilScenario==3){
+        FVector Best=V->Terrain->Spawns[4];float Distance=FLT_MAX;
+        for(int X=-18;X<=18;++X)for(int Y=-18;Y<=18;++Y){
+          const FVector Q=V->Terrain->Spawns[4]+FVector(X*100,Y*100,0);const auto S=V->Terrain->Sample(Q);
+          if(S.Surface==3&&S.Normal.Z>.9f&&X*X+Y*Y<Distance){Best=Q;Distance=X*X+Y*Y;}}
+        Best.Z=V->Terrain->Height(Best.X,Best.Y)+V->ExpectedRideHeight()*100+12;
+        V->SetActorLocation(Best,false,nullptr,ETeleportType::TeleportPhysics);
+      }
+      if(SoilScenario==5){
+        FVector Best=V->Terrain->Spawns[0];float Distance=FLT_MAX;
+        for(int X=-40;X<=40;++X)for(int Y=-40;Y<=40;++Y){
+          const FVector Q=V->Terrain->Spawns[0]+FVector(X*150,Y*150,0);const auto S=V->Terrain->Sample(Q);
+          if(S.Surface==0&&S.Softness>.60f&&S.Normal.Z>.94f&&X*X+Y*Y<Distance){Best=Q;Distance=X*X+Y*Y;}}
+        Best.Z=V->Terrain->Height(Best.X,Best.Y)+V->ExpectedRideHeight()*100+12;
+        V->SetActorLocation(Best,false,nullptr,ETeleportType::TeleportPhysics);
+      }
+      V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;V->Pressure=24;V->FourDrive=true;V->LowRange=true;
+      V->FrontLocked=V->RearLocked=true;V->Direction=1;SoilProbes.Empty();Captured=true;
+      if(auto *PC=Cast<APlayerController>(V->GetController()))PC->SetViewTarget(V);
+    }
+    if(StageTime>1){Start=V->GetActorLocation();V->TestBrake=0;V->TestThrottle=.65f;Next(53);}
+  }else if(Stage==53){
+    for(const auto &Wheel:V->WheelState)if(Wheel.ContactValid&&Wheel.Load>500&&SoilProbes.Num()<2400&&
+        (SoilScenario!=5||(Wheel.Ground.Surface==0&&Wheel.Ground.Softness>.3f)))
+      SoilProbes.Add(Wheel.Contact);
+    if(StageTime>6||FVector::Dist2D(Start,V->GetActorLocation())>1400){
+      V->TestThrottle=0;V->TestBrake=1;Next(54);
+    }
+  }else if(Stage==54){
+    if(StageTime>.8f&&!Captured){
+      auto *T=V->Terrain.Get();const FString Names[]={TEXT("hard dirt"),TEXT("mud"),TEXT("snow"),TEXT("wetland"),TEXT("sand"),TEXT("soft dirt")};
+      float Deepest=0,Berm=0,Packed=0;FVector Best=Start;
+      const FVector F=V->GetActorForwardVector(),Side(-F.Y,F.X,0);
+      for(const auto &P:SoilProbes){const auto S=T->Sample(P);
+        if(S.RutDepth>Deepest){Deepest=S.RutDepth;Best=P;}Packed=FMath::Max(Packed,S.Packing);
+        for(float Offset:{-38.f,-28.f,28.f,38.f})Berm=FMath::Max(Berm,T->Sample(P+Side*Offset).Displacement);
+      }
+      Check(Names[SoilScenario]+TEXT(" actual driven pass leaves loaded terrain deformation"),Deepest>(SoilScenario==0?.001f:.025f),Deepest);
+      Check(Names[SoilScenario]+TEXT(" actual driven pass compacts contact footprints"),Packed>.10f,Packed);
+      if(SoilScenario>0)Check(Names[SoilScenario]+TEXT(" actual driven pass pushes up side berms"),Berm>.003f,Berm);
+      Check(Names[SoilScenario]+TEXT(" cannot receive black rubber skid geometry"),T->TireMarkCount()==0,T->TireMarkCount());
+      Check(Names[SoilScenario]+TEXT(" driven path advances beyond stationary footprint"),FVector::Dist2D(Start,V->GetActorLocation())>150,FVector::Dist2D(Start,V->GetActorLocation()));
+      Check(Names[SoilScenario]+TEXT(" displaced and compacted volumes conserve excavated soil"),FMath::Abs(T->DepressedVolume-T->DisplacedVolume-T->CompactedVolume)<.00001,T->DisplacedVolume);
+      // Inspect the trail from an oblique stationary camera after driving away.
+      FVector Center=SoilScenario==5?Best:(Start+V->GetActorLocation())*.5;Center.Z=T->Height(Center.X,Center.Y);
+      if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
+      const FVector Eye=Center-F*480-Side*430+FVector(0,0,320);
+      SoilCamera->SetActorLocationAndRotation(Eye,(Center-Eye).Rotation());SoilCamera->GetCameraComponent()->SetFieldOfView(62);
+      if(auto *PC=Cast<APlayerController>(V->GetController()))PC->SetViewTarget(SoilCamera);
+      Captured=true;
+    }
+    if(StageTime>1.6f){
+      const TCHAR *Names[]={TEXT("native-driven-dirt.png"),TEXT("native-driven-mud.png"),TEXT("native-driven-snow.png"),TEXT("native-driven-wetland.png"),TEXT("native-driven-sand.png"),TEXT("native-driven-soft-dirt.png")};
+      Capture(Names[SoilScenario]);Next(55);
+    }
+  }else if(Stage==55&&StageTime>.4f){
+    if(++SoilScenario<6)Next(52);else Next(56);
+  }else if(Stage==56){
+    if(!Captured){
+      auto *T=V->Terrain.Get();T->ResetSoil();const FVector P=T->NearestCrushable(T->Spawns[0]);
+      T->Deform(P,FVector::ForwardVector,5500,24,.32f,.22f,0,2,.05f);
+      Check(TEXT("loaded tires flatten and bend actual grass plant instances"),T->CrushedPlantCount>0,T->CrushedPlantCount);
+      const int Flattened=T->CrushedPlantCount;
+      T->Deform(P,FVector::ForwardVector,0,24,.32f,.22f,0,2,.05f);
+      Check(TEXT("unloaded tires cannot flatten additional plants"),T->CrushedPlantCount==Flattened);
+      const FVector Eye=P-FVector(120,180,-100);
+      SoilCamera->SetActorLocationAndRotation(Eye,(P-Eye).Rotation());
+      Captured=true;
+    }
+    if(StageTime>.8f){Capture(TEXT("native-crushed-grass.png"));Next(57);}
+  }else if(Stage==57&&StageTime>.4f){
+    V->Terrain->ResetSoil();Check(TEXT("terrain repair restores crushed plants"),V->Terrain->CrushedPlantCount==0);
+    Next(58);
+  }else if(Stage==58){
+    auto *T=V->Terrain.Get();T->ActiveTileLimit=8;T->ResetSoil();
+    const FVector P=T->Spawns[7]+FVector(150,150,0);
+    T->Deform(P,FVector::ForwardVector,5500,24,.32f,.22f,.3f,2,.1f);
+    const float Original=T->Sample(P).RutDepth;
+    for(int I=1;I<14;++I)T->Deform(P+FVector((I%4)*800,(I/4)*800,0),FVector::ForwardVector,5500,24,.32f,.22f,.3f,2,.1f);
+    Check(TEXT("full soil render pool keeps producing new ruts"),T->DetailCount()<=8&&T->CachedSoilCount()>0&&T->Sample(P+FVector(800,2400,0)).RutDepth>.025f,T->CachedSoilCount());
+    Check(TEXT("offscreen soil cache retains original groove depth"),Original>.025f&&FMath::Abs(T->Sample(P).RutDepth-Original)<.0001f,T->Sample(P).RutDepth);
+    T->ActivateSoil(P,1);
+    Check(TEXT("returning to a cached rut restores its detailed geometry"),T->DetailCount()<=8&&FMath::Abs(T->Sample(P).RutDepth-Original)<.0001f,T->DetailCount());
+    T->ActiveTileLimit=768;T->ResetSoil();
+    Check(TEXT("soil repair clears both rendered and cached deformation"),T->DetailCount()==0&&T->CachedSoilCount()==0);
     FinishValidation();
   }
 

@@ -37,7 +37,14 @@ inline float SoilTarget(float maxSink, float load, float width, float length,
                         float slip) {
     const float stress = load / std::max(.025f, width * length);
     return maxSink * std::clamp(std::pow(stress / 150000.f, .68f), 0.f, 1.f) *
-           (.32f + std::min(1.5f, std::abs(slip)) * .38f);
+           (.55f + std::min(1.5f, std::abs(slip)) * .30f);
+}
+inline float SoilResponse(float dt,float speed,float patchLength,float slip,float packing) {
+    // Respond within a passing footprint, rather than requiring seconds of
+    // stationary wheelspin. The time integration stays stable at varied FPS.
+    const float rate=(10.f+std::abs(speed)/std::max(.1f,patchLength)*3.f+
+                      std::min(2.f,std::abs(slip))*8.f)*(1.f-packing*.55f);
+    return 1.f-std::exp(-std::max(0.f,dt)*rate);
 }
 inline float FrictionScale(float longitudinal, float lateral, float mu,
                            float load) {

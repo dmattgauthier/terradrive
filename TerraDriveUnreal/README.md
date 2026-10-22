@@ -71,4 +71,6 @@ Player-facing measurements use mph, feet/inches, pounds, PSI, horsepower and pou
 
 Native controls and researched model refinements are described in [vehicle-model-research.md](docs/vehicle-model-research.md). The extended suite covers brake input/holding for all six vehicles, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling.
 
-See [lighting-tracks-urus.md](docs/lighting-tracks-urus.md) for the original V8 Urus Performante, brake/reverse lights, persistent tread and skid geometry, CC0 scan sources and photographic sky. Vendored native sources are under Vendor/Environment. Run Tools/fetch-environment-assets.py only to recover missing source downloads; normal builds use the included offline copies.
+See [lighting-tracks-urus.md](docs/lighting-tracks-urus.md) for the original V8 Urus Performante, brake/reverse lights, CC0 scan sources and photographic sky. Vendored native sources are under Vendor/Environment. Run Tools/fetch-environment-assets.py only to recover missing source downloads; normal builds use the included offline copies.
+
+The corrective [surface deformation round](docs/surface-deformation.md) replaces dark off-road tread ribbons with physical grooves, raised shoulders, compacted snow, light dusty dirt trails and bent grass instances. Rubber skidmarks are restricted to pavement traction loss. Backspace repairs terrain, plants and marks. The same document records the inspected Fab library, the downloaded quarry pack and additional free asset candidates.

@@ -4,6 +4,7 @@
 #include "GameFramework/HUD.h"
 #include "TerraGameMode.generated.h"
 class UBoxComponent;
+class ACameraActor;
 UCLASS()
 class TERRADRIVE_API ATerraHUD : public AHUD {
   GENERATED_BODY()
@@ -32,5 +33,8 @@ private:
   FVector GarageCameraBefore;
   TArray<FString> Results;
   bool Captured = false;
+  int SoilScenario=0;
+  TArray<FVector> SoilProbes;
+  UPROPERTY() TObjectPtr<ACameraActor> SoilCamera;
   void FinishValidation();
 };
