@@ -74,7 +74,6 @@ uint8 ATerraWorld::SurfaceAt(float X, float Y) const {
   return Surfaces[I * N + J];
 }
 float ATerraWorld::LooseDirt(float X,float Y) const {
-  if(SurfaceAt(X,Y)!=0)return 0;
   // Broad continuous loose-soil pockets, shared by physics and vertex material
   // data. Firm trails and loose dirt can coexist inside the dirt biome.
   const float Field=.5f+.5f*FMath::Sin(X*.0017f+FMath::Cos(Y*.0013f))*FMath::Sin(Y*.0019f-.8f);
@@ -88,6 +87,17 @@ float ATerraWorld::LooseDirt(float X,float Y) const {
     Loose*=FMath::Lerp(.08f,1.f,Smooth(225,380,Distance));
   }
   return Loose;
+}
+FTerraSurfaceBlend ATerraWorld::SurfaceBlend(float X,float Y) const {
+  FTerraSurfaceBlend Result;
+  if(N<2||BlendWeights.Num()!=N*N*7){Result.Weight[SurfaceAt(X,Y)]=1;return Result;}
+  const float GX=FMath::Clamp((X/100-Origin)/Step,0.f,float(N-1)-.0001f),GY=FMath::Clamp((Y/100-Origin)/Step,0.f,float(N-1)-.0001f);
+  const int I=FMath::FloorToInt(GX),J=FMath::FloorToInt(GY);const float U=GX-I,V=GY-J;
+  float Sum=0;
+  for(int S=0;S<7;++S){const auto Read=[&](int R,int C){return BlendWeights[(R*N+C)*7+S]/255.f;};
+    Result.Weight[S]=FMath::Lerp(FMath::Lerp(Read(I,J),Read(I+1,J),U),FMath::Lerp(Read(I,J+1),Read(I+1,J+1),U),V);Sum+=Result.Weight[S];}
+  if(Sum>0)for(float &W:Result.Weight)W/=Sum;
+  return Result;
 }
 float ATerraWorld::Height(float X, float Y) const {
   FIntPoint K(FMath::FloorToInt(X / TileCM), FMath::FloorToInt(Y / TileCM));
@@ -121,12 +131,14 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
                      RR[] = {.03, .013, .11, .13, .022, .08, .085},
                      Soft[] = {.06, 0, .83, .92, 0, .75, .88},
                      Sink[] = {.025, 0, .36, .48, 0, .28, .6};
-  S.Mu = Mu[S.Surface] * (Rain ? .76f : 1.f);
-  S.Rolling = RR[S.Surface];
-  S.Softness = Soft[S.Surface];
-  S.MaxSink = Sink[S.Surface];
-  if(S.Surface==0){const float Loose=LooseDirt(P.X,P.Y);
+  const auto Blend=SurfaceBlend(P.X,P.Y);
+  S.Mu=S.Rolling=S.Softness=S.MaxSink=0;
+  for(int K=0;K<7;++K){const float W=Blend.Weight[K];S.Mu+=Mu[K]*W;S.Rolling+=RR[K]*W;S.Softness+=Soft[K]*W;S.MaxSink+=Sink[K]*W;}
+  S.Mu*=Rain?.76f:1.f;
+  if(Blend.Weight[0]>0){const float Loose=LooseDirt(P.X,P.Y)*Blend.Weight[0];
     S.MaxSink+=Loose*.24f;S.Softness+=Loose*.65f;S.Rolling*=1+Loose*2.f;}
+  // Thin soil at a rock/pavement edge cannot excavate the rigid substrate.
+  if(S.Surface==1||S.Surface==4){S.Softness=0;S.MaxSink=0;}
   if (N) {
     int I = FMath::Clamp(FMath::RoundToInt((P.X / 100 - Origin) / Step), 0,
                          N - 1),
@@ -296,6 +308,14 @@ void ATerraWorld::BeginPlay() {
     R << Water[I];
     R << Surfaces[I];
   }
+  TArray<uint8> BlendFile;
+  if(FFileHelper::LoadFileToArray(BlendFile,*(FPaths::ProjectContentDir()/TEXT("NativeData/terrain-blend.bin")))&&BlendFile.Num()==16+N*N*7){
+    FMemoryReader BR(BlendFile);uint32 BM=0;int BN=0;float BS=0,BO=0;BR<<BM;BR<<BN;BR<<BS;BR<<BO;
+    if(BM==0x54425731&&BN==N&&BS==Step&&BO==Origin){BlendWeights.SetNum(N*N*7);FMemory::Memcpy(BlendWeights.GetData(),BlendFile.GetData()+16,BlendWeights.Num());}
+  }
+  FString TransitionJson;
+  if(FFileHelper::LoadFileToString(TransitionJson,*(FPaths::ProjectContentDir()/TEXT("NativeData/terrain-transitions.json"))))FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(TransitionJson),TransitionData);
+  GroundBlendMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Materials/Terrain_GroundBlend"));
   FString Names[] = {TEXT("dirt"),    TEXT("asphalt"), TEXT("mud"),
                      TEXT("wetland"), TEXT("rock"),    TEXT("sand"),
                      TEXT("snow")};
@@ -394,7 +414,7 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
   for (int S = 0; S < 7; S++) {
     Mesh->CreateMeshSection_LinearColor(S, V, Indices[S], Nr, UV, C, {}, true);
     if (Materials.IsValidIndex(S))
-      Mesh->SetMaterial(S, Materials[S]);
+      Mesh->SetMaterial(S, GroundBlendMaterial?GroundBlendMaterial.Get():Materials[S].Get());
   }
 }
 FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
@@ -484,7 +504,7 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
       T.Mesh->UpdateMeshSection_LinearColor(S,V,T.Normals,T.UV,T.Colors,{});
     else{
       T.Mesh->CreateMeshSection_LinearColor(S,V,Idx[S],T.Normals,T.UV,T.Colors,{},true);
-      T.Mesh->SetMaterial(S, Materials[S]);
+      T.Mesh->SetMaterial(S, GroundBlendMaterial?GroundBlendMaterial.Get():Materials[S].Get());
     }
   }
   T.Dirty = false;

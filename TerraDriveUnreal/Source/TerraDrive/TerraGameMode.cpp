@@ -107,10 +107,21 @@ void ATerraGameMode::Tick(float Dt) {
       FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
   };
   auto Next = [&](int NewStage) { Stage=NewStage; StageTime=0; Captured=false; MaxProgress=0; };
+  auto LockerTrial = [&](bool Locked) {
+    // Each comparison needs virgin soil and the same stock vehicle. The open
+    // pass must not leave ruts/packing for only the locked pass to negotiate.
+    V->Terrain->ResetSoil();V->SelectVehicle(0);V->ResetUpgrades(false);
+    V->FourDrive=V->LowRange=true;V->FrontLocked=V->RearLocked=Locked;
+    V->TestDriverInput=false;V->TestSteer=0;V->TestBrake=0;V->TestThrottle=.35f;
+    V->TeleportRoute(4);Start=V->GetActorLocation();
+    UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_START locked=%d soilTiles=%d position=%s"),Locked,V->Terrain->DetailCount(),*Start.ToString());
+  };
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))Next(61);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly")))Next(64);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"))){ModelVehicle=0;Next(64);}
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraGroundOnly")))Next(66);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTransitionsOnly")))Next(80);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraLockersOnly")))Next(16);
   if(Stage==0&&(FParse::Param(FCommandLine::Get(),TEXT("TerraRenderOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraPerfOnly"))))Next(69);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){
     BrakeVehicle=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
@@ -355,16 +366,17 @@ void ATerraGameMode::Tick(float Dt) {
   } else if(Stage==16&&StageTime>5){
     int Rendered=0;for(auto M:V->SprayMeshes)Rendered+=M->GetInstanceCount();
     Check(TEXT("stopped tires leave no frozen debris"),V->SprayCount()==0&&Rendered==0,Rendered);
-    V->SelectVehicle(0);V->FourDrive=true;V->LowRange=true;V->TeleportRoute(4);V->TestBrake=0;V->TestThrottle=.35f;Start=V->GetActorLocation();Next(17);
+    LockerTrial(false);Next(17);
   } else if(Stage==17||Stage==18){
     MaxProgress=FMath::Max(MaxProgress,float(V->GetActorLocation().X-Start.X)/100);
     if(Stage==18&&StageTime>13&&!Captured){Capture(TEXT("native-locked-climb.png"));Captured=true;}
     if(StageTime>14){
-      if(Stage==17){OpenProgress=MaxProgress;V->SelectVehicle(0);V->FourDrive=true;V->LowRange=true;V->TeleportRoute(4);V->FrontLocked=V->RearLocked=true;Start=V->GetActorLocation();Next(18);}
+      if(Stage==17){OpenProgress=MaxProgress;LockerTrial(true);Next(18);}
       else {
         Check(TEXT("locked axles climb farther than open axles"),MaxProgress>OpenProgress+.5f&&MaxProgress>8,MaxProgress-OpenProgress);
         Check(TEXT("locked axle shaft speeds remain coupled"),FMath::Abs(V->WheelState[0].Omega-V->WheelState[1].Omega)<.001f&&FMath::Abs(V->WheelState[2].Omega-V->WheelState[3].Omega)<.001f);
         UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER open=%.3f locked=%.3f"),OpenProgress,MaxProgress);
+        if(FParse::Param(FCommandLine::Get(),TEXT("TerraLockersOnly"))){FinishValidation();return;}
         V->SelectVehicle(0);V->LowRange=true;V->DescentAssist=true;V->TeleportRoute(7);V->Chassis->SetPhysicsLinearVelocity(FVector(500,0,0));Start=V->GetActorLocation();V->TestThrottle=0;Next(19);
       }
     }
@@ -969,6 +981,66 @@ void ATerraGameMode::Tick(float Dt) {
     if(auto *PC=GetWorld()->GetFirstPlayerController())PC->SetViewTarget(V);
     Capture(TEXT("native-graphics-menu.png"));Next(74);
   }else if(Stage==74&&StageTime>.5f){FinishValidation();}
+  else if(Stage==80){
+    Check(TEXT("cooked ground coverage and blended material are loaded"),V->Terrain->HasSurfaceBlend());
+    bool Textures=true;
+    for(const TCHAR *Name:{TEXT("TerrainBlendA"),TEXT("TerrainBlendB")}){
+      auto *T=LoadObject<UTexture2D>(nullptr,*FString::Printf(TEXT("/Game/Textures/%s"),Name));
+      Textures&=T&&T->GetSizeX()==1601&&T->GetSizeY()==1601;
+    }
+    Check(TEXT("both linear coverage textures retain the native grid resolution"),Textures);
+    const auto Data=V->Terrain->TransitionData;
+    const bool Fixtures=Data.IsValid()&&Data->GetArrayField(TEXT("fixtures")).Num()==7;
+    Check(TEXT("all seven terrain boundary fixtures are available"),Fixtures);
+    TArray<UProceduralMeshComponent*> Ground;V->Terrain->GetComponents(Ground);int Sections=0;bool Unified=true;
+    for(auto *C:Ground)if(C->ComponentHasTag(TEXT("TerraGround")))for(int S=0;S<C->GetNumSections();++S){
+      auto *Section=C->GetProcMeshSection(S);if(!Section||Section->ProcIndexBuffer.Num()==0)continue;
+      ++Sections;auto *M=C->GetMaterial(S);Unified&=M&&M->GetName()==TEXT("Terrain_GroundBlend");
+    }
+    Check(TEXT("coarse and detailed ground sections share the coverage material"),Unified&&Sections>0,Sections);
+    if(!Fixtures){FinishValidation();return;}
+    for(const auto &Item:Data->GetArrayField(TEXT("fixtures"))){
+      const auto F=Item->AsObject();const auto P=F->GetArrayField(TEXT("p")),N=F->GetArrayField(TEXT("normal")),Pair=F->GetArrayField(TEXT("pair"));
+      const FVector2D Center(P[0]->AsNumber(),P[1]->AsNumber()),Normal(N[0]->AsNumber(),N[1]->AsNumber());
+      const int A=Pair[0]->AsNumber(),B=Pair[1]->AsNumber();const float Half=F->GetNumberField(TEXT("halfWidthM"))*100;
+      bool Valid=true,Rigid=true;int Mixed=0;float Jump=0,MuJump=0,RollJump=0;FTerraSurfaceBlend Previous;FTerraSample PreviousSample;
+      for(int I=0;I<=160;++I){const FVector2D Q=Center+Normal*FMath::Lerp(-2*Half,2*Half,I/160.f);
+        const auto W=V->Terrain->SurfaceBlend(Q.X,Q.Y);const auto S=V->Terrain->Sample(FVector(Q.X,Q.Y,0));float Sum=0;
+        for(int K=0;K<7;++K){Sum+=W.Weight[K];Valid&=FMath::IsFinite(W.Weight[K])&&W.Weight[K]>=0&&W.Weight[K]<=1;
+          if(I)Jump=FMath::Max(Jump,FMath::Abs(W.Weight[K]-Previous.Weight[K]));}
+        Valid&=FMath::Abs(Sum-1)<.001f&&FMath::IsFinite(S.Mu)&&FMath::IsFinite(S.Rolling);
+        if(W.Weight[A]>.05f&&W.Weight[B]>.05f)++Mixed;
+        if(S.Surface==1||S.Surface==4)Rigid&=S.Softness==0&&S.MaxSink==0;
+        if(I){MuJump=FMath::Max(MuJump,FMath::Abs(S.Mu-PreviousSample.Mu));RollJump=FMath::Max(RollJump,FMath::Abs(S.Rolling-PreviousSample.Rolling));}
+        Previous=W;PreviousSample=S;
+      }
+      const FString Name=F->GetStringField(TEXT("name"));
+      Check(Name+TEXT(" weights remain finite and normalized"),Valid);
+      Check(Name+TEXT(" contains a mixed fringe"),Mixed>3,Mixed);
+      Check(Name+TEXT(" coverage changes gradually across the border"),Jump<.3f,Jump);
+      Check(Name+TEXT(" grip and rolling resistance change gradually"),MuJump<.15f&&RollJump<.05f,MuJump);
+      Check(Name+TEXT(" keeps any rock and pavement substrate rigid"),Rigid);
+    }
+    V->SetGarage(false);V->TeleportZone(1);V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
+    V->SetActorTickEnabled(false);V->Chassis->SetSimulatePhysics(false);
+    SoilCamera=GetWorld()->SpawnActor<ACameraActor>();SoilCamera->GetCameraComponent()->SetFieldOfView(62);
+    auto *PC=GetWorld()->GetFirstPlayerController();PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;
+    ModelVehicle=ModelView=0;Next(81);
+  }else if(Stage==81){
+    const auto F=V->Terrain->TransitionData->GetArrayField(TEXT("fixtures"))[ModelVehicle]->AsObject();
+    const auto P=F->GetArrayField(TEXT("p")),N=F->GetArrayField(TEXT("normal"));
+    const FVector Normal(N[0]->AsNumber(),N[1]->AsNumber(),0),Tangent(-Normal.Y,Normal.X,0);
+    const FVector Target(P[0]->AsNumber(),P[1]->AsNumber(),V->Terrain->Height(P[0]->AsNumber(),P[1]->AsNumber())+15);
+    const float Scale=FMath::Clamp(float(F->GetNumberField(TEXT("halfWidthM")))/3.f,1.f,2.f);
+    FVector Eye=Target-Normal*(ModelView?1000.f:1800.f)*Scale+Tangent*500.f*Scale+FVector(0,0,ModelView?380.f:1700.f)*Scale;
+    Eye.Z=FMath::Max(Eye.Z,V->Terrain->Height(Eye.X,Eye.Y)+180.f);
+    SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());Next(82);
+  }else if(Stage==82&&StageTime>2){
+    const auto F=V->Terrain->TransitionData->GetArrayField(TEXT("fixtures"))[ModelVehicle]->AsObject();
+    const FString Name=FString::Printf(TEXT("native-transition-%s-view-%d.png"),*F->GetStringField(TEXT("name")),ModelView);
+    Capture(*Name);Check(Name+TEXT(" camera remains above the ground"),SoilCamera->GetActorLocation().Z>V->Terrain->Height(SoilCamera->GetActorLocation().X,SoilCamera->GetActorLocation().Y)+100);
+    if(++ModelView==2){ModelView=0;++ModelVehicle;}Next(ModelVehicle==7?83:81);
+  }else if(Stage==83&&StageTime>.5f){FinishValidation();}
   else if(Stage==67){
     V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(4);
     if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}

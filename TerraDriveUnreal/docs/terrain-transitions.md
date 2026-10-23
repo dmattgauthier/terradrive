@@ -1,0 +1,13 @@
+# Terrain transitions
+
+The native ground uses seven coverage weights rather than changing material abruptly at a surface ID boundary. Color, small surface normals and roughness blend together. Broad terrain regions retain their original materials, so a driver can still distinguish pavement, dirt, mud, marsh, rock, sand and snow.
+
+Pavement has a narrow gravel/soil shoulder, approximately 4.3 feet across the complete blend. Natural boundaries are wider: dirt to mud spans about 23 feet, dirt to marsh 33 feet, dirt to sand 39 feet and dirt to snow 46 feet. These are nominal full widths; irregular patches break up the natural edges. Small mud/rock boundaries remain narrower to keep individual stones recognizable. The shader adds smaller coverage variation within the fringe rather than applying a uniform blurred stripe.
+
+Grip and rolling resistance use the same underlying coverage field, sampled continuously between grid points. Solid pavement and rock retain a rigid substrate even where thin soil appears at the edge. Existing tire-mark classification and soft-ground deformation remain specific to the original ground type. The terrain geometry, obstacle collisions and original surface map are unchanged.
+
+`Tools/bake-terrain-transitions.mjs` creates two linear RGBA coverage textures and the native weight field from the preserved terrain data. `Tools/terrain-ground-blend.py`, invoked by the material importer, creates the shared ground material. All procedural ground sections, including nearby deformable tiles, bind that material. Existing per-surface materials remain available for scenery and constructed courses. The shader shares texture samplers and branches around absent biomes; mixed boundaries require more material work than pure interiors. The two uncompressed coverage textures add approximately 20 MiB of GPU texture storage at their full resolution, and native weights add about 17 MiB in CPU memory.
+
+Rebuild with `Tools/build-native.ps1 -ImportAssets -Package`. Generated textures, UAssets, native fields and packaged builds remain excluded from the public source. The baker is native-only and does not edit the browser implementation.
+
+Validate the field with `node Tools/validate-terrain-transitions.mjs`. After packaging, `Tools/verify-render.ps1 -Mode Transitions` checks cooked material bindings, weight continuity, graded traction and rigid substrates, then captures two views of seven representative boundaries. The rendering verifier isolates player saves, caps this check at 20 FPS, records GPU telemetry and stops at 77 °C. Current accepted results and visual review are recorded in `docs/native-validation.json` and `docs/validation-native.md` once verification is complete.

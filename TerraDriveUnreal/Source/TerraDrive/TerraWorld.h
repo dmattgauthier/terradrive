@@ -14,6 +14,7 @@ struct FTerraSample {
   uint8 Surface = 0;
   FVector Normal = FVector::UpVector;
 };
+struct FTerraSurfaceBlend { float Weight[7]={0,0,0,0,0,0,0}; };
 struct FTerraSupport {
   FVector Point = FVector::ZeroVector, Normal = FVector::UpVector;
   float Distance = 0;
@@ -65,6 +66,9 @@ public:
   virtual void BeginPlay() override;
   virtual void Tick(float Dt) override;
   FTerraSample Sample(FVector P) const;
+  FTerraSurfaceBlend SurfaceBlend(float X,float Y) const;
+  bool HasSurfaceBlend() const { return N>1&&BlendWeights.Num()==N*N*7&&GroundBlendMaterial!=nullptr; }
+  TSharedPtr<FJsonObject> TransitionData;
   FTerraSupport CastSupport(FVector Mount, FVector Up, float RadiusCM,
                             float MinCM, float MaxCM, const AActor *Ignore,
                             bool *RigidEncountered=nullptr) const;
@@ -103,6 +107,7 @@ public:
 private:
   TArray<float> Heights, Water;
   TArray<uint8> Surfaces;
+  TArray<uint8> BlendWeights;
   TArray<FVector2D> QuarryTrailPolyline;
   int32 N = 0;
   float Step = .5f, Origin = -400, VisualTimer = 0;
@@ -110,6 +115,7 @@ private:
   TMap<FIntPoint, FTerraSoilState> SoilCache;
   TMap<FIntPoint, UProceduralMeshComponent *> Ground;
   UPROPERTY() TArray<TObjectPtr<UMaterialInterface>> Materials;
+  UPROPERTY() TObjectPtr<UMaterialInterface> GroundBlendMaterial;
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Scenery;
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConstructedMeshes;
   float BaseHeight(float X, float Y) const;

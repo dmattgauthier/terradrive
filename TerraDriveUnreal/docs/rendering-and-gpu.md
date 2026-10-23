@@ -32,11 +32,13 @@ Lower rendering demand does not establish the cause of a PC reboot or guarantee 
 
 ## Recorded preset samples — October 23, 2026
 
-The final package was sampled on the RTX 4060 Laptop GPU at the same 1920×1080 quarry overlook. Each sample window lasted approximately 25 seconds after ten seconds of warmup, with 23 NVIDIA telemetry observations.
+The table below records the rock/GPU update in commit `8c851a6`, before the subsequent terrain transition material. Current package measurements and focused transition checks are recorded in [native-validation.json](native-validation.json) and [validation-native.md](validation-native.md).
+
+That package was sampled on the RTX 4060 Laptop GPU at the same 1920×1080 quarry overlook. Each sample window lasted approximately 25 seconds after ten seconds of warmup, with 23 NVIDIA telemetry observations.
 
 | Preset | Measured FPS | Average GPU utilization | Average GPU board power | Maximum sample temperature |
 |---|---:|---:|---:|---:|
 | Cool | 29.99 | 37.4% | 19.2 W | 59°C |
 | Balanced | 44.98 | 50.3% | 25.4 W | 62°C |
 
-Cool reached 60°C during its complete run including startup; Balanced's complete-run maximum was 62°C. Neither reached the 77°C cutoff. These are short, stationary scene samples, not whole-map averages or a controlled comparison to the user's earlier screenshot. The Quality shader check used a separate 20 FPS cap and is not a measurement of normal 60 FPS Quality performance. Logs and exact sample summaries are recorded in `native-validation.json` after the full driving regression passes.
+Cool reached 60°C during its complete run including startup; Balanced's complete-run maximum was 62°C. Neither reached the 77°C cutoff. These are short, stationary scene samples, not whole-map averages or a controlled comparison to the user's earlier screenshot. The Quality shader check used a separate 20 FPS cap and is not a measurement of normal 60 FPS Quality performance. The original evidence is retained in commit `8c851a6` and locally in `Saved/gpu-rocks-final-evidence.json`.

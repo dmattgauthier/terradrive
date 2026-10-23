@@ -1,4 +1,4 @@
-param([ValidateSet('Rocks','Cool','Balanced','QualitySmoke')][string]$Mode='Rocks',[int]$StopTemperature=77)
+param([ValidateSet('Rocks','Cool','Balanced','QualitySmoke','Transitions')][string]$Mode='Rocks',[int]$StopTemperature=77)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $executable=Join-Path $projectRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'
@@ -9,8 +9,8 @@ $report=Join-Path $output ('render-'+$Mode+'.json')
 $log=Join-Path $output ('render-'+$Mode+'.log')
 $telemetry=Join-Path $output ('gpu-'+$Mode+'.json')
 $preset=if($Mode -eq 'QualitySmoke'){2}elseif($Mode -eq 'Balanced'){1}else{0}
-$flag=if($Mode -eq 'Rocks'){'-TerraRenderOnly'}else{'-TerraPerfOnly'}
-$limit=if($Mode -eq 'Rocks' -or $Mode -eq 'QualitySmoke'){20}else{60}
+$flag=if($Mode -eq 'Rocks'){'-TerraRenderOnly'}elseif($Mode -eq 'Transitions'){'-TerraTransitionsOnly'}else{'-TerraPerfOnly'}
+$limit=if($Mode -in @('Rocks','QualitySmoke','Transitions')){20}else{60}
 $started=Get-Date
 $arguments=@('-unattended','-windowed','-RenderOffscreen','-ResX=1920','-ResY=1080','-NoSound','-TerraValidate','-TerraCapture',$flag,
   ('-TerraTestFPS='+$limit),('-TerraGraphicsMode='+$preset),('-TerraReport="'+$report+'"'),('-abslog="'+$log+'"'),
@@ -45,11 +45,15 @@ if($game.ExitCode -ne 0){throw ('Native check exit '+$game.ExitCode)}
 if(!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWriteTime -lt $started){throw 'No fresh native report'}
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $failed=@($result.tests | Where-Object {!$_.pass})
-$minimum=if($Mode -eq 'Rocks'){69}else{16}
+$minimum=if($Mode -eq 'Rocks'){69}elseif($Mode -eq 'Transitions'){53}else{16}
 if($failed.Count -or @($result.tests).Count -lt $minimum){$failed | ConvertTo-Json;throw 'Native render checks failed'}
 if(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error') {throw 'Native rendering diagnostics failed'}
 if($Mode -eq 'Rocks'){
   $images=@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'Build/Windows/TerraDrive/Saved/Screenshots') -Filter 'native-rock-*-view-*.png' | Where-Object {$_.LastWriteTime -ge $started})
   if($images.Count -ne 44){throw ('Expected 44 fresh rock views, got '+$images.Count)}
+}
+if($Mode -eq 'Transitions'){
+  $images=@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'Build/Windows/TerraDrive/Saved/Screenshots') -Filter 'native-transition-*-view-*.png' | Where-Object {$_.LastWriteTime -ge $started})
+  if($images.Count -ne 14){throw ('Expected 14 fresh terrain boundary views, got '+$images.Count)}
 }
 Write-Output ('PASS '+$Mode+': '+@($result.tests).Count+' native checks; exit 0; telemetry '+$telemetry)

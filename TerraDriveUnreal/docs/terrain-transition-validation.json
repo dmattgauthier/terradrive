@@ -1,0 +1,61 @@
+{
+  "pass": true,
+  "n": 1601,
+  "coverageSamples": 2563201,
+  "mixedPixels": 102577,
+  "pureInteriorPixels": [
+    2126819,
+    29233,
+    26577,
+    40391,
+    61498,
+    100675,
+    75431
+  ],
+  "maskChannelParity": true,
+  "sourceTerrainSHA256": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
+  "lines": [
+    {
+      "surfacePair": "dirt-asphalt",
+      "mixedSamples": 79,
+      "maxJump": 0.01771568627464859,
+      "pass": true
+    },
+    {
+      "surfacePair": "dirt-mud",
+      "mixedSamples": 70,
+      "maxJump": 0.018529411764713122,
+      "pass": true
+    },
+    {
+      "surfacePair": "dirt-rock",
+      "mixedSamples": 63,
+      "maxJump": 0.019607843137259384,
+      "pass": true
+    },
+    {
+      "surfacePair": "dirt-sand",
+      "mixedSamples": 64,
+      "maxJump": 0.02941176470588347,
+      "pass": true
+    },
+    {
+      "surfacePair": "dirt-snow",
+      "mixedSamples": 93,
+      "maxJump": 0.024705882352950903,
+      "pass": true
+    },
+    {
+      "surfacePair": "dirt-wetland",
+      "mixedSamples": 43,
+      "maxJump": 0.027450980392156876,
+      "pass": true
+    },
+    {
+      "surfacePair": "mud-rock",
+      "mixedSamples": 95,
+      "maxJump": 0.019450980392194617,
+      "pass": true
+    }
+  ]
+}

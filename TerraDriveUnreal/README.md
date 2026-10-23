@@ -2,6 +2,8 @@
 
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
+The [terrain transition update](docs/terrain-transitions.md) replaces hard material boundaries with shared coverage: narrow pavement shoulders, damp mud/marsh fringes, scattered stone and broken snow cover. Ground color, normal detail, roughness, grip and rolling resistance grade through the fringes while terrain interiors stay distinct. Use `Tools/verify-render.ps1 -Mode Transitions` for the focused native checks and boundary captures.
+
 The [rendering and GPU update](docs/rendering-and-gpu.md) corrects angle-dependent quarry rock visibility and adds **Tab → 03 Graphics**. The new default is Cool at 30 FPS; Balanced at 45 FPS and Quality at 60 FPS are selectable. Garage previews run at 20 FPS and background rendering at 15 FPS. Native verification is capped and records GPU telemetry with a conservative temperature cutoff.
 
 The [all-vehicle coachwork round](docs/model-refinement-6.md) revises the six models' glazing, cabin surfaces and body details. It includes open Urus windshield/hatch surrounds, native seat/headrest shading, flatter SUV fender shelves, Civic panel changes, Sprinter liners and HUMMER haunch/mirror changes. Use `node Tools/validate-models.mjs` for the geometry and glazing regression checks; native build evidence is in `docs/native-validation.json`.
@@ -41,6 +43,8 @@ After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows
 ```
 
 The verifier requires a fresh JSON report, a successful game exit, and all expanded checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, nine challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
+
+Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison. Each attempt starts with repaired terrain and the same stock setup, so earlier tire ruts and compaction cannot bias the second attempt.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
 

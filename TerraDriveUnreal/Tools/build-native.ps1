@@ -16,6 +16,8 @@ if ($ImportAssets) {
         if ($LASTEXITCODE) { throw 'Source conversion failed' }
     }
     $importMarker=Join-Path $projectRoot 'Saved\import-complete.json'
+    & node (Join-Path $PSScriptRoot 'bake-terrain-transitions.mjs')
+    if($LASTEXITCODE){throw 'Terrain transition mask generation failed'}
     # PythonScriptCommandlet interprets backslash escapes (notably the \t in
     # "\terra drive"). Forward slashes preserve paths containing spaces.
     $scriptPath=(Join-Path $PSScriptRoot 'import-assets.py').Replace('\','/')

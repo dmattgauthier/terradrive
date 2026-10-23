@@ -1,4 +1,4 @@
-param([string]$Executable='', [int]$TimeoutSeconds=900, [switch]$GroundOnly)
+param([string]$Executable='', [int]$TimeoutSeconds=900, [switch]$GroundOnly, [switch]$LockersOnly)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 if (!$Executable) { $Executable=Join-Path $projectRoot 'Build\Windows\TerraDrive\Binaries\Win64\TerraDrive.exe' }
@@ -6,14 +6,15 @@ if (!(Test-Path -LiteralPath $Executable)) { throw "Packaged executable missing:
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd -ErrorAction SilentlyContinue){throw 'Close game/editor before the isolated native check.'}
 $output=Join-Path $projectRoot 'Saved\Validation'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
-$report=Join-Path $output $(if($GroundOnly){'ground-contact.json'}else{'native-validation.json'})
-$log=Join-Path $output $(if($GroundOnly){'ground-contact.log'}else{'packaged-game.log'})
+$report=Join-Path $output $(if($GroundOnly){'ground-contact.json'}elseif($LockersOnly){'lockers.json'}else{'native-validation.json'})
+$log=Join-Path $output $(if($GroundOnly){'ground-contact.log'}elseif($LockersOnly){'lockers.log'}else{'packaged-game.log'})
 $started=Get-Date
 $arguments=@('-unattended','-windowed','-RenderOffscreen','-ResX=1280','-ResY=720',
     '-NoSound','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraReport="'+$report+'"'),
     ('-TerraGarage="'+(Join-Path $output 'validation-garage.json')+'"'),
     ('-abslog="'+$log+'"'))
 if($GroundOnly){$arguments+=@('-TerraGroundOnly')}
+if($LockersOnly){$arguments+=@('-TerraLockersOnly')}
 $startInfo=[System.Diagnostics.ProcessStartInfo]::new()
 $startInfo.FileName=$Executable
 $startInfo.Arguments=$arguments -join ' '
@@ -51,7 +52,7 @@ $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
 if($renderErrors.Count){throw "Native mesh/render diagnostics failed. Inspect $log"}
 $failed=@($result.tests | Where-Object { !$_.pass })
-$minimumChecks=if($GroundOnly){19}else{286}
+$minimumChecks=if($GroundOnly){19}elseif($LockersOnly){3}else{286}
 if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt $minimumChecks) {
     $failed | Format-Table | Out-String | Write-Output
     throw "Native checks failed (exit $gameExit). Inspect $report and $log"

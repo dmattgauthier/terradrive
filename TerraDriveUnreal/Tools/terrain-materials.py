@@ -115,6 +115,7 @@ terrain_specs = [
     ('snow',[winter_layer('CleanSnow','T_CleanSnow','TRO'),winter_layer('SnowRoad','T_Road_Extra','TRD'),mw_layer('Rock','rocks_ground_05')],0,[3.,3.4,4.5])]
 for biome, (surface, layers, wetness, scales) in enumerate(terrain_specs):
     terrain_material('Terrain_'+surface,layers,biome,wetness,scales)
+exec(compile(open(os.path.join(root,'Tools','terrain-ground-blend.py'),encoding='utf8').read(),'terrain-ground-blend.py','exec'))
 json.dump({'surfaces':terrain_bindings},open(os.path.join(root,'Saved','terrain-bindings.json'),'w'),indent=2)
 # Only the quarry's rock slot; colored gate posts keep their original materials.
 for d in data['materials']:
