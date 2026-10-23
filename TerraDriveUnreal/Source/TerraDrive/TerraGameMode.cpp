@@ -763,7 +763,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==3);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==4);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
@@ -823,6 +823,12 @@ void ATerraGameMode::Tick(float Dt) {
     if(!Captured){
       V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
       V->TestDriverInput=false;V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;
+      int AutomotiveSlots=0;bool HasPaint=false,HasCarbon=false;
+      for(int I=0;I<V->Body->GetNumMaterials();++I)if(auto *M=V->Body->GetMaterial(I)){
+        const FString Name=M->GetName();AutomotiveSlots+=Name.StartsWith(TEXT("MI_Urus_"));
+        HasPaint|=Name.StartsWith(TEXT("MI_Urus_paint_"));HasCarbon|=Name.StartsWith(TEXT("MI_Urus_carbon_"));
+      }
+      Check(TEXT("Urus cooked body uses Epic automotive paint, carbon and trim instances"),HasPaint&&HasCarbon&&AutomotiveSlots>=6,AutomotiveSlots);
       if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;}
       Captured=true;
@@ -830,14 +836,14 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>5){ModelView=0;Next(65);}
   }else if(Stage==65){
     const FVector Target=V->GetActorLocation()+FVector(0,0,18),F=V->GetActorForwardVector(),S=V->GetActorRightVector();
-    const FVector Offsets[]={F*850+FVector(0,0,160),S*900+FVector(0,0,90),-F*850+FVector(0,0,150),F*650+S*560+FVector(0,0,280)};
+    const FVector Offsets[]={F*850+FVector(0,0,160),S*900+FVector(0,0,90),-F*850+FVector(0,0,150),F*650+S*560+FVector(0,0,280),-F*680+S*570+FVector(0,0,230),F*690-S*550+FVector(0,0,100)};
     const FVector Eye=Target+Offsets[ModelView];SoilCamera->GetCameraComponent()->SetFieldOfView(40);
     SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
     if(StageTime>2&&!Captured){
       Check(FString::Printf(TEXT("Urus body renders in close photo view %d"),ModelView),V->Body->WasRecentlyRendered(.4f));
       Capture(*FString::Printf(TEXT("native-urus-hero-%d.png"),ModelView));Captured=true;
     }
-    if(StageTime>2.5f){if(++ModelView==4){if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);}else Next(65);}
+    if(StageTime>2.5f){if(++ModelView==6){if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);}else Next(65);}
   }else if(Stage==66){
     // Query the actual cooked rock course, including compressed and banked
     // tire poses. A mesh-load or spawn check cannot catch missing wheel support.
@@ -856,6 +862,7 @@ void ATerraGameMode::Tick(float Dt) {
     ModelVehicle=0;Next(67);
   }else if(Stage==67){
     V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(4);
+    if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
     V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
     const FVector Floor=V->Terrain->Routes[4].Spawn+FVector(400,0,0);
     V->SetActorLocationAndRotation(Floor+FVector(0,0,V->ExpectedRideHeight()*100-24),FRotator(0,0,18),false,nullptr,ETeleportType::TeleportPhysics);

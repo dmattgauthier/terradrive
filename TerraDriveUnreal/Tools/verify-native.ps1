@@ -34,7 +34,7 @@ $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
 if($renderErrors.Count){throw "Native mesh/render diagnostics failed. Inspect $log"}
 $failed=@($result.tests | Where-Object { !$_.pass })
-$minimumChecks=if($GroundOnly){19}else{275}
+$minimumChecks=if($GroundOnly){19}else{278}
 if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt $minimumChecks) {
     $failed | Format-Table | Out-String | Write-Output
     throw "Native checks failed (exit $gameExit). Inspect $report and $log"

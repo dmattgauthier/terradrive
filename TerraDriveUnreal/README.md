@@ -4,11 +4,15 @@ Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with
 
 The latest physics correction restores finite-tread support on uneven rigid ledges after the sphere query rejects a side contact. See [ground-contact.md](docs/ground-contact.md) and run `Tools/verify-native.ps1 -GroundOnly` for the focused regression. Current bodies remain procedural approximations; [vehicle-art-production.md](docs/vehicle-art-production.md) describes the recommended mesh, material and reference-review pipeline for a substantial visual improvement.
 
+The Urus art update is described in [urus-automotive.md](docs/urus-automotive.md): reconstructed coachwork, inset glazing, deeper intake and diffuser geometry, dished 22-inch wheels and actual Epic Automotive Materials instances. The material pack is a separately acquired build dependency; its original UAssets are not distributed in this source repository. The reference reconstruction is improved but remains below the precision and detail of a production racing-game vehicle asset.
+
 The latest native model/scenery changes are documented in [urus-slate-rim.md](docs/urus-slate-rim.md): sculpted V8 Urus Performante body/cabin surfaces and the 1,065-foot Slate Rim quarry trail, with matching CC0 cliff, boulder, grass and ground scans. It is the ninth challenge, selectable with J. The previous [body-shapes-and-fab.md](docs/body-shapes-and-fab.md) round retains the other five body refinements, circular Summit loop and African Slate Quarry scenery. Optional Fab content is imported from your own Epic cache; raw licensed assets are excluded from this public source.
 
 ## Build
 
 Install Unreal Engine 5.8, Visual Studio with Desktop/Game Development C++, and a Windows 10/11 SDK. Development here uses UE 5.8.3, VS 2026 MSVC 14.51 and SDK 10.0.26100. Node 24 is needed only to convert the supplied source assets. Unreal's bundled Python runs the editor import script.
+
+Before importing, add Epic's free [Automotive Materials](https://www.fab.com/listings/5dd132fe-ee32-4e8c-9cd3-7496547dfb29) pack from your Fab library to this project. Use **Show all projects**, select **TerraDrive**, and choose the nearest available pack version (5.7 in this installation) if the Launcher filters out UE 5.8. Keep the project on UE 5.8.3. The required material parents must exist under `Content/AutomotiveMaterials`; the import script checks for them.
 
 From this directory:
 

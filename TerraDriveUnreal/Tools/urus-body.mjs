@@ -1,131 +1,212 @@
-// Original V8 Performante, authored from Lamborghini's 2024 brochure plates.
-// Ground datum Y=0, axle midpoint Z=0. No manufacturer CAD or purchased mesh.
+// Original V8 Urus Performante. Hand-authored reference reconstruction, not OEM CAD.
+// Datum: tyre contact Y=0; axle midpoint Z=0; nose +Z. Units are metres.
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
-import {T,mesh,box,surface,polygon,line,curve,station,lerp,clamp,smooth} from './body-surface.mjs';
+import {T,mesh,box,surface,polygon,mappedPolygon,line,curve,station,lerp,clamp,smooth} from './body-surface.mjs';
 import {urusCabin} from './urus-cabin.mjs';
 import {geometryText} from './vehicle-fidelity.mjs';
-export const URUS_BODY_LANDMARKS={length:5.137,width:2.026,height:1.618,wheelbase:3.006,
- roofFrontZ:-.06,roofRearZ:-1.12,cowlZ:.69,frontZ:2.5685,rearZ:-2.5685,beltFrontY:1.074,beltRearY:1.205,archRadius:.438};
+export const URUS_BODY_LANDMARKS={length:5.137,width:2.026,widthWithMirrors:2.181,height:1.618,wheelbase:3.006,
+ roofFrontZ:-.06,roofRearZ:-1.12,cowlZ:.72,frontZ:2.5685,rearZ:-2.5685,beltFrontY:1.102,beltRearY:1.248,archRadius:.448};
 export function urusView(spec){
  const view=new VehicleView(new T.Scene(),{...spec,bodyStyle:'sedan'}),g=view.body,m=view.materials;
  g.clear();g.position.set(0,-spec.cgHeight,(.5-spec.frontWeightFraction)*spec.wheelbase);
- const carbon=new T.MeshPhysicalMaterial({color:'#15191b',roughness:.34,metalness:.02,clearcoat:.35,clearcoatRoughness:.22});carbon.userData.nativeRole='carbon';
- m.paint.metalness=.10;m.paint.roughness=.30;m.paint.clearcoatRoughness=.16;
- const dark=new T.MeshStandardMaterial({color:'#080b0c',roughness:.79}),grille=new T.MeshStandardMaterial({color:'#293031',roughness:.47,metalness:.25});
- const drl=new T.MeshStandardMaterial({color:'#d5e5eb',emissive:'#c8eaff',emissiveIntensity:1.15,roughness:.18});
- const tint=m.privacyGlass;tint.opacity=.70;tint.color.set('#263941');
- m.interior.color.set('#151b1e');m.upholstery.color.set('#12171b');m.windscreen.color.set('#485962');m.windscreen.opacity=.54;
- const front=2.5685,rear=-2.5685,axles=[-spec.wheelbase/2,spec.wheelbase/2],wy=spec.tireRadius,arch=.438,bottom=.268;
- // Z, sheet half-width, shoulder height: broad haunches, tapered nose/tail.
- const rows=[[rear,.855,1.055],[-2.43,.931,1.129],[-2.08,.975,1.193],[-1.58,.996,1.213],[-1.02,.958,1.183],[-.30,.941,1.128],[.46,.949,1.076],[1.15,.985,1.065],[1.52,.996,1.063],[1.93,.968,1.044],[2.29,.926,1.005],[2.47,.862,.982],[front,.62,.958]];
- const belt=z=>station(rows,z,2),width=z=>station(rows,z,1);
- const low=z=>{let y=bottom;for(const a of axles){const d=Math.abs(z-a);if(d<arch)y=Math.max(y,wy+Math.sqrt(arch*arch-d*d));}return y;};
- const section=[[0,.900],[.10,.920],[.24,.944],[.43,.950],[.60,.967],[.77,.996],[.86,1.003],[.93,.996],[1,.979]];
- const skinX=(y,z)=>{const high=belt(z),t=clamp((y-bottom)/(high-bottom),0,1),doors=smooth(z,-1.06,-.80)*(1-smooth(z,.74,.99)),rising=.42-.060*z;
-  const fenders=Math.max(Math.exp(-(((z-1.50)/.52)**2)),Math.exp(-(((z+1.50)/.62)**2)));
-  return width(z)*station(section,t,1)+.012*fenders*Math.exp(-(((y-.91)/.18)**2))-.018*doors*Math.exp(-(((y-rising-.045)/.10)**2));};
- const noseOutline=[[.268,.78],[.291,.82],[.45,.963],[.89,.937],[.982,.865],[1.03,.81]],tailOutline=[[.268,.75],[.42,.839],[.56,.920],[.84,.945],[1.08,.920],[1.22,.88]];
- const sidePoint=(s,z,y,off=0)=>{
-  const f=smooth(z,2.18,2.41),r=1-smooth(z,-2.42,-2.22);
-  let x=lerp(skinX(y,z),station(noseOutline,y,1),f);x=lerp(x,station(tailOutline,y,1),r);
-  const zz=lerp(lerp(z,front-.23*(x/.99)**2,f),rear+.245*(x/.99)**2,r);
-  return[s*(x+off),y,zz];
+ const finish=(mat,role)=>{mat.userData.automotive=role;return mat;};
+ const carbon=finish(new T.MeshPhysicalMaterial({color:'#15191b',roughness:.27,clearcoat:1,clearcoatRoughness:.16}),'carbon');carbon.userData.nativeRole='carbon';
+ const black=finish(new T.MeshPhysicalMaterial({color:'#080a0b',roughness:.21,clearcoat:.7}),'black');
+ const rubber=finish(new T.MeshStandardMaterial({color:'#101213',roughness:.66}),'rubber');
+ const grille=finish(new T.MeshStandardMaterial({color:'#303337',roughness:.34,metalness:.9}),'metal');
+ const dark=new T.MeshStandardMaterial({color:'#050708',roughness:.9});
+ const drl=new T.MeshStandardMaterial({color:'#e2efff',emissive:'#d5e6ff',emissiveIntensity:.85,roughness:.2});
+ finish(m.paint,'paint');finish(m.chrome,'metal');finish(m.interior,'plastic');finish(m.upholstery,'alcantara');
+ m.paint.color.set('#f0c800');m.paint.metalness=0;m.paint.roughness=.22;m.paint.clearcoat=1;
+ for(const mat of [m.glass,m.windscreen,m.privacyGlass]){mat.color.set('#172329');mat.opacity=mat===m.privacyGlass?.91:.64;mat.roughness=.10;}
+ m.interior.color.set('#141618');m.upholstery.color.set('#17191c');
+ const front=2.5685,rear=-2.5685,wy=spec.tireRadius,arch=.448,axles=[-1.503,1.503];
+ const gauss=(x,c,w)=>Math.exp(-(((x-c)/w)**2));
+ // Width, upper edge and shoulder are independent stations. The waist is
+ // genuinely recessed; a material highlight cannot substitute for this shape.
+ const rows=[[-2.48,.873,1.155],[-2.20,.951,1.239],[-1.80,.993,1.265],[-1.50,.998,1.256],[-1.12,.969,1.229],[-.55,.939,1.186],[.05,.931,1.144],[.72,.951,1.102],[1.22,.982,1.093],[1.54,.994,1.092],[1.92,.975,1.072],[2.26,.934,1.032],[2.48,.868,1.016]];
+ const width=z=>station(rows,z,1),belt=z=>station(rows,z,2);
+ const low=z=>Math.max(.27+.26*(1-smooth(z,-2.48,-2.05)),...axles.map(a=>Math.abs(z-a)<arch?wy+Math.sqrt(arch*arch-(z-a)**2):.27));
+ const skinX=(y,z)=>{
+  const h=belt(z),shoulder=h-.115,doors=smooth(z,-1.14,-.80)*(1-smooth(z,.70,1.01));
+  const section=[[.24,.865],[.34,.914],[.45,.925],[.58,.886],[.73,.912],[shoulder-.055,.983],[shoulder,1],[h,.951]];
+  const sorted=section.filter((p,i)=>i<5||p[0]>.74);
+  return width(z)*station(sorted,y,1)-.022*doors*gauss(y,.57-.045*z,.105)+.008*gauss(z,-1.55,.55)*gauss(y,.91,.20);
+ };
+ const sidePoint=(s,z,y,offset=0)=>{
+  const f=smooth(z,2.05,2.48),r=1-smooth(z,-2.48,-2.05);
+  // Match the fascia's piecewise-linear boundary exactly. Smooth interpolation
+  // here made a detached, curled strip along the bumper corners.
+  const edge=[[.24,.89],[.261,.89],[.44,.977],[.883,.955],[1.016,.843],[1.04,.81]];
+  const ei=Math.max(1,edge.findIndex(p=>p[0]>=y)),ea=edge[ei-1],eb=edge[ei];
+  const nose=lerp(ea[1],eb[1],clamp((y-ea[0])/(eb[0]-ea[0]),0,1));
+  const tail=station([[.25,.88],[.53,.938],[.76,.971],[1.04,.947],[1.155,.881]],y,1);
+  const x=lerp(lerp(skinX(y,z),nose,f),tail,r);
+  // Offset the original longitudinal coordinate toward the end boundary.
+  // Blending the coordinate itself into an end point folded the last strips.
+  const noseZ=front-.255*(x/.99)**2-.055*gauss(y,.66,.15),tailZ=rear+.245*(x/.99)**2;
+  return[s*(x+offset),y,z+f*(noseZ-2.48)+r*(tailZ+2.48)];
+ };
+ const seam=(s,points)=>{const path=new T.CatmullRomCurve3(points.map(([z,y])=>new T.Vector3(z,y,0)));line(g,dark,Array.from({length:181},(_,i)=>{const p=path.getPoint(i/180);return sidePoint(s,p.x,p.y,.002);}),.0016);};
+ const quad=(mat,a,b,c,d,nu=20,nv=12)=>surface(g,mat,nu,nv,(u,v)=>a.map((n,k)=>lerp(lerp(n,b[k],u),lerp(d[k],c[k],u),v)));
+ function inset(points,scale){const center=points.reduce((a,p)=>a.map((v,k)=>v+p[k]/points.length),[0,0]);return points.map(p=>p.map((v,k)=>lerp(center[k],v,scale)));}
+ function opening(contour,map,depth,lip=.005){
+  mappedPolygon(g,dark,contour,(x,y)=>{const p=map(x,y);p[2]-=depth;return p;},[],false,12);
+  const lipPoints=[];
+  for(let j=0;j<contour.length;j++){
+   const a=contour[j],b=contour[(j+1)%contour.length];
+   surface(g,carbon,24,4,(u,v)=>{const p=map(lerp(a[0],b[0],u),lerp(a[1],b[1],u));p[2]-=depth*v;return p;});
+   for(let k=0;k<24;k++)lipPoints.push(map(lerp(a[0],b[0],k/24),lerp(a[1],b[1],k/24)));
+  }
+  line(g,black,[...lipPoints,lipPoints[0]],lip);
+ }
+ for(const s of [-1,1]){
+  surface(g,m.paint,260,60,(u,v)=>{const z=lerp(-2.48,2.48,u);return sidePoint(s,z,lerp(low(z),belt(z),v));},s>0);
+  surface(g,carbon,45,16,(u,v)=>{const z=lerp(-2.48,-2.05,u);return sidePoint(s,z,lerp(.27,low(z)+.003,v),.001);},s>0);
+  // Faceted, body-following carbon arch flares, including the nearly flat crown.
+  for(const axle of axles){
+   const rimPoint=(a,r,v)=>{const z=axle+r*Math.cos(a),y=wy+r*Math.sin(a),x=lerp(skinX(y,z)+.003,1.013,v);return[s*x,y,z];};
+   surface(g,carbon,100,9,(u,v)=>{const a=lerp(-.28,Math.PI+.28,u),r=lerp(arch+.002,Math.min(.512,.487/Math.max(.01,Math.sin(a))),v);return rimPoint(a,r,1-v*.65);},s<0);
+   surface(g,rubber,90,6,(u,v)=>{const a=lerp(-.27,Math.PI+.27,u),z=axle+arch*Math.cos(a),y=wy+arch*Math.sin(a);return[s*lerp(.76,1.013,v),y,z];},s<0);
+  }
+  // Sculpted rocker: broad carbon blade, raised leading arrow and a tucked sill.
+  const rocker=[[-1.08,.266],[-.91,.382],[.66,.433],[1.04,.555],[.94,.357],[.79,.286]];
+  mappedPolygon(g,carbon,rocker,(z,y)=>sidePoint(s,z,y,.014),[],s>0,16);
+  line(g,black,rocker.map(([z,y])=>sidePoint(s,z,y,.016)),.004);
+  seam(s,[[.70,1.10],[.69,.91],[.67,.66],[.60,.43],[.39,.331],[-.53,.337],[-.66,.45],[-.64,.85],[-.61,1.19]]);
+  seam(s,[[-.61,1.19],[-.64,.91],[-.69,.62],[-.82,.405],[-1.00,.407],[-1.07,.67],[-1.27,1.235]]);
+  for(const z of [-.37,-1.22]){
+   const y=belt(z)-.077;box(g,black,sidePoint(s,z,y,.006),[.009,.026,.153],.003);
+   box(g,m.paint,sidePoint(s,z,y+.004,.012),[.019,.018,.137],.004);
+  }
+  // Low front-fender outlet is recessed and finishes at the front door seam.
+  const vent=[[.99,1.030],[.75,1.085],[.76,.965]];
+  mappedPolygon(g,carbon,vent,(z,y)=>sidePoint(s,z,y,.008),[],s>0);
+  for(let j=0;j<3;j++)line(g,grille,[[.77,.983+j*.019],[.87,1.007+j*.017]].map(([z,y])=>sidePoint(s,z,y,.013)),.002);
+ }
+ // A continuous painted greenhouse surround, with inset flush glass. The
+ // previous independent rail tubes left gaps and looked like a roll cage.
+ const roof=[[-2.20,1.252,.875],[-1.94,1.386,.835],[-1.53,1.555,.783],[-1.13,1.603,.748],[-.62,1.609,.734],[-.06,1.578,.735],[.24,1.438,.785],[.72,1.136,.855]];
+ const sideGlass=[[[.636,1.143],[.006,1.534],[-.536,1.547],[-.586,1.217]],
+  [[-.655,1.224],[-.607,1.548],[-1.170,1.521],[-1.360,1.284]],
+  [[-1.413,1.287],[-1.255,1.494],[-1.470,1.431],[-1.700,1.348],[-1.840,1.316],[-1.860,1.298],[-1.730,1.285]]];
+ const canopyPoint=(s,z,y,offset=0)=>{
+  const h=station(roof,z,1),t=(y-belt(z))/(h-belt(z));
+  const base=sidePoint(s,z,belt(z));
+  return[s*(lerp(Math.abs(base[0]),station(roof,z,2),t)+.010*Math.sin(Math.PI*t)+offset),y,lerp(base[2],z,t)];
  };
  for(const s of [-1,1]){
-  // Side sheets stop at the wrapped fascia. Extending both sheets all the
-  // way to the centre-line nose/tail creates opaque pillars over the lamps.
-  surface(g,m.paint,240,40,(u,v)=>{const z=lerp(-2.42,2.41,u),y=lerp(low(z),belt(z),v);return sidePoint(s,z,y);},s>0);
-  surface(g,m.paint,160,16,(u,v)=>{const z=lerp(-2.04,.69,u),outer=skinX(belt(z),z),inner=station([[-2.04,.885],[-1.79,.923],[-1.29,.932],[-.56,.916],[.67,.864],[.69,.860]],z,1);return[s*lerp(inner,outer,v),belt(z)+.017*Math.sin(v*Math.PI),z];},s<0);
-  for(const a of axles){
-   surface(g,carbon,84,10,(u,v)=>{const angle=lerp(-.23,Math.PI+.23,u),outer=angle>1.19&&angle<1.95?.483/Math.sin(angle):.492,r=lerp(arch+.002,outer,v),z=a+r*Math.cos(angle),y=wy+r*Math.sin(angle);return[s*(Math.min(1.013,width(z)+.022)+.007*Math.sin(v*Math.PI)),y,z];},s<0);
-   surface(g,dark,72,5,(u,v)=>{const angle=lerp(-.22,Math.PI+.22,u),z=a+arch*Math.cos(angle),y=wy+arch*Math.sin(angle);return[s*lerp(.80,Math.min(1.007,width(z)+.019),v),y,z];},s<0);
+  const silhouette=[...Array.from({length:100},(_,i)=>{const z=lerp(.72,-2.20,i/99);return[z,station(roof,z,1)];}),...Array.from({length:100},(_,i)=>{const z=lerp(-2.20,.72,i/99);return[z,belt(z)];})];
+  mappedPolygon(g,m.paint,silhouette,(z,y)=>canopyPoint(s,z,y),sideGlass,s>0,16);
+  for(const [i,contour]of sideGlass.entries()){
+   const glass=inset(contour,.945),map=([z,y],off=0)=>canopyPoint(s,z,y,off);
+   mappedPolygon(g,black,contour,(z,y)=>map([z,y],.002),[glass],s>0,12);
+   // Fan patches curve into the center without stretching a single giant quad.
+   const center=glass.reduce((c,p)=>c.map((v,k)=>v+p[k]/glass.length),[0,0]);
+   for(let j=0;j<glass.length;j++)surface(g,i?m.privacyGlass:m.glass,16,16,(u,v)=>{
+    const a=glass[j],b=glass[(j+1)%glass.length],p=center.map((n,k)=>lerp(n,lerp(a[k],b[k],u),v));return map(p,-.003+.006*(1-v*v));
+   },s<0);
   }
-  // The rear quarter narrows to a point and climbs with the beltline. All
-  // pillars are physical painted/black surfaces, not one rectangular window.
-  const win=[[.67,1.104,.864],[.045,1.547,.739],[-.73,1.559,.747],[-1.28,1.493,.784],[-1.95,1.234,.907],[-1.75,1.208,.919]];
-  const point=([z,y,x],off=0)=>[s*(x+off),y,z];
-  const windows=[[[.60,1.131,.875],[.002,1.536,.749],[-.54,1.551,.752],[-.57,1.161,.916]],[[-.64,1.166,.919],[-.61,1.549,.755],[-1.22,1.486,.795],[-1.62,1.213,.920]],[[-1.69,1.219,.924],[-1.34,1.444,.814],[-1.87,1.248,.909]]];
-  polygon(g,dark,win.map(p=>point(p)),0,windows.map(ps=>ps.map(p=>point(p))));
-  for(const [i,pts]of windows.entries()){
-   const center=pts.reduce((a,p)=>a.map((v,j)=>v+p[j]/pts.length),[0,0,0]);
-   for(let e=0;e<pts.length;e++){const a=pts[e],b=pts[(e+1)%pts.length];surface(g,i?tint:m.glass,12,12,(u,v)=>{
-    const edge=a.map((n,j)=>lerp(n,b[j],u)),p=center.map((n,j)=>lerp(n,edge[j],v));
-    return point(p,.003+.011*(1-v*v));
-   },s<0);}
+  // Black B pillar and waist reveal. No tubes along the painted roof.
+  mappedPolygon(g,black,[[-.536,1.547],[-.607,1.548],[-.655,1.224],[-.586,1.217]],(z,y)=>canopyPoint(s,z,y,.003),[],s>0);
+  mappedPolygon(g,black,[[-1.170,1.521],[-1.255,1.494],[-1.413,1.287],[-1.360,1.284]],(z,y)=>canopyPoint(s,z,y,.003),[],s>0);
+  curve(g,black,[[.64,1.135],[-.58,1.207],[-1.38,1.260],[-1.94,1.296]].map(([z,y])=>canopyPoint(s,z,y,.004)),.004);
+  const stemA=canopyPoint(s,.49,1.162),stemB=[s*.965,1.207,.49];line(g,black,[stemA,stemB],.014);
+  // Aerodynamic angular mirror cap and recessed reflecting face.
+  const cap=mesh(g,new T.SphereGeometry(1,40,24),carbon,[s*.991,1.210,.48]);cap.scale.set(.0995,.057,.105);
+  box(g,m.chrome,[s*.994,1.208,.394],[.152,.066,.006],.007);
+ }
+ const canopy=(u,z,off=0)=>{const t=u*2-1;return[t*station(roof,z,2),station(roof,z,1)+.009*(1-t*t)+off,z];};
+ surface(g,carbon,72,76,(u,v)=>canopy(u,lerp(-1.13,-.06,v)),true);
+ // Windshield lies within a black ceramic perimeter, with two physical wipers.
+ surface(g,black,72,48,(u,v)=>canopy(u,lerp(-.06,.72,v)),true);
+ surface(g,m.windscreen,72,48,(u,v)=>canopy(lerp(.025,.975,u),lerp(-.035,.695,v),.0025),true);
+ for(const s of [-1,1])curve(g,rubber,[[s*.10,1.175,.68],[s*.31,1.189,.653],[s*.61,1.191,.647]],.005);
+ // Rear hatch glass is bounded by a substantial painted D-pillar and spoiler.
+ surface(g,m.paint,76,60,(u,v)=>canopy(u,lerp(-2.20,-1.13,v)),true);
+ surface(g,black,68,48,(u,v)=>canopy(lerp(.095,.905,u),lerp(-2.12,-1.22,v),.003),true);
+ surface(g,m.privacyGlass,64,44,(u,v)=>canopy(lerp(.112,.888,u),lerp(-2.093,-1.235,v),.006),true);
+ for(let j=0;j<8;j++)curve(g,rubber,Array.from({length:24},(_,k)=>canopy(lerp(.13,.87,k/23),-2.04+j*.105,.008)),.0006);
+ curve(g,black,[canopy(.49,-2.05,.011),canopy(.37,-2.01,.013),canopy(.24,-1.95,.013)],.005);
+ // Bonnet: deep outer cooling apertures, raised fender ridges and a pointed
+ // central carbon panel; the perimeter is crowned rather than a flat plane.
+ const hoodRows=[[.72,1.156,.81],[1.08,1.128,.849],[1.50,1.104,.870],[1.93,1.073,.844],[2.27,1.033,.762],[2.48,.980,.64]];
+ const hood=(x,z,off=0)=>{const t=x/station(hoodRows,z,2);return[x,station(hoodRows,z,1)+.022*(1-t*t)+.016*gauss(Math.abs(t),.79,.12)+off,z];};
+ surface(g,m.paint,100,110,(u,v)=>{const z=lerp(.72,2.48,v);return hood((2*u-1)*station(hoodRows,z,2),z);},true);
+ surface(g,carbon,80,100,(u,v)=>{const z=lerp(.75,2.30,v),w=station([[.75,.598],[1.22,.584],[1.82,.523],[2.14,.426],[2.25,.324],[2.30,.05]],z,1);return hood((u*2-1)*w,z,.002);},true);
+ for(const s of [-1,1]){
+  surface(g,m.paint,110,12,(u,v)=>{const z=lerp(.72,2.48,u),a=hood(s*station(hoodRows,z,2),z),b=sidePoint(s,z,belt(z));return a.map((n,k)=>lerp(n,b[k],v));},s<0);
+  curve(g,dark,Array.from({length:65},(_,i)=>{const z=lerp(.74,2.34,i/64);return hood(s*(station(hoodRows,z,2)-.014),z,.002);}),.0014);
+  const outline=[[.613,1.27],[.752,1.34],[.691,1.83],[.575,1.96],[.552,1.87]],vent=outline.map(([x,z])=>hood(s*x,z,.004));
+  mappedPolygon(g,carbon,outline,(x,z)=>hood(s*x,z,.004),[],s>0,14);line(g,black,[...vent,vent[0]],.004);
+  for(let j=0;j<9;j++){const z=1.37+j*.052;quad(grille,hood(s*(.612-.075*(z-1.37)),z,.009),hood(s*(.735-.130*(z-1.37)),z+.015,.009),hood(s*(.731-.130*(z-1.37)),z+.024,.011),hood(s*(.611-.075*(z-1.37)),z+.009,.011),8,2);}
+ }
+ // Wrapped front fascia. Real apertures, a broad splitter and boxed air
+ // curtains replace the old flat hexagons and tubular bumper guard.
+ const face=(x,y,d=0)=>[x,y,front-.255*(Math.abs(x)/.99)**2-.055*gauss(y,.66,.15)+d];
+ const outline=[[-.977,.44],[-.955,.883],[-.843,1.016],[-.46,1.026],[0,.977],[.46,1.026],[.843,1.016],[.955,.883],[.977,.44],[.89,.261],[.53,.258],[.42,.309],[-.42,.309],[-.53,.258],[-.89,.261]];
+ const openings=[[[-.443,.850],[-.354,.883],[.354,.883],[.443,.850],[.402,.736],[-.402,.736]],
+  [[-.438,.616],[-.337,.694],[.337,.694],[.438,.616],[.614,.347],[-.614,.347]],
+  [[-.918,.798],[-.562,.812],[-.479,.669],[-.739,.378],[-.896,.346],[-.951,.486]],
+  [[.918,.798],[.562,.812],[.479,.669],[.739,.378],[.896,.346],[.951,.486]]];
+ mappedPolygon(g,m.paint,outline,face,openings,false,16);
+ for(const contour of openings)opening(contour,face,.105,.004);
+ // Thin real horizontal bars over a recessed cellular radiator.
+ for(let j=0;j<4;j++)quad(grille,face(-.36,.407+j*.065,-.060),face(.36,.407+j*.065,-.060),face(.36,.416+j*.065,-.062),face(-.36,.416+j*.065,-.062),30,2);
+ for(const s of [-1,1])for(let j=0;j<4;j++)quad(black,face(s*.60,.465+j*.074,-.045),face(s*.883,.485+j*.070,-.045),face(s*.883,.498+j*.070,-.046),face(s*.60,.478+j*.074,-.046),20,2);
+ for(let y=.40;y<.63;y+=.035)for(let x=-.31;x<.32;x+=.040){const cell=Array.from({length:7},(_,i)=>face(x+.018*Math.cos(i*Math.PI/3),y+.017*Math.sin(i*Math.PI/3),-.09));line(g,grille,cell,.0011);}
+ surface(g,carbon,90,8,(u,v)=>{const x=(u*2-1)*.965,y=.246+.025*Math.abs(x)/.965;const a=face(x,y,.028),b=face(x,y+.012,-.18);return a.map((n,k)=>lerp(n,b[k],v));},true);
+ surface(g,m.paint,72,8,(u,v)=>{const x=(u*2-1)*lerp(.64,.843,v),a=hood((u*2-1)*.64,2.48),b=face(x,station([[0,.977],[.46,1.026],[.843,1.016]],Math.abs(x),1));return a.map((n,k)=>lerp(n,b[k],v));},true);
+ for(const s of [-1,1]){
+  const outline=[[.434,.967],[.488,1.028],[.857,1.027],[.956,.958],[.882,.914],[.511,.921]];
+  mappedPolygon(g,black,outline,(x,y)=>face(s*x,y,.009),[],s<0,12);
+  const light=([x,y])=>face(s*x,y,.017);
+  // Lamborghini Y light guide, individual projector lenses and dark surround.
+  line(g,drl,[[.910,.960],[.822,.942],[.613,.943],[.517,.981]].map(light),.0045);
+  line(g,drl,[[.613,.943],[.526,.933]].map(light),.0045);
+  for(let j=0;j<3;j++){const p=face(s*(.644+j*.076),.981,.015);box(g,grille,p,[.053,.026,.010],.004);box(g,m.headlampReflector,[p[0],p[1],p[2]+.007],[.032,.016,.007],.003);}
+  // Long air curtain wraps around the outside of each side intake.
+  mappedPolygon(g,carbon,[[.941,.818],[.987,.764],[.994,.441],[.921,.315],[.902,.374],[.953,.504]],(x,y)=>face(s*x,y,.006),[],s<0,12);
+ }
+ polygon(g,m.badge,[face(-.024,.944,.008),face(.024,.944,.008),face(.020,.908,.008),face(0,.891,.008),face(-.020,.908,.008)]);
+ box(g,black,face(0,.800,.007),[.073,.027,.012],.003);
+ // Full hatch, broad rear shoulders and recessed plate pocket. The rear
+ // corners taper in plan view; exhaust outlets sit inside the diffuser.
+ const tail=(x,y,d=0)=>[x,y,rear+.245*(Math.abs(x)/.99)**2+.055*gauss(y,.70,.16)*gauss(x,0,.41)+d];
+ surface(g,m.paint,100,54,(u,v)=>{const y=lerp(.53,1.155,v),w=station([[.53,.938],[.76,.971],[1.04,.947],[1.155,.881]],y,1);return tail((u*2-1)*w,y);});
+ surface(g,m.paint,90,28,(u,v)=>{const x=(2*u-1)*lerp(.881,.875,v),a=tail(x,1.155),b=canopy(u,-2.20);return a.map((n,k)=>lerp(n,b[k],v));},true);
+ surface(g,carbon,90,28,(u,v)=>{const y=lerp(.252,.58,v),x=(2*u-1)*lerp(.88,.938,v);return tail(x,y,.06*(1-v));});
+ const plateOutline=[[-.31,.858],[.31,.858],[.365,.754],[.291,.643],[-.291,.643],[-.365,.754]];
+ mappedPolygon(g,black,[[-.37,1.145],[.37,1.145],[.37,1.044],[-.37,1.044]],(x,y)=>tail(x,y,-.008),[],true,12);
+ mappedPolygon(g,black,plateOutline,(x,y)=>tail(x,y,-.006),[],true,14);
+ const plate=finish(new T.MeshStandardMaterial({color:'#bfc5c7',roughness:.34}),'metal');
+ box(g,plate,tail(0,.747,-.014),[.428,.101,.008],.004);
+ const text=geometryText(g,'TD 2024',.31,.041,black);text.position.set(0,.727,rear+.025);text.rotation.y=Math.PI;
+ for(const s of [-1,1]){
+  const outline=[[.245,1.095],[.345,1.150],[.870,1.142],[.948,1.083],[.870,1.028],[.335,1.039]];
+  mappedPolygon(g,black,outline,(x,y)=>tail(s*x,y,-.010),[],s>0,12);
+  const light=([x,y])=>tail(s*x,y,-.020);
+  line(g,m.red,[[.908,1.095],[.791,1.073],[.529,1.082],[.420,1.120]].map(light),.006);
+  line(g,m.red,[[.529,1.082],[.428,1.050]].map(light),.005);
+  box(g,m.reverse,tail(s*.814,1.045,-.021),[.107,.012,.009],.002);
+  // Reflectors and parking sensors belong to the bumper, not the tail lamps.
+  box(g,m.red,tail(s*.792,.577,-.011),[.175,.019,.009],.003);
+  for(const x of [.45,.87]){const sensor=mesh(g,new T.CircleGeometry(.007,20),black,tail(s*x,.648,-.006));sensor.rotation.y=Math.PI;}
+  for(const x of [.663,.811]){
+   const p=tail(s*x,.414,-.010),tip=mesh(g,new T.CylinderGeometry(.051,.048,.108,48,1,true),m.chrome,[p[0],p[1],p[2]+.043]);tip.rotation.x=Math.PI/2;
+   const bore=mesh(g,new T.CircleGeometry(.044,48),dark,[p[0],p[1],p[2]-.011]);bore.rotation.y=Math.PI;
   }
-  curve(g,m.paint,[[s*.878,1.105,.71],[s*.752,1.558,.04],[s*.751,1.595,-.62],[s*.792,1.530,-1.28],[s*.920,1.225,-2.01]],.019);
-  curve(g,carbon,[[s*.870,1.108,.67],[s*.916,1.153,-.56],[s*.932,1.197,-1.29],[s*.924,1.221,-1.79],[s*.916,1.239,-1.94]],.009);
-  for(const pts of [[[.64,1.075],[.64,.74],[.63,.44],[.45,.316],[-.48,.316],[-.62,.40],[-.63,1.15]],[[-.63,1.15],[-.65,.70],[-.65,.39],[-.84,.32],[-.98,.34],[-1.02,.65],[-1.19,1.18]]])curve(g,dark,pts.map(([z,y])=>sidePoint(s,z,y,.0012)),.0013);
-  for(const z of [-.38,-1.19]){const y=belt(z)-.070;box(g,dark,sidePoint(s,z,y,.004),[.009,.025,.142],.004);box(g,carbon,sidePoint(s,z,y+.002,.010),[.017,.014,.128],.003);}
-  surface(g,carbon,70,8,(u,v)=>{const z=lerp(-1.02,1.01,u),y=.258+v*.091;return[s*(.910+.056*Math.sin(v*Math.PI/2)),y,z];},s>0);
-  curve(g,m.paint,[[-1.03,.354],[-.66,.368],[.15,.422],[.91,.470]].map(([z,y])=>sidePoint(s,z,y,.003)),.007);
-  polygon(g,dark,[[s*.971,.86,.87],[s*.966,1.009,.89],[s*.962,1.011,.70]],0);
-  for(let i=0;i<4;i++)line(g,grille,[[s*.976,.894+i*.025,.854],[s*.973,.902+i*.024,.756+i*.025]],.003);
-  curve(g,carbon,[[s*.892,1.135,.50],[s*.971,1.172,.50],[s*1.015,1.185,.49]],.016);
-  const mirror=mesh(g,new T.SphereGeometry(1,40,20),carbon,[s*1.034,1.195,.47]);mirror.scale.set(.056,.055,.125);
-  box(g,m.chrome,[s*1.087,1.194,.459],[.006,.065,.161],.013);
+  const inlet=[[.56,.491],[.899,.499],[.905,.326],[.579,.323]];mappedPolygon(g,dark,inlet,(x,y)=>tail(s*x,y,-.003),[],s>0,10);
  }
- // Crowned bonnet and exposed-carbon inset follow the same curved surface.
- const hoodRows=[[.69,1.163,.77],[1.12,1.118,.84],[1.57,1.083,.85],[2.02,1.044,.81],[2.32,1.002,.73],[2.47,.982,.60]];
- const hood=(x,z,off=0)=>{const w=station(hoodRows,z,2),t=x/w;return[x,station(hoodRows,z,1)+.026*(1-t*t)+.017*Math.exp(-(((Math.abs(t)-.77)/.105)**2))+off,z];};
- surface(g,m.paint,72,90,(u,v)=>{const z=lerp(.69,2.47,v);return hood((u*2-1)*station(hoodRows,z,2),z);},true);
- for(const s of [-1,1])surface(g,m.paint,110,16,(u,v)=>{
-  const z=lerp(.69,2.41,u),w=station(hoodRows,z,2),a=hood(s*w,z),b=sidePoint(s,z,belt(z));
-  return[lerp(a[0],b[0],v),lerp(a[1],b[1],v)+.009*Math.sin(v*Math.PI),lerp(a[2],b[2],v)];
- },s<0);
- const noseTop=[[0,.950],[.48,1.003],[.84,.991]];
- surface(g,m.paint,72,12,(u,v)=>{const x=(u*2-1)*lerp(.60,.84,v),a=hood((u*2-1)*.60,2.47),y=station(noseTop,Math.abs(x),1),z=front-.18*(Math.abs(x)/.99)**2;return[x,lerp(a[1],y,v),lerp(a[2],z,v)];},true);
- surface(g,carbon,56,72,(u,v)=>{const z=lerp(.73,2.20,v);return hood((u*2-1)*lerp(.605,.43,smooth(v,.10,1)),z,.0015);},true);
- for(const s of [-1,1]){
-  curve(g,dark,Array.from({length:65},(_,i)=>{const z=lerp(.72,2.29,i/64);return hood(s*(station(hoodRows,z,2)-.023),z,.002);}),.0017);
-  polygon(g,dark,[[.615,1.30],[.75,1.43],[.651,2.004],[.571,1.947]].map(([x,z])=>hood(s*x,z,.003)),1);
-  for(let i=0;i<8;i++){const z=1.42+i*.062;line(g,grille,[hood(s*(.640-.045*(z-1.42)),z,.006),hood(s*(.724-.152*(z-1.42)),z+.015,.006)],.003);}
- }
- const canopy=[[-2.04,1.214,.885],[-1.80,1.341,.843],[-1.35,1.522,.781],[-1.12,1.589,.752],[-.70,1.603,.742],[-.06,1.577,.730],[.69,1.155,.843]];
- const glassRail=[[-2.04,1.227,.916],[-1.95,1.234,.907],[-1.28,1.493,.784],[-.73,1.559,.747],[.045,1.547,.739],[.67,1.104,.864],[.69,1.103,.868]];
- // Continuous roof rails/A and D pillars close the strips between the bowed
- // canopy and the side glazing. Tubes alone leave daylight through the body.
- for(const s of [-1,1])surface(g,m.paint,180,10,(u,v)=>{const z=lerp(-2.04,.69,u);return[s*lerp(station(canopy,z,2),station(glassRail,z,2),v),lerp(station(canopy,z,1),station(glassRail,z,1),v)+.004*Math.sin(v*Math.PI),z];},s>0);
- for(const [a,b,mat,bow,nu,nv]of [[-.06,.69,m.windscreen,.021,64,46],[-1.12,-.06,carbon,.015,64,58]])surface(g,mat,nu,nv,(u,v)=>{const z=lerp(a,b,v),t=u*2-1;return[t*station(canopy,z,2),station(canopy,z,1)+bow*(1-t*t),z];},true);
- const hatch=(u,v,off=0)=>{const z=lerp(-2.04,-1.12,v),t=u*2-1;return[t*station(canopy,z,2),station(canopy,z,1)+.012*(1-t*t)+off,z];};
- surface(g,m.paint,80,40,(u,v)=>hatch(u,v),true,(u,v)=>u>.10&&u<.90&&v>.10&&v<.90);
- surface(g,tint,64,36,(u,v)=>hatch(lerp(.10,.90,u),lerp(.10,.90,v),.002),true);
- for(const u of [.10,.90])curve(g,dark,Array.from({length:41},(_,i)=>hatch(u,lerp(.10,.90,i/40),.003)),.006);
- for(const v of [.10,.90])curve(g,dark,Array.from({length:41},(_,i)=>hatch(lerp(.10,.90,i/40),v,.003)),.006);
- for(let k=0;k<8;k++)curve(g,dark,Array.from({length:25},(_,i)=>hatch(lerp(.12,.88,i/24),.16+k*.087,.003)),.0007);
- curve(g,dark,[hatch(.55,.19,.008),hatch(.43,.27,.013),hatch(.29,.35,.013)],.006);
- surface(g,m.paint,64,36,(u,v)=>{const z=lerp(rear,-2.04,v),t=u*2-1,x=t*(width(z)-.03);return[x,belt(z)+.016*(1-t*t),lerp(rear+.168*(x/.99)**2,-2.04,v)];},true);
- // Cut the distinct hexagonal intakes into a wrapped nose sheet. Carbon
- // reveals and deeply recessed louvres make the painted bridges legible.
- const face=(x,y,d=0)=>[x,y,front-.23*(Math.abs(x)/.99)**2+d];
- const outline=[[-.98,.45],[-.95,.89],[-.84,.991],[-.48,1.003],[0,.950],[.48,1.003],[.84,.991],[.95,.89],[.98,.45],[.83,.291],[.57,.300],[.44,.365],[-.44,.365],[-.57,.300],[-.83,.291]];
- const openings=[[[-.49,.809],[-.40,.852],[.40,.852],[.49,.809],[.43,.718],[-.43,.718]],[[-.43,.633],[-.34,.686],[.34,.686],[.43,.633],[.62,.386],[-.62,.386]],[[-.92,.768],[-.55,.806],[-.47,.668],[-.74,.407],[-.88,.373],[-.95,.479]],[[.92,.768],[.55,.806],[.47,.668],[.74,.407],[.88,.373],[.95,.479]]];
- polygon(g,m.paint,outline.map(p=>face(...p)),2,openings.map(h=>h.map(p=>face(...p))));
- for(const h of openings){const pts=h.map(p=>face(...p)),inner=h.map(([x,y])=>face(x*.98,y,-.065));polygon(g,dark,inner,2);for(let j=0;j<h.length;j++)polygon(g,carbon,[pts[j],pts[(j+1)%h.length],inner[(j+1)%h.length],inner[j]],2);line(g,carbon,[...pts,pts[0]],.008);}
- for(let j=0;j<4;j++)line(g,grille,[face(-.36,.437+j*.059,-.042),face(.36,.437+j*.059,-.042)],.009);
- for(const s of [-1,1])for(let j=0;j<4;j++)line(g,grille,[face(s*.61,.454+j*.072,-.038),face(s*.88,.471+j*.069,-.038)],.006);
- curve(g,carbon,[face(-.97,.305,.005),face(-.81,.251,.019),face(-.57,.265,.034),face(0,.307,.031),face(.57,.265,.034),face(.81,.251,.019),face(.97,.305,.005)],.021);
- polygon(g,m.badge,[face(-.026,.921,.010),face(.026,.921,.010),face(.020,.880,.011),face(0,.866,.011),face(-.020,.880,.011)]);box(g,dark,face(0,.789,.010),[.074,.029,.013],.004);
- // Continuous rear face sits behind the lamp shells and number-plate recess.
- surface(g,m.paint,100,48,(u,v)=>{const y=lerp(.56,1.101,v),x=(u*2-1)*station(tailOutline,y,1);return[x,y,rear+.245*(Math.abs(x)/.99)**2+.065*Math.exp(-((x/.36)**4))*Math.exp(-(((y-.75)/.16)**4))];},true);
- surface(g,carbon,80,28,(u,v)=>{const y=lerp(.275,.57,v),x=(u*2-1)*station(tailOutline,y,1);return[x,y,rear+.245*(Math.abs(x)/.99)**2+.085*(1-v)];},true);
- for(const s of [-1,1]){
-  const lamp=[[s*.43,.928],[s*.48,1.009],[s*.89,1.002],[s*.957,.943],[s*.887,.898],[s*.52,.886]];polygon(g,dark,lamp.map(([x,y])=>face(x,y,.012)),2);
-  const l=([x,y])=>face(s*x,y,.022);curve(g,drl,[[.91,.933],[.83,.918],[.60,.912],[.51,.944]].map(l),.006);line(g,drl,[[.60,.912],[.52,.899]].map(l),.005);
-  for(let j=0;j<3;j++)box(g,m.headlampReflector,face(s*(.64+j*.074),.956,.021),[.044,.021,.015],.005);
-  const tf=(x,y,d=0)=>[s*x,y,rear+.245*(x/.99)**2-d];
-  polygon(g,dark,[[.21,1.042],[.33,1.110],[.89,1.104],[.955,1.026],[.88,.975],[.32,.987]].map(p=>tf(...p,.009)));
-  curve(g,m.red,[[.91,1.063],[.77,1.046],[.54,1.051],[.42,1.082]].map(p=>tf(...p,.019)),.008);line(g,m.red,[[.54,1.051],[.43,1.013]].map(p=>tf(...p,.019)),.006);box(g,m.reverse,tf(.81,.991,.024),[.119,.016,.012],.003);
-  for(const x of [.682,.838]){const tip=mesh(g,new T.CylinderGeometry(.047,.051,.16,40,1,true),m.chrome,[s*x,.393,rear+.081]);tip.rotation.x=Math.PI/2;const inner=mesh(g,new T.CircleGeometry(.040,40),dark,[s*x,.393,rear]);inner.rotation.y=Math.PI;}
-  curve(g,carbon,[[s*.74,1.586,-1.10],[s*.84,1.550,-1.36],[s*.89,1.497,-1.48]],.018);
- }
- const plate=new T.MeshStandardMaterial({color:'#c3c9c8',roughness:.55});
- box(g,dark,[0,.756,rear+.024],[.52,.166,.024],.018);box(g,plate,[0,.752,rear+.008],[.395,.093,.008],.003);
- const plateText=geometryText(g,'TD 2024',.31,.044,dark);plateText.position.set(0,.732,rear+.001);plateText.rotation.y=Math.PI;
- const urusBadge=geometryText(g,'URUS',.15,.027,m.chrome);urusBadge.position.set(-.62,.963,rear+.065);urusBadge.rotation.y=Math.PI;
- for(let i=-2;i<=2;i++)box(g,carbon,[i*.19,.310,rear+.19],[.012,.065,.25],.004);
- surface(g,carbon,64,20,(u,v)=>{const x=(u*2-1)*lerp(.82,.88,v);return[x,1.590-.045*v+.018*Math.sin(v*Math.PI)-.013*(x/.88)**2,lerp(-1.20,-1.47,v)];},true);
- box(g,m.red,[0,1.541,-1.477],[.47,.012,.012],.003);box(g,carbon,[0,.224,-.12],[1.46,.04,2.72]);
+ for(let j=-2;j<=2;j++)box(g,carbon,tail(j*.145,.303,.060),[.010,.094,.265],.002);
+ const marque=geometryText(g,'LAMBORGHINI',.46,.028,m.chrome);marque.position.set(0,1.080,rear-.016);marque.rotation.y=Math.PI;
+ const badge=geometryText(g,'URUS',.143,.025,m.chrome);badge.position.set(-.61,.909,rear+.075);badge.rotation.y=Math.PI;
+ // Roof spoiler is a broad blade, with vertical end fins and a continuous
+ // lower rear lip. The trailing edge follows the sloping hatch silhouette.
+ surface(g,carbon,72,22,(u,v)=>{const x=(u*2-1)*lerp(.763,.855,v);return[x,1.608-.025*v-.012*(x/.855)**2,lerp(-1.20,-1.58,v)];},true);
+ for(const s of [-1,1])polygon(g,carbon,[[s*.758,1.607,-1.20],[s*.855,1.578,-1.58],[s*.872,1.491,-1.65],[s*.799,1.512,-1.39]],0);
+ box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
+ box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon);
- view.root.userData.visualModel={type:'Manufacturer-reference sculpted body and cabin',version:3,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:4,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

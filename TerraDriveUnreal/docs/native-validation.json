@@ -1,6 +1,6 @@
 {
   "date": "2026-10-22",
-  "verifiedAt": "2026-10-22T23:09:20.242Z",
+  "verifiedAt": "2026-10-23T00:19:31.852Z",
   "engine": "5.8.3",
   "configuration": "Windows Development",
   "displayUnits": "imperial",
@@ -14,7 +14,7 @@
     ]
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "61a555f05b4fa2cc71baa12bb854fcd7051a570e6bd7eb56796faf98052709c5",
+  "executableSHA256": "fc9577ae8a4b7eeae89eb174c0e2858558c4f813866cf41d96274bb6bf687cd7",
   "tests": [
     {
       "case": "native world data",
@@ -217,8 +217,8 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 82.391,
-      "speedMS": 22.834,
+      "distanceM": 81.908,
+      "speedMS": 22.787,
       "pass": true
     },
     {
@@ -239,8 +239,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 13.579,
-      "yawDegrees": 92.615,
+      "speedMS": 13.662,
+      "yawDegrees": 93.125,
       "pass": true
     },
     {
@@ -251,7 +251,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.289,
+      "clearanceCM": 510.28,
       "rollDegrees": 0,
       "pass": true
     },
@@ -263,7 +263,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.987,
+      "clearanceCM": 506.993,
       "rollDegrees": 0,
       "pass": true
     },
@@ -275,7 +275,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 639.867,
+      "clearanceCM": 639.852,
       "rollDegrees": 0,
       "pass": true
     },
@@ -287,7 +287,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 613.078,
+      "clearanceCM": 613.297,
       "rollDegrees": 0,
       "pass": true
     },
@@ -299,7 +299,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 528.829,
+      "clearanceCM": 529.766,
       "rollDegrees": 0,
       "pass": true
     },
@@ -311,7 +311,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 673.834,
+      "clearanceCM": 674.094,
       "rollDegrees": 0,
       "pass": true
     },
@@ -323,7 +323,7 @@
     },
     {
       "case": "region 6 camera",
-      "clearanceCM": 515.996,
+      "clearanceCM": 515.997,
       "rollDegrees": 0,
       "pass": true
     },
@@ -335,7 +335,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 473.186,
+      "clearanceCM": 458.79,
       "rollDegrees": 0,
       "pass": true
     },
@@ -346,12 +346,12 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 2.1404,
+      "value": 0.17,
       "pass": true
     },
     {
       "case": "rolled vehicle camera stays above terrain",
-      "value": 521.903,
+      "value": 521.9028,
       "pass": true
     },
     {
@@ -361,17 +361,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 60318.7305,
+      "value": 66633.8672,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 469,
+      "value": 479,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 6600.002,
+      "value": 5254.0645,
       "pass": true
     },
     {
@@ -381,7 +381,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 2.3206,
+      "value": 2.4146,
       "pass": true
     },
     {
@@ -391,7 +391,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 2.5186,
+      "value": 2.5089,
       "pass": true
     },
     {
@@ -436,7 +436,7 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 526.3158,
+      "value": 526.3721,
       "pass": true
     },
     {
@@ -521,7 +521,7 @@
     },
     {
       "case": "engine upgrade changes packaged driving performance",
-      "value": 22.5626,
+      "value": 22.5611,
       "pass": true
     },
     {
@@ -536,7 +536,7 @@
     },
     {
       "case": "lower pressure enlarges the live soil footprint",
-      "value": 1.6072,
+      "value": 1.6032,
       "pass": true
     },
     {
@@ -571,7 +571,7 @@
     },
     {
       "case": "vehicle 0 launches through shared W input",
-      "value": 16.8393,
+      "value": 16.8644,
       "pass": true
     },
     {
@@ -581,7 +581,7 @@
     },
     {
       "case": "vehicle 1 launches through shared W input",
-      "value": 19.8208,
+      "value": 19.8346,
       "pass": true
     },
     {
@@ -591,7 +591,7 @@
     },
     {
       "case": "vehicle 2 launches through shared W input",
-      "value": 9.3108,
+      "value": 9.2999,
       "pass": true
     },
     {
@@ -601,7 +601,7 @@
     },
     {
       "case": "vehicle 3 launches through shared W input",
-      "value": 13.7894,
+      "value": 13.7918,
       "pass": true
     },
     {
@@ -611,17 +611,17 @@
     },
     {
       "case": "vehicle 4 launches through shared W input",
-      "value": 22.7215,
+      "value": 22.7846,
       "pass": true
     },
     {
       "case": "vehicle 4 Space stops and holds against held throttle",
-      "value": 0.0003,
+      "value": 0,
       "pass": true
     },
     {
       "case": "vehicle 5 launches through shared W input",
-      "value": 25.4578,
+      "value": 25.5412,
       "pass": true
     },
     {
@@ -631,27 +631,27 @@
     },
     {
       "case": "W launch before S brake check",
-      "value": 17.122,
+      "value": 17.1312,
       "pass": true
     },
     {
       "case": "held S brakes then selects physical reverse without a release",
-      "value": -12.7433,
+      "value": -12.7327,
       "pass": true
     },
     {
       "case": "S maintains physical reverse drive after reapplication",
-      "value": -20.818,
+      "value": -20.8171,
       "pass": true
     },
     {
       "case": "Space stops and holds while S requests reverse",
-      "value": 0.0003,
+      "value": 0.0008,
       "pass": true
     },
     {
       "case": "Space holds contact speed on a twelve degree incline",
-      "value": 0.0004,
+      "value": 0.0002,
       "pass": true
     },
     {
@@ -1036,12 +1036,12 @@
     },
     {
       "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.0212,
+      "value": 0.0222,
       "pass": true
     },
     {
       "case": "hard dirt actual driven pass compacts contact footprints",
-      "value": 0.9959,
+      "value": 0.9976,
       "pass": true
     },
     {
@@ -1051,27 +1051,27 @@
     },
     {
       "case": "hard dirt driven path advances beyond stationary footprint",
-      "value": 1476.2274,
+      "value": 1485.0671,
       "pass": true
     },
     {
       "case": "hard dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.0136,
+      "value": 0.0138,
       "pass": true
     },
     {
       "case": "mud actual driven pass leaves loaded terrain deformation",
-      "value": 0.2043,
+      "value": 0.2117,
       "pass": true
     },
     {
       "case": "mud actual driven pass compacts contact footprints",
-      "value": 0.9985,
+      "value": 0.9984,
       "pass": true
     },
     {
       "case": "mud actual driven pass pushes up side berms",
-      "value": 0.1404,
+      "value": 0.1595,
       "pass": true
     },
     {
@@ -1081,27 +1081,27 @@
     },
     {
       "case": "mud driven path advances beyond stationary footprint",
-      "value": 1463.4827,
+      "value": 1491.8228,
       "pass": true
     },
     {
       "case": "mud displaced and compacted volumes conserve excavated soil",
-      "value": 3.9443,
+      "value": 3.9015,
       "pass": true
     },
     {
       "case": "snow actual driven pass leaves loaded terrain deformation",
-      "value": 0.4316,
+      "value": 0.4651,
       "pass": true
     },
     {
       "case": "snow actual driven pass compacts contact footprints",
-      "value": 0.9907,
+      "value": 0.99,
       "pass": true
     },
     {
       "case": "snow actual driven pass pushes up side berms",
-      "value": 0.0967,
+      "value": 0.1099,
       "pass": true
     },
     {
@@ -1111,27 +1111,27 @@
     },
     {
       "case": "snow driven path advances beyond stationary footprint",
-      "value": 616.0573,
+      "value": 727.4439,
       "pass": true
     },
     {
       "case": "snow displaced and compacted volumes conserve excavated soil",
-      "value": 1.9155,
+      "value": 2.0337,
       "pass": true
     },
     {
       "case": "wetland actual driven pass leaves loaded terrain deformation",
-      "value": 0.2615,
+      "value": 0.2156,
       "pass": true
     },
     {
       "case": "wetland actual driven pass compacts contact footprints",
-      "value": 0.9967,
+      "value": 0.995,
       "pass": true
     },
     {
       "case": "wetland actual driven pass pushes up side berms",
-      "value": 0.1741,
+      "value": 0.1724,
       "pass": true
     },
     {
@@ -1141,27 +1141,27 @@
     },
     {
       "case": "wetland driven path advances beyond stationary footprint",
-      "value": 1503.1544,
+      "value": 1494.8306,
       "pass": true
     },
     {
       "case": "wetland displaced and compacted volumes conserve excavated soil",
-      "value": 4.2277,
+      "value": 4.1169,
       "pass": true
     },
     {
       "case": "sand actual driven pass leaves loaded terrain deformation",
-      "value": 0.1963,
+      "value": 0.1797,
       "pass": true
     },
     {
       "case": "sand actual driven pass compacts contact footprints",
-      "value": 0.9971,
+      "value": 0.9956,
       "pass": true
     },
     {
       "case": "sand actual driven pass pushes up side berms",
-      "value": 0.1577,
+      "value": 0.1162,
       "pass": true
     },
     {
@@ -1171,27 +1171,27 @@
     },
     {
       "case": "sand driven path advances beyond stationary footprint",
-      "value": 1553.8038,
+      "value": 1497.5187,
       "pass": true
     },
     {
       "case": "sand displaced and compacted volumes conserve excavated soil",
-      "value": 2.3336,
+      "value": 2.3213,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.1652,
+      "value": 0.1521,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass compacts contact footprints",
-      "value": 0.9963,
+      "value": 0.9973,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass pushes up side berms",
-      "value": 0.0954,
+      "value": 0.113,
       "pass": true
     },
     {
@@ -1201,12 +1201,12 @@
     },
     {
       "case": "soft dirt driven path advances beyond stationary footprint",
-      "value": 1477.4911,
+      "value": 1478.7074,
       "pass": true
     },
     {
       "case": "soft dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.3436,
+      "value": 0.3547,
       "pass": true
     },
     {
@@ -1281,12 +1281,17 @@
     },
     {
       "case": "Urus quarry drive stays upright with a controlled trail line",
-      "value": 143.5953,
+      "value": 142.6763,
       "pass": true
     },
     {
       "case": "native quarry drive covers more than 700 feet without teleporting",
       "value": 120,
+      "pass": true
+    },
+    {
+      "case": "Urus cooked body uses Epic automotive paint, carbon and trim instances",
+      "value": 9,
       "pass": true
     },
     {
@@ -1310,6 +1315,16 @@
       "pass": true
     },
     {
+      "case": "Urus body renders in close photo view 4",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "Urus body renders in close photo view 5",
+      "value": 0,
+      "pass": true
+    },
+    {
       "case": "Axlebreaker cooked rock supports banked and compressed tires",
       "value": 0,
       "pass": true
@@ -1326,7 +1341,7 @@
     },
     {
       "case": "vehicle 0 can reverse out of the quarry compression",
-      "value": 14.6797,
+      "value": 14.2626,
       "pass": true
     },
     {
@@ -1341,7 +1356,7 @@
     },
     {
       "case": "vehicle 1 can reverse out of the quarry compression",
-      "value": 31.7098,
+      "value": 30.722,
       "pass": true
     },
     {
@@ -1356,7 +1371,7 @@
     },
     {
       "case": "vehicle 2 can reverse out of the quarry compression",
-      "value": 11.502,
+      "value": 11.3134,
       "pass": true
     },
     {
@@ -1371,7 +1386,7 @@
     },
     {
       "case": "vehicle 3 can reverse out of the quarry compression",
-      "value": 17.8708,
+      "value": 17.7858,
       "pass": true
     },
     {
@@ -1381,12 +1396,12 @@
     },
     {
       "case": "vehicle 4 tires stay above the hard quarry floor",
-      "value": 0.0001,
+      "value": 0.0002,
       "pass": true
     },
     {
       "case": "vehicle 4 can reverse out of the quarry compression",
-      "value": 28.9503,
+      "value": 28.6009,
       "pass": true
     },
     {
@@ -1401,7 +1416,7 @@
     },
     {
       "case": "vehicle 5 can reverse out of the quarry compression",
-      "value": 26.2553,
+      "value": 25.663,
       "pass": true
     }
   ],
@@ -1413,7 +1428,7 @@
       60,
       120
     ],
-    "log": "Saved/ground-core-test.log",
+    "log": "Saved/urus-automotive-core.log",
     "contactRegressionFrameTimesSeconds": [
       0.008333333333333333,
       0.01,
@@ -1504,7 +1519,7 @@
     "tintedMaterials": 15,
     "preservedInstanceColors": true,
     "pass": true,
-    "sourceMaterials": 335,
+    "sourceMaterials": 338,
     "textureAssets": 57,
     "scannedInstances": 13500,
     "fabImportedMeshes": 8,
@@ -1527,36 +1542,8 @@
     "native-urus-hero-1.png",
     "native-urus-hero-2.png",
     "native-urus-hero-3.png",
-    "native-slate-rim-trail.png",
-    "native-urus-quarry-driving.png",
-    "native-model-0-view-0.png",
-    "native-model-0-view-1.png",
-    "native-model-0-view-2.png",
-    "native-model-0-view-3.png",
-    "native-model-1-view-0.png",
-    "native-model-1-view-1.png",
-    "native-model-1-view-2.png",
-    "native-model-1-view-3.png",
-    "native-model-2-view-0.png",
-    "native-model-2-view-1.png",
-    "native-model-2-view-2.png",
-    "native-model-2-view-3.png",
-    "native-model-3-view-0.png",
-    "native-model-3-view-1.png",
-    "native-model-3-view-2.png",
-    "native-model-3-view-3.png",
-    "native-model-4-view-0.png",
-    "native-model-4-view-1.png",
-    "native-model-4-view-2.png",
-    "native-model-4-view-3.png",
-    "native-model-5-view-0.png",
-    "native-model-5-view-1.png",
-    "native-model-5-view-2.png",
-    "native-model-5-view-3.png",
-    "native-driven-snow.png",
-    "native-driven-mud.png",
-    "native-round-loop.png",
-    "native-fab-slate-quarry.png"
+    "native-urus-hero-4.png",
+    "native-urus-hero-5.png"
   ],
   "browser": {
     "referenceFiles": 189,
@@ -1566,16 +1553,16 @@
   "packagedContentSHA256": {
     "global.ucas": "9de4b5cec4b89e8edbe7675cc42f9064fcce79829d4b0794af7b40c9bfc71631",
     "global.utoc": "89e25c926368c8f06557107c344589ed6d84157d2518309963ff7bd18c8e9a89",
-    "TerraDrive-Windows.pak": "77d94789834614e254cf4027dea8b98962eb3e5476d0b8dd1fdeaf017f68025a",
-    "TerraDrive-Windows.ucas": "2e29fd4da3097b6b390aad91e07e0aa00abf30aa965eae0ecff6c32b48a3f1d2",
-    "TerraDrive-Windows.utoc": "fa58e81d86eaf0b67ae021289e570a1097eec2013f14c9509e976a0b722a7369"
+    "TerraDrive-Windows.pak": "38cc937fadfbf3c70fb5b2d7faf32c9604ca2f4ec83f7f4a348b41b5df20f150",
+    "TerraDrive-Windows.ucas": "fa04f79c7d82b32a84b6060a32c39a51147635c27332935dbc7037c376959544",
+    "TerraDrive-Windows.utoc": "b4a4972cdfd57eecb27601b84d2a758e69d8ee6bcbfb45c3fb76b64d8f099783"
   },
   "sourceSHA256": {
     "Source/TerraDrive/TerraContact.h": "eebefcf6e4b07f8602d7dd6d881bb14e50794befb1047befa369a54e17ec00d1",
     "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
     "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
     "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
-    "Source/TerraDrive/TerraGameMode.cpp": "f933a5c628a18540f32d61562ef7a76ac53fc87499e6fdc752a27c67fccba55b",
+    "Source/TerraDrive/TerraGameMode.cpp": "d56b9c25a09ae0e2775e97c6a603448a8c82f397b0a771ff607fb9055635f129",
     "Source/TerraDrive/TerraGameMode.h": "04b497d508bf47ca2a4e908da57f09dce65f1b4cb14a61cbc7766596862b1bb7",
     "Source/TerraDrive/TerraGarage.cpp": "9992957178f45405bb2667fe46a6dd905ee96a468aa6af65feb61990977cd049",
     "Source/TerraDrive/TerraGarage.h": "35e4eaa7188968df3493497dedc68368c28e24d28a9bf32ff7b0de56006c6849",
@@ -1592,14 +1579,15 @@
     "Source/TerraDrive/TerraWorld.h": "0e617334c31c358bb8fe9ae601d6355c4962dd95272167f8a46e3557b6d5137d",
     "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
     "Source/TerraDriveEditor.Target.cs": "57232ee6bc870cca86e6f7bdd83daa4674607633d9d8791c7671481d29edf534",
+    "Tools/automotive-materials.py": "c70bec13be6cead7c492a6f019cbfe4d8c76861ffa441becfe2bb128d12622ea",
     "Tools/body-refinement.mjs": "8da7597ba30633618e4648e657278ea524e27b77add985ed3b69b745cbfd838e",
-    "Tools/body-surface.mjs": "175b83a7784630a20259ccf3b7eba4f3e17aedeb6847aa4d9d02a9146c4ab94a",
+    "Tools/body-surface.mjs": "d47e4c6464e4850acae0d1485658b26275787118dd34c6b93f3f2db0236a4474",
     "Tools/build-native.ps1": "63064b61da5395efbfeb66410df1547d31c4f27d3507a1e42ccd293d68c59b77",
-    "Tools/export-source.mjs": "71abf615e53709f68b74aae153564186c9719c2bed244f575583f80f610b471b",
+    "Tools/export-source.mjs": "5b04cd0557d3261c3b961a086c4b8d0cb6a9eea55b4ec24ebf7ffed3b1648e57",
     "Tools/fab-scenery.json": "7c169313508e3d6b219badd3bd3d014351cffde2fdb7443b5c0525c702c7d895",
     "Tools/fab-scenery.mjs": "13d05263506ca572d3bae045288912203a7e973efe547e49d1d60651f0ae7a4f",
     "Tools/fetch-environment-assets.py": "3048d13230862aaa787c075523c6230c0c044cc8c0605cbe980e68b9a31d1225",
-    "Tools/import-assets.py": "3fdcbebea512b8a0b80e0abc0831069a94c62c64899e28182f94707379bd5486",
+    "Tools/import-assets.py": "156e21dafedee7100b67d14e4c4d757a815bbbe093f6c54c2d9d16cd7cf52519",
     "Tools/import-fab.py": "9b82946fbcf289a4b36be03e814eb2aa5d6506700f0c87cd3ab049980f374cbf",
     "Tools/native-challenge-course.mjs": "54626ee9d34fa0e74ef8ab4d0b8f3b3d4d89f4d3c5674aa8cc2431a073be8a13",
     "Tools/native-models.mjs": "1d5d022821efc17596c96b3fe37d44e181ba22471d91f1ee527e8d1a20986de2",
@@ -1615,23 +1603,23 @@
     "Tools/test-core.cmd": "06f3e8dbde5ccdfa032422eff1fbccc0b777e0ec9a67f61c411333c11e0b72ad",
     "Tools/test-core.cpp": "39525ee42613e691d01a597d42498ff5af6a58669dae478c86748d3bd2f6faed",
     "Tools/tire-mark-materials.py": "9d28390c9c4aea23effbdddfea18411a5a39756ae362be1c643fe27270188617",
-    "Tools/urus-body.mjs": "d2a5e729fbc106082fb758c4e71b6b7a172068c4d7aaee8b5a6bff2151101889",
+    "Tools/urus-body.mjs": "23be5ca6c937d0915f4d83c408506956910b252527d3cfb87d29f074f19712a0",
     "Tools/urus-cabin.mjs": "92dda1394e1e85e04306dc3ebc8605598838ddf673cfd7f5edbb23e17b550a06",
     "Tools/urus-model.mjs": "dc7e9c69574d582c9e8beabcf108d367578b921a9899d32378aa05934986215b",
-    "Tools/validate-export.mjs": "062b2b2131791e0168656ce3e0be705cb220d8bc5d5e6c3bcfdc310b680ede9d",
-    "Tools/vehicle-fidelity.mjs": "437c4744b14b8ba68b85ea2bef477300549f1618434982d0aced30827782c761",
-    "Tools/verify-native.ps1": "36ca9dd5beb9b3c551e932528a4d926988eab20b79e3543573ed33411fc43ef1",
+    "Tools/validate-export.mjs": "f67c67fee7b021c41d4df5ac7b46e0a068e0e8a5b055370758e390e31de4f3a9",
+    "Tools/vehicle-fidelity.mjs": "8a28784579dd1297b54b4887ef1ab451dde98da24db20bd66c8c1dbc81be980e",
+    "Tools/verify-native.ps1": "d78fdd36544a0e7a1299071994674c795fb32ec6794527b2eb3c58dd1f095f38",
     "Config/DefaultEngine.ini": "051c43c515d4d3007bdc7a04c99908ec158d02192e3e33332a747be728a2e967",
-    "Config/DefaultGame.ini": "3b5d9c96fcabf0ab86816f114cdafd3baf902f8056c73cb5edcc14fc8dacdb7c",
+    "Config/DefaultGame.ini": "f39824b22f76eaa48d005c19c25a2eb39a412bf67d572161cb53688ecc7e4ba7",
     "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f"
   },
   "logs": [
-    "Saved/ground-fix-build.log",
-    "Saved/ground-full-test-console.log",
+    "Saved/urus-automotive-build-6.log",
+    "Saved/urus-automotive-hero-5.log",
+    "Saved/urus-automotive-full.log",
     "Saved/Validation/packaged-game.log",
-    "Saved/ground-core-test.log",
-    "Saved/Validation/ground-contact.log",
-    "Saved/hero-quarry-build-8-console.log"
+    "Saved/urus-automotive-core.log",
+    "Saved/urus-automotive-export-check-5.log"
   ],
   "limits": [
     "Vehicle bodies and cabin are authored manufacturer-reference approximations, not OEM CAD/scans or certified Forza-equivalent models.",
@@ -1649,87 +1637,87 @@
     "soilCases": [
       {
         "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-        "value": 0.0212,
+        "value": 0.0222,
         "pass": true
       },
       {
         "case": "hard dirt actual driven pass compacts contact footprints",
-        "value": 0.9959,
+        "value": 0.9976,
         "pass": true
       },
       {
         "case": "mud actual driven pass leaves loaded terrain deformation",
-        "value": 0.2043,
+        "value": 0.2117,
         "pass": true
       },
       {
         "case": "mud actual driven pass compacts contact footprints",
-        "value": 0.9985,
+        "value": 0.9984,
         "pass": true
       },
       {
         "case": "mud actual driven pass pushes up side berms",
-        "value": 0.1404,
+        "value": 0.1595,
         "pass": true
       },
       {
         "case": "snow actual driven pass leaves loaded terrain deformation",
-        "value": 0.4316,
+        "value": 0.4651,
         "pass": true
       },
       {
         "case": "snow actual driven pass compacts contact footprints",
-        "value": 0.9907,
+        "value": 0.99,
         "pass": true
       },
       {
         "case": "snow actual driven pass pushes up side berms",
-        "value": 0.0967,
+        "value": 0.1099,
         "pass": true
       },
       {
         "case": "wetland actual driven pass leaves loaded terrain deformation",
-        "value": 0.2615,
+        "value": 0.2156,
         "pass": true
       },
       {
         "case": "wetland actual driven pass compacts contact footprints",
-        "value": 0.9967,
+        "value": 0.995,
         "pass": true
       },
       {
         "case": "wetland actual driven pass pushes up side berms",
-        "value": 0.1741,
+        "value": 0.1724,
         "pass": true
       },
       {
         "case": "sand actual driven pass leaves loaded terrain deformation",
-        "value": 0.1963,
+        "value": 0.1797,
         "pass": true
       },
       {
         "case": "sand actual driven pass compacts contact footprints",
-        "value": 0.9971,
+        "value": 0.9956,
         "pass": true
       },
       {
         "case": "sand actual driven pass pushes up side berms",
-        "value": 0.1577,
+        "value": 0.1162,
         "pass": true
       },
       {
         "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-        "value": 0.1652,
+        "value": 0.1521,
         "pass": true
       },
       {
         "case": "soft dirt actual driven pass compacts contact footprints",
-        "value": 0.9963,
+        "value": 0.9973,
         "pass": true
       },
       {
         "case": "soft dirt actual driven pass pushes up side berms",
-        "value": 0.0954,
+        "value": 0.113,
         "pass": true
       }
     ],
@@ -1742,22 +1730,23 @@
   },
   "bodyShapes": {
     "urus": {
-      "type": "Manufacturer-reference sculpted body and cabin",
-      "version": 3,
+      "type": "Reference-built continuous coachwork and cabin",
+      "version": 4,
       "importedManufacturerCAD": false,
       "landmarks": {
         "length": 5.137,
         "width": 2.026,
+        "widthWithMirrors": 2.181,
         "height": 1.618,
         "wheelbase": 3.006,
         "roofFrontZ": -0.06,
         "roofRearZ": -1.12,
-        "cowlZ": 0.69,
+        "cowlZ": 0.72,
         "frontZ": 2.5685,
         "rearZ": -2.5685,
-        "beltFrontY": 1.074,
-        "beltRearY": 1.205,
-        "archRadius": 0.438
+        "beltFrontY": 1.102,
+        "beltRearY": 1.248,
+        "archRadius": 0.448
       }
     },
     "otherVehicles": [
@@ -3004,12 +2993,15 @@
     "collisionFallback": "Full source resolution"
   },
   "renderedInspectionContext": {
-    "previousArtRoundExecutableSHA256": "70417e36ee6d0ba70642ba17631637394b4fd6dc5d9657a968023a248915aa77",
-    "note": "The prior 34-image art review remains historical evidence. This physics-only round additionally inspected the HUMMER floor-rest and Wrangler locked-ledge captures.",
     "currentRound": {
-      "native-ground-contact-4.png": "4f5fa50e779fc963b4be60f029635becbedad67b470ac13bcadd918ab5f5fdb8",
-      "native-locked-climb.png": "8d5d0f51496acfb7491fd284dba504202b2b268d1dd093c3e9ad041f6e81f5ea"
-    }
+      "native-urus-hero-0.png": "0ae28f71a249684e179ea5b67731abc922bbd4436f94eb8b873b80016d7d9d60",
+      "native-urus-hero-1.png": "70cd3341816feb765619dd4a6fb0384ba5e655da19ba7999c42216e50bb7bfeb",
+      "native-urus-hero-2.png": "9eafadb214fef2bf61e9ece8ce2ac0d4d3e87f26becbb4b366aa2b0c7971e2a4",
+      "native-urus-hero-3.png": "70b2123b206d9115f68a6f7f642d421c54cc6c473ef86b8145388abc98dc4eb9",
+      "native-urus-hero-4.png": "3fa843d46e5440eaf8280251a213451c9c83272f066093ca7e7b1732f56890d3",
+      "native-urus-hero-5.png": "3161caee110e82661b667c47c4f2a05a2d51305b3b4902bbe1a052e26ea668ca"
+    },
+    "note": "Six actual native views compared against manufacturer brochure, manufacturer photographs and dealer exterior details. Four previews were corrected before accepting the fifth. Authored reconstruction, not OEM CAD or Forza-equivalent art."
   },
   "groundContact": {
     "beforeMissingContacts": 84,
@@ -3021,6 +3013,214 @@
     "fullExitCode": 0,
     "report": "Saved/Validation/ground-contact.json",
     "log": "Saved/Validation/ground-contact.log",
-    "scope": "Cooked Axlebreaker ledge contact grid; all six vehicles settle and reverse out of a tilted compression on the flat quarry approach. Not full Axlebreaker traversal."
+    "scope": "Cooked Axlebreaker ledge contact grid; all six vehicles settle and reverse out of a tilted compression on the flat quarry approach. Not full Axlebreaker traversal.",
+    "focusedHistorical": true,
+    "focusedExecutableSHA256": "61a555f05b4fa2cc71baa12bb854fcd7051a570e6bd7eb56796faf98052709c5",
+    "note": "The focused 20-FPS run is from the preceding ground correction; all ground cases also pass in this current full suite."
+  },
+  "automotive": {
+    "publisher": "Epic Games",
+    "pack": "Automotive Materials",
+    "bindings": [
+      {
+        "slot": "M_152",
+        "role": "paint",
+        "instance": "/Game/Materials/Automotive/MI_Urus_paint_M_152",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/CarPaint/MI_CarPaint_White",
+        "switches": {
+          "UsePearl": false,
+          "InvertGradient": false,
+          "UseOrangePeel": true,
+          "UseChameleon": false,
+          "UseFlakes": false,
+          "Use Object UVs": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false
+        }
+      },
+      {
+        "slot": "M_153",
+        "role": "carbon",
+        "instance": "/Game/Materials/Automotive/MI_Urus_carbon_M_153",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/CarbonFiber/MI_CarbonFiber",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": false,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Clear Coat": true,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false,
+          "AnisoAngle Map": false,
+          "Use Anisotropy": false
+        }
+      },
+      {
+        "slot": "M_154",
+        "role": "rubber",
+        "instance": "/Game/Materials/Automotive/MI_Urus_rubber_M_154",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Rubber/MI_Rubber_Rough",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": false,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Clear Coat": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false,
+          "AnisoAngle Map": false,
+          "Use Anisotropy": false
+        }
+      },
+      {
+        "slot": "M_155",
+        "role": "black",
+        "instance": "/Game/Materials/Automotive/MI_Urus_black_M_155",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Plastic/MI_Plastic_Glossy",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": false,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Clear Coat": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false,
+          "AnisoAngle Map": false,
+          "Use Anisotropy": false
+        }
+      },
+      {
+        "slot": "M_157",
+        "role": "metal",
+        "instance": "/Game/Materials/Automotive/MI_Urus_metal_M_157",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Metal/MI_Metal_Chrome_01",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": true,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Clear Coat": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false,
+          "AnisoAngle Map": false,
+          "Use Anisotropy": false
+        }
+      },
+      {
+        "slot": "M_160",
+        "role": "metal",
+        "instance": "/Game/Materials/Automotive/MI_Urus_metal_M_160",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Metal/MI_Metal_Chrome_01",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": true,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Clear Coat": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false,
+          "AnisoAngle Map": false,
+          "Use Anisotropy": false
+        }
+      },
+      {
+        "slot": "M_165",
+        "role": "metal",
+        "instance": "/Game/Materials/Automotive/MI_Urus_metal_M_165",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Metal/MI_Metal_Chrome_01",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": true,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Clear Coat": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false,
+          "AnisoAngle Map": false,
+          "Use Anisotropy": false
+        }
+      },
+      {
+        "slot": "M_168",
+        "role": "plastic",
+        "instance": "/Game/Materials/Automotive/MI_Urus_plastic_M_168",
+        "parent": "/Game/AutomotiveMaterials/Materials/Interior/Plastic/MI_Plastic_SmallGrain_black",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": false,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Clear Coat": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false,
+          "AnisoAngle Map": false,
+          "Use Anisotropy": false
+        }
+      },
+      {
+        "slot": "M_171",
+        "role": "alcantara",
+        "instance": "/Game/Materials/Automotive/MI_Urus_alcantara_M_171",
+        "parent": "/Game/AutomotiveMaterials/Materials/Interior/Leather/MI_Suede_Grey",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Use Object UVs": false,
+          "Use Tint": true,
+          "Use Perforation": false,
+          "Add Wear": false,
+          "Is Leather": false,
+          "UseVariation": false
+        }
+      },
+      {
+        "slot": "M_176",
+        "role": "wheel",
+        "instance": "/Game/Materials/Automotive/MI_Urus_wheel_M_176",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/CarPaint/MI_CarPaint_Black",
+        "switches": {
+          "UsePearl": false,
+          "InvertGradient": false,
+          "UseOrangePeel": true,
+          "UseChameleon": false,
+          "UseFlakes": false,
+          "Use Object UVs": false,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false
+        }
+      },
+      {
+        "slot": "M_177",
+        "role": "rotor",
+        "instance": "/Game/Materials/Automotive/MI_Urus_rotor_M_177",
+        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/BrakeRotor/MI_BrakeRotor_Carbon_Ceramic",
+        "switches": {
+          "Enable Raytracing Optims": false,
+          "Is Metallic": true,
+          "Use Object UVs": true,
+          "Use Tint": true,
+          "Add Cracks": true,
+          "Add Dust": false,
+          "Add Fingerprints": false,
+          "Add Stains": false
+        }
+      }
+    ],
+    "packVersion": "5.7",
+    "engine": "5.8.3",
+    "rawAssetsPublished": false,
+    "originalParentsPreserved": true,
+    "localChildInstances": true,
+    "focusedChecks": 7,
+    "focusedProcessExit": 0,
+    "fullProcessExit": 0
   }
 }

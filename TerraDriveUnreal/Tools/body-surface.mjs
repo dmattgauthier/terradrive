@@ -23,6 +23,27 @@ export function polygon(g,m,pts,axis=2,holes=[]){
  const vertices=[pts,...holes].flat(1);geo.setAttribute('position',new T.Float32BufferAttribute(vertices.flat(),3));
  geo.setAttribute('uv',new T.Float32BufferAttribute(vertices.flatMap(p=>[p[dims[0]],p[dims[1]]]),2));geo.setIndex(ix);geo.computeVertexNormals();return mesh(g,geo,m);
 }
+// Triangulate in parameter space, then subdivide and project each triangle.
+// A single polygon chord cuts through a curved panel between its corners.
+export function mappedPolygon(g,m,contour,map,holes=[],flip=false,steps=10){
+ const points=[contour,...holes].flat(1),v2=p=>new T.Vector2(...p);
+ const triangles=T.ShapeUtils.triangulateShape(contour.map(v2),holes.map(h=>h.map(v2)));
+ const p=[],norm=[],uv=[],ix=[];
+ for(const triangle of triangles){
+  const [a,b,c]=triangle.map(i=>points[i]),ids=[];
+  for(let i=0;i<=steps;i++){ids[i]=[];for(let j=0;j<=steps-i;j++){
+   const q=a.map((v,k)=>v+(b[k]-v)*i/steps+(c[k]-v)*j/steps),v=map(...q);
+   const h=.0001,du=new T.Vector3(...map(q[0]+h,q[1])).sub(new T.Vector3(...map(q[0]-h,q[1]))),dv=new T.Vector3(...map(q[0],q[1]+h)).sub(new T.Vector3(...map(q[0],q[1]-h)));
+   const n=du.cross(dv).normalize().multiplyScalar(flip?-1:1);ids[i][j]=p.length/3;p.push(...v);norm.push(...n.toArray());uv.push(...q);
+  }}
+  const emit=(a,b,c)=>ix.push(...(flip?[a,c,b]:[a,b,c]));
+  for(let i=0;i<steps;i++)for(let j=0;j<steps-i;j++){
+   emit(ids[i][j],ids[i+1][j],ids[i][j+1]);
+   if(j<steps-i-1)emit(ids[i+1][j],ids[i+1][j+1],ids[i][j+1]);
+  }
+ }
+ const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(p,3));geo.setAttribute('normal',new T.Float32BufferAttribute(norm,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(ix);return mesh(g,geo,m);
+}
 export function line(g,m,pts,r=.003){const path=new T.CurvePath();for(let i=1;i<pts.length;i++)path.add(new T.LineCurve3(new T.Vector3(...pts[i-1]),new T.Vector3(...pts[i])));return mesh(g,new T.TubeGeometry(path,Math.max(8,pts.length*3),r,8,false),m);}
 export function curve(g,m,pts,r=.003){return mesh(g,new T.TubeGeometry(new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(...p)),false,'centripetal'),Math.max(48,pts.length*12),r,8,false),m);}
 export function station(rows,z,k){

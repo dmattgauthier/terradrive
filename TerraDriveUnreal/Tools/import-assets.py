@@ -189,6 +189,7 @@ exec(compile(open(os.path.join(root,'Tools','sky-material.py'),encoding='utf8').
 exec(compile(open(os.path.join(root,'Tools','tire-mark-materials.py'),encoding='utf8').read(),'tire-mark-materials.py','exec'),globals())
 material('Native_SuspensionSteel',[.035,.05,.055],.48,.72)
 material('Native_Chrome',[.45,.53,.57],.25,.88)
+exec(compile(open(os.path.join(root,'Tools','automotive-materials.py'),encoding='utf8').read(),'automotive-materials.py','exec'),globals())
 
 for i, asset in enumerate(data['assets']):
     dest = '/Game/Meshes/' + asset['name']

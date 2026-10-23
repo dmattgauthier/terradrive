@@ -1,5 +1,7 @@
 # Vehicle art: moving beyond procedural approximations
 
+Update, October 22 evening: Epic Automotive Materials has now been acquired, installed and integrated into the Urus. A substantial body reconstruction and repeated native photo-reference reviews are recorded in [urus-automotive.md](urus-automotive.md). The professional mesh, topology, UV and detail-production steps below remain relevant to closing the remaining quality gap.
+
 Research and proposed production plan: October 22, 2026. This is a quality plan, not a claim that the existing six vehicles meet it. The browser version remains preserved.
 
 ## What is limiting the current result
@@ -27,7 +29,7 @@ Finish one vehicle to an agreed visual standard before repeating the process acr
 | --- | --- | --- |
 | [ZIFIR Urus Performante 2023](https://zifir3d.com/product/lamborghini-urus-performante-2023) | Publisher lists $59, FBX/OBJ/MAX/3DS and Blender on request, 312,189 polygons, textured materials and mixed UV unwrapping; its description mentions games, while supplied shaders are V-Ray/Corona. | Candidate for inspection, not an approved purchase or verified game-ready asset. Confirm exact trim, mesh provenance, interior/parts, game-use rights and source-file redistribution terms. Expect material conversion, topology review, LOD work and rig adaptation. |
 | [Render Rides Urus on Fab](https://www.fab.com/listings/f9b73984-d8c7-42e9-89f7-75cc85b29714) | Publisher describes a rigged Urus and lists 500,605 polygons with FBX/OBJ/Blender. | Not demonstrated to be the original Performante. Price and license tier were not exposed by the page read. Do not substitute it merely because it is called Urus. |
-| Epic Automotive Materials | Official free Fab listing and UE documentation. | Good material reference and possible integration source; separate from acquiring the correct vehicle mesh. |
+| Epic Automotive Materials | Official free Fab listing and UE documentation. | Now integrated locally into 11 Urus material slots; the source repository contains the repeatable integration recipe. The pack contains automotive finishes, not a Urus mesh. |
 
 No paid vehicle asset was purchased or imported during this investigation. No freely downloadable exact-trim Urus was verified to satisfy both this visual standard and the project's distribution requirements. Store claims are not independently verified mesh quality.
 
