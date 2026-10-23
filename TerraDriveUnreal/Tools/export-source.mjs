@@ -6,9 +6,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {Terrain} from './native-terrain.mjs';
-import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {VEHICLES} from './native-vehicles.mjs';
-import {urusView} from './urus-body.mjs';
+import {nativeVehicle,vehicleFinishes} from './vehicle-realism.mjs';
 import {bodyRefinement} from './body-refinement.mjs';
 import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
@@ -26,7 +25,7 @@ const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeDa
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
 globalThis.document={createElement(){return {width:0,height:0,getContext:()=>({fillRect(){},fillText(){},putImageData(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})})}}};
 const mats=[],matIds=new Map(),assets=[],tints=new Map();
-function matId(m){if(matIds.has(m.uuid))return matIds.get(m.uuid);const id='M_'+String(mats.length).padStart(3,'0');matIds.set(m.uuid,id);mats.push({id,color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors,diffuse:m.map?.userData?.source||null,alpha:m.alphaMap?.userData?.source||null,alphaTest:m.alphaTest||0,clearcoat:m.clearcoat||0,coatRoughness:m.clearcoatRoughness??.15,emissive:m.emissive?.toArray().map(v=>v*(m.emissiveIntensity??1))||[0,0,0],role:m.userData.nativeRole||'',automotive:m.userData.automotive||'',normal:m.normalMap?.userData?.source||null,roughMap:m.roughnessMap?.userData?.source||null});return id;}
+function matId(m){if(matIds.has(m.uuid))return matIds.get(m.uuid);const id='M_'+String(mats.length).padStart(3,'0');matIds.set(m.uuid,id);mats.push({id,color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors,diffuse:m.map?.userData?.source||null,alpha:m.alphaMap?.userData?.source||null,alphaTest:m.alphaTest||0,clearcoat:m.clearcoat||0,coatRoughness:m.clearcoatRoughness??.15,emissive:m.emissive?.toArray().map(v=>v*(m.emissiveIntensity??1))||[0,0,0],role:m.userData.nativeRole||'',automotive:m.userData.automotive||'',automotiveOwner:m.userData.automotiveOwner||'',normal:m.normalMap?.userData?.source||null,roughMap:m.roughnessMap?.userData?.source||null});return id;}
 function exportObj(name,group,excludeCanvas=false){
  group.updateMatrixWorld(true);let lines=['# Converted directly from Terra Drive 1.15 source. Metres baked to Unreal centimetres.'],offset=1,slots=[];
  group.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;const n=obj.isInstancedMesh?obj.count:1;
@@ -90,7 +89,7 @@ for(let row=940;row<=1400;row++)for(let col=50;col<=520;col++){
  field.writeFloatLE(terrain.heightAt(-uy,ux),16+(row*n+col)*9);
 }
 fs.writeFileSync(path.join(data,'terrain.bin'),field);
-const vehicles=[];for(const spec of VEHICLES){const view=spec.bodyStyle==='urus'?urusView(spec):new VehicleView(new THREE.Scene(),spec);bodyRefinement(view,spec);const parts=refineVehicle(view,spec);const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix,lamps:assets.find(a=>a.name===prefix+'_body').slots.filter(id=>['brake','reverse'].includes(mats.find(m=>m.id===id).role)).map(id=>({material:id,role:mats.find(m=>m.id===id).role})),nativeModel:{...view.root.userData.nativeFidelity,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?view.root.userData.visualModel:view.root.userData.bodyRefinement}});view.dispose();console.log('Vehicle exported',spec.name);}
+const vehicles=[];for(const spec of VEHICLES){const view=nativeVehicle(spec);bodyRefinement(view,spec);vehicleFinishes(view,spec);const parts=refineVehicle(view,spec);const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix,lamps:assets.find(a=>a.name===prefix+'_body').slots.filter(id=>['brake','reverse'].includes(mats.find(m=>m.id===id).role)).map(id=>({material:id,role:mats.find(m=>m.id===id).role})),nativeModel:{...view.root.userData.nativeFidelity,construction:view.root.userData.nativeConstruction,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?view.root.userData.visualModel:view.root.userData.bodyRefinement}});view.dispose();console.log('Vehicle exported',spec.name);}
 // Export the actual shared scenery geometry and original placements.
 const world=Object.create(OffroadWorld.prototype);Object.assign(world,{terrain,scene:new THREE.Scene(),groundMeshes:new Map(),spec:VEHICLES[0],clock:0,_textureLoader:{load(url){return new THREE.Texture();}}});
 terrain.obstacles=[];world._createVegetation();world._createLandmarks();world.scene.updateMatrixWorld(true);
@@ -133,10 +132,11 @@ for(const g of [...placements,...environment.placements])if(g.instances.some(i=>
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
 for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);m.instanceTint=tinted.has(m.id);}
 const manifest={version:'1.15.0',nativeRevision:'body-circle-fab-2',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base,fabScenery:fabScenery(root,terrain,routes,quarry.base),loopFrames:Array.from({length:25},(_,i)=>{const f=challengeLoopFrame(i*Math.PI*2/24),p=f.point,n=f.normal,t=f.tangent;return {p:[p.z*100,-p.x*100,p.y*100],n:[n.z,-n.x,n.y],t:[t.z,-t.x,t.y]};})};
-manifest.nativeRevision='urus-automotive-4';
+manifest.nativeRevision='realism-terrain-5';
 manifest.terrainGrade=terrain.gradeVersion;
 manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,assetCounts:trail.assetCounts,routeIndex:8};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));
 console.log('Export complete:',assets.length,'meshes,',placements.length,'instance groups,',trees.length,'trees');
+

@@ -19,7 +19,7 @@ export function urusView(spec){
  finish(m.paint,'paint');finish(m.chrome,'metal');finish(m.interior,'plastic');finish(m.upholstery,'alcantara');
  m.paint.color.set('#f0c800');m.paint.metalness=0;m.paint.roughness=.22;m.paint.clearcoat=1;
  for(const mat of [m.glass,m.windscreen,m.privacyGlass]){mat.color.set('#172329');mat.opacity=mat===m.privacyGlass?.91:.64;mat.roughness=.10;}
- m.interior.color.set('#141618');m.upholstery.color.set('#17191c');
+ m.interior.color.set('#141618');m.upholstery.color.set('#17191c');m.headliner.color.set('#16191c');
  const front=2.5685,rear=-2.5685,wy=spec.tireRadius,arch=.448,axles=[-1.503,1.503];
  const gauss=(x,c,w)=>Math.exp(-(((x-c)/w)**2));
  // Width, upper edge and shoulder are independent stations. The waist is
@@ -29,9 +29,9 @@ export function urusView(spec){
  const low=z=>Math.max(.27+.26*(1-smooth(z,-2.48,-2.05)),...axles.map(a=>Math.abs(z-a)<arch?wy+Math.sqrt(arch*arch-(z-a)**2):.27));
  const skinX=(y,z)=>{
   const h=belt(z),shoulder=h-.115,doors=smooth(z,-1.14,-.80)*(1-smooth(z,.70,1.01));
-  const section=[[.24,.865],[.34,.914],[.45,.925],[.58,.886],[.73,.912],[shoulder-.055,.983],[shoulder,1],[h,.951]];
+  const section=[[.24,.895],[.34,.940],[.45,.963],[.58,.956],[.73,.972],[shoulder-.055,.995],[shoulder,1],[h,.951]];
   const sorted=section.filter((p,i)=>i<5||p[0]>.74);
-  return width(z)*station(sorted,y,1)-.022*doors*gauss(y,.57-.045*z,.105)+.008*gauss(z,-1.55,.55)*gauss(y,.91,.20);
+  return width(z)*station(sorted,y,1)-.008*doors*gauss(y,.57-.045*z,.105)+.008*gauss(z,-1.55,.55)*gauss(y,.91,.20);
  };
  const sidePoint=(s,z,y,offset=0)=>{
   const f=smooth(z,2.05,2.48),r=1-smooth(z,-2.48,-2.05);
@@ -98,6 +98,9 @@ export function urusView(spec){
  for(const s of [-1,1]){
   const silhouette=[...Array.from({length:100},(_,i)=>{const z=lerp(.72,-2.20,i/99);return[z,station(roof,z,1)];}),...Array.from({length:100},(_,i)=>{const z=lerp(-2.20,.72,i/99);return[z,belt(z)];})];
   mappedPolygon(g,m.paint,silhouette,(z,y)=>canopyPoint(s,z,y),sideGlass,s>0,16);
+  // The inside of a pillar is trimmed, not the exterior body color. Keep
+  // genuine window apertures and place the liner behind the exterior shell.
+  mappedPolygon(g,m.interior,silhouette,(z,y)=>canopyPoint(s,z,y,-.014),sideGlass,s<0,16);
   for(const [i,contour]of sideGlass.entries()){
    const glass=inset(contour,.945),map=([z,y],off=0)=>canopyPoint(s,z,y,off);
    mappedPolygon(g,black,contour,(z,y)=>map([z,y],.002),[glass],s>0,12);
@@ -118,6 +121,7 @@ export function urusView(spec){
  }
  const canopy=(u,z,off=0)=>{const t=u*2-1;return[t*station(roof,z,2),station(roof,z,1)+.009*(1-t*t)+off,z];};
  surface(g,carbon,72,76,(u,v)=>canopy(u,lerp(-1.13,-.06,v)),true);
+ surface(g,m.headliner,64,64,(u,v)=>{const p=canopy(lerp(.025,.975,u),lerp(-1.13,-.06,v));p[1]-=.016;return p;});
  // Windshield lies within a black ceramic perimeter, with two physical wipers.
  surface(g,black,72,48,(u,v)=>canopy(u,lerp(-.06,.72,v)),true);
  surface(g,m.windscreen,72,48,(u,v)=>canopy(lerp(.025,.975,u),lerp(-.035,.695,v),.0025),true);
@@ -162,8 +166,8 @@ export function urusView(spec){
   mappedPolygon(g,black,outline,(x,y)=>face(s*x,y,.009),[],s<0,12);
   const light=([x,y])=>face(s*x,y,.017);
   // Lamborghini Y light guide, individual projector lenses and dark surround.
-  line(g,drl,[[.910,.960],[.822,.942],[.613,.943],[.517,.981]].map(light),.0045);
-  line(g,drl,[[.613,.943],[.526,.933]].map(light),.0045);
+  line(g,drl,[[.515,.943],[.806,.945],[.892,.978]].map(light),.0045);
+  line(g,drl,[[.806,.945],[.914,.939]].map(light),.0045);
   for(let j=0;j<3;j++){const p=face(s*(.644+j*.076),.981,.015);box(g,grille,p,[.053,.026,.010],.004);box(g,m.headlampReflector,[p[0],p[1],p[2]+.007],[.032,.016,.007],.003);}
   // Long air curtain wraps around the outside of each side intake.
   mappedPolygon(g,carbon,[[.941,.818],[.987,.764],[.994,.441],[.921,.315],[.902,.374],[.953,.504]],(x,y)=>face(s*x,y,.006),[],s<0,12);
@@ -186,8 +190,8 @@ export function urusView(spec){
   const outline=[[.245,1.095],[.345,1.150],[.870,1.142],[.948,1.083],[.870,1.028],[.335,1.039]];
   mappedPolygon(g,black,outline,(x,y)=>tail(s*x,y,-.010),[],s>0,12);
   const light=([x,y])=>tail(s*x,y,-.020);
-  line(g,m.red,[[.908,1.095],[.791,1.073],[.529,1.082],[.420,1.120]].map(light),.006);
-  line(g,m.red,[[.529,1.082],[.428,1.050]].map(light),.005);
+  line(g,m.red,[[.420,1.082],[.780,1.080],[.908,1.113]].map(light),.006);
+  line(g,m.red,[[.780,1.080],[.908,1.050]].map(light),.005);
   box(g,m.reverse,tail(s*.814,1.045,-.021),[.107,.012,.009],.002);
   // Reflectors and parking sensors belong to the bumper, not the tail lamps.
   box(g,m.red,tail(s*.792,.577,-.011),[.175,.019,.009],.003);
@@ -208,5 +212,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon);
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:4,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:5,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

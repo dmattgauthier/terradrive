@@ -3,6 +3,16 @@
   "publisher": "Quixel Megascans",
   "cacheFolder": "African_Slate_Quarry-578d0ceb/fbx/mid/south_african_slate_quar_extracted",
   "license": "Fab Standard License; acquired through the player's Epic library. Raw files excluded from public source.",
+  "unrealAssets": [
+    {"id":"Winter_Rock01","kind":"boulder","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Rock_Assembly_01/SM_Rock_Assembly_01"},
+    {"id":"Winter_Rock02","kind":"rubble","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Rock_Assembly_02/SM_Rock_Assembly_02"},
+    {"id":"Winter_Cliff02","kind":"outcrop","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Quarry_Cliff_02/SM_Quarry_Cliff_02"},
+    {"id":"Winter_Ice01","kind":"outcrop","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Ice_Cliff_01/SM_Ice_Cliff_01"},
+    {"id":"Winter_Ice02","kind":"outcrop","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Ice_Cliff_02/SM_Ice_Cliff_02"},
+    {"id":"MW_GrassA","kind":"grass","solid":false,"source":"/Game/MWLandscapeAutoMaterial/Meshes/Plants/SM_MWAM_GrassA"},
+    {"id":"MW_GrassB","kind":"grass","solid":false,"source":"/Game/MWLandscapeAutoMaterial/Meshes/Plants/SM_MWAM_GrassB"},
+    {"id":"MW_GrassC","kind":"grass","solid":false,"source":"/Game/MWLandscapeAutoMaterial/Meshes/Plants/SM_MWAM_GrassC"}
+  ],
   "assets": [
     {"id":"xcghcfe","kind":"outcrop","scale":1},
     {"id":"xckjagi","kind":"outcrop","scale":1},

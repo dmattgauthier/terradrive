@@ -21,9 +21,27 @@ def terrain_map(stem, kind):
         lib.save_loaded_asset(texture)
     return texture
 
-def terrain_material(name, stems, biome, wetness):
+def acquired_map(path):
+    if not lib.does_asset_exist(path):
+        raise RuntimeError('Add the acquired terrain pack to this project: '+path)
+    return lib.load_asset(path)
+
+mw='/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_'
+winter='/Game/AutomotiveWinterScene/Megascans/Surfaces/'
+def source_layer(stem):
+    return {'maps':[terrain_map(stem,k) for k in ['diff','nor_gl','rough']], 'normalY':-1.,'roughG':0.}
+def mw_layer(name, rough_stem):
+    # MW supplies BC5 normals and color; retain a photographic soil roughness map.
+    return {'maps':[acquired_map(mw+name+'_col'),acquired_map(mw+name+'_nrm'),terrain_map(rough_stem,'rough')],'normalY':1.,'roughG':0.}
+def winter_layer(folder, prefix, packed):
+    return {'maps':[acquired_map(winter+folder+'/'+prefix+'_'+k) for k in ['BC','N',packed]],'normalY':1.,'roughG':1.}
+
+terrain_bindings=[]
+def terrain_material(name, layers, biome, wetness, scales):
     dest = '/Game/Materials/' + name
-    signature = hashlib.sha256((terrain_code+repr((stems,biome,wetness,3))).encode()).hexdigest()
+    paths=[[t.get_path_name() for t in layer['maps']] for layer in layers]
+    terrain_bindings.append({'material':dest,'textures':paths,'scalesM':scales})
+    signature = hashlib.sha256((terrain_code+repr((paths,biome,wetness,scales,5))).encode()).hexdigest()
     m = lib.load_asset(dest) if lib.does_asset_exist(dest) else tools.create_asset(
         name, '/Game/Materials', unreal.Material, unreal.MaterialFactoryNew())
     if lib.get_metadata_tag(m, 'TerraTerrainSignature') == signature:
@@ -37,7 +55,7 @@ def terrain_material(name, stems, biome, wetness):
     custom.set_editor_property('code', terrain_code)
     custom.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     inputs = []
-    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','Biome','Wetness','Wear','LooseSoil']:
+    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','SecondaryRough','AccentRough','NormalSigns','RoughChannels','Scales','Biome','Wetness','Wear','LooseSoil']:
         item = unreal.CustomInput()
         item.set_editor_property('input_name', name)
         inputs.append(item)
@@ -57,14 +75,18 @@ def terrain_material(name, stems, biome, wetness):
     wear=edit.create_material_expression(m,unreal.MaterialExpressionVertexColor,-600,-80)
     edit.connect_material_expressions(wear,'R',custom,'Wear')
     edit.connect_material_expressions(wear,'G',custom,'LooseSoil')
-    maps = [(stems[0],'diff','Primary'),(stems[1],'diff','Secondary'),
-            (stems[2],'diff','Accent'),(stems[0],'nor_gl','NormalMap'),(stems[1],'nor_gl','SecondaryNormal'),(stems[2],'nor_gl','AccentNormal'),(stems[0],'rough','RoughMap')]
-    for i, (stem,kind,pin) in enumerate(maps):
+    maps = [(layer['maps'][kind],kind,pin) for layer,pins in zip(layers,[['Primary','NormalMap','RoughMap'],['Secondary','SecondaryNormal','SecondaryRough'],['Accent','AccentNormal','AccentRough']]) for kind,pin in enumerate(pins)]
+    for i, (texture,kind,pin) in enumerate(maps):
         obj = edit.create_material_expression(m, unreal.MaterialExpressionTextureObject,-600,i*140)
-        obj.set_editor_property('texture', terrain_map(stem,kind))
-        if kind != 'diff':
-            obj.set_editor_property('sampler_type', unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
+        obj.set_editor_property('texture', texture)
+        if kind:
+            is_normal=texture.get_editor_property('compression_settings')==unreal.TextureCompressionSettings.TC_NORMALMAP
+            obj.set_editor_property('sampler_type', unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL if is_normal else unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
         edit.connect_material_expressions(obj,'',custom,pin)
+    for pin,values in [('NormalSigns',[x['normalY'] for x in layers]),('RoughChannels',[x['roughG'] for x in layers]),('Scales',scales)]:
+        node=edit.create_material_expression(m,unreal.MaterialExpressionConstant3Vector,-300,1100)
+        node.set_editor_property('constant',unreal.LinearColor(*values,1))
+        edit.connect_material_expressions(node,'',custom,pin)
     for i, (pin,value) in enumerate([('Biome',biome),('Wetness',wetness)]):
         node = edit.create_material_expression(m,unreal.MaterialExpressionConstant,-260,700+i*80)
         node.set_editor_property('r',float(value))
@@ -84,17 +106,18 @@ def terrain_material(name, stems, biome, wetness):
     return m
 
 terrain_specs = [
-    ('dirt',('dry_ground_rocks','sparse_grass','rocks_ground_05'),.32),
-    ('asphalt',('asphalt_02','gravel_ground_01','brown_mud_02'),.15),
-    ('mud',('brown_mud_02','dry_riverbed_rock','forest_ground_04'),.8),
-    ('wetland',('brown_mud_02','leafy_grass','forest_ground_04'),.95),
-    ('rock',('rocks_ground_05','mossy_rock','dry_ground_rocks'),.12),
-    ('sand',('sand_03','gravel_floor_02','dry_riverbed_rock'),.08),
-    ('snow',('sand_03','mossy_rock','dry_riverbed_rock'),0)]
-for biome, (surface, stems, wetness) in enumerate(terrain_specs):
-    terrain_material('Terrain_'+surface,stems,biome,wetness)
+    ('dirt',[mw_layer('Dirt','dry_ground_rocks'),mw_layer('Grass','sparse_grass'),mw_layer('Stones','rocks_ground_05')],.32,[3.5,2.8,2.4]),
+    ('asphalt',[source_layer(s) for s in ['asphalt_02','gravel_ground_01','brown_mud_02']],.15,[2.1,2.7,1.55]),
+    ('mud',[source_layer(s) for s in ['brown_mud_02','dry_riverbed_rock','forest_ground_04']],.8,[2.1,2.7,1.55]),
+    ('wetland',[source_layer('brown_mud_02'),mw_layer('Grass','leafy_grass'),source_layer('forest_ground_04')],.95,[2.1,2.7,1.55]),
+    ('rock',[mw_layer('Rock','rocks_ground_05'),source_layer('mossy_rock'),winter_layer('RockWall','T_Rock','HRO')],.12,[5.,3.4,4.]),
+    ('sand',[mw_layer('SandA','sand_03'),mw_layer('SandC','gravel_floor_02'),source_layer('dry_riverbed_rock')],.08,[3.2,2.7,1.55]),
+    ('snow',[winter_layer('CleanSnow','T_CleanSnow','TRO'),winter_layer('SnowRoad','T_Road_Extra','TRD'),mw_layer('Rock','rocks_ground_05')],0,[3.,3.4,4.5])]
+for biome, (surface, layers, wetness, scales) in enumerate(terrain_specs):
+    terrain_material('Terrain_'+surface,layers,biome,wetness,scales)
+json.dump({'surfaces':terrain_bindings},open(os.path.join(root,'Saved','terrain-bindings.json'),'w'),indent=2)
 # Only the quarry's rock slot; colored gate posts keep their original materials.
 for d in data['materials']:
     if d.get('diffuse') == 'mossy_rock_diff_1k.jpg':
         materials[d['id']] = lib.load_asset('/Game/Materials/Terrain_rock')
-unreal.log('TERRA_TERRAIN_VARIATION_COMPLETE surfaces=7 layers=3 normal_roughness=true')
+unreal.log('TERRA_TERRAIN_VARIATION_COMPLETE surfaces=7 layers=3 stochastic=true acquired=true normal_roughness=true')

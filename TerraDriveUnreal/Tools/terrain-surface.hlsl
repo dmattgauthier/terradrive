@@ -1,91 +1,97 @@
-// Custom material expression. World metres keep coarse/detail terrain continuous.
+// World-space material for the deformable native ground, not a Landscape actor.
 struct TerraSurface {
   float hash(float2 p) { return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
   float noise(float2 p) {
     float2 i=floor(p),f=frac(p);f=f*f*(3-2*f);
-    return lerp(lerp(hash(i),hash(i+float2(1,0)),f.x),
-                lerp(hash(i+float2(0,1)),hash(i+1),f.x),f.y);
+    return lerp(lerp(hash(i),hash(i+float2(1,0)),f.x),lerp(hash(i+float2(0,1)),hash(i+1),f.x),f.y);
   }
-  float3 plane(Texture2D tex,SamplerState samp,float2 uv,float seed) {
-    float blend=smoothstep(.18,.82,noise(uv*.11+seed));
-    float2 rotated=float2(-uv.y,uv.x)*1.417+float2(7.31,19.63)+seed;
-    return lerp(Texture2DSample(tex,samp,uv).rgb,
-                Texture2DSample(tex,samp,rotated).rgb,blend*.72);
+  float2 rotate(float2 p,float quarter) {
+    if(quarter<.5)return p;if(quarter<1.5)return float2(-p.y,p.x);
+    if(quarter<2.5)return -p;return float2(p.y,-p.x);
   }
-  float3 tri(Texture2D tex,SamplerState samp,float3 p,float3 w,float seed) {
-    return plane(tex,samp,p.yz,seed)*w.x+
-           plane(tex,samp,p.xz,seed+13)*w.y+
-           plane(tex,samp,p.xy,seed+27)*w.z;
+  // Three overlapping lattice samples remove the repeating square pattern.
+  // Color, normal and roughness share every offset, rotation and blend weight.
+  void plane(Texture2D albedo,SamplerState asamp,Texture2D normals,SamplerState nsamp,
+             Texture2D rough,SamplerState rsamp,float2 uv,float seed,float normalY,float roughG,
+             out float3 color,out float3 detail,out float r) {
+    float2 cell=floor(uv),f=frac(uv);
+    float2 corners[3];float3 weight;
+    if(f.x+f.y<1){corners[0]=cell;corners[1]=cell+float2(1,0);corners[2]=cell+float2(0,1);weight=float3(1-f.x-f.y,f.x,f.y);}
+    else{corners[0]=cell+1;corners[1]=cell+float2(0,1);corners[2]=cell+float2(1,0);weight=float3(f.x+f.y-1,1-f.x,1-f.y);}
+    weight=pow(max(weight,0),4);weight/=max(dot(weight,1),.0001);
+    float2 dx=ddx(uv),dy=ddy(uv);color=0;detail=0;r=0;
+    [unroll]for(int k=0;k<3;++k){
+      float h=hash(corners[k]+seed),q=floor(h*4);
+      float2 coord=rotate(uv-corners[k],q)+float2(hash(corners[k]+31+seed),hash(corners[k]-17-seed))*23;
+      float2 gx=rotate(dx,q),gy=rotate(dy,q);
+      color+=Texture2DSampleGrad(albedo,asamp,coord,gx,gy).rgb*weight[k];
+      float2 xy=Texture2DSampleGrad(normals,nsamp,coord,gx,gy).rg*2-1;
+      xy.y*=normalY;xy=rotate(xy,fmod(4-q,4));
+      detail+=float3(xy,sqrt(saturate(1-dot(xy,xy))))*weight[k];
+      float2 rg=Texture2DSampleGrad(rough,rsamp,coord,gx,gy).rg;
+      r+=lerp(rg.x,rg.y,roughG)*weight[k];
+    }
+  }
+  void layer(Texture2D a,SamplerState sa,Texture2D n,SamplerState sn,Texture2D r,SamplerState sr,
+             float3 p,float3 normal,float seed,float normalY,float roughG,
+             out float3 color,out float3 worldDetail,out float roughness){
+    float3 w=pow(abs(normal),6);w/=max(dot(w,1),.0001);
+    color=0;worldDetail=0;roughness=0;
+    // Flat ground samples one projection. Cliff transitions blend projections.
+    [unroll]for(int axis=0;axis<3;++axis)if(w[axis]>.005){
+      float2 uv=axis==0?p.yz:axis==1?p.xz:p.xy;float3 c,d;float rr;
+      plane(a,sa,n,sn,r,sr,uv,seed+axis*19,normalY,roughG,c,d,rr);
+      float3 tangent=axis==0?float3(0,1,0):float3(1,0,0);
+      tangent=normalize(tangent-normal*dot(tangent,normal));
+      float3 bitangent=normalize(cross(normal,tangent));
+      float3 v=axis==2?float3(0,1,0):float3(0,0,1);
+      bitangent*=dot(bitangent,v)<0?-1:1;
+      color+=c*w[axis];worldDetail+=(tangent*d.x+bitangent*d.y)*w[axis];roughness+=rr*w[axis];
+    }
   }
 };
 TerraSurface f;
-float3 p=World*.01;
-float3 n=normalize(GeoNormal);
-float3 w=pow(abs(n),4);w/=max(.0001,w.x+w.y+w.z);
-float macro=f.noise(p.xy*.045+Biome*19);
-float patches=.60*macro+.28*f.noise(p.xy*.16+37)+.12*f.noise(p.xy*.67);
-float small=f.noise(p.xy*.41+13);
-float b=smoothstep(.34,.65,patches);
-float grit=.40*f.noise(p.xy*.09-46)+.28*f.noise(p.xy*.31+17)
-          +.20*f.noise(p.xy*.9)+.12*f.noise(p.xy*2.1);
-float c=smoothstep(.46,.68,grit)*(1-b*.7);
-// Moss/vegetation prefers upward faces; rock becomes exposed on steep ground.
-if(Biome==0||Biome==3) b=saturate((b+.13)*saturate((n.z-.35)*1.8));
-if(Biome==4) { b*=saturate(n.z*.85+.15);c=max(c,saturate(1-n.z)*.5); }
-if(Biome==1) { b*=.22;c*=.16; }
-if(Biome==5) { b*=.48;c*=.26; }
+float3 p=World*.01,n=normalize(GeoNormal);
+float macro=f.noise(p.xy*.019+Biome*19);
+float patches=.52*macro+.30*f.noise(p.xy*.073+37)+.18*f.noise(p.xy*.29);
+float b=smoothstep(.34,.68,patches);
+float grit=.48*f.noise(p.xy*.041-46)+.32*f.noise(p.xy*.19+17)+.20*f.noise(p.xy*.81);
+float c=smoothstep(.46,.69,grit)*(1-b*.7);
+if(Biome==0||Biome==3)b=saturate((b+.12)*smoothstep(.38,.85,n.z));
+if(Biome==4){b*=smoothstep(.25,.88,n.z);c=max(c,(1-n.z)*.65);}
+if(Biome==1){b*=.15;c*=.10;}
+if(Biome==5){b*=.54;c*=.28;}
+if(Biome==6){b=smoothstep(.58,.78,patches)*.32;c=(1-smoothstep(.38,.75,n.z))*.74;}
 if(Biome==0){ /*QUARRY_TRAIL*/ }
-float aScale=Biome==0?4:Biome==4?3:2.1;
-float cScale=Biome==0?3:Biome==4?4:1.55;
-float3 aColor=f.tri(Primary,PrimarySampler,p/aScale,w,0);
-float3 bColor=f.tri(Secondary,SecondarySampler,p/2.7,w,4);
-float3 cColor=f.tri(Accent,AccentSampler,p/cScale,w,11);
-// These photographs have different albedo ranges. The pale gravel source
-// needs soil staining or its large patches read as snow after tonemapping.
-if(Biome==0) cColor*=float3(.88,.85,.79);
-if(Biome==5) bColor*=float3(.38,.34,.27);
-float3 color=lerp(lerp(aColor,bColor,b),cColor,c);
-float broad=lerp(.73,1.15,smoothstep(.15,.85,macro));
-float mineral=f.noise(p.xy*.023+p.z*.017);
-color*=broad*lerp(float3(.91,.97,1.03),float3(1.07,1.02,.87),mineral);
-float wet=smoothstep(.50,.76,patches)*Wetness;
-color*=lerp(1,.56,wet);
-// Persistent packed state comes from the actual loaded contact footprint.
-// Preserve each substrate's albedo: dust lightens, vegetation bends/yellows,
-// and wet excavated soil darkens moderately. No rubber tint on loose ground.
+float3 ac,bc,cc,an,bn,cn;float ar,br,cr;
+f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,p/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
+f.layer(Secondary,SecondarySampler,SecondaryNormal,SecondaryNormalSampler,SecondaryRough,SecondaryRoughSampler,p/Scales.y,n,7,NormalSigns.y,RoughChannels.y,bc,bn,br);
+f.layer(Accent,AccentSampler,AccentNormal,AccentNormalSampler,AccentRough,AccentRoughSampler,p/Scales.z,n,29,NormalSigns.z,RoughChannels.z,cc,cn,cr);
+if(Biome==0)cc*=float3(.84,.83,.78);
+if(Biome==5)cc*=float3(.62,.57,.47);
+float3 color=lerp(lerp(ac,bc,b),cc,c);
+float3 relief=lerp(lerp(an,bn,b),cn,c);
+float rough=lerp(lerp(ar,br,b),cr,c);
+float broad=lerp(.78,1.13,smoothstep(.16,.84,macro));
+float mineral=f.noise(p.xy*.012+p.z*.024);
+color*=broad*lerp(float3(.94,.98,1.02),float3(1.05,1.01,.91),mineral);
+float wet=smoothstep(.51,.77,patches)*Wetness;
+color*=lerp(1,.61,wet);
 float packed=saturate(1-Wear);
 if(Biome==0){
-  float loose=saturate(LooseSoil);
-  color*=lerp(1,.85,loose);
+  float loose=saturate(LooseSoil);color*=lerp(1,.85,loose);
   float3 dry=lerp(color,color*lerp(1.16,.90,loose)+float3(.022,.018,.009)*(1-loose),packed*.65);
-  float3 crushed=lerp(bColor,bColor*float3(1.23,1.04,.68),packed*.78);
+  float3 crushed=lerp(bc,bc*float3(1.23,1.04,.68),packed*.78);
   color=lerp(dry,crushed,b*packed*.62);
 }
 if(Biome==2||Biome==3)color*=1-packed*.24;
-if(Biome==5)color=lerp(color,color*1.09,packed);
-float2 uv=p.xy/aScale;
-if(w.x>w.z&&w.x>w.y)uv=p.yz/aScale;
-else if(w.y>w.z)uv=p.xz/aScale;
-float rough=Texture2DSample(RoughMap,RoughMapSampler,uv).r;
-// Soil stays rough. Very low values turn photographic patches into broad
-// white sky/sun reflections, visually resembling snow on ordinary ground.
-Roughness=clamp(lerp(.78+rough*.20,.52,wet),.52,.99);
-float3 detail=Texture2DSample(NormalMap,NormalMapSampler,uv).xyz*2-1;
-detail=normalize(lerp(lerp(detail,Texture2DSample(SecondaryNormal,SecondaryNormalSampler,uv*aScale/2.7).xyz*2-1,b),Texture2DSample(AccentNormal,AccentNormalSampler,uv*aScale/cScale).xyz*2-1,c));
-detail.y=-detail.y; // The supplied photographic maps use OpenGL green.
-detail.xy*=.38;
-// Packed material loses fluffy microrelief. Large groove/berm normals are
-// supplied by the deformed mesh and remain fully visible to the lighting.
-detail.xy*=1-packed*.66;
-detail.z=sqrt(saturate(1-dot(detail.xy,detail.xy)));
-float3 ref=abs(n.y)>.95?float3(1,0,0):float3(0,1,0);
-float3 tangent=normalize(cross(ref,n)),bitangent=cross(n,tangent);
-SurfaceNormal=normalize(tangent*detail.x+bitangent*detail.y+n*detail.z);
+if(Biome==5)color*=1+packed*.09;
+Roughness=clamp(lerp(.66+rough*.31,.53,wet),.52,.99);
+SurfaceNormal=normalize(n+relief*.48*(1-packed*.66));
 if(Biome==6){
-  float frost=smoothstep(.18,.57,patches)*saturate(n.z+.4);
-  float grain=dot(aColor,float3(.3,.59,.11));
-  color=float3(.79,.88,.97)*(.88+grain*.18)*lerp(.93,1.04,frost);
-  color=lerp(color,float3(.52,.66,.78)*(.94+grain*.10),packed*.72);
-  Roughness=lerp(.94,.66,packed);SurfaceNormal=normalize(lerp(n,SurfaceNormal,.35*(1-packed*.7)));
+  // Scanned snow/road albedo; exposed rock stays rock on steep faces.
+  color=lerp(color,color*float3(.76,.84,.92),packed*.66*(1-c));
+  Roughness=lerp(lerp(.94,.69,packed),.81,c);
+  SurfaceNormal=normalize(n+relief*.30*(1-packed*.7));
 }
-return max(color*.92,.008);
+return max(color*.92,.006);

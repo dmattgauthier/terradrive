@@ -42,7 +42,7 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         5 if instance_tint else 4, color, roughness, metallic, opacity, sky,
         texture.get_path_name() if texture else None,
         alpha.get_path_name() if alpha else None, clip,
-        clearcoat, coat_roughness, emissive, role, 9 if role=='carbon' else 8, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
+        clearcoat, coat_roughness, emissive, role, 10, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
     ]).encode()).hexdigest()
     if lib.does_asset_exist(dest):
         m = lib.load_asset(dest)
@@ -161,7 +161,19 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
             m.set_editor_property('screen_space_reflections',True)
         node = edit.create_material_expression(m, unreal.MaterialExpressionConstant, -180, 400)
         node.set_editor_property('r', opacity)
-        edit.connect_material_property(node, '', unreal.MaterialProperty.MP_OPACITY)
+        if role == 'glass':
+            fresnel=edit.create_material_expression(m,unreal.MaterialExpressionFresnel,-500,500)
+            fresnel.set_editor_property('exponent',5.)
+            fresnel.set_editor_property('base_reflect_fraction',.04)
+            rim=edit.create_material_expression(m,unreal.MaterialExpressionMultiply,-240,520)
+            rim.set_editor_property('const_b',.68-opacity*.5)
+            edit.connect_material_expressions(fresnel,'',rim,'A')
+            result=edit.create_material_expression(m,unreal.MaterialExpressionAdd,-60,500)
+            edit.connect_material_expressions(node,'',result,'A')
+            edit.connect_material_expressions(rim,'',result,'B')
+            edit.connect_material_property(result,'',unreal.MaterialProperty.MP_OPACITY)
+        else:
+            edit.connect_material_property(node, '', unreal.MaterialProperty.MP_OPACITY)
     edit.set_base_material_usage(m, unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES, True)
     lib.set_metadata_tag(m, 'TerraMaterialSignature', signature)
     edit.recompile_material(m)

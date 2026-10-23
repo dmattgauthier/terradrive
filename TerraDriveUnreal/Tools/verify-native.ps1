@@ -10,6 +10,7 @@ $log=Join-Path $output $(if($GroundOnly){'ground-contact.log'}else{'packaged-gam
 $started=Get-Date
 $arguments=@('-unattended','-windowed','-RenderOffscreen','-ResX=1280','-ResY=720',
     '-NoSound','-TerraValidate','-TerraCapture',('-TerraReport="'+$report+'"'),
+    ('-TerraGarage="'+(Join-Path $output 'validation-garage.json')+'"'),
     ('-abslog="'+$log+'"'))
 if($GroundOnly){$arguments+=@('-TerraGroundOnly','-ExecCmds="t.MaxFPS 20"')}
 $startInfo=[System.Diagnostics.ProcessStartInfo]::new()
@@ -34,7 +35,7 @@ $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
 if($renderErrors.Count){throw "Native mesh/render diagnostics failed. Inspect $log"}
 $failed=@($result.tests | Where-Object { !$_.pass })
-$minimumChecks=if($GroundOnly){19}else{278}
+$minimumChecks=if($GroundOnly){19}else{286}
 if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt $minimumChecks) {
     $failed | Format-Table | Out-String | Write-Output
     throw "Native checks failed (exit $gameExit). Inspect $report and $log"

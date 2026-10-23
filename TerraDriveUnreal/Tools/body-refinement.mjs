@@ -44,7 +44,7 @@ export function bodyRefinement(view,spec){
   }else{
    // HUMMER's bluff hood, full rear haunch and tapered upper greenhouse.
    dx-=sign*cab*side*.037*smooth(y,1.45,1.93);
-   dx+=sign*sheet*(.017*Math.sin(level*Math.PI)-.017*gauss(y,.83,.12));
+   dx+=sign*sheet*(.004*Math.sin(level*Math.PI)-.003*gauss(y,.83,.12));
    dx+=sign*.018*side*gauss(z,-1.19,.24)*gauss(y,1.20,.20);
    dy+=.013*gauss(x,0,.80)*gauss(z,1.49,.55)*smooth(y,1.32,1.46);
    dy+=.011*cab*gauss(x,0,.76)*smooth(y,1.88,1.95);

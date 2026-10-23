@@ -732,7 +732,10 @@ void ATerraWorld::LoadScenery() {
       auto *Mesh=LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/FabScenery/Meshes/")+O->GetStringField(TEXT("asset"))));
       if(!ensureMsgf(Mesh,TEXT("Enabled Fab scenery mesh is missing")))continue;
       auto *C=NewObject<UInstancedStaticMeshComponent>(this);C->SetupAttachment(RootComponent);C->SetStaticMesh(Mesh);
-      C->SetCollisionProfileName(TEXT("BlockAll"));C->ComponentTags.Add(TEXT("TerraConstructed"));C->ComponentTags.Add(TEXT("TerraRock"));
+      const bool Solid=O->GetBoolField(TEXT("solid"));
+      C->SetCollisionProfileName(Solid?TEXT("BlockAll"):TEXT("NoCollision"));
+      if(!Solid)C->SetMobility(EComponentMobility::Movable);
+      if(Solid){C->ComponentTags.Add(TEXT("TerraConstructed"));C->ComponentTags.Add(TEXT("TerraRock"));}
       C->ComponentTags.Add(TEXT("TerraFabScenery"));
       C->SetCullDistances(16000,36000);C->RegisterComponent();Scenery.Add(C);++FabAssetCount;
       const FBox Bounds=Mesh->GetBoundingBox();
@@ -755,12 +758,14 @@ void ATerraWorld::LoadScenery() {
         const FVector Forward=FVector::VectorPlaneProject(T.GetRotation().GetForwardVector(),GroundNormal).GetSafeNormal();
         if(!Forward.IsNearlyZero())T.SetRotation(FRotationMatrix::MakeFromXZ(Forward,GroundNormal).ToQuat());
         const FString Kind=O->GetStringField(TEXT("kind"));
-        const float Fraction=Kind==TEXT("outcrop")||Kind==TEXT("ledge")?.38f:Kind==TEXT("rubble")?.24f:.14f;
+        const float Fraction=Kind==TEXT("grass")?.02f:Kind==TEXT("outcrop")||Kind==TEXT("ledge")?.38f:Kind==TEXT("rubble")?.24f:.14f;
         P.Z=GroundZ-FMath::Max(2.f,float(Bounds.GetSize().Z*T.GetScale3D().Z)*Fraction);T.SetLocation(P);++Snapped;
         // Source pivots differ. Place the bottom-centre of each imported mesh
         // on the authored ground anchor, with its slope/yaw/scale applied.
         T.AddToTranslation(-T.TransformVector(Anchor));
-        C->AddInstance(T);++FabInstanceCount;++DetailInstanceCount;++SolidDetailCount;
+        const int32 Index=C->AddInstance(T);
+        if(Kind==TEXT("grass"))RegisterCrushable(C,Index);
+        ++FabInstanceCount;++DetailInstanceCount;if(Solid)++SolidDetailCount;
       }
       UE_LOG(LogTemp,Display,TEXT("TERRA_FAB_GROUNDED %s %d/%d"),*O->GetStringField(TEXT("asset")),Snapped,O->GetArrayField(TEXT("instances")).Num());
       UE_LOG(LogTemp,Display,TEXT("TERRA_FAB_TRACED %s %d"),*O->GetStringField(TEXT("asset")),Traced);

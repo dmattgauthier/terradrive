@@ -50,6 +50,21 @@ if data.get('fabScenery',{}).get('enabled'):
         if not (5<size.z<500 and 5<max(size.x,size.y)<1000):raise RuntimeError('Unexpected Fab dimensions/orientation: '+asset_id+' '+str(size))
         lib.set_metadata_tag(mesh,'TerraFabHash',digest);lib.save_loaded_asset(mesh)
         fab_report.append({'id':asset_id,'mesh':dest,'boundsCM':{'min':[bounds.min.x,bounds.min.y,bounds.min.z],'max':[bounds.max.x,bounds.max.y,bounds.max.z]},'sourceSHA256':digest})
-    unreal.log('TERRA_FAB_IMPORTED %d acquired slate meshes'%len(fab_report))
+    for entry in recipe.get('unrealAssets',[]):
+        source=entry['source'];dest='/Game/FabScenery/Meshes/'+entry['id']
+        if not lib.does_asset_exist(source):raise RuntimeError('Missing acquired scenery: '+source)
+        mesh=lib.load_asset(dest) if lib.does_asset_exist(dest) else lib.duplicate_asset(source,dest)
+        if not isinstance(mesh,unreal.StaticMesh):raise RuntimeError('Not a scenery static mesh: '+source)
+        # The source rock instances use the Winter Scene's snow/weather master.
+        # Temperate formations share the native biome's photographic rock finish;
+        # retain the original ice shading only for the Snow Basin formations.
+        if entry['id'].startswith('Winter_') and 'Ice' not in entry['id']:
+            finish=lib.load_asset('/Game/Materials/Terrain_rock')
+            for slot in range(len(mesh.get_editor_property('static_materials'))):mesh.set_material(slot,finish)
+        body=mesh.get_editor_property('body_setup')
+        if body and entry.get('solid',True):body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+        lib.save_loaded_asset(mesh)
+        fab_report.append({'id':entry['id'],'mesh':dest,'sourceAsset':source})
+    unreal.log('TERRA_FAB_IMPORTED %d acquired scenery meshes'%len(fab_report))
 os.makedirs(os.path.join(root,'Saved'),exist_ok=True)
 json.dump({'enabled':bool(fab_report),'pack':recipe['pack'],'assets':fab_report},open(os.path.join(root,'Saved','fab-import-report.json'),'w'),indent=2)

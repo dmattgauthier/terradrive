@@ -159,17 +159,28 @@ void ATerraGameMode::Tick(float Dt) {
     for(auto F:LoopFrames){const auto P=F->AsObject()->GetArrayField(TEXT("p"));RadiusError=FMath::Max(RadiusError,float(FMath::Abs(FMath::Sqrt(FMath::Square(P[0]->AsNumber()-5800)+FMath::Square(P[2]->AsNumber()-2472))-2000)));}
     Check(TEXT("loop side elevation is a 131-foot circle"),RadiusError<.01f,RadiusError);
     const bool FabEnabled=V->Terrain->Data->GetObjectField(TEXT("fabScenery"))->GetBoolField(TEXT("enabled"));
-    Check(TEXT("acquired Fab slate meshes load in packaged game"),!FabEnabled||V->Terrain->FabAssetCount==8,V->Terrain->FabAssetCount);
+    const bool TerrainPacks=LoadObject<UTexture2D>(nullptr,TEXT("/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Grass_col"))&&
+      LoadObject<UTexture2D>(nullptr,TEXT("/Game/AutomotiveWinterScene/Megascans/Surfaces/CleanSnow/T_CleanSnow_BC"));
+    Check(TEXT("MW landscape and scanned Winter snow textures are cooked and loadable"),TerrainPacks);
+    Check(TEXT("all declared acquired scenery meshes load in packaged game"),!FabEnabled||V->Terrain->FabAssetCount==V->Terrain->Data->GetObjectField(TEXT("fabScenery"))->GetArrayField(TEXT("groups")).Num(),V->Terrain->FabAssetCount);
     Check(TEXT("acquired Fab scenery is placed with physical collision"),!FabEnabled||V->Terrain->FabInstanceCount>100,V->Terrain->FabInstanceCount);
     int FabRayHits=0;
     TArray<UInstancedStaticMeshComponent*> FabComponents;V->Terrain->GetComponents(FabComponents);
-    for(auto *C:FabComponents)if(C->ComponentHasTag(TEXT("TerraFabScenery"))&&C->GetInstanceCount()>0){
+    for(auto *C:FabComponents)if(C->ComponentHasTag(TEXT("TerraFabScenery"))&&C->GetCollisionEnabled()!=ECollisionEnabled::NoCollision&&C->GetInstanceCount()>0){
       FTransform Instance;C->GetInstanceTransform(0,Instance,true);
       const FVector P=Instance.TransformPosition(C->GetStaticMesh()->GetBoundingBox().GetCenter());
       FHitResult Hit;FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraFabValidation),true,V);
       if(GetWorld()->LineTraceSingleByChannel(Hit,P+FVector(0,0,1500),P-FVector(0,0,1500),ECC_Visibility,Query)&&Hit.GetComponent()==C)++FabRayHits;
     }
     Check(TEXT("imported Fab outcrops block a native world collision ray"),!FabEnabled||FabRayHits>0,FabRayHits);
+    int BentGrassGroups=0;
+    for(auto *C:FabComponents)if(C->GetStaticMesh()&&C->GetStaticMesh()->GetName().StartsWith(TEXT("MW_Grass"))&&C->GetInstanceCount()>0){
+      FTransform Before,After,Restored;C->GetInstanceTransform(0,Before,true);
+      V->Terrain->Deform(Before.GetLocation(),FVector::ForwardVector,5500,24,.32f,.22f,0,2,.05f);
+      C->GetInstanceTransform(0,After,true);V->Terrain->ResetSoil();C->GetInstanceTransform(0,Restored,true);
+      if(After.GetScale3D().Z<Before.GetScale3D().Z*.3f&&Restored.GetScale3D().Equals(Before.GetScale3D(),.0001f))++BentGrassGroups;
+    }
+    Check(TEXT("all three acquired MW grass variants flatten under tire load and restore"),!FabEnabled||BentGrassGroups==3,BentGrassGroups);
     { const auto S=V->Terrain->CastSupport(FVector(500,18300,860),FVector::UpVector,42,-30,57,V); Check(TEXT("jump gap has no hidden support"),!S.Hit); }
     V->SelectVehicle(0);
     for(int I=0;I<4;++I){
@@ -571,6 +582,15 @@ void ATerraGameMode::Tick(float Dt) {
     }
   } else if(Stage==44){
     if(StageTime>.55f&&!Captured){
+      if(ModelView==0){
+        bool Paint=false,Trim=false;int Slots=0;
+        for(int I=0;I<V->Body->GetNumMaterials();++I)if(auto *M=V->Body->GetMaterial(I)){
+          const FString N=M->GetName();
+          Paint|=N.Contains(TEXT("_paint_"));Trim|=N.Contains(TEXT("_plastic_"))||N.Contains(TEXT("_metal_"));
+          Slots+=N.StartsWith(TEXT("MI_Vehicle_"))||N.StartsWith(TEXT("MI_Urus_"));
+        }
+        Check(FString::Printf(TEXT("vehicle %d cooked body uses acquired automotive paint and trim"),ModelVehicle),Paint&&Trim&&Slots>=3,Slots);
+      }
       Capture(*FString::Printf(TEXT("native-model-%d-view-%d.png"),ModelVehicle,ModelView));Captured=true;
       const float Error=FMath::Abs(FMath::FindDeltaAngleDegrees(V->Camera->GetComponentRotation().Yaw,V->GetActorRotation().Yaw+V->GarageViewState().X));
       Check(FString::Printf(TEXT("vehicle %d garage view %d persists without camera reset"),ModelVehicle,ModelView),Error<1,Error);
@@ -763,7 +783,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==4);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==5);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){

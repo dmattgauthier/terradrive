@@ -41,7 +41,7 @@ export function urusCabin(g,m,carbon){
  }
  // Inset door cards avoid the former solid black plate behind the glazing.
  for(const s of [-1,1]){
-  surface(g,m.interior,60,20,(u,v)=>{const z=lerp(-1.7,.52,u);return[s*(.824+.024*Math.sin(v*Math.PI)),lerp(.70,1.08,v),z];},s>0);
+  surface(g,m.interior,90,28,(u,v)=>{const z=lerp(-1.90,.61,u),top=station([[-1.9,1.255],[-1.1,1.224],[0,1.139],[.61,1.103]],z,1);return[s*(.843+.028*Math.sin(v*Math.PI)),lerp(.70,top-.008,v),z];},s>0);
   curve(g,carbon,[[s*.835,.92,.39],[s*.843,.96,-.50],[s*.844,1.00,-1.47]],.023);
   for(const z of [-.19,-1.1])box(g,metal,[s*.807,.99,z],[.025,.017,.126],.006);
  }

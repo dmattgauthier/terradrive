@@ -1,8 +1,9 @@
 {
-  "date": "2026-10-22",
-  "verifiedAt": "2026-10-23T00:19:31.852Z",
+  "date": "2026-10-23",
+  "verifiedAt": "2026-10-23T13:59:16.780Z",
   "engine": "5.8.3",
   "configuration": "Windows Development",
+  "nativeRevision": "realism-terrain-5",
   "displayUnits": "imperial",
   "diagnosticUnits": "SI except explicitly named fields; player displays use imperial units",
   "graphics": {
@@ -14,7 +15,7 @@
     ]
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "fc9577ae8a4b7eeae89eb174c0e2858558c4f813866cf41d96274bb6bf687cd7",
+  "executableSHA256": "432e825d0623ee7865c97c44c65ece657a116099350d15bc225ef75b3ca75e3c",
   "tests": [
     {
       "case": "native world data",
@@ -112,7 +113,7 @@
     },
     {
       "case": "detailed scenery models and solid obstacles",
-      "value": 16407,
+      "value": 16951,
       "pass": true
     },
     {
@@ -156,18 +157,28 @@
       "pass": true
     },
     {
-      "case": "acquired Fab slate meshes load in packaged game",
-      "value": 8,
+      "case": "MW landscape and scanned Winter snow textures are cooked and loadable",
+      "value": 0,
+      "pass": true
+    },
+    {
+      "case": "all declared acquired scenery meshes load in packaged game",
+      "value": 16,
       "pass": true
     },
     {
       "case": "acquired Fab scenery is placed with physical collision",
-      "value": 274,
+      "value": 818,
       "pass": true
     },
     {
       "case": "imported Fab outcrops block a native world collision ray",
-      "value": 8,
+      "value": 12,
+      "pass": true
+    },
+    {
+      "case": "all three acquired MW grass variants flatten under tire load and restore",
+      "value": 3,
       "pass": true
     },
     {
@@ -217,8 +228,8 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 81.908,
-      "speedMS": 22.787,
+      "distanceM": 82.29,
+      "speedMS": 22.829,
       "pass": true
     },
     {
@@ -239,8 +250,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 13.662,
-      "yawDegrees": 93.125,
+      "speedMS": 13.609,
+      "yawDegrees": 91.275,
       "pass": true
     },
     {
@@ -251,7 +262,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.28,
+      "clearanceCM": 510.293,
       "rollDegrees": 0,
       "pass": true
     },
@@ -263,7 +274,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.993,
+      "clearanceCM": 506.983,
       "rollDegrees": 0,
       "pass": true
     },
@@ -275,7 +286,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 639.852,
+      "clearanceCM": 639.833,
       "rollDegrees": 0,
       "pass": true
     },
@@ -287,7 +298,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 613.297,
+      "clearanceCM": 612.331,
       "rollDegrees": 0,
       "pass": true
     },
@@ -299,7 +310,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 529.766,
+      "clearanceCM": 527.191,
       "rollDegrees": 0,
       "pass": true
     },
@@ -311,7 +322,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 674.094,
+      "clearanceCM": 674.116,
       "rollDegrees": 0,
       "pass": true
     },
@@ -335,7 +346,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 458.79,
+      "clearanceCM": 471.654,
       "rollDegrees": 0,
       "pass": true
     },
@@ -346,7 +357,7 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 0.17,
+      "value": 0.0629,
       "pass": true
     },
     {
@@ -361,17 +372,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 66633.8672,
+      "value": 81261.5391,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 479,
+      "value": 525,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 5254.0645,
+      "value": 5330.499,
       "pass": true
     },
     {
@@ -381,7 +392,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 2.4146,
+      "value": 1.7869,
       "pass": true
     },
     {
@@ -391,7 +402,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 2.5089,
+      "value": 2.519,
       "pass": true
     },
     {
@@ -436,7 +447,7 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 526.3721,
+      "value": 526.4702,
       "pass": true
     },
     {
@@ -521,7 +532,7 @@
     },
     {
       "case": "engine upgrade changes packaged driving performance",
-      "value": 22.5611,
+      "value": 22.5609,
       "pass": true
     },
     {
@@ -536,12 +547,12 @@
     },
     {
       "case": "lower pressure enlarges the live soil footprint",
-      "value": 1.6032,
+      "value": 1.5954,
       "pass": true
     },
     {
       "case": "lower pressure improves live loose terrain grip",
-      "value": 1.1587,
+      "value": 1.1593,
       "pass": true
     },
     {
@@ -571,27 +582,27 @@
     },
     {
       "case": "vehicle 0 launches through shared W input",
-      "value": 16.8644,
+      "value": 16.8512,
       "pass": true
     },
     {
       "case": "vehicle 0 Space stops and holds against held throttle",
-      "value": 0,
+      "value": 0.0003,
       "pass": true
     },
     {
       "case": "vehicle 1 launches through shared W input",
-      "value": 19.8346,
+      "value": 19.8099,
       "pass": true
     },
     {
       "case": "vehicle 1 Space stops and holds against held throttle",
-      "value": 0,
+      "value": 0.0004,
       "pass": true
     },
     {
       "case": "vehicle 2 launches through shared W input",
-      "value": 9.2999,
+      "value": 9.3115,
       "pass": true
     },
     {
@@ -601,17 +612,17 @@
     },
     {
       "case": "vehicle 3 launches through shared W input",
-      "value": 13.7918,
+      "value": 13.7899,
       "pass": true
     },
     {
       "case": "vehicle 3 Space stops and holds against held throttle",
-      "value": 0,
+      "value": 0.0001,
       "pass": true
     },
     {
       "case": "vehicle 4 launches through shared W input",
-      "value": 22.7846,
+      "value": 22.7209,
       "pass": true
     },
     {
@@ -621,7 +632,7 @@
     },
     {
       "case": "vehicle 5 launches through shared W input",
-      "value": 25.5412,
+      "value": 25.5604,
       "pass": true
     },
     {
@@ -631,32 +642,32 @@
     },
     {
       "case": "W launch before S brake check",
-      "value": 17.1312,
+      "value": 17.1481,
       "pass": true
     },
     {
       "case": "held S brakes then selects physical reverse without a release",
-      "value": -12.7327,
+      "value": -12.7125,
       "pass": true
     },
     {
       "case": "S maintains physical reverse drive after reapplication",
-      "value": -20.8171,
+      "value": -20.8148,
       "pass": true
     },
     {
       "case": "Space stops and holds while S requests reverse",
-      "value": 0.0008,
+      "value": 0.0015,
       "pass": true
     },
     {
       "case": "Space holds contact speed on a twelve degree incline",
-      "value": 0.0002,
+      "value": 0,
       "pass": true
     },
     {
       "case": "brake holding friction prevents sustained downhill creep",
-      "value": 0.0019,
+      "value": 0.0018,
       "pass": true
     },
     {
@@ -680,6 +691,11 @@
       "pass": true
     },
     {
+      "case": "vehicle 0 cooked body uses acquired automotive paint and trim",
+      "value": 12,
+      "pass": true
+    },
+    {
       "case": "vehicle 0 garage view 0 persists without camera reset",
       "value": 0,
       "pass": true
@@ -697,6 +713,11 @@
     {
       "case": "vehicle 0 garage view 3 persists without camera reset",
       "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 1 cooked body uses acquired automotive paint and trim",
+      "value": 13,
       "pass": true
     },
     {
@@ -720,6 +741,11 @@
       "pass": true
     },
     {
+      "case": "vehicle 2 cooked body uses acquired automotive paint and trim",
+      "value": 14,
+      "pass": true
+    },
+    {
       "case": "vehicle 2 garage view 0 persists without camera reset",
       "value": 0,
       "pass": true
@@ -737,6 +763,11 @@
     {
       "case": "vehicle 2 garage view 3 persists without camera reset",
       "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 3 cooked body uses acquired automotive paint and trim",
+      "value": 9,
       "pass": true
     },
     {
@@ -760,6 +791,11 @@
       "pass": true
     },
     {
+      "case": "vehicle 4 cooked body uses acquired automotive paint and trim",
+      "value": 15,
+      "pass": true
+    },
+    {
       "case": "vehicle 4 garage view 0 persists without camera reset",
       "value": 0,
       "pass": true
@@ -777,6 +813,11 @@
     {
       "case": "vehicle 4 garage view 3 persists without camera reset",
       "value": 0,
+      "pass": true
+    },
+    {
+      "case": "vehicle 5 cooked body uses acquired automotive paint and trim",
+      "value": 11,
       "pass": true
     },
     {
@@ -1036,12 +1077,12 @@
     },
     {
       "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.0222,
+      "value": 0.0207,
       "pass": true
     },
     {
       "case": "hard dirt actual driven pass compacts contact footprints",
-      "value": 0.9976,
+      "value": 0.9977,
       "pass": true
     },
     {
@@ -1051,27 +1092,27 @@
     },
     {
       "case": "hard dirt driven path advances beyond stationary footprint",
-      "value": 1485.0671,
+      "value": 1481.6387,
       "pass": true
     },
     {
       "case": "hard dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.0138,
+      "value": 0.0137,
       "pass": true
     },
     {
       "case": "mud actual driven pass leaves loaded terrain deformation",
-      "value": 0.2117,
+      "value": 0.202,
       "pass": true
     },
     {
       "case": "mud actual driven pass compacts contact footprints",
-      "value": 0.9984,
+      "value": 0.9966,
       "pass": true
     },
     {
       "case": "mud actual driven pass pushes up side berms",
-      "value": 0.1595,
+      "value": 0.1533,
       "pass": true
     },
     {
@@ -1081,27 +1122,27 @@
     },
     {
       "case": "mud driven path advances beyond stationary footprint",
-      "value": 1491.8228,
+      "value": 1466.4054,
       "pass": true
     },
     {
       "case": "mud displaced and compacted volumes conserve excavated soil",
-      "value": 3.9015,
+      "value": 4.0876,
       "pass": true
     },
     {
       "case": "snow actual driven pass leaves loaded terrain deformation",
-      "value": 0.4651,
+      "value": 0.4596,
       "pass": true
     },
     {
       "case": "snow actual driven pass compacts contact footprints",
-      "value": 0.99,
+      "value": 0.9937,
       "pass": true
     },
     {
       "case": "snow actual driven pass pushes up side berms",
-      "value": 0.1099,
+      "value": 0.0838,
       "pass": true
     },
     {
@@ -1111,27 +1152,27 @@
     },
     {
       "case": "snow driven path advances beyond stationary footprint",
-      "value": 727.4439,
+      "value": 851.1534,
       "pass": true
     },
     {
       "case": "snow displaced and compacted volumes conserve excavated soil",
-      "value": 2.0337,
+      "value": 2.0802,
       "pass": true
     },
     {
       "case": "wetland actual driven pass leaves loaded terrain deformation",
-      "value": 0.2156,
+      "value": 0.2395,
       "pass": true
     },
     {
       "case": "wetland actual driven pass compacts contact footprints",
-      "value": 0.995,
+      "value": 0.9991,
       "pass": true
     },
     {
       "case": "wetland actual driven pass pushes up side berms",
-      "value": 0.1724,
+      "value": 0.1771,
       "pass": true
     },
     {
@@ -1141,27 +1182,27 @@
     },
     {
       "case": "wetland driven path advances beyond stationary footprint",
-      "value": 1494.8306,
+      "value": 1498.9902,
       "pass": true
     },
     {
       "case": "wetland displaced and compacted volumes conserve excavated soil",
-      "value": 4.1169,
+      "value": 4.1317,
       "pass": true
     },
     {
       "case": "sand actual driven pass leaves loaded terrain deformation",
-      "value": 0.1797,
+      "value": 0.188,
       "pass": true
     },
     {
       "case": "sand actual driven pass compacts contact footprints",
-      "value": 0.9956,
+      "value": 0.9983,
       "pass": true
     },
     {
       "case": "sand actual driven pass pushes up side berms",
-      "value": 0.1162,
+      "value": 0.1132,
       "pass": true
     },
     {
@@ -1171,27 +1212,27 @@
     },
     {
       "case": "sand driven path advances beyond stationary footprint",
-      "value": 1497.5187,
+      "value": 1512.6123,
       "pass": true
     },
     {
       "case": "sand displaced and compacted volumes conserve excavated soil",
-      "value": 2.3213,
+      "value": 2.2202,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.1521,
+      "value": 0.1811,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass compacts contact footprints",
-      "value": 0.9973,
+      "value": 0.9987,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass pushes up side berms",
-      "value": 0.113,
+      "value": 0.1185,
       "pass": true
     },
     {
@@ -1201,12 +1242,12 @@
     },
     {
       "case": "soft dirt driven path advances beyond stationary footprint",
-      "value": 1478.7074,
+      "value": 1476.693,
       "pass": true
     },
     {
       "case": "soft dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.3547,
+      "value": 0.3489,
       "pass": true
     },
     {
@@ -1281,7 +1322,7 @@
     },
     {
       "case": "Urus quarry drive stays upright with a controlled trail line",
-      "value": 142.6763,
+      "value": 142.9256,
       "pass": true
     },
     {
@@ -1291,7 +1332,7 @@
     },
     {
       "case": "Urus cooked body uses Epic automotive paint, carbon and trim instances",
-      "value": 9,
+      "value": 11,
       "pass": true
     },
     {
@@ -1341,7 +1382,7 @@
     },
     {
       "case": "vehicle 0 can reverse out of the quarry compression",
-      "value": 14.2626,
+      "value": 14.2362,
       "pass": true
     },
     {
@@ -1356,7 +1397,7 @@
     },
     {
       "case": "vehicle 1 can reverse out of the quarry compression",
-      "value": 30.722,
+      "value": 31.0892,
       "pass": true
     },
     {
@@ -1366,12 +1407,12 @@
     },
     {
       "case": "vehicle 2 tires stay above the hard quarry floor",
-      "value": 0.0002,
+      "value": 0.0001,
       "pass": true
     },
     {
       "case": "vehicle 2 can reverse out of the quarry compression",
-      "value": 11.3134,
+      "value": 11.2519,
       "pass": true
     },
     {
@@ -1381,12 +1422,12 @@
     },
     {
       "case": "vehicle 3 tires stay above the hard quarry floor",
-      "value": 0.0001,
+      "value": 0.0002,
       "pass": true
     },
     {
       "case": "vehicle 3 can reverse out of the quarry compression",
-      "value": 17.7858,
+      "value": 17.6821,
       "pass": true
     },
     {
@@ -1396,12 +1437,12 @@
     },
     {
       "case": "vehicle 4 tires stay above the hard quarry floor",
-      "value": 0.0002,
+      "value": 0,
       "pass": true
     },
     {
       "case": "vehicle 4 can reverse out of the quarry compression",
-      "value": 28.6009,
+      "value": 28.6315,
       "pass": true
     },
     {
@@ -1411,32 +1452,20 @@
     },
     {
       "case": "vehicle 5 tires stay above the hard quarry floor",
-      "value": 0.0002,
+      "value": 0.0001,
       "pass": true
     },
     {
       "case": "vehicle 5 can reverse out of the quarry compression",
-      "value": 25.663,
+      "value": 25.7404,
       "pass": true
     }
   ],
+  "fullProcessExit": 0,
   "core": {
     "checks": 143,
     "pass": true,
-    "frameRates": [
-      30,
-      60,
-      120
-    ],
-    "log": "Saved/urus-automotive-core.log",
-    "contactRegressionFrameTimesSeconds": [
-      0.008333333333333333,
-      0.01,
-      0.016666666666666666,
-      0.03333333333333333,
-      0.05,
-      0.1
-    ]
+    "log": "Saved/realism-core.log"
   },
   "assets": {
     "terrainSamples": 1000,
@@ -1519,50 +1548,537 @@
     "tintedMaterials": 15,
     "preservedInstanceColors": true,
     "pass": true,
-    "sourceMaterials": 338,
-    "textureAssets": 57,
-    "scannedInstances": 13500,
-    "fabImportedMeshes": 8,
-    "fabInstances": 274,
     "gradedTrailSamples": 363,
-    "terrainGrade": "slate-rim-heightfield-1"
+    "terrainGrade": "slate-rim-heightfield-1",
+    "materialRecords": 346
   },
   "garage": {
     "originalBytesPreserved": true,
-    "automatedSaveIsolation": true,
-    "legacyFiveVehicleMigration": true,
-    "playerSaveSHA256": "6eb2c4d1e6f5c0fc680bb8af8b603241aeed3612db11b7f719944cdb7f55fa67"
+    "automatedSaveIsolation": true
   },
-  "interactive": {
-    "performed": false,
-    "reason": "Packaged native throttle/steering input tests and actual native renders; no separate live desktop or hardware controller session."
-  },
-  "renderedInspection": [
-    "native-urus-hero-0.png",
-    "native-urus-hero-1.png",
-    "native-urus-hero-2.png",
-    "native-urus-hero-3.png",
-    "native-urus-hero-4.png",
-    "native-urus-hero-5.png"
-  ],
   "browser": {
     "referenceFiles": 189,
-    "unchanged": true,
-    "localTreeFiles": 1214
+    "localTreeFiles": 1214,
+    "unchanged": true
+  },
+  "automotive": {
+    "pack": "Epic Automotive Materials",
+    "bindings": 90,
+    "roles": {
+      "rubber": 13,
+      "paint": 6,
+      "plastic": 26,
+      "metal": 21,
+      "alcantara": 12,
+      "brakeSteel": 5,
+      "black": 3,
+      "wheel": 2,
+      "carbon": 1,
+      "rotor": 1
+    },
+    "vehicles": {
+      "jeep": 14,
+      "bronco": 15,
+      "sedan": 15,
+      "van": 13,
+      "hummer": 17,
+      "urus": 16
+    },
+    "originalParentsPreserved": true,
+    "rawAssetsPublished": false
+  },
+  "terrain": {
+    "surfaces": [
+      {
+        "material": "/Game/Materials/Terrain_dirt",
+        "textures": [
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Dirt_col.TEX_MWAM_Dirt_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Dirt_nrm.TEX_MWAM_Dirt_nrm",
+            "/Game/Textures/dry_ground_rocks_rough_2k.dry_ground_rocks_rough_2k"
+          ],
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Grass_col.TEX_MWAM_Grass_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Grass_nrm.TEX_MWAM_Grass_nrm",
+            "/Game/Textures/sparse_grass_rough_1k.sparse_grass_rough_1k"
+          ],
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Stones_col.TEX_MWAM_Stones_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Stones_nrm.TEX_MWAM_Stones_nrm",
+            "/Game/Textures/rocks_ground_05_rough_2k.rocks_ground_05_rough_2k"
+          ]
+        ],
+        "scalesM": [
+          3.5,
+          2.8,
+          2.4
+        ]
+      },
+      {
+        "material": "/Game/Materials/Terrain_asphalt",
+        "textures": [
+          [
+            "/Game/Textures/asphalt_02_diff_1k.asphalt_02_diff_1k",
+            "/Game/Textures/asphalt_02_nor_gl_1k.asphalt_02_nor_gl_1k",
+            "/Game/Textures/asphalt_02_rough_1k.asphalt_02_rough_1k"
+          ],
+          [
+            "/Game/Textures/gravel_ground_01_diff_1k.gravel_ground_01_diff_1k",
+            "/Game/Textures/gravel_ground_01_nor_gl_1k.gravel_ground_01_nor_gl_1k",
+            "/Game/Textures/gravel_ground_01_rough_1k.gravel_ground_01_rough_1k"
+          ],
+          [
+            "/Game/Textures/brown_mud_02_diff_1k.brown_mud_02_diff_1k",
+            "/Game/Textures/brown_mud_02_nor_gl_1k.brown_mud_02_nor_gl_1k",
+            "/Game/Textures/brown_mud_02_rough_1k.brown_mud_02_rough_1k"
+          ]
+        ],
+        "scalesM": [
+          2.1,
+          2.7,
+          1.55
+        ]
+      },
+      {
+        "material": "/Game/Materials/Terrain_mud",
+        "textures": [
+          [
+            "/Game/Textures/brown_mud_02_diff_1k.brown_mud_02_diff_1k",
+            "/Game/Textures/brown_mud_02_nor_gl_1k.brown_mud_02_nor_gl_1k",
+            "/Game/Textures/brown_mud_02_rough_1k.brown_mud_02_rough_1k"
+          ],
+          [
+            "/Game/Textures/dry_riverbed_rock_diff_1k.dry_riverbed_rock_diff_1k",
+            "/Game/Textures/dry_riverbed_rock_nor_gl_1k.dry_riverbed_rock_nor_gl_1k",
+            "/Game/Textures/dry_riverbed_rock_rough_1k.dry_riverbed_rock_rough_1k"
+          ],
+          [
+            "/Game/Textures/forest_ground_04_diff_1k.forest_ground_04_diff_1k",
+            "/Game/Textures/forest_ground_04_nor_gl_1k.forest_ground_04_nor_gl_1k",
+            "/Game/Textures/forest_ground_04_rough_1k.forest_ground_04_rough_1k"
+          ]
+        ],
+        "scalesM": [
+          2.1,
+          2.7,
+          1.55
+        ]
+      },
+      {
+        "material": "/Game/Materials/Terrain_wetland",
+        "textures": [
+          [
+            "/Game/Textures/brown_mud_02_diff_1k.brown_mud_02_diff_1k",
+            "/Game/Textures/brown_mud_02_nor_gl_1k.brown_mud_02_nor_gl_1k",
+            "/Game/Textures/brown_mud_02_rough_1k.brown_mud_02_rough_1k"
+          ],
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Grass_col.TEX_MWAM_Grass_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Grass_nrm.TEX_MWAM_Grass_nrm",
+            "/Game/Textures/leafy_grass_rough_1k.leafy_grass_rough_1k"
+          ],
+          [
+            "/Game/Textures/forest_ground_04_diff_1k.forest_ground_04_diff_1k",
+            "/Game/Textures/forest_ground_04_nor_gl_1k.forest_ground_04_nor_gl_1k",
+            "/Game/Textures/forest_ground_04_rough_1k.forest_ground_04_rough_1k"
+          ]
+        ],
+        "scalesM": [
+          2.1,
+          2.7,
+          1.55
+        ]
+      },
+      {
+        "material": "/Game/Materials/Terrain_rock",
+        "textures": [
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Rock_col.TEX_MWAM_Rock_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Rock_nrm.TEX_MWAM_Rock_nrm",
+            "/Game/Textures/rocks_ground_05_rough_2k.rocks_ground_05_rough_2k"
+          ],
+          [
+            "/Game/Textures/mossy_rock_diff_1k.mossy_rock_diff_1k",
+            "/Game/Textures/mossy_rock_nor_gl_1k.mossy_rock_nor_gl_1k",
+            "/Game/Textures/mossy_rock_rough_1k.mossy_rock_rough_1k"
+          ],
+          [
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/RockWall/T_Rock_BC.T_Rock_BC",
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/RockWall/T_Rock_N.T_Rock_N",
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/RockWall/T_Rock_HRO.T_Rock_HRO"
+          ]
+        ],
+        "scalesM": [
+          5,
+          3.4,
+          4
+        ]
+      },
+      {
+        "material": "/Game/Materials/Terrain_sand",
+        "textures": [
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_SandA_col.TEX_MWAM_SandA_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_SandA_nrm.TEX_MWAM_SandA_nrm",
+            "/Game/Textures/sand_03_rough_1k.sand_03_rough_1k"
+          ],
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_SandC_col.TEX_MWAM_SandC_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_SandC_nrm.TEX_MWAM_SandC_nrm",
+            "/Game/Textures/gravel_floor_02_rough_1k.gravel_floor_02_rough_1k"
+          ],
+          [
+            "/Game/Textures/dry_riverbed_rock_diff_1k.dry_riverbed_rock_diff_1k",
+            "/Game/Textures/dry_riverbed_rock_nor_gl_1k.dry_riverbed_rock_nor_gl_1k",
+            "/Game/Textures/dry_riverbed_rock_rough_1k.dry_riverbed_rock_rough_1k"
+          ]
+        ],
+        "scalesM": [
+          3.2,
+          2.7,
+          1.55
+        ]
+      },
+      {
+        "material": "/Game/Materials/Terrain_snow",
+        "textures": [
+          [
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/CleanSnow/T_CleanSnow_BC.T_CleanSnow_BC",
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/CleanSnow/T_CleanSnow_N.T_CleanSnow_N",
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/CleanSnow/T_CleanSnow_TRO.T_CleanSnow_TRO"
+          ],
+          [
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/SnowRoad/T_Road_Extra_BC.T_Road_Extra_BC",
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/SnowRoad/T_Road_Extra_N.T_Road_Extra_N",
+            "/Game/AutomotiveWinterScene/Megascans/Surfaces/SnowRoad/T_Road_Extra_TRD.T_Road_Extra_TRD"
+          ],
+          [
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Rock_col.TEX_MWAM_Rock_col",
+            "/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Rock_nrm.TEX_MWAM_Rock_nrm",
+            "/Game/Textures/rocks_ground_05_rough_2k.rocks_ground_05_rough_2k"
+          ]
+        ],
+        "scalesM": [
+          3,
+          3.4,
+          4.5
+        ]
+      }
+    ]
+  },
+  "scenery": {
+    "groups": [
+      {
+        "asset": "xcghcfe",
+        "kind": "outcrop",
+        "solid": true,
+        "instances": 8
+      },
+      {
+        "asset": "xckjagi",
+        "kind": "outcrop",
+        "solid": true,
+        "instances": 10
+      },
+      {
+        "asset": "xckifaf",
+        "kind": "outcrop",
+        "solid": true,
+        "instances": 9
+      },
+      {
+        "asset": "xbrdfck",
+        "kind": "ledge",
+        "solid": true,
+        "instances": 8
+      },
+      {
+        "asset": "xbkgdbu",
+        "kind": "boulder",
+        "solid": true,
+        "instances": 42
+      },
+      {
+        "asset": "xbkndhe",
+        "kind": "boulder",
+        "solid": true,
+        "instances": 41
+      },
+      {
+        "asset": "xckjajs",
+        "kind": "rubble",
+        "solid": true,
+        "instances": 88
+      },
+      {
+        "asset": "xbsfdip",
+        "kind": "stone",
+        "solid": true,
+        "instances": 68
+      },
+      {
+        "asset": "Winter_Rock01",
+        "kind": "boulder",
+        "solid": true,
+        "instances": 23
+      },
+      {
+        "asset": "Winter_Rock02",
+        "kind": "rubble",
+        "solid": true,
+        "instances": 23
+      },
+      {
+        "asset": "Winter_Cliff02",
+        "kind": "outcrop",
+        "solid": true,
+        "instances": 21
+      },
+      {
+        "asset": "Winter_Ice01",
+        "kind": "outcrop",
+        "solid": true,
+        "instances": 16
+      },
+      {
+        "asset": "Winter_Ice02",
+        "kind": "outcrop",
+        "solid": true,
+        "instances": 17
+      },
+      {
+        "asset": "MW_GrassA",
+        "kind": "grass",
+        "solid": false,
+        "instances": 151
+      },
+      {
+        "asset": "MW_GrassB",
+        "kind": "grass",
+        "solid": false,
+        "instances": 145
+      },
+      {
+        "asset": "MW_GrassC",
+        "kind": "grass",
+        "solid": false,
+        "instances": 148
+      }
+    ],
+    "placements": 818
+  },
+  "bodyShapes": [
+    {
+      "vehicle": "Jeep Wrangler Rubicon",
+      "model": {
+        "version": 2,
+        "splitTireAndRim": true,
+        "factorySpokeProfile": "jeep",
+        "bodyClearcoat": true,
+        "geometryLettering": true,
+        "construction": {
+          "version": 1,
+          "analyticSurfaceNormals": true,
+          "roundedSolidParts": true,
+          "thinnerWindowSeals": true,
+          "automotiveFinishes": true
+        },
+        "upgradeTireBeads": true,
+        "bodyShape": {
+          "version": 1,
+          "style": "jeep",
+          "vertices": 400542,
+          "maximumSurfaceChangeM": 0.01910155605602605,
+          "hardpointsPreserved": true
+        }
+      }
+    },
+    {
+      "vehicle": "Ford Bronco Badlands",
+      "model": {
+        "version": 2,
+        "splitTireAndRim": true,
+        "factorySpokeProfile": "bronco",
+        "bodyClearcoat": true,
+        "geometryLettering": true,
+        "construction": {
+          "version": 1,
+          "analyticSurfaceNormals": true,
+          "roundedSolidParts": true,
+          "thinnerWindowSeals": true,
+          "automotiveFinishes": true
+        },
+        "upgradeTireBeads": true,
+        "bodyShape": {
+          "version": 1,
+          "style": "bronco",
+          "vertices": 392902,
+          "maximumSurfaceChangeM": 0.02814205564805858,
+          "hardpointsPreserved": true
+        }
+      }
+    },
+    {
+      "vehicle": "Honda Civic Sport",
+      "model": {
+        "version": 2,
+        "splitTireAndRim": true,
+        "factorySpokeProfile": "sedan",
+        "bodyClearcoat": true,
+        "geometryLettering": true,
+        "construction": {
+          "version": 1,
+          "analyticSurfaceNormals": true,
+          "roundedSolidParts": true,
+          "thinnerWindowSeals": true,
+          "automotiveFinishes": true
+        },
+        "upgradeTireBeads": true,
+        "bodyShape": {
+          "version": 1,
+          "style": "sedan",
+          "vertices": 280355,
+          "maximumSurfaceChangeM": 0.017543011705320577,
+          "hardpointsPreserved": true
+        }
+      }
+    },
+    {
+      "vehicle": "Mercedes-Benz Sprinter 2500",
+      "model": {
+        "version": 2,
+        "splitTireAndRim": true,
+        "factorySpokeProfile": "van",
+        "bodyClearcoat": true,
+        "geometryLettering": true,
+        "construction": {
+          "version": 1,
+          "analyticSurfaceNormals": true,
+          "roundedSolidParts": true,
+          "thinnerWindowSeals": true,
+          "automotiveFinishes": true
+        },
+        "upgradeTireBeads": true,
+        "bodyShape": {
+          "version": 1,
+          "style": "van",
+          "vertices": 495651,
+          "maximumSurfaceChangeM": 0.03752181772052887,
+          "hardpointsPreserved": true
+        }
+      }
+    },
+    {
+      "vehicle": "GMC HUMMER EV SUV",
+      "model": {
+        "version": 2,
+        "splitTireAndRim": true,
+        "factorySpokeProfile": "hummer",
+        "bodyClearcoat": true,
+        "geometryLettering": true,
+        "construction": {
+          "version": 1,
+          "analyticSurfaceNormals": true,
+          "roundedSolidParts": true,
+          "thinnerWindowSeals": true,
+          "automotiveFinishes": true
+        },
+        "upgradeTireBeads": true,
+        "bodyShape": {
+          "version": 1,
+          "style": "hummer",
+          "vertices": 311189,
+          "maximumSurfaceChangeM": 0.03692691556309541,
+          "hardpointsPreserved": true
+        }
+      }
+    },
+    {
+      "vehicle": "Lamborghini Urus Performante",
+      "model": {
+        "version": 2,
+        "splitTireAndRim": true,
+        "factorySpokeProfile": "urus",
+        "bodyClearcoat": true,
+        "geometryLettering": true,
+        "construction": {
+          "version": 1,
+          "automotiveFinishes": true
+        },
+        "upgradeTireBeads": true,
+        "bodyShape": {
+          "type": "Reference-built continuous coachwork and cabin",
+          "version": 5,
+          "importedManufacturerCAD": false,
+          "landmarks": {
+            "length": 5.137,
+            "width": 2.026,
+            "widthWithMirrors": 2.181,
+            "height": 1.618,
+            "wheelbase": 3.006,
+            "roofFrontZ": -0.06,
+            "roofRearZ": -1.12,
+            "cowlZ": 0.72,
+            "frontZ": 2.5685,
+            "rearZ": -2.5685,
+            "beltFrontY": 1.102,
+            "beltRearY": 1.248,
+            "archRadius": 0.448
+          }
+        }
+      }
+    }
+  ],
+  "focused": {
+    "garageChecks": 30,
+    "garageExit": 0,
+    "urusChecks": 7,
+    "urusExit": 0
+  },
+  "renderedInspection": {
+    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-0.png": "68454f3c5ea58a918ebe8c68001db9e49459e934bde7c41b9b3d4caf5ebc4c49",
+    "Saved/RealismTerrainReview/iteration-2/native-model-0-view-1.png": "94999a7666c49145a77839a05477f6c6ac4fcb6dc0cdc89589cc8514e3a08fe4",
+    "Saved/RealismTerrainReview/iteration-2/native-model-0-view-3.png": "72e123e07088ac8d1583449e21c4dc23aeea2b49c8cc3929c9d819d9a762f335",
+    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-1.png": "57f17b4c4cda2daba0c36d71bbac7f7db3ec5e3b69a40ae4ad5322439df72488",
+    "Saved/RealismTerrainReview/iteration-2/native-model-1-view-1.png": "39b31290f22511593005ef7e0148ad6e1b0b52deb67a27cc21dddf9055df8e3f",
+    "Saved/RealismTerrainReview/iteration-2/native-model-1-view-3.png": "cd2138c770ea8f51605235dea34b22e94d3ffbddc516a950d8441ecbcda26e65",
+    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-2.png": "2ca017d6df5a2d299de5afe83b7820fef9446109687bd6fc4889705045700b77",
+    "Saved/RealismTerrainReview/iteration-2/native-model-2-view-1.png": "474f5146fad874a02324753b9c1ba406de28c9ddf1cc8d6ed230a2c329f30979",
+    "Saved/RealismTerrainReview/iteration-2/native-model-2-view-3.png": "f67f863677a820e80f98844a47d10d98b7c6d49f6f64d6b9313094ad4ae15051",
+    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-3.png": "e5f5bd25596c570966c47613c0d8128e8e12852af2fa84a29480d83e868e240b",
+    "Saved/RealismTerrainReview/iteration-2/native-model-3-view-1.png": "c8aa36877e11f10ac693b911235e0be870726e9b654cb733c020de9ac837886f",
+    "Saved/RealismTerrainReview/iteration-2/native-model-3-view-3.png": "34c52c25891b02c49269d31ec2a7466539528e035953cc7a07272fd8333af93d",
+    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-4.png": "cf2cc1c3d5e79d3589f75117b98d6a2217a619a25db452c79488abc720ec081f",
+    "Saved/RealismTerrainReview/iteration-2/native-model-4-view-1.png": "ec18a4bdd4d1415b4077c748943ff69e795751134794b48bf2b1907fcce16c0f",
+    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-5.png": "9fc16dd46fe24034c312a78457d69810892f31230707b7ae64ba0a54de892060",
+    "Saved/RealismTerrainReview/iteration-2/native-model-5-view-1.png": "8d4f4b384fd32bc6c0d72ff88375c1197ac5102d3b7660c1552a3cca6a8db2d8",
+    "Saved/RealismTerrainReview/iteration-2/native-model-4-view-0.png": "33965751e84fed31bd5eec27ab67213c305cd9288bbd1b821611f96b07a27339",
+    "Saved/RealismTerrainReview/iteration-2/native-model-5-view-0.png": "32971e77b80572dbb17cd5a6715a8ad6ac9217b70fe1e084ef456feda0deb5b4",
+    "Saved/RealismTerrainReview/iteration-2/native-region-1.png": "9ff4b61cf1d270e435644628f346897eabfda2de4cde30e5ea7deff45056f146",
+    "Saved/RealismTerrainReview/iteration-2/native-region-6.png": "51f21c9d1f83d5b3a0ea48876e5c2c17dd304eb42675bb6aeb079ce9aa05f98f",
+    "Saved/RealismTerrainReview/iteration-2/native-region-8.png": "d9220ed6ed6cc11e84263efa385c92715c6d2fa09e826cab38b2c4a90d18fae5",
+    "Saved/RealismTerrainReview/final/native-region-3.png": "222d847badb25b4ecfc0aecb0011e33fec1efa2c0a1a5efad90e00d3ab767278",
+    "Saved/RealismTerrainReview/final/native-driven-snow.png": "9309eefbb41f54f7f62dbe379fb3178847219ccd429ead1a97dd856f447a79e3",
+    "Saved/RealismTerrainReview/final/native-driven-mud.png": "53dd4ddf6ffcdc72b2b91bca91eae9042eb28e96a37f13eb6fbff008b90ac7ed",
+    "Saved/RealismTerrainReview/final/native-crushed-grass.png": "953e8e2dca981b125c954a50df8c7ea4177e43deba6881a1ddb0b8eff5879296",
+    "Saved/RealismTerrainReview/final/native-urus-hero-3.png": "67e384c65d764a4aea351788935487e50654e4244f1ecbba2faae164eb65b5fa",
+    "Saved/RealismTerrainReview/final/native-model-4-view-3.png": "11657b3d1e19660703c6fcc5c8908f6404c09c236d10884a11022db1f8ca683f",
+    "Saved/RealismTerrainReview/final/native-slate-rim-trail.png": "17f6978f9495eeaeefd2afdc4e00f0af06c1e5205aede050a29d65a4bb366f77",
+    "Saved/RealismTerrainReview/final/native-ground-contact-4.png": "f3d5dbb4236a0b5f80ac7f3c37edefc708f96c9fd199e709f1ed59b0ceb4588c"
   },
   "packagedContentSHA256": {
     "global.ucas": "9de4b5cec4b89e8edbe7675cc42f9064fcce79829d4b0794af7b40c9bfc71631",
     "global.utoc": "89e25c926368c8f06557107c344589ed6d84157d2518309963ff7bd18c8e9a89",
-    "TerraDrive-Windows.pak": "38cc937fadfbf3c70fb5b2d7faf32c9604ca2f4ec83f7f4a348b41b5df20f150",
-    "TerraDrive-Windows.ucas": "fa04f79c7d82b32a84b6060a32c39a51147635c27332935dbc7037c376959544",
-    "TerraDrive-Windows.utoc": "b4a4972cdfd57eecb27601b84d2a758e69d8ee6bcbfb45c3fb76b64d8f099783"
+    "TerraDrive-Windows.pak": "f83601709ee00a1bd6d14088caf742e794d11cf0bca2da173dc55c139174893e",
+    "TerraDrive-Windows.ucas": "93902e43d707c75a5889339090731e2ae13cd942e4c0b9ca5b486bbe8f6d6ce0",
+    "TerraDrive-Windows.utoc": "2880fae7c9eafca1c631ec473adc717a67747518cb0dce6cdfc91ee51ae5e247"
   },
   "sourceSHA256": {
     "Source/TerraDrive/TerraContact.h": "eebefcf6e4b07f8602d7dd6d881bb14e50794befb1047befa369a54e17ec00d1",
     "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
     "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
     "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
-    "Source/TerraDrive/TerraGameMode.cpp": "d56b9c25a09ae0e2775e97c6a603448a8c82f397b0a771ff607fb9055635f129",
+    "Source/TerraDrive/TerraGameMode.cpp": "010cce4148bc5bef3851677abe994db957f88bacc639b8c08ef5926928a69964",
     "Source/TerraDrive/TerraGameMode.h": "04b497d508bf47ca2a4e908da57f09dce65f1b4cb14a61cbc7766596862b1bb7",
     "Source/TerraDrive/TerraGarage.cpp": "9992957178f45405bb2667fe46a6dd905ee96a468aa6af65feb61990977cd049",
     "Source/TerraDrive/TerraGarage.h": "35e4eaa7188968df3493497dedc68368c28e24d28a9bf32ff7b0de56006c6849",
@@ -1575,20 +2091,24 @@
     "Source/TerraDrive/TerraVehicleGarage.cpp": "f899b3c0ce40b86a2ed1669ecd623d91495bfd6d321cd39bd2dc5e38f777d5f9",
     "Source/TerraDrive/TerraVehicleLamps.cpp": "ee679571f1f2b9cb4094c894c4286ea32db118d0e19a97272a5c7a2027493969",
     "Source/TerraDrive/TerraVehicleVisuals.cpp": "3abfd71e2a695e5fb9981bb520eaabc2af572ba41f372e281c97ae29677f5bd7",
-    "Source/TerraDrive/TerraWorld.cpp": "f1e8ac6d600581da6b277f92ce219a26c459b03c44425a8731526fe65b6d0b0c",
+    "Source/TerraDrive/TerraWorld.cpp": "0496b72c7b837c18434ef9da009123864239a41a9f6e94d8d6e7775ec7773bf3",
     "Source/TerraDrive/TerraWorld.h": "0e617334c31c358bb8fe9ae601d6355c4962dd95272167f8a46e3557b6d5137d",
     "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
     "Source/TerraDriveEditor.Target.cs": "57232ee6bc870cca86e6f7bdd83daa4674607633d9d8791c7671481d29edf534",
-    "Tools/automotive-materials.py": "c70bec13be6cead7c492a6f019cbfe4d8c76861ffa441becfe2bb128d12622ea",
-    "Tools/body-refinement.mjs": "8da7597ba30633618e4648e657278ea524e27b77add985ed3b69b745cbfd838e",
-    "Tools/body-surface.mjs": "d47e4c6464e4850acae0d1485658b26275787118dd34c6b93f3f2db0236a4474",
+    "Config/DefaultEngine.ini": "051c43c515d4d3007bdc7a04c99908ec158d02192e3e33332a747be728a2e967",
+    "Config/DefaultGame.ini": "f39824b22f76eaa48d005c19c25a2eb39a412bf67d572161cb53688ecc7e4ba7",
+    "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f",
+    "Tools/automotive-materials.py": "e8958e2a84d8ecfc14afde4aa997b9eacc126582a5dc4a52722d61f05fded634",
+    "Tools/body-refinement.mjs": "e0b090d51bbf4c36cd384372a9cc10b8c3af8d35184c0dbd2c2751de00a8ee4d",
+    "Tools/body-surface.mjs": "6a6bee7dfad9845c5bbe8c2bf98755658e2b815a29b12e87169de164367e43e2",
     "Tools/build-native.ps1": "63064b61da5395efbfeb66410df1547d31c4f27d3507a1e42ccd293d68c59b77",
-    "Tools/export-source.mjs": "5b04cd0557d3261c3b961a086c4b8d0cb6a9eea55b4ec24ebf7ffed3b1648e57",
-    "Tools/fab-scenery.json": "7c169313508e3d6b219badd3bd3d014351cffde2fdb7443b5c0525c702c7d895",
-    "Tools/fab-scenery.mjs": "13d05263506ca572d3bae045288912203a7e973efe547e49d1d60651f0ae7a4f",
+    "Tools/export-source.mjs": "ac82e67ee1343c9e6765cafd7fb3ce73e58dd4e7829da0215d4f6978008b90c6",
+    "Tools/fab-scenery.json": "d7fd91f7f754079da960f12192ccad569b96d55612089a7798c406b9b04d9c03",
+    "Tools/fab-scenery.mjs": "a5af9c434168b011b4009f536c51d16f837e9e35b589b0edde5dd8279e79d05b",
     "Tools/fetch-environment-assets.py": "3048d13230862aaa787c075523c6230c0c044cc8c0605cbe980e68b9a31d1225",
-    "Tools/import-assets.py": "156e21dafedee7100b67d14e4c4d757a815bbbe093f6c54c2d9d16cd7cf52519",
-    "Tools/import-fab.py": "9b82946fbcf289a4b36be03e814eb2aa5d6506700f0c87cd3ab049980f374cbf",
+    "Tools/hummer-body.mjs": "b697f94ee33906012cb2e92a94257f73fba5c8d5d52b713a7c6f45cbb9e8869c",
+    "Tools/import-assets.py": "8ba23b94f1e0ada870801259bde6ff916804f6fcfa6428ed30b8026053f32a2e",
+    "Tools/import-fab.py": "ed9827bcd71fad2d27c6b24a4bcf7ac2988d08ec7b56a98f5f36b280b5663d8f",
     "Tools/native-challenge-course.mjs": "54626ee9d34fa0e74ef8ab4d0b8f3b3d4d89f4d3c5674aa8cc2431a073be8a13",
     "Tools/native-models.mjs": "1d5d022821efc17596c96b3fe37d44e181ba22471d91f1ee527e8d1a20986de2",
     "Tools/native-terrain.mjs": "34a64cbd67262df12155d560df25c6256e5b4dac541b7c04a9716b6ac4f41cdf",
@@ -1598,1629 +2118,38 @@
     "Tools/quarry-trail.mjs": "be3d89aa125527dccdcaa2e6de7a742ec3e390bcad50d877bcf83442323257ef",
     "Tools/scanned-environment.mjs": "13c7aeb35ab48370bc79c67e332412e89e4a92c810532ba3cff5c227db70b431",
     "Tools/sky-material.py": "f2e9c58393ae51fc31e07512fd64b8b286a007758a0ff6651ad8654192554925",
-    "Tools/terrain-materials.py": "1d049083bc1544c4a49613769513c87f07452bc199f385e194b31467dd1b9688",
-    "Tools/terrain-surface.hlsl": "8bdd3ae1f2c9a219eb7eeeb579fb515a012e571adf69f83ac6a0312925d764d8",
+    "Tools/terrain-materials.py": "66f851910241bcfbf64bf303a613760127dab6ef4211ec1bdb62f4f66ee2c213",
+    "Tools/terrain-surface.hlsl": "938e380bb857bc8e2c2fbf6ce1355b2fde3e80d30cbf9424374ec98091034002",
     "Tools/test-core.cmd": "06f3e8dbde5ccdfa032422eff1fbccc0b777e0ec9a67f61c411333c11e0b72ad",
     "Tools/test-core.cpp": "39525ee42613e691d01a597d42498ff5af6a58669dae478c86748d3bd2f6faed",
     "Tools/tire-mark-materials.py": "9d28390c9c4aea23effbdddfea18411a5a39756ae362be1c643fe27270188617",
-    "Tools/urus-body.mjs": "23be5ca6c937d0915f4d83c408506956910b252527d3cfb87d29f074f19712a0",
-    "Tools/urus-cabin.mjs": "92dda1394e1e85e04306dc3ebc8605598838ddf673cfd7f5edbb23e17b550a06",
+    "Tools/urus-body.mjs": "58c6fb9fcdea3951ef910fb19a93a53f31e463fedf4580d199d95284c0ceb161",
+    "Tools/urus-cabin.mjs": "682762766a66dfad030aa9871db3e49b66d2bcc508f791ba4dafb4feed7452bb",
     "Tools/urus-model.mjs": "dc7e9c69574d582c9e8beabcf108d367578b921a9899d32378aa05934986215b",
-    "Tools/validate-export.mjs": "f67c67fee7b021c41d4df5ac7b46e0a068e0e8a5b055370758e390e31de4f3a9",
-    "Tools/vehicle-fidelity.mjs": "8a28784579dd1297b54b4887ef1ab451dde98da24db20bd66c8c1dbc81be980e",
-    "Tools/verify-native.ps1": "d78fdd36544a0e7a1299071994674c795fb32ec6794527b2eb3c58dd1f095f38",
-    "Config/DefaultEngine.ini": "051c43c515d4d3007bdc7a04c99908ec158d02192e3e33332a747be728a2e967",
-    "Config/DefaultGame.ini": "f39824b22f76eaa48d005c19c25a2eb39a412bf67d572161cb53688ecc7e4ba7",
-    "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f"
+    "Tools/validate-export.mjs": "09ac1d97b0d163bbef8c53c76810e70b3ed9ef21ec0efdd494d32361ec6d0048",
+    "Tools/vehicle-fidelity.mjs": "c9e9f71e0a485660ce9f76e186f8957b4ce13049a94b5b92f365f35b98a31a6a",
+    "Tools/vehicle-geometry.mjs": "f1b30b1c75b737f1dc1beb86e6f53d5cecada7db4ffb3d4b12db05477ce58cf7",
+    "Tools/vehicle-realism.mjs": "2d1bddac59324e1b8e5d7aae29e4006febcd7d3a4fabce7bff8b9271ff0923ca",
+    "Tools/verify-native.ps1": "4d8b732ce6994accd1f1c6bd63cc4a38f1d25d6ed65e10fab4996d2449fbd722"
   },
-  "logs": [
-    "Saved/urus-automotive-build-6.log",
-    "Saved/urus-automotive-hero-5.log",
-    "Saved/urus-automotive-full.log",
-    "Saved/Validation/packaged-game.log",
-    "Saved/urus-automotive-core.log",
-    "Saved/urus-automotive-export-check-5.log"
-  ],
+  "sourceManifestSHA256": "cca644f85072e44a1ea29f6f00a7a4387038ec03be193b44f1ea6a47e6cf9d60",
+  "worldDataSHA256": "a57b2b6df8733cb30a6e5d5eef511495e0febafef537d68650f9addab5e14ca3",
+  "terrainDataSHA256": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
+  "logs": {
+    "build": "Saved/realism-build-4.log",
+    "full": "Saved/realism-full-final.log",
+    "fullEngine": "Saved/Validation/packaged-game.log",
+    "garage": "Saved/realism-visual-final.log",
+    "urus": "Saved/realism-hero-final.log"
+  },
+  "interactive": {
+    "performed": false,
+    "reason": "Native automated control input and engine captures; no separate hardware-controller or live desktop driving session."
+  },
   "limits": [
-    "Vehicle bodies and cabin are authored manufacturer-reference approximations, not OEM CAD/scans or certified Forza-equivalent models.",
-    "Only Slate Rim is newly verified as an uninterrupted complete route; complete traversal of the Summit loop and other entire courses remains unproven.",
-    "Tire/soil/chassis coefficients remain simulator estimates. Deformation is session-only with bounded history.",
-    "Fab raw files stay local and require the user's acquisition; CC0 source downloads are included with provenance.",
-    "No separate live desktop driving, controller hardware, or long-session stability test."
-  ],
-  "surfaceDeformation": {
-    "gridInches": 2.4606299212598426,
-    "tileFeet": 13.123359580052494,
-    "tileLimit": 768,
-    "cachedTileLimit": 8192,
-    "blackMarks": "pavement traction loss only",
-    "soilCases": [
-      {
-        "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-        "value": 0.0222,
-        "pass": true
-      },
-      {
-        "case": "hard dirt actual driven pass compacts contact footprints",
-        "value": 0.9976,
-        "pass": true
-      },
-      {
-        "case": "mud actual driven pass leaves loaded terrain deformation",
-        "value": 0.2117,
-        "pass": true
-      },
-      {
-        "case": "mud actual driven pass compacts contact footprints",
-        "value": 0.9984,
-        "pass": true
-      },
-      {
-        "case": "mud actual driven pass pushes up side berms",
-        "value": 0.1595,
-        "pass": true
-      },
-      {
-        "case": "snow actual driven pass leaves loaded terrain deformation",
-        "value": 0.4651,
-        "pass": true
-      },
-      {
-        "case": "snow actual driven pass compacts contact footprints",
-        "value": 0.99,
-        "pass": true
-      },
-      {
-        "case": "snow actual driven pass pushes up side berms",
-        "value": 0.1099,
-        "pass": true
-      },
-      {
-        "case": "wetland actual driven pass leaves loaded terrain deformation",
-        "value": 0.2156,
-        "pass": true
-      },
-      {
-        "case": "wetland actual driven pass compacts contact footprints",
-        "value": 0.995,
-        "pass": true
-      },
-      {
-        "case": "wetland actual driven pass pushes up side berms",
-        "value": 0.1724,
-        "pass": true
-      },
-      {
-        "case": "sand actual driven pass leaves loaded terrain deformation",
-        "value": 0.1797,
-        "pass": true
-      },
-      {
-        "case": "sand actual driven pass compacts contact footprints",
-        "value": 0.9956,
-        "pass": true
-      },
-      {
-        "case": "sand actual driven pass pushes up side berms",
-        "value": 0.1162,
-        "pass": true
-      },
-      {
-        "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-        "value": 0.1521,
-        "pass": true
-      },
-      {
-        "case": "soft dirt actual driven pass compacts contact footprints",
-        "value": 0.9973,
-        "pass": true
-      },
-      {
-        "case": "soft dirt actual driven pass pushes up side berms",
-        "value": 0.113,
-        "pass": true
-      }
-    ],
-    "fabLibrary": [
-      "Automotive Winter Scene",
-      "African Slate Quarry",
-      "Electric Dreams Env"
-    ],
-    "fabDownloaded": "African Slate Quarry: eight acquired FBX meshes and 24 PBR textures imported and placed"
-  },
-  "bodyShapes": {
-    "urus": {
-      "type": "Reference-built continuous coachwork and cabin",
-      "version": 4,
-      "importedManufacturerCAD": false,
-      "landmarks": {
-        "length": 5.137,
-        "width": 2.026,
-        "widthWithMirrors": 2.181,
-        "height": 1.618,
-        "wheelbase": 3.006,
-        "roofFrontZ": -0.06,
-        "roofRearZ": -1.12,
-        "cowlZ": 0.72,
-        "frontZ": 2.5685,
-        "rearZ": -2.5685,
-        "beltFrontY": 1.102,
-        "beltRearY": 1.248,
-        "archRadius": 0.448
-      }
-    },
-    "otherVehicles": [
-      {
-        "name": "Jeep Wrangler Rubicon",
-        "version": 1,
-        "style": "jeep",
-        "vertices": 356366,
-        "maximumSurfaceChangeM": 0.01910155605602605,
-        "hardpointsPreserved": true
-      },
-      {
-        "name": "Ford Bronco Badlands",
-        "version": 1,
-        "style": "bronco",
-        "vertices": 335518,
-        "maximumSurfaceChangeM": 0.02814205564805858,
-        "hardpointsPreserved": true
-      },
-      {
-        "name": "Honda Civic Sport",
-        "version": 1,
-        "style": "sedan",
-        "vertices": 270043,
-        "maximumSurfaceChangeM": 0.017543011705320577,
-        "hardpointsPreserved": true
-      },
-      {
-        "name": "Mercedes-Benz Sprinter 2500",
-        "version": 1,
-        "style": "van",
-        "vertices": 425681,
-        "maximumSurfaceChangeM": 0.03752181772052887,
-        "hardpointsPreserved": true
-      },
-      {
-        "name": "GMC HUMMER EV SUV",
-        "version": 1,
-        "style": "hummer",
-        "vertices": 232143,
-        "maximumSurfaceChangeM": 0.03692691556309541,
-        "hardpointsPreserved": true
-      }
-    ],
-    "loopDiameterFeet": 131.23359580052494
-  },
-  "fabScenery": {
-    "enabled": true,
-    "pack": "African Slate Quarry",
-    "assets": [
-      {
-        "id": "xcghcfe",
-        "mesh": "/Game/FabScenery/Meshes/xcghcfe",
-        "boundsCM": {
-          "min": [
-            -240.15513610839844,
-            -2.816514730453491,
-            -2.716702938079834
-          ],
-          "max": [
-            264.4997863769531,
-            222.9876708984375,
-            210.09999084472656
-          ]
-        },
-        "sourceSHA256": "5de81aade2a5ed788d94a98f56990dbf0a6087c34db0a6f18ab4e96c2dbfb9a4"
-      },
-      {
-        "id": "xckjagi",
-        "mesh": "/Game/FabScenery/Meshes/xckjagi",
-        "boundsCM": {
-          "min": [
-            -207.8599853515625,
-            -0.11036243289709091,
-            -1.3020864725112915
-          ],
-          "max": [
-            213.2777862548828,
-            273.7448425292969,
-            149.68881225585938
-          ]
-        },
-        "sourceSHA256": "c52e845f495bd2175db8d6b50f15191f144596182cc1e5f7953d92199fc311d8"
-      },
-      {
-        "id": "xckifaf",
-        "mesh": "/Game/FabScenery/Meshes/xckifaf",
-        "boundsCM": {
-          "min": [
-            -199.6790313720703,
-            -83.9461669921875,
-            -3.3274805545806885
-          ],
-          "max": [
-            198.72122192382812,
-            96.41161346435547,
-            111.75040435791016
-          ]
-        },
-        "sourceSHA256": "972ee7ae67899f36b5338b4263badbb5121d9ea500cbdaff954faab5bf10de7e"
-      },
-      {
-        "id": "xbrdfck",
-        "mesh": "/Game/FabScenery/Meshes/xbrdfck",
-        "boundsCM": {
-          "min": [
-            -304.08428955078125,
-            -137.3504180908203,
-            -1.820281744003296
-          ],
-          "max": [
-            304.0854797363281,
-            108.01465606689453,
-            90.920654296875
-          ]
-        },
-        "sourceSHA256": "b5c3a9b76d5700a5bd112d9b524dc7883865299a6e5c00432710b1fd8a916abd"
-      },
-      {
-        "id": "xbkgdbu",
-        "mesh": "/Game/FabScenery/Meshes/xbkgdbu",
-        "boundsCM": {
-          "min": [
-            -63.693050384521484,
-            -59.864505767822266,
-            -2.753154993057251
-          ],
-          "max": [
-            67.00354766845703,
-            59.45745849609375,
-            93.43720245361328
-          ]
-        },
-        "sourceSHA256": "47e5d2dead625830f8e5c32cda4ecfa3579336051305bec054c9ceda584bccd3"
-      },
-      {
-        "id": "xbkndhe",
-        "mesh": "/Game/FabScenery/Meshes/xbkndhe",
-        "boundsCM": {
-          "min": [
-            -110.63470458984375,
-            -74.50053405761719,
-            -6.750952243804932
-          ],
-          "max": [
-            125.88008880615234,
-            65.03954315185547,
-            57.23050308227539
-          ]
-        },
-        "sourceSHA256": "a827146392f780edd30769664dc0af18a08bd66151182b95714e86637be7fadb"
-      },
-      {
-        "id": "xckjajs",
-        "mesh": "/Game/FabScenery/Meshes/xckjajs",
-        "boundsCM": {
-          "min": [
-            -154.11671447753906,
-            -71.23055267333984,
-            -14.994186401367188
-          ],
-          "max": [
-            146.22059631347656,
-            93.09735107421875,
-            36.67280578613281
-          ]
-        },
-        "sourceSHA256": "1a588c167ab3b0ed406a20bd60fd78bc9eaab39142100396206f80b3d97153ff"
-      },
-      {
-        "id": "xbsfdip",
-        "mesh": "/Game/FabScenery/Meshes/xbsfdip",
-        "boundsCM": {
-          "min": [
-            -12.069835662841797,
-            -16.485889434814453,
-            -0.2758467495441437
-          ],
-          "max": [
-            12.419305801391602,
-            16.71213722229004,
-            24.76202964782715
-          ]
-        },
-        "sourceSHA256": "7d8ec8d84a3a484ad79674cd1777c2e986a4ef5646414355cd22f656a8ceb7e1"
-      }
-    ],
-    "grounding": [
-      {
-        "asset": "xcghcfe",
-        "snapped": 8,
-        "expected": 8
-      },
-      {
-        "asset": "xckjagi",
-        "snapped": 10,
-        "expected": 10
-      },
-      {
-        "asset": "xckifaf",
-        "snapped": 9,
-        "expected": 9
-      },
-      {
-        "asset": "xbrdfck",
-        "snapped": 8,
-        "expected": 8
-      },
-      {
-        "asset": "xbkgdbu",
-        "snapped": 42,
-        "expected": 42
-      },
-      {
-        "asset": "xbkndhe",
-        "snapped": 41,
-        "expected": 41
-      },
-      {
-        "asset": "xckjajs",
-        "snapped": 88,
-        "expected": 88
-      },
-      {
-        "asset": "xbsfdip",
-        "snapped": 68,
-        "expected": 68
-      }
-    ]
-  },
-  "focusedBrakes": {
-    "checks": 18,
-    "frameRateCap": 20,
-    "exitCode": 0,
-    "log": "Saved/Validation/focused-BrakeOnly.log",
-    "historical": true,
-    "executableSHA256": "70417e36ee6d0ba70642ba17631637394b4fd6dc5d9657a968023a248915aa77",
-    "note": "Previous accepted executable; braking cases also run in the current full native suite."
-  },
-  "profilingDiagnostic": {
-    "accepted": false,
-    "exitCode": 777003,
-    "observation": "A CSV-enabled diagnostic exited during shutdown after passing its game checks. Cause unproven; accepted full and focused runs omit CSV capture and exit 0."
-  },
-  "quarryTrail": {
-    "samples": [
-      {
-        "x": 90,
-        "y": -325,
-        "z": 21.375880338546885,
-        "tx": 0.8943627627950133,
-        "ty": -0.44734242871168717,
-        "d": 0
-      },
-      {
-        "x": 92.40372210161034,
-        "y": -326.2376778061834,
-        "z": 21.87242968094092,
-        "tx": 0.8840747469243111,
-        "ty": -0.46734552726084294,
-        "d": 2.7038329359013393
-      },
-      {
-        "x": 94.78300869855919,
-        "y": -327.52199643223383,
-        "z": 22.329038422424926,
-        "tx": 0.876326312859468,
-        "ty": -0.48171796041888426,
-        "d": 5.407665871802679
-      },
-      {
-        "x": 97.14521790801108,
-        "y": -328.8376974090586,
-        "z": 22.806975670868866,
-        "tx": 0.8714094221118964,
-        "ty": -0.4905564381950471,
-        "d": 8.111498807704018
-      },
-      {
-        "x": 99.4981182318349,
-        "y": -330.1699980049904,
-        "z": 23.34837935831114,
-        "tx": 0.8694540457282651,
-        "ty": -0.49401382811288996,
-        "d": 10.815331743605357
-      },
-      {
-        "x": 101.8497396564553,
-        "y": -331.50442064962715,
-        "z": 23.981541521641272,
-        "tx": 0.8705086328202168,
-        "ty": -0.4921531470848044,
-        "d": 13.519164679506696
-      },
-      {
-        "x": 104.2083366218572,
-        "y": -332.82663738927465,
-        "z": 24.673419407935675,
-        "tx": 0.8745473266796819,
-        "ty": -0.48494017507051523,
-        "d": 16.222997615408037
-      },
-      {
-        "x": 106.58176800211196,
-        "y": -334.1219736986801,
-        "z": 25.409998287852726,
-        "tx": 0.8814660751584352,
-        "ty": -0.4722473486900523,
-        "d": 18.926830551309376
-      },
-      {
-        "x": 108.9775030465745,
-        "y": -335.3753095033803,
-        "z": 26.161941859183315,
-        "tx": 0.8910688067217323,
-        "ty": -0.45386824265144204,
-        "d": 21.630663487210715
-      },
-      {
-        "x": 111.40241237668103,
-        "y": -336.5709342357313,
-        "z": 26.909280366840793,
-        "tx": 0.903045878498921,
-        "ty": -0.4295441087084213,
-        "d": 24.334496423112054
-      },
-      {
-        "x": 113.86256388156508,
-        "y": -337.69251211920135,
-        "z": 27.6333138386137,
-        "tx": 0.9169482873638172,
-        "ty": -0.39900606298722185,
-        "d": 27.038329359013392
-      },
-      {
-        "x": 116.36215029426612,
-        "y": -338.72284116669795,
-        "z": 28.301418327227154,
-        "tx": 0.9321588567360469,
-        "ty": -0.3620495350204802,
-        "d": 29.742162294914735
-      },
-      {
-        "x": 118.90361504674907,
-        "y": -339.64443088012484,
-        "z": 28.904518932284585,
-        "tx": 0.9478834734709666,
-        "ty": -0.31861720091767703,
-        "d": 32.445995230816074
-      },
-      {
-        "x": 121.48262685831577,
-        "y": -340.45382680725527,
-        "z": 29.400359593140244,
-        "tx": 0.9578772195529368,
-        "ty": -0.2871780497557829,
-        "d": 35.14982816671741
-      },
-      {
-        "x": 124.081021457116,
-        "y": -341.2040323077705,
-        "z": 29.79079819953311,
-        "tx": 0.9635674892236645,
-        "ty": -0.2674653130991067,
-        "d": 37.85366110261875
-      },
-      {
-        "x": 126.69321842238587,
-        "y": -341.8995141527106,
-        "z": 30.026478274454014,
-        "tx": 0.9690315327987516,
-        "ty": -0.246937013105978,
-        "d": 40.55749403852009
-      },
-      {
-        "x": 129.3207591831579,
-        "y": -342.5384145613802,
-        "z": 30.127434419345125,
-        "tx": 0.9742622823407346,
-        "ty": -0.2254174021858628,
-        "d": 43.26132697442143
-      },
-      {
-        "x": 131.96238041311645,
-        "y": -343.11766438580605,
-        "z": 30.057576370668475,
-        "tx": 0.9792315023888731,
-        "ty": -0.20274531987010316,
-        "d": 45.96515991032277
-      },
-      {
-        "x": 134.61627839236323,
-        "y": -343.6337089284011,
-        "z": 29.85758778240954,
-        "tx": 0.9838936782504358,
-        "ty": -0.17875466399181833,
-        "d": 48.66899284622411
-      },
-      {
-        "x": 137.28270870603953,
-        "y": -344.08295280528677,
-        "z": 29.511649031856965,
-        "tx": 0.9881879070910968,
-        "ty": -0.1532470563466654,
-        "d": 51.372825782125446
-      },
-      {
-        "x": 139.95991898968987,
-        "y": -344.4609182361752,
-        "z": 29.0713462734342,
-        "tx": 0.9920270183981198,
-        "ty": -0.12602537350921228,
-        "d": 54.076658718026785
-      },
-      {
-        "x": 142.64713422141912,
-        "y": -344.7627500286822,
-        "z": 28.558802863660205,
-        "tx": 0.9952976677235745,
-        "ty": -0.09686357738599728,
-        "d": 56.78049165392813
-      },
-      {
-        "x": 145.3421300554458,
-        "y": -344.9828301724275,
-        "z": 28.040240945055782,
-        "tx": 0.9978505996000188,
-        "ty": -0.06552999983124687,
-        "d": 59.48432458982947
-      },
-      {
-        "x": 148.04223115969637,
-        "y": -345.11494120024696,
-        "z": 27.58687671489459,
-        "tx": 0.999494923066583,
-        "ty": -0.03177890438837241,
-        "d": 62.18815752573081
-      },
-      {
-        "x": 150.74621817747175,
-        "y": -345.1522297407526,
-        "z": 27.2366550691956,
-        "tx": 0.9999890795532745,
-        "ty": 0.004673411408706101,
-        "d": 64.89199046163215
-      },
-      {
-        "x": 153.44945469344552,
-        "y": -345.0870064059607,
-        "z": 27.054658012801255,
-        "tx": 0.9990280020593253,
-        "ty": 0.044080053327473744,
-        "d": 67.59582339753348
-      },
-      {
-        "x": 156.14595554556283,
-        "y": -344.90828918152107,
-        "z": 27.02210999875183,
-        "tx": 0.9958311636979473,
-        "ty": 0.09121564234270392,
-        "d": 70.29965633343483
-      },
-      {
-        "x": 158.831100371173,
-        "y": -344.5928177002671,
-        "z": 27.173862762624697,
-        "tx": 0.9899952393758721,
-        "ty": 0.14110076545897987,
-        "d": 73.00348926933616
-      },
-      {
-        "x": 161.49792912520107,
-        "y": -344.1508946276723,
-        "z": 27.458398187099384,
-        "tx": 0.9827730626316865,
-        "ty": 0.1848164153032286,
-        "d": 75.7073222052375
-      },
-      {
-        "x": 164.1449241615676,
-        "y": -343.5987981468689,
-        "z": 27.86929141371749,
-        "tx": 0.97492319300196,
-        "ty": 0.22254160902371317,
-        "d": 78.41115514113883
-      },
-      {
-        "x": 166.77051550434797,
-        "y": -342.95247965640084,
-        "z": 28.339289895280274,
-        "tx": 0.9670549483890147,
-        "ty": 0.2545677253626632,
-        "d": 81.11498807704018
-      },
-      {
-        "x": 169.37474226621717,
-        "y": -342.22703111224706,
-        "z": 28.824454081662246,
-        "tx": 0.959633149370713,
-        "ty": 0.2812547219672001,
-        "d": 83.81882101294151
-      },
-      {
-        "x": 171.96067789665918,
-        "y": -341.43597740768575,
-        "z": 29.279245724423546,
-        "tx": 0.952995491287443,
-        "ty": 0.3029844774667594,
-        "d": 86.52265394884286
-      },
-      {
-        "x": 174.5296040624543,
-        "y": -340.59263078182727,
-        "z": 29.652043383854014,
-        "tx": 0.9473904940795244,
-        "ty": 0.3200800708069075,
-        "d": 89.2264868847442
-      },
-      {
-        "x": 177.08499879496088,
-        "y": -339.70898975844,
-        "z": 29.932585647006388,
-        "tx": 0.9429892352014708,
-        "ty": 0.3328232297994618,
-        "d": 91.93031982064554
-      },
-      {
-        "x": 179.63048652355707,
-        "y": -338.7964509088707,
-        "z": 30.073499454311268,
-        "tx": 0.9399097060503845,
-        "ty": 0.34142311648785567,
-        "d": 94.63415275654688
-      },
-      {
-        "x": 182.16933544368774,
-        "y": -337.8661724696473,
-        "z": 30.089128459888173,
-        "tx": 0.9382304535160584,
-        "ty": 0.34601100574266624,
-        "d": 97.33798569244821
-      },
-      {
-        "x": 184.7056886663116,
-        "y": -336.9288077963797,
-        "z": 29.940442259075695,
-        "tx": 0.9379982021882015,
-        "ty": 0.3466401198529998,
-        "d": 100.04181862834956
-      },
-      {
-        "x": 187.2431366748614,
-        "y": -335.99521495633326,
-        "z": 29.663553113460097,
-        "tx": 0.9392332569687487,
-        "ty": 0.34327960761437126,
-        "d": 102.74565156425089
-      },
-      {
-        "x": 189.78007258019244,
-        "y": -335.0783030335673,
-        "z": 29.247470501840585,
-        "tx": 0.9419213190992501,
-        "ty": 0.33583363236330105,
-        "d": 105.44948450015224
-      },
-      {
-        "x": 192.33227130036434,
-        "y": -334.1675392467099,
-        "z": 28.74323327468253,
-        "tx": 0.9413170255573675,
-        "ty": 0.3375237138273851,
-        "d": 108.15331743605357
-      },
-      {
-        "x": 194.87548204800044,
-        "y": -333.24973123873934,
-        "z": 28.17334731185276,
-        "tx": 0.9398384328286138,
-        "ty": 0.3416192620129249,
-        "d": 110.85715037195492
-      },
-      {
-        "x": 197.41403838431617,
-        "y": -332.3189760758121,
-        "z": 27.58406283328207,
-        "tx": 0.937834220565764,
-        "ty": 0.34708352703031875,
-        "d": 113.56098330785626
-      },
-      {
-        "x": 199.94657873103603,
-        "y": -331.37157214151955,
-        "z": 27.009732532702277,
-        "tx": 0.935285907152211,
-        "ty": 0.3538930232181274,
-        "d": 116.2648162437576
-      },
-      {
-        "x": 202.47119404501808,
-        "y": -330.4040739731545,
-        "z": 26.47462800297485,
-        "tx": 0.9321707114621295,
-        "ty": 0.36201901150656124,
-        "d": 118.96864917965894
-      },
-      {
-        "x": 204.9869126813,
-        "y": -329.4127315652848,
-        "z": 26.013284101037936,
-        "tx": 0.9284603669526583,
-        "ty": 0.37143148358497435,
-        "d": 121.67248211556027
-      },
-      {
-        "x": 207.49142995118535,
-        "y": -328.3943773642298,
-        "z": 25.623040165416736,
-        "tx": 0.9241248040160768,
-        "ty": 0.38209075702278905,
-        "d": 124.37631505146162
-      },
-      {
-        "x": 209.9835344144134,
-        "y": -327.3454827010327,
-        "z": 25.32284809557739,
-        "tx": 0.9191294620019606,
-        "ty": 0.39395562196773726,
-        "d": 127.08014798736295
-      },
-      {
-        "x": 212.46120236074213,
-        "y": -326.26293345814537,
-        "z": 25.08640352938739,
-        "tx": 0.9134393028474028,
-        "ty": 0.40697498696314355,
-        "d": 129.7839809232643
-      },
-      {
-        "x": 214.92232325369858,
-        "y": -325.14376983638965,
-        "z": 24.906288155676016,
-        "tx": 0.9070190230565939,
-        "ty": 0.4210896481908121,
-        "d": 132.48781385916564
-      },
-      {
-        "x": 217.36550496753935,
-        "y": -323.98482073267917,
-        "z": 24.74551626256176,
-        "tx": 0.8998318958273444,
-        "ty": 0.4362368155621068,
-        "d": 135.19164679506696
-      },
-      {
-        "x": 219.78748999904406,
-        "y": -322.78395228223144,
-        "z": 24.570204945927685,
-        "tx": 0.8918487921798338,
-        "ty": 0.4523336510667451,
-        "d": 137.8954797309683
-      },
-      {
-        "x": 222.18756160282308,
-        "y": -321.53795880753967,
-        "z": 24.352960309490207,
-        "tx": 0.8830360279130245,
-        "ty": 0.4693052028345611,
-        "d": 140.59931266686965
-      },
-      {
-        "x": 224.55531379046818,
-        "y": -320.24909293287465,
-        "z": 24.055680597216096,
-        "tx": 0.8734041953513104,
-        "ty": 0.4869960077277125,
-        "d": 143.303145602771
-      },
-      {
-        "x": 226.91772901767692,
-        "y": -318.91884594772074,
-        "z": 23.680843406810016,
-        "tx": 0.8705910526116977,
-        "ty": 0.4920073364417002,
-        "d": 146.0069785386723
-      },
-      {
-        "x": 229.2670844500481,
-        "y": -317.5850683008113,
-        "z": 23.21697586722401,
-        "tx": 0.868487372525691,
-        "ty": 0.495711290736273,
-        "d": 148.71081147457366
-      },
-      {
-        "x": 231.6127918114526,
-        "y": -316.2368676658091,
-        "z": 22.69266844751121,
-        "tx": 0.8653364888968346,
-        "ty": 0.5011913416886795,
-        "d": 151.414644410475
-      },
-      {
-        "x": 233.947325800307,
-        "y": -314.87230700292986,
-        "z": 22.111657011551387,
-        "tx": 0.861157662760179,
-        "ty": 0.508337958320472,
-        "d": 154.11847734637635
-      },
-      {
-        "x": 236.26889833582183,
-        "y": -313.4863572664613,
-        "z": 21.495407939959772,
-        "tx": 0.855916489849094,
-        "ty": 0.5171140709789339,
-        "d": 156.82231028227767
-      },
-      {
-        "x": 238.57555169009007,
-        "y": -312.0739875463119,
-        "z": 20.84703478367887,
-        "tx": 0.8495326429665989,
-        "ty": 0.527536054250499,
-        "d": 159.52614321817904
-      },
-      {
-        "x": 240.86283993637844,
-        "y": -310.63141935819425,
-        "z": 20.19536736077686,
-        "tx": 0.8418863871194509,
-        "ty": 0.5396548074306002,
-        "d": 162.22997615408036
-      },
-      {
-        "x": 243.1276890816225,
-        "y": -309.15358811317896,
-        "z": 19.59705808713544,
-        "tx": 0.83280274457129,
-        "ty": 0.5535698588566099,
-        "d": 164.9338090899817
-      },
-      {
-        "x": 245.36505333374132,
-        "y": -307.6360466189244,
-        "z": 19.102958131736024,
-        "tx": 0.8220522983308147,
-        "ty": 0.5694119939104072,
-        "d": 167.63764202588303
-      },
-      {
-        "x": 247.57199457325103,
-        "y": -306.07197356263816,
-        "z": 18.806036062378414,
-        "tx": 0.8093160363107674,
-        "ty": 0.5873734360440799,
-        "d": 170.3414749617844
-      },
-      {
-        "x": 249.7409225124259,
-        "y": -304.45655289081253,
-        "z": 18.696175872711535,
-        "tx": 0.7941972361840032,
-        "ty": 0.6076600612494546,
-        "d": 173.04530789768572
-      },
-      {
-        "x": 251.86329305506408,
-        "y": -302.7843434752545,
-        "z": 18.814165268342162,
-        "tx": 0.7761791103199444,
-        "ty": 0.6305124810048884,
-        "d": 175.74914083358706
-      },
-      {
-        "x": 253.93582499640942,
-        "y": -301.04348661093485,
-        "z": 19.091460584194547,
-        "tx": 0.7545108646979106,
-        "ty": 0.6562875551561307,
-        "d": 178.4529737694884
-      },
-      {
-        "x": 255.94049822688393,
-        "y": -299.2317041141092,
-        "z": 19.528358752772338,
-        "tx": 0.728345867885123,
-        "ty": 0.6852096735559613,
-        "d": 181.15680670538976
-      },
-      {
-        "x": 257.86956589837354,
-        "y": -297.3345015765759,
-        "z": 20.06771301693537,
-        "tx": 0.6963935984537146,
-        "ty": 0.7176600560381542,
-        "d": 183.86063964129107
-      },
-      {
-        "x": 259.7003951835187,
-        "y": -295.34709907213306,
-        "z": 20.708477685083125,
-        "tx": 0.657152774550502,
-        "ty": 0.753757408521188,
-        "d": 186.5644725771924
-      },
-      {
-        "x": 261.43321644964544,
-        "y": -293.27458248624134,
-        "z": 21.41568462183264,
-        "tx": 0.628133588104909,
-        "ty": 0.7781055169412776,
-        "d": 189.26830551309376
-      },
-      {
-        "x": 263.09552616769315,
-        "y": -291.1419453045439,
-        "z": 22.187449010196257,
-        "tx": 0.601126470001111,
-        "ty": 0.799153906994143,
-        "d": 191.97213844899508
-      },
-      {
-        "x": 264.68283987983614,
-        "y": -288.95315848951344,
-        "z": 22.991803098917767,
-        "tx": 0.5727072097263718,
-        "ty": 0.8197599965401056,
-        "d": 194.67597138489643
-      },
-      {
-        "x": 266.1912238332395,
-        "y": -286.70902076224974,
-        "z": 23.804296221071482,
-        "tx": 0.5426181986027232,
-        "ty": 0.8399794584066539,
-        "d": 197.37980432079777
-      },
-      {
-        "x": 267.61569689404377,
-        "y": -284.41067663597875,
-        "z": 24.59290354944264,
-        "tx": 0.5105824084642299,
-        "ty": 0.859828822596025,
-        "d": 200.08363725669912
-      },
-      {
-        "x": 268.95043777175283,
-        "y": -282.0594169735746,
-        "z": 25.313524603113542,
-        "tx": 0.4762978405129473,
-        "ty": 0.879284008226411,
-        "d": 202.78747019260044
-      },
-      {
-        "x": 270.1888752791944,
-        "y": -279.6565325793785,
-        "z": 25.957021789720564,
-        "tx": 0.43943325647514203,
-        "ty": 0.8982752435103911,
-        "d": 205.49130312850178
-      },
-      {
-        "x": 271.32417087384647,
-        "y": -277.2021068214089,
-        "z": 26.48781120175517,
-        "tx": 0.3996070901202314,
-        "ty": 0.9166865186778091,
-        "d": 208.19513606440313
-      },
-      {
-        "x": 272.3472426074299,
-        "y": -274.6991561622583,
-        "z": 26.923182186324937,
-        "tx": 0.3564561381871147,
-        "ty": 0.9343120579060985,
-        "d": 210.89896900030448
-      },
-      {
-        "x": 273.2485797443305,
-        "y": -272.1502313129281,
-        "z": 27.24189236671425,
-        "tx": 0.309592634098491,
-        "ty": 0.9508692869747967,
-        "d": 213.6028019362058
-      },
-      {
-        "x": 274.0176733257201,
-        "y": -269.55868634690995,
-        "z": 27.4800650847032,
-        "tx": 0.2586406697547237,
-        "ty": 0.9659736041677476,
-        "d": 216.30663487210714
-      },
-      {
-        "x": 274.643077141106,
-        "y": -266.9289405061497,
-        "z": 27.644188097557493,
-        "tx": 0.20326931755178762,
-        "ty": 0.9791228648857255,
-        "d": 219.01046780800849
-      },
-      {
-        "x": 275.1105705584542,
-        "y": -264.26941093865605,
-        "z": 27.767971042097756,
-        "tx": 0.13921767309287125,
-        "ty": 0.9902618035139023,
-        "d": 221.71430074390983
-      },
-      {
-        "x": 275.38967702973616,
-        "y": -261.579204672285,
-        "z": 27.834679679493444,
-        "tx": 0.0687531436142617,
-        "ty": 0.9976337029406919,
-        "d": 224.41813367981115
-      },
-      {
-        "x": 275.49096945460235,
-        "y": -258.87738188713314,
-        "z": 27.825934771258446,
-        "tx": 0.00764064334076541,
-        "ty": 0.9999708098586376,
-        "d": 227.12196661571252
-      },
-      {
-        "x": 275.4384524002206,
-        "y": -256.1728653169772,
-        "z": 27.671927342374687,
-        "tx": -0.045167272859243594,
-        "ty": 0.9989794379577883,
-        "d": 229.82579955161384
-      },
-      {
-        "x": 275.2533125484314,
-        "y": -253.47629350130217,
-        "z": 27.379589131849215,
-        "tx": -0.09069602549398165,
-        "ty": 0.9958786226039773,
-        "d": 232.5296324875152
-      },
-      {
-        "x": 274.9536131684218,
-        "y": -250.78919578195067,
-        "z": 26.930279211496813,
-        "tx": -0.130022945620979,
-        "ty": 0.9915109851191989,
-        "d": 235.2334654234165
-      },
-      {
-        "x": 274.5548084312665,
-        "y": -248.11403959615765,
-        "z": 26.39592593280701,
-        "tx": -0.16403654560853734,
-        "ty": 0.9864542623481428,
-        "d": 237.93729835931788
-      },
-      {
-        "x": 274.0705642530975,
-        "y": -245.4541155017464,
-        "z": 25.814703437438,
-        "tx": -0.19345739731291797,
-        "ty": 0.9811086766637589,
-        "d": 240.6411312952192
-      },
-      {
-        "x": 273.51213493787736,
-        "y": -242.80812793025575,
-        "z": 25.23080205027783,
-        "tx": -0.21890900555047907,
-        "ty": 0.9757452778716895,
-        "d": 243.34496423112054
-      },
-      {
-        "x": 272.8898581447814,
-        "y": -240.17705693392358,
-        "z": 24.662710330813294,
-        "tx": -0.24085268548146424,
-        "ty": 0.9705616847456771,
-        "d": 246.0487971670219
-      },
-      {
-        "x": 272.2122520183363,
-        "y": -237.5583911189809,
-        "z": 24.11545350352172,
-        "tx": -0.2596561234039521,
-        "ty": 0.9657011429934376,
-        "d": 248.75263010292323
-      },
-      {
-        "x": 271.48795423751534,
-        "y": -234.95296575371822,
-        "z": 23.612899966926197,
-        "tx": -0.27554476838549197,
-        "ty": 0.9612882401316402,
-        "d": 251.45646303882455
-      },
-      {
-        "x": 270.72499300113117,
-        "y": -232.3604760787288,
-        "z": 23.16706364113425,
-        "tx": -0.2886395641319427,
-        "ty": 0.9574378319336051,
-        "d": 254.1602959747259
-      },
-      {
-        "x": 269.9269368337457,
-        "y": -229.77041080268964,
-        "z": 22.797644057330952,
-        "tx": -0.30828489308804735,
-        "ty": 0.9512940789754194,
-        "d": 256.86412891062724
-      },
-      {
-        "x": 268.959366864566,
-        "y": -227.25616725413457,
-        "z": 22.465851317971907,
-        "tx": -0.4047121998573524,
-        "ty": 0.9144441127191002,
-        "d": 259.5679618465286
-      },
-      {
-        "x": 267.76540426529715,
-        "y": -224.8296859793799,
-        "z": 22.108374077213583,
-        "tx": -0.473928556531322,
-        "ty": 0.8805632988628005,
-        "d": 262.27179478242994
-      },
-      {
-        "x": 266.4154478841391,
-        "y": -222.48614105883902,
-        "z": 21.693369638142098,
-        "tx": -0.5209551113919061,
-        "ty": 0.8535840743094069,
-        "d": 264.9756277183313
-      },
-      {
-        "x": 264.9637611605073,
-        "y": -220.20543051707395,
-        "z": 21.225522232417827,
-        "tx": -0.5502483707830668,
-        "ty": 0.8350010361973097,
-        "d": 267.6794606542326
-      },
-      {
-        "x": 263.45273195235944,
-        "y": -217.9619579790586,
-        "z": 20.77075621697155,
-        "tx": -0.5646623641971593,
-        "ty": 0.8253220065279218,
-        "d": 270.3832935901339
-      },
-      {
-        "x": 261.92195365314325,
-        "y": -215.73313190945055,
-        "z": 20.398489186431416,
-        "tx": -0.5653429560324826,
-        "ty": 0.8248559523119503,
-        "d": 273.0871265260353
-      },
-      {
-        "x": 260.40723628675255,
-        "y": -213.49110387784714,
-        "z": 20.105474258171082,
-        "tx": -0.5517546490725419,
-        "ty": 0.8340064791276124,
-        "d": 275.7909594619366
-      },
-      {
-        "x": 258.95171872895634,
-        "y": -211.21165009806498,
-        "z": 19.867742854392144,
-        "tx": -0.5214254604324267,
-        "ty": 0.8532968353467812,
-        "d": 278.49479239783795
-      },
-      {
-        "x": 257.6071842866965,
-        "y": -208.86776459272178,
-        "z": 19.62516577242358,
-        "tx": -0.46938480094508,
-        "ty": 0.8829937194803527,
-        "d": 281.1986253337393
-      },
-      {
-        "x": 256.44134730985184,
-        "y": -206.43002624732392,
-        "z": 19.347357277943214,
-        "tx": -0.38733472228714433,
-        "ty": 0.9219391590071119,
-        "d": 283.9024582696406
-      },
-      {
-        "x": 255.54968187335373,
-        "y": -203.87817425971798,
-        "z": 19.06136181675976,
-        "tx": -0.26413741969552146,
-        "ty": 0.964485056139592,
-        "d": 286.606291205542
-      },
-      {
-        "x": 255.05711627288883,
-        "y": -201.22310322903616,
-        "z": 18.82301044405293,
-        "tx": -0.09211912608929343,
-        "ty": 0.9957479935247396,
-        "d": 289.31012414144334
-      },
-      {
-        "x": 255.07090673003677,
-        "y": -198.5232197498081,
-        "z": 18.66277552268827,
-        "tx": 0.09439345191268524,
-        "ty": 0.9955349698709774,
-        "d": 292.0139570773446
-      },
-      {
-        "x": 255.5314627733028,
-        "y": -195.86176301098692,
-        "z": 18.593966338929963,
-        "tx": 0.24010492275308357,
-        "ty": 0.970746942343748,
-        "d": 294.717790013246
-      },
-      {
-        "x": 256.33571358457453,
-        "y": -193.2826163476137,
-        "z": 18.55822510108717,
-        "tx": 0.3491672369621863,
-        "ty": 0.9370604252833392,
-        "d": 297.4216229491473
-      },
-      {
-        "x": 257.39119719996404,
-        "y": -190.7947745207799,
-        "z": 18.48331069053739,
-        "tx": 0.42717789908676496,
-        "ty": 0.9041675964840908,
-        "d": 300.12545588504867
-      },
-      {
-        "x": 258.6245572031802,
-        "y": -188.3883685871015,
-        "z": 18.327392965713518,
-        "tx": 0.4815093880014438,
-        "ty": 0.8764409331303938,
-        "d": 302.82928882095
-      },
-      {
-        "x": 259.9804213824644,
-        "y": -186.04696090751946,
-        "z": 18.060478225099914,
-        "tx": 0.5180907397475326,
-        "ty": 0.8553256604287367,
-        "d": 305.5331217568513
-      },
-      {
-        "x": 261.41485490989515,
-        "y": -183.75517859241293,
-        "z": 17.73689853435441,
-        "tx": 0.5409401859079808,
-        "ty": 0.8410610651253805,
-        "d": 308.2369546927527
-      },
-      {
-        "x": 262.8957390541558,
-        "y": -181.49249524872633,
-        "z": 17.40065192558992,
-        "tx": 0.5525558899620957,
-        "ty": 0.8334758475614015,
-        "d": 310.94078762865405
-      },
-      {
-        "x": 264.39458350566895,
-        "y": -179.2410938387275,
-        "z": 17.08994590259076,
-        "tx": 0.5541466606343527,
-        "ty": 0.8324190522253774,
-        "d": 313.64462056455534
-      },
-      {
-        "x": 265.88422765698516,
-        "y": -176.984132947623,
-        "z": 16.826717276700602,
-        "tx": 0.5458757835794944,
-        "ty": 0.8378661163345089,
-        "d": 316.3484535004567
-      },
-      {
-        "x": 267.33788825143745,
-        "y": -174.70262073998634,
-        "z": 16.598517893737007,
-        "tx": 0.5268757456763317,
-        "ty": 0.8499423207594794,
-        "d": 319.0522864363581
-      },
-      {
-        "x": 268.7227956423406,
-        "y": -172.38050410075067,
-        "z": 16.40101665145027,
-        "tx": 0.4951407886895798,
-        "ty": 0.8688127527700436,
-        "d": 321.7561193722594
-      },
-      {
-        "x": 270,
-        "y": -170,
-        "z": 16.21889112470694,
-        "tx": 0.44753521271183305,
-        "ty": 0.8942663101017361,
-        "d": 324.4599523081607
-      }
-    ],
-    "lengthM": 324.4599523081607,
-    "widthM": 5.6,
-    "assetCounts": {
-      "cliffs": 22,
-      "boulders": 425,
-      "grass": 2566
-    },
-    "routeIndex": 8,
-    "verifiedEntireRoute": true,
-    "gateCount": 20,
-    "lengthFeet": 1064.501155866669,
-    "widthFeet": 18.372703412073488
-  },
-  "environmentSources": {
-    "provider": "Poly Haven",
-    "license": "CC0-1.0",
-    "manifest": "Vendor/Environment/manifest.json",
-    "newAssets": [
-      "mountainside",
-      "boulder_01",
-      "grass_medium_01",
-      "dry_ground_rocks",
-      "rocks_ground_05"
-    ],
-    "naniteRocks": [
-      "scan_mountainside_0",
-      "scan_boulder_01_0"
-    ],
-    "collisionFallback": "Full source resolution"
-  },
-  "renderedInspectionContext": {
-    "currentRound": {
-      "native-urus-hero-0.png": "0ae28f71a249684e179ea5b67731abc922bbd4436f94eb8b873b80016d7d9d60",
-      "native-urus-hero-1.png": "70cd3341816feb765619dd4a6fb0384ba5e655da19ba7999c42216e50bb7bfeb",
-      "native-urus-hero-2.png": "9eafadb214fef2bf61e9ece8ce2ac0d4d3e87f26becbb4b366aa2b0c7971e2a4",
-      "native-urus-hero-3.png": "70b2123b206d9115f68a6f7f642d421c54cc6c473ef86b8145388abc98dc4eb9",
-      "native-urus-hero-4.png": "3fa843d46e5440eaf8280251a213451c9c83272f066093ca7e7b1732f56890d3",
-      "native-urus-hero-5.png": "3161caee110e82661b667c47c4f2a05a2d51305b3b4902bbe1a052e26ea668ca"
-    },
-    "note": "Six actual native views compared against manufacturer brochure, manufacturer photographs and dealer exterior details. Four previews were corrected before accepting the fifth. Authored reconstruction, not OEM CAD or Forza-equivalent art."
-  },
-  "groundContact": {
-    "beforeMissingContacts": 84,
-    "afterMissingContacts": 0,
-    "minimumProbeCount": 901,
-    "focusedChecks": 19,
-    "focusedFrameRateCap": 20,
-    "focusedExitCode": 0,
-    "fullExitCode": 0,
-    "report": "Saved/Validation/ground-contact.json",
-    "log": "Saved/Validation/ground-contact.log",
-    "scope": "Cooked Axlebreaker ledge contact grid; all six vehicles settle and reverse out of a tilted compression on the flat quarry approach. Not full Axlebreaker traversal.",
-    "focusedHistorical": true,
-    "focusedExecutableSHA256": "61a555f05b4fa2cc71baa12bb854fcd7051a570e6bd7eb56796faf98052709c5",
-    "note": "The focused 20-FPS run is from the preceding ground correction; all ground cases also pass in this current full suite."
-  },
-  "automotive": {
-    "publisher": "Epic Games",
-    "pack": "Automotive Materials",
-    "bindings": [
-      {
-        "slot": "M_152",
-        "role": "paint",
-        "instance": "/Game/Materials/Automotive/MI_Urus_paint_M_152",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/CarPaint/MI_CarPaint_White",
-        "switches": {
-          "UsePearl": false,
-          "InvertGradient": false,
-          "UseOrangePeel": true,
-          "UseChameleon": false,
-          "UseFlakes": false,
-          "Use Object UVs": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false
-        }
-      },
-      {
-        "slot": "M_153",
-        "role": "carbon",
-        "instance": "/Game/Materials/Automotive/MI_Urus_carbon_M_153",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/CarbonFiber/MI_CarbonFiber",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": false,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Clear Coat": true,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false,
-          "AnisoAngle Map": false,
-          "Use Anisotropy": false
-        }
-      },
-      {
-        "slot": "M_154",
-        "role": "rubber",
-        "instance": "/Game/Materials/Automotive/MI_Urus_rubber_M_154",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Rubber/MI_Rubber_Rough",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": false,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Clear Coat": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false,
-          "AnisoAngle Map": false,
-          "Use Anisotropy": false
-        }
-      },
-      {
-        "slot": "M_155",
-        "role": "black",
-        "instance": "/Game/Materials/Automotive/MI_Urus_black_M_155",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Plastic/MI_Plastic_Glossy",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": false,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Clear Coat": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false,
-          "AnisoAngle Map": false,
-          "Use Anisotropy": false
-        }
-      },
-      {
-        "slot": "M_157",
-        "role": "metal",
-        "instance": "/Game/Materials/Automotive/MI_Urus_metal_M_157",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Metal/MI_Metal_Chrome_01",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": true,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Clear Coat": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false,
-          "AnisoAngle Map": false,
-          "Use Anisotropy": false
-        }
-      },
-      {
-        "slot": "M_160",
-        "role": "metal",
-        "instance": "/Game/Materials/Automotive/MI_Urus_metal_M_160",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Metal/MI_Metal_Chrome_01",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": true,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Clear Coat": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false,
-          "AnisoAngle Map": false,
-          "Use Anisotropy": false
-        }
-      },
-      {
-        "slot": "M_165",
-        "role": "metal",
-        "instance": "/Game/Materials/Automotive/MI_Urus_metal_M_165",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/Metal/MI_Metal_Chrome_01",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": true,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Clear Coat": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false,
-          "AnisoAngle Map": false,
-          "Use Anisotropy": false
-        }
-      },
-      {
-        "slot": "M_168",
-        "role": "plastic",
-        "instance": "/Game/Materials/Automotive/MI_Urus_plastic_M_168",
-        "parent": "/Game/AutomotiveMaterials/Materials/Interior/Plastic/MI_Plastic_SmallGrain_black",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": false,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Clear Coat": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false,
-          "AnisoAngle Map": false,
-          "Use Anisotropy": false
-        }
-      },
-      {
-        "slot": "M_171",
-        "role": "alcantara",
-        "instance": "/Game/Materials/Automotive/MI_Urus_alcantara_M_171",
-        "parent": "/Game/AutomotiveMaterials/Materials/Interior/Leather/MI_Suede_Grey",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Use Object UVs": false,
-          "Use Tint": true,
-          "Use Perforation": false,
-          "Add Wear": false,
-          "Is Leather": false,
-          "UseVariation": false
-        }
-      },
-      {
-        "slot": "M_176",
-        "role": "wheel",
-        "instance": "/Game/Materials/Automotive/MI_Urus_wheel_M_176",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/CarPaint/MI_CarPaint_Black",
-        "switches": {
-          "UsePearl": false,
-          "InvertGradient": false,
-          "UseOrangePeel": true,
-          "UseChameleon": false,
-          "UseFlakes": false,
-          "Use Object UVs": false,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false
-        }
-      },
-      {
-        "slot": "M_177",
-        "role": "rotor",
-        "instance": "/Game/Materials/Automotive/MI_Urus_rotor_M_177",
-        "parent": "/Game/AutomotiveMaterials/Materials/Exterior/BrakeRotor/MI_BrakeRotor_Carbon_Ceramic",
-        "switches": {
-          "Enable Raytracing Optims": false,
-          "Is Metallic": true,
-          "Use Object UVs": true,
-          "Use Tint": true,
-          "Add Cracks": true,
-          "Add Dust": false,
-          "Add Fingerprints": false,
-          "Add Stains": false
-        }
-      }
-    ],
-    "packVersion": "5.7",
-    "engine": "5.8.3",
-    "rawAssetsPublished": false,
-    "originalParentsPreserved": true,
-    "localChildInstances": true,
-    "focusedChecks": 7,
-    "focusedProcessExit": 0,
-    "fullProcessExit": 0
-  }
+    "Authored vehicle reconstructions remain below production racing-game art quality; no OEM CAD accuracy claim.",
+    "Only Slate Rim is verified as a complete continuous route; other routes and full loop traversal remain unproven.",
+    "No long-session stability or controller-hardware test.",
+    "Earlier candidate full run was stopped for a scenery material correction and is not accepted evidence."
+  ]
 }

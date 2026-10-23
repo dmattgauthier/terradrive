@@ -1,50 +1,42 @@
 # Native migration validation
 
-Verified October 22, 2026, Unreal Engine 5.8.3, Windows Development, DX12 SM6, RTX 4060 Laptop GPU. Launch Build/Windows/TerraDrive.exe with the complete Windows folder.
+Verified October 23, 2026, Unreal Engine 5.8.3, Windows Development, DX12 SM6, RTX 4060 Laptop GPU. Launch `Build/Windows/TerraDrive.exe` with the complete Windows folder.
 
 | Check | Result |
 |---|---|
-| Import, full shader cook and Windows packaging | Successful; accepted cook has no invalid-material fallback |
-| Packaged native suite | 278/278 pass; fresh report and actual process exit 0 |
-| Focused Urus review | 7/7 pass; six fresh native captures and actual exit 0 |
+| Import and full material cook | Successful; corrected scenery cook has no invalid material fallback |
+| Final code compilation and Windows staging | Successful against the corrected full cook |
+| Packaged native suite | 286/286 pass; fresh report and actual process exit 0 |
+| Six-vehicle garage | 30/30 pass; four captured views per vehicle and acquired finish checks |
+| Close Urus review | 7/7 pass; six fresh native captures and actual exit 0 |
 | Independent simulation core | 143/143 pass |
-| Export validation | 1,000 broad terrain samples, 363 trail samples, finite meshes/materials, wheel beads and circular loop pass |
-| Native assets | 238 source meshes; 338 material records |
-| Epic Automotive Materials | 11 Urus material slots across nine finish roles; parent and parameter bindings verified |
-| Slate Rim | 20/20 gates in the uninterrupted stock-Urus drive; approximately 1,065 feet |
-| Browser and player garage | All 1,214 local browser files match the preserved tree; player save bytes preserved |
+| Export validation | 1,000 broad terrain samples and 363 explicit trail samples pass, with finite geometry, seated tires and circular loop checks |
+| Native export | 238 source meshes; 346 material records |
+| Automotive Materials | 90 project-owned finish bindings across all six vehicles |
+| Acquired scenery | 16 mesh variants and 818 placements, including 444 MW grass clumps |
+| New foliage behavior | All three acquired MW grass variants flatten under loaded tire footprints and restore with terrain repair |
+| Browser and player garage | All 1,214 local browser files and player save bytes preserved |
 
-Executable SHA-256: fc9577ae8a4b7eeae89eb174c0e2858558c4f813866cf41d96274bb6bf687cd7. [native-validation.json](native-validation.json) records the cases, source/cooked hashes and asset metadata.
+Executable and cooked-content SHA-256 values, exact source hashes and all cases are recorded in [native-validation.json](native-validation.json).
 
-## Urus render review
+## Visual review
 
-The new [Urus body and automotive-material integration](urus-automotive.md) was reviewed through five native preview rounds. Front, side, rear and three quarter-angle views were compared against the cited manufacturer and dealer reference photographs. The first four sets led to corrections; the fifth six-image set is the accepted review evidence. Screenshots are actual packaged-game renders, not browser images or generated concept art.
+The [vehicle and terrain pass](realism-terrain.md) was reviewed in the packaged game. The first model captures exposed paint inside the Urus cabin and an excessively narrow waist. Corrections add inner pillar trims, a roof liner and taller door cards, broaden the lower door cross section and thin the arch reveals. The HUMMER side sheets have a denser grid with a matching seam projector and less extra door bulging. Native helpers add rounded fittings and analytic surface normals; all six vehicles use acquired automotive finishes.
 
-The current body has reshaped doors and shoulders, continuous painted pillars, inset glazing, revised bonnet and intake geometry, a black rear lamp band, revised mirrors and dished 22-inch wheel webs. Epic child material instances supply paint, carbon, trim, upholstery, wheel and rotor finishes. Raw Epic UAssets remain local; the public source includes the integration recipe and reference links.
+The corrected garage was inspected in side and front-quarter views across all six vehicles, with additional front views and six close Urus angles. The figures are actual native renders. Manufacturer and dealer references are linked in [urus-automotive.md](urus-automotive.md) and [vehicle-art-production.md](vehicle-art-production.md). Current shapes remain reference reconstructions, with visible limitations in exact panel transitions, lamp optics, cabin details and production topology/UV/LOD work. They are not Forza-equivalent assets.
 
-This is an authored reconstruction and remains below Forza-level automotive asset quality. Exact panel curvature, detailed lamp optics, trim, cabin and production LOD/UV work remain limitations. Numerical loading tests and polygon counts are not evidence of exact photographic accuracy. See [vehicle-art-production.md](vehicle-art-production.md).
+Terrain review covers forest, rock, dune and snow regions and driven soil captures. MW landscape color/normal maps, scanned Winter Scene snow/road textures, rock formations, ice and foliage are integrated through project-owned recipes. A scenery capture caught Winter Scene snow/weather materials on temperate rocks; those formations now use the biome's matching photographic rock material. The new grass participates in tire crushing.
 
-## Driving and terrain regressions
+## Driving and contact
 
-The full suite retains all six vehicles' braking/reverse, lamp, wheel rotation, Hummer ride height, upgrade, garage orbit, save-isolation, rollover, moving debris, locker, descent and course-start checks. The stock Urus still drives every Slate Rim gate using normal throttle/steering without intermediate teleportation.
+The full suite checks six-vehicle braking and held-input reverse, Space braking, lights, wheel rotation, Hummer ride height, upgrades, garage orbit, isolated saves, rollover grip inhibition, moving debris, lockers, descent and course starts. The stock Urus completes all 20 Slate Rim gates continuously using ordinary throttle/steering input.
 
-The [firm-ground contact correction](ground-contact.md) remains passing in this suite: zero missing supports in the cooked Axlebreaker probe grid, and all six vehicles settle and reverse from banked compression. Its preceding focused 19/19 run at a 20-FPS cap is historical evidence on the prior executable; it is not presented as a fresh focused run of this art build.
-
-Pavement traction loss alone leaves black rubber. Hard dirt leaves a light trail; loose dirt/mud/sand create grooves and berms; snow compacts and vegetation bends. Current driven sample maxima, not universally calibrated depths:
-
-| Surface | Deepest groove | Highest sampled berm |
-|---|---:|---:|
-| hard dirt | 0.87 in | shallow trail |
-| soft dirt | 5.99 in | 4.45 in |
-| mud | 8.33 in | 6.28 in |
-| wetland | 8.49 in | 6.79 in |
-| sand | 7.07 in | 4.57 in |
-| snow | 18.31 in | 4.33 in |
+The firm-ground regression queries the cooked Axlebreaker ledges and verifies all six vehicles settle above the quarry floor and reverse out of a banked compression. Soil cases retain hard-dirt trails, soft-soil grooves and berms, snow compaction, crushed vegetation and pavement-only rubber marks. Results report individual driven samples, not universally calibrated soil depths.
 
 ## Reproduce and limits
 
-Add the acquired Epic Automotive Materials pack to the project as described in [README.md](../README.md), then run Tools/test-core.cmd, Tools/build-native.ps1 -ImportAssets -Package and Tools/verify-native.ps1. Asset/material changes require a fresh cook. Player displays use imperial units; diagnostic JSON retains explicitly documented SI values.
+Add the acquired packs as described in [realism-terrain.md](realism-terrain.md), then run `Tools/build-native.ps1 -ImportAssets -Package`, `Tools/verify-native.ps1` and `Tools/test-core.cmd`. Asset/material changes require a fresh cook. Validation uses its own garage save. Player displays use imperial units; diagnostic JSON documents internal SI values.
 
-Only Slate Rim is verified as a complete uninterrupted route. Full traversal of the other challenges/loop, controller hardware and long-session stability remain unproven. This verification uses native automated driving and engine-generated captures, with no separate live desktop driving session. Licensed raw Fab/Epic files are excluded from public source; the existing vendored Poly Haven sources are CC0.
+Only Slate Rim is verified as a full uninterrupted route. Full traversal of the other challenges/loop, controller hardware and long-session stability remain unproven. This round uses native automated driving and engine-generated captures, without a separate live desktop/controller session. An earlier candidate full run was intentionally stopped for the scenery correction and is not accepted as passing evidence. The accepted final run completes on the corrected package.
 
-A previous CSV-enabled diagnostic passed its game cases but exited 777003 during shutdown. It was rejected; the cause remains unproven. The accepted current focused and full runs omit CSV capture and exit 0.
+Raw acquired Epic/Fab assets, saves and builds remain local. The public repository contains original source, preserved browser assets, integration recipes and verification metadata.

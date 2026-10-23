@@ -1,6 +1,7 @@
 // Native-only factory detail pass. The supplied browser rig remains untouched.
 // References, trim exclusions and measured envelopes: docs/vehicle-model-research.md.
 import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
+import {nativeGeometry} from './vehicle-geometry.mjs';
 
 const alloy=new THREE.MeshPhysicalMaterial({color:'#9ba2a5',metalness:.86,roughness:.29,clearcoat:.35,clearcoatRoughness:.18});
 const graphite=new THREE.MeshPhysicalMaterial({color:'#252c30',metalness:.70,roughness:.31,clearcoat:.45,clearcoatRoughness:.16});
@@ -60,10 +61,10 @@ function text(g,value,width,height,material){
 
 function factoryRim(spec){
   const g=new THREE.Group(),style=spec.bodyStyle,rimInches=Number(spec.tireSize.match(/R(\d+)/)[1]),r=rimInches*.0254*.5,w=spec.tireWidth;
-  const rimMaterial=style==='urus'?new THREE.MeshPhysicalMaterial({color:'#9ba2a5',metalness:.86,roughness:.29,clearcoat:.35,clearcoatRoughness:.18}):style==='sedan'?new THREE.MeshPhysicalMaterial({color:'#171c21',metalness:.58,roughness:.20,clearcoat:1,clearcoatRoughness:.10}):style==='van'?alloy:graphite;
+  const rimMaterial=style==='urus'?new THREE.MeshPhysicalMaterial({color:'#9ba2a5',metalness:.86,roughness:.29,clearcoat:.35,clearcoatRoughness:.18}):style==='sedan'?new THREE.MeshPhysicalMaterial({color:'#171c21',metalness:.58,roughness:.20,clearcoat:1,clearcoatRoughness:.10}):style==='van'?alloy.clone():graphite.clone();
+  rimMaterial.userData.automotive=['urus','sedan'].includes(style)?'wheel':'metal';rimMaterial.userData.automotiveOwner=style;
   if(style==='urus'){rimMaterial.color.set('#20252a');rimMaterial.userData.automotive='wheel';}
-  const brakeMaterial=style==='urus'?rotorMetal.clone():rotorMetal;
-  if(style==='urus')brakeMaterial.userData.automotive='rotor';
+  const brakeMaterial=rotorMetal.clone();brakeMaterial.userData.automotive=style==='urus'?'rotor':'brakeSteel';brakeMaterial.userData.automotiveOwner=style;
   const barrel=mesh(g,new THREE.LatheGeometry([[r*.85,-w*.43],[r*.97,-w*.44],[r,-w*.38],[r*.93,-w*.32],[r*.93,w*.32],[r,w*.38],[r*.97,w*.44],[r*.85,w*.43]].map(p=>new THREE.Vector2(...p)),96),rimMaterial);barrel.rotation.z=Math.PI/2;
   for(const side of [-1,1]){
     const face=side*w*.43;
@@ -185,7 +186,7 @@ export {text as geometryText};
 export function brakeCaliperModel(){
   const g=new THREE.Group();
   // Local hub coordinates: +X is forward and Y points outward after import.
-  const shell=mesh(g,new THREE.BoxGeometry(.060,.110,.140,2,3,3),castMetal);
+  nativeGeometry.roundedBox(g,castMetal,0,0,0,.060,.110,.140,.013);
   for(const side of [-1,1]){
     const cap=mesh(g,new THREE.CylinderGeometry(.029,.029,.008,24),alloy,[side*.033,0,.025]);cap.rotation.z=Math.PI/2;
     for(const y of [-.036,.036])rod(g,alloy,[-.04,y,-.036],[.04,y,-.036],.006);

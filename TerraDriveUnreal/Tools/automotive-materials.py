@@ -1,4 +1,4 @@
-"""Bind original Urus geometry to the locally acquired Epic Automotive pack.
+"""Bind original vehicle geometry to the locally acquired Epic Automotive pack.
 
 Executed by import-assets.py. Licensed UAssets remain local; this recipe is
 public. Parents are never edited. Import through Fab > Add to Project first.
@@ -13,6 +13,7 @@ automotive_parents = {
     'alcantara': 'Interior/Leather/MI_Suede_Grey',
     'wheel': 'Exterior/CarPaint/MI_CarPaint_Black',
     'rotor': 'Exterior/BrakeRotor/MI_BrakeRotor_Carbon_Ceramic',
+    'brakeSteel': 'Exterior/BrakeRotor/MI_BrakeRotor_Iron_Clean',
 }
 automotive_overrides = {
     'paint': {'PaintRoughness': .48, 'MinRoughness': .075, 'MaxRoughness': .12,
@@ -23,6 +24,7 @@ automotive_overrides = {
     'metal': {'Roughness Min': .16, 'Roughness Max': .26},
     'wheel': {'MinRoughness': .22, 'MaxRoughness': .30, 'OrangePeelIntensity': .015, 'PaintRoughness': .45},
     'rotor': {'Roughness Min': .36, 'Roughness Max': .51, 'Crack Intensity': .15},
+    'brakeSteel': {'Roughness Min': .31, 'Roughness Max': .47, 'Normal Intensity': .20},
 }
 automotive_instances = {}
 automotive_bindings = []
@@ -37,7 +39,8 @@ for record in data['materials']:
         raise RuntimeError('Missing Epic Automotive Materials: add the acquired pack to TerraDrive through Epic Launcher/Fab. Required: ' + parent_path)
     # Key by source material too: chrome, radiator slats and plate backing
     # need different tints even though they use the same Epic master family.
-    name = 'MI_Urus_' + role + '_' + record['id']
+    owner = record.get('automotiveOwner', 'urus') or 'urus'
+    name = ('MI_Urus_' if owner == 'urus' else 'MI_Vehicle_' + owner + '_') + role + '_' + record['id']
     dest = '/Game/Materials/Automotive/' + name
     instance = lib.load_asset(dest) if lib.does_asset_exist(dest) else tools.create_asset(
         name, '/Game/Materials/Automotive', unreal.MaterialInstanceConstant,
@@ -82,7 +85,7 @@ for record in data['materials']:
     materials[record['id']] = instance
     switches = {str(n): edit.get_material_instance_static_switch_parameter_value(instance,n)
                 for n in edit.get_static_switch_parameter_names(instance)}
-    automotive_bindings.append({'slot': record['id'], 'role': role, 'instance': dest, 'parent': parent_path, 'switches': switches})
+    automotive_bindings.append({'slot': record['id'], 'role': role, 'owner': owner, 'instance': dest, 'parent': parent_path, 'switches': switches})
 with open(os.path.join(root, 'Saved', 'automotive-bindings.json'), 'w', encoding='utf8') as stream:
     json.dump({'publisher': 'Epic Games', 'pack': 'Automotive Materials', 'bindings': automotive_bindings}, stream, indent=2)
 if automotive_bindings:

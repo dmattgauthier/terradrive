@@ -1,16 +1,15 @@
 // Native-only compound body surfaces. Metres, Y up, nose +Z.
 import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
+import {nativeGeometry} from './vehicle-geometry.mjs';
 export {T};
 export const clamp=T.MathUtils.clamp, smooth=T.MathUtils.smoothstep, lerp=T.MathUtils.lerp;
 export function mesh(g,geo,m,p=[0,0,0]){const o=new T.Mesh(geo,m);o.position.set(...p);g.add(o);return o;}
 export function box(g,m,p,s,r=0){
- r=Math.min(r,...s.map(v=>v*.24));
  if(!r)return mesh(g,new T.BoxGeometry(...s),m,p);
- const sh=new T.Shape(),x=s[0]/2-r,y=s[1]/2-r;
- sh.moveTo(-x,-y);sh.lineTo(x,-y);sh.lineTo(x,y);sh.lineTo(-x,y);sh.closePath();
- const geo=new T.ExtrudeGeometry(sh,{depth:s[2]-r*2,steps:1,bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelSegments:4});geo.translate(0,0,-s[2]/2+r);return mesh(g,geo,m,p);
+ return nativeGeometry.roundedBox(g,m,...p,...s,r);
 }
 export function surface(g,m,nu,nv,sample,flip=false,cutout=null){
+ if(!cutout)return nativeGeometry.surface(g,m,nu,nv,sample,flip);
  const p=[],uv=[],ix=[];
  for(let j=0;j<=nv;j++)for(let i=0;i<=nu;i++){p.push(...sample(i/nu,j/nv));uv.push(i/nu,j/nv);}
  for(let j=0;j<nv;j++)for(let i=0;i<nu;i++){if(cutout?.((i+.5)/nu,(j+.5)/nv))continue;const a=j*(nu+1)+i,b=a+1,c=a+nu+1,d=c+1;ix.push(...(flip?[a,c,b,b,c,d]:[a,b,c,b,d,c]));}

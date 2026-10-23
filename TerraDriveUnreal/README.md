@@ -2,6 +2,8 @@
 
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
+The latest [vehicle and landscape pass](docs/realism-terrain.md) adds curved-surface normals and rounded fittings, automotive finishes across all six vehicles, lighter view-dependent glazing, MW landscape textures/foliage and scanned Winter Scene snow, rock and ice. It requires the acquired **MW Landscape Auto Material** and **Automotive Winter Scene** packs as well as Automotive Materials. The document explains how the packs feed the deformable native terrain and how to add them from your Epic library.
+
 The latest physics correction restores finite-tread support on uneven rigid ledges after the sphere query rejects a side contact. See [ground-contact.md](docs/ground-contact.md) and run `Tools/verify-native.ps1 -GroundOnly` for the focused regression. Current bodies remain procedural approximations; [vehicle-art-production.md](docs/vehicle-art-production.md) describes the recommended mesh, material and reference-review pipeline for a substantial visual improvement.
 
 The Urus art update is described in [urus-automotive.md](docs/urus-automotive.md): reconstructed coachwork, inset glazing, deeper intake and diffuser geometry, dished 22-inch wheels and actual Epic Automotive Materials instances. The material pack is a separately acquired build dependency; its original UAssets are not distributed in this source repository. The reference reconstruction is improved but remains below the precision and detail of a production racing-game vehicle asset.
