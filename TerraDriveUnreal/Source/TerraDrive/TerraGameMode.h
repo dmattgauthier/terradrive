@@ -34,6 +34,9 @@ private:
   TArray<FString> Results;
   bool Captured = false;
   int SoilScenario=0;
+  TArray<TWeakObjectPtr<class UInstancedStaticMeshComponent>> RockViews;
+  double RenderSampleStart=0,RenderSampleSeconds=0;
+  int RenderFrames=0;
   float TrailMaximumError=0;
   int TrailClosestSample=0;
   TArray<FVector> SoilProbes;

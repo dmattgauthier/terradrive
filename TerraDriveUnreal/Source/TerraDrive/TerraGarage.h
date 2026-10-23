@@ -17,6 +17,7 @@ private:
   int Page = 0;
   TSharedRef<SWidget> VehiclePage();
   TSharedRef<SWidget> UpgradePage();
+  TSharedRef<SWidget> GraphicsPage();
   TSharedRef<SWidget> UpgradeRow(int Part);
   TSharedRef<SWidget> Metric(const FString &Name, TAttribute<FText> Value);
 };

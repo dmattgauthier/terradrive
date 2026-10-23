@@ -1,6 +1,9 @@
 #include "TerraGarage.h"
 #include "TerraVehicle.h"
 #include "TerraUnits.h"
+#include "TerraGraphics.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/SBoxPanel.h"
@@ -92,11 +95,15 @@ void STerraGarage::Construct(const FArguments &Args) {
             .OnClicked_Lambda([this]{Page=0;Pages->SetActiveWidgetIndex(0);return FReply::Handled();})[Label(TEXT("01   VEHICLES"),13,White,true)]]
           +SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(5,0)
           [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(16,10)).ButtonColorAndOpacity_Lambda([this]{return Page==1?FLinearColor(.22,.38,.29):Ink;})
-            .OnClicked_Lambda([this]{Page=1;Pages->SetActiveWidgetIndex(1);return FReply::Handled();})[Label(TEXT("02   UPGRADES"),13,White,true)]]]
+            .OnClicked_Lambda([this]{Page=1;Pages->SetActiveWidgetIndex(1);return FReply::Handled();})[Label(TEXT("02   UPGRADES"),13,White,true)]]
+          +SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(5,0)
+          [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(16,10)).ButtonColorAndOpacity_Lambda([this]{return Page==2?FLinearColor(.22,.38,.29):Ink;})
+            .OnClicked_Lambda([this]{Page=2;Pages->SetActiveWidgetIndex(2);return FReply::Handled();})[Label(TEXT("03   GRAPHICS"),13,White,true)]]]
         +SVerticalBox::Slot().FillHeight(1).Padding(28,0)
         [SAssignNew(Pages,SWidgetSwitcher)
           +SWidgetSwitcher::Slot()[VehiclePage()]
-          +SWidgetSwitcher::Slot()[UpgradePage()]]
+          +SWidgetSwitcher::Slot()[UpgradePage()]
+          +SWidgetSwitcher::Slot()[GraphicsPage()]]
         +SVerticalBox::Slot().AutoHeight().Padding(28,16,28,22)
         [SNew(SBorder).BorderImage(&Panel).Padding(18,12)
           [SNew(SHorizontalBox)
@@ -114,6 +121,29 @@ void STerraGarage::Construct(const FArguments &Args) {
               .OnClicked_Lambda([this]{if(Vehicle.IsValid())Vehicle->SetGarage(false);return FReply::Handled();})
               [Label(TEXT("LET'S DRIVE   >"),14,FLinearColor(.025,.06,.04),true)]]]]
       ]]];
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraRenderOnly"))){Page=2;Pages->SetActiveWidgetIndex(2);}
+}
+TSharedRef<SWidget> STerraGarage::GraphicsPage(){
+  auto Options=SNew(SVerticalBox);
+  const TCHAR *Names[]={TEXT("COOL   /   30 FPS"),TEXT("BALANCED   /   45 FPS"),TEXT("QUALITY   /   60 FPS")};
+  const TCHAR *Details[]={TEXT("Recommended for lower GPU load. 75% internal resolution, lighter shadows, screen-space GI and reflections off."),
+    TEXT("Smoother driving. 85% internal resolution, medium shadows and simple reflections. Uses more GPU power than Cool."),
+    TEXT("Full internal resolution, higher shadows, screen-space GI and reflections. Highest GPU demand.")};
+  for(int I=0;I<3;++I)Options->AddSlot().AutoHeight().Padding(0,0,0,14)
+    [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(22)
+      .ButtonColorAndOpacity_Lambda([I]{return TerraGraphics::Preset()==I?FLinearColor(.19,.33,.26):Ink;})
+      .OnClicked_Lambda([I]{TerraGraphics::Select(I);return FReply::Handled();})
+      [SNew(SVerticalBox)
+        +SVerticalBox::Slot().AutoHeight()[Label(Names[I],19,Mint,true)]
+        +SVerticalBox::Slot().AutoHeight().Padding(0,10,0,0)[SNew(STextBlock).Text(FText::FromString(Details[I])).Font(Font(13)).ColorAndOpacity(White).AutoWrapText(true)]]];
+  return SNew(SHorizontalBox)
+    +SHorizontalBox::Slot().FillWidth(1.5).Padding(0,0,24,0)[Options]
+    +SHorizontalBox::Slot().FillWidth(1)
+    [SNew(SBorder).BorderImage(&Panel).Padding(26)
+      [SNew(SVerticalBox)
+        +SVerticalBox::Slot().AutoHeight()[Label(TEXT("RENDERING & POWER"),16,Mint,true)]
+        +SVerticalBox::Slot().AutoHeight().Padding(0,18)[SNew(STextBlock).Text_Lambda([]{return FText::FromString(TerraGraphics::Name());}).Font(Font(22,true)).ColorAndOpacity(White)]
+        +SVerticalBox::Slot().AutoHeight()[SNew(STextBlock).Text(FText::FromString(TEXT("Changes apply immediately and are saved.\n\nGarage previews are capped at 20 FPS. An unfocused game window is capped at 15 FPS.\n\nTerrain ruts, crushed grass, vehicle physics and textures remain available in every preset.\n\nA lower cap reduces rendering work; it cannot guarantee a particular GPU temperature."))).Font(Font(14)).ColorAndOpacity(Muted).AutoWrapText(true)]]];
 }
 FReply STerraGarage::OnPreviewKeyDown(const FGeometry& Geometry,const FKeyEvent &Event){
   // Camera keys must work after a child button acquires keyboard focus.

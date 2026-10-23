@@ -12,6 +12,11 @@
   ],
   "Plugins": [
     {
+      "Name": "GeometryScripting",
+      "Enabled": true,
+      "TargetAllowList": ["Editor"]
+    },
+    {
       "Name": "ProceduralMeshComponent",
       "Enabled": true
     },

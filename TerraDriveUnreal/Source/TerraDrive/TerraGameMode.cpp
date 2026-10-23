@@ -24,6 +24,8 @@
 #include "TerraWorld.h"
 #include "TerraUnits.h"
 #include "TerraContact.h"
+#include "TerraGraphics.h"
+#include "Misc/App.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
   DefaultPawnClass = ATerraVehicle::StaticClass();
@@ -32,6 +34,7 @@ ATerraGameMode::ATerraGameMode() {
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
+  TerraGraphics::Initialize();
   // Create visible vehicle proxies while their PSOs warm; delaying proxies
   // can otherwise show only wheels on the first cold vehicle selection.
   if(auto *Strategy=IConsoleManager::Get().FindConsoleVariable(TEXT("r.PSOPrecache.ProxyCreationStrategy")))Strategy->Set(0,ECVF_SetByCode);
@@ -80,6 +83,9 @@ void ATerraHUD::DrawHUD() {
 }
 void ATerraGameMode::Tick(float Dt) {
   Super::Tick(Dt);
+  auto *GraphicsVehicle=Cast<ATerraVehicle>(UGameplayStatics::GetPlayerPawn(this,0));
+  const bool Automated=FParse::Param(FCommandLine::Get(),TEXT("unattended"));
+  TerraGraphics::Tick(GraphicsVehicle&&GraphicsVehicle->Garage,!Automated&&!FApp::HasFocus());
   if (!FParse::Param(FCommandLine::Get(), TEXT("TerraValidate")))
     return;
   TestTime += Dt;
@@ -105,6 +111,7 @@ void ATerraGameMode::Tick(float Dt) {
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly")))Next(64);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"))){ModelVehicle=0;Next(64);}
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraGroundOnly")))Next(66);
+  if(Stage==0&&(FParse::Param(FCommandLine::Get(),TEXT("TerraRenderOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraPerfOnly"))))Next(69);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){
     BrakeVehicle=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
     V->TestDriverInput=true;V->TestForward=V->TestReverse=V->TestStop=false;V->TestSteer=0;Next(34);
@@ -893,7 +900,76 @@ void ATerraGameMode::Tick(float Dt) {
     }
     Check(TEXT("Axlebreaker cooked rock supports banked and compressed tires"),Tested>900&&Missing==0,Missing);
     ModelVehicle=0;Next(67);
-  }else if(Stage==67){
+  }else if(Stage==69){
+    V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(8);
+    V->TestThrottle=V->TestSteer=0;V->TestBrake=1;V->SetActorTickEnabled(false);V->Chassis->SetSimulatePhysics(false);
+    SoilCamera=GetWorld()->SpawnActor<ACameraActor>();SoilCamera->GetCameraComponent()->SetFieldOfView(64);
+    auto *PC=GetWorld()->GetFirstPlayerController();PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;
+    TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
+    for(auto *C:Components)if(C->ComponentHasTag(TEXT("TerraFabScenery"))&&C->GetStaticMesh()&&C->GetInstanceCount()>0){
+      const FString Name=C->GetStaticMesh()->GetName();
+      if(Name.StartsWith(TEXT("MW_"))){Check(Name+TEXT(" avoids distant grass shadow passes"),!C->CastShadow&&C->InstanceEndCullDistance==8000);continue;}
+      if(Name.Contains(TEXT("Ice")))continue;
+      bool Opaque=true,TwoSided=true;
+      for(int Slot=0;Slot<C->GetNumMaterials();++Slot){auto *M=C->GetMaterial(Slot);Opaque&=M&&M->GetBlendMode()==BLEND_Opaque;TwoSided&=M&&M->IsTwoSided();}
+      Check(Name+TEXT(" rock is opaque and renders backfaces"),Opaque&&TwoSided);
+      RockViews.Add(C);
+    }
+    Check(TEXT("all eleven acquired non-ice rock groups inspected"),RockViews.Num()==11,RockViews.Num());
+    if(FParse::Param(FCommandLine::Get(),TEXT("TerraPerfOnly"))){
+      // Reproducible quarry overlook. Warm shaders/streaming before sampling.
+      const FVector P=V->GetActorLocation()+FVector(-750,-950,700);
+      SoilCamera->SetActorLocationAndRotation(P,(V->GetActorLocation()+FVector(1000,0,70)-P).Rotation());
+      ModelView=0;Next(72);
+    }else{
+      const int Original=TerraGraphics::Preset();
+      const FString Path=FPaths::ProjectSavedDir()/TEXT("Validation/render-graphics-test.json");
+      for(int I=0;I<3;++I){TerraGraphics::Select(I,false);
+        const float Scale=IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenPercentage"))->GetFloat();
+        Check(FString::Printf(TEXT("graphics preset %d applies resolution and bounded frame limit"),I),FMath::IsNearlyEqual(Scale,I==0?75.f:I==1?85.f:100.f)&&TerraGraphics::FrameLimit(false,false)<=60,Scale);
+        Check(FString::Printf(TEXT("graphics preset %d saves and reloads independently"),I),TerraGraphics::Save(Path)&&TerraGraphics::Load(Path)&&TerraGraphics::Preset()==I);
+      }
+      FFileHelper::SaveStringToFile(TEXT("{\"version\":1,\"preset\":200}"),*Path);
+      Check(TEXT("invalid graphics save preserves selected preset"),!TerraGraphics::Load(Path)&&TerraGraphics::Preset()==2);
+      Check(TEXT("background and garage have lower frame caps"),TerraGraphics::FrameLimit(true,false)<=20&&TerraGraphics::FrameLimit(false,true)<=15);
+      TerraGraphics::Tick(false,true);
+      Check(TEXT("background cap reaches the engine frame limiter"),IConsoleManager::Get().FindConsoleVariable(TEXT("t.MaxFPS"))->GetFloat()<=15);
+      TerraGraphics::Tick(true,false);
+      Check(TEXT("garage cap reaches the engine frame limiter"),IConsoleManager::Get().FindConsoleVariable(TEXT("t.MaxFPS"))->GetFloat()<=20);
+      TerraGraphics::Select(Original,false);ModelVehicle=ModelView=0;Next(70);
+    }
+  }else if(Stage==70){
+    if(!RockViews.IsValidIndex(ModelVehicle)){V->SetActorTickEnabled(true);V->SetGarage(true);Next(73);return;}
+    auto *C=RockViews[ModelVehicle].Get();FTransform T;C->GetInstanceTransform(0,T,true);
+    const FBox Box=C->GetStaticMesh()->GetBoundingBox();
+    const FVector Target=T.TransformPosition(Box.GetCenter());
+    const float Radius=FMath::Max(100.f,float((Box.GetExtent()*T.GetScale3D()).Size()));
+    const float Angle=ModelView*PI*.5f+.37f;
+    FVector Eye=Target+FVector(FMath::Cos(Angle),FMath::Sin(Angle),.25f)*Radius*2.5f;
+    Eye.Z=FMath::Max(Eye.Z,V->Terrain->Sample(Eye).Height+100.f);
+    SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());Next(71);
+  }else if(Stage==71&&StageTime>1.2f){
+    auto *C=RockViews[ModelVehicle].Get();
+    const FString Filename=FString::Printf(TEXT("native-rock-%s-view-%d.png"),*C->GetStaticMesh()->GetName(),ModelView);
+    Capture(*Filename);Check(Filename+TEXT(" rendered"),C->IsVisible());
+    if(++ModelView==4){ModelView=0;++ModelVehicle;}Next(70);
+  }else if(Stage==72){
+    if(StageTime>10){
+      if(!RenderFrames){RenderSampleStart=FPlatformTime::Seconds();UE_LOG(LogTemp,Display,TEXT("TERRA_GPU_SAMPLE_BEGIN mode=%d"),TerraGraphics::Preset());}
+      ++RenderFrames;RenderSampleSeconds=FPlatformTime::Seconds()-RenderSampleStart;
+    }
+    if(StageTime>35){
+      const double FPS=(RenderFrames-1)/FMath::Max(.001,RenderSampleSeconds);
+      const float Cap=TerraGraphics::FrameLimit(false,false);
+      Check(TEXT("measured native frame rate respects preset cap"),FPS<=Cap*1.08f,FPS);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_GPU_SAMPLE_END mode=%d frames=%d seconds=%.3f fps=%.2f cap=%.0f"),TerraGraphics::Preset(),RenderFrames,RenderSampleSeconds,FPS,Cap);
+      Capture(*FString::Printf(TEXT("native-gpu-preset-%d.png"),TerraGraphics::Preset()));Next(74);
+    }
+  }else if(Stage==73&&StageTime>2){
+    if(auto *PC=GetWorld()->GetFirstPlayerController())PC->SetViewTarget(V);
+    Capture(TEXT("native-graphics-menu.png"));Next(74);
+  }else if(Stage==74&&StageTime>.5f){FinishValidation();}
+  else if(Stage==67){
     V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(4);
     if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
     V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;

@@ -1,6 +1,6 @@
 {
   "date": "2026-10-23",
-  "verifiedAt": "2026-10-23T17:21:59.993Z",
+  "verifiedAt": "2026-10-23T19:57:24.809Z",
   "engine": "5.8.3",
   "configuration": "Windows Development",
   "nativeRevision": "all-models-6",
@@ -12,10 +12,28 @@
     "automatedResolution": [
       1280,
       720
+    ],
+    "defaultPreset": "Cool",
+    "drivingCaps": [
+      30,
+      45,
+      60
+    ],
+    "internalRenderPercent": [
+      75,
+      85,
+      100
+    ],
+    "garageCap": 20,
+    "backgroundCap": 15,
+    "fullValidationCap": 20,
+    "renderValidationResolution": [
+      1920,
+      1080
     ]
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "7eff4e08a98416524c4d1c894fd2ed190b09f96fd8a4f540ce7c63090eadf7ba",
+  "executableSHA256": "c4c8e8e7348444247982fcf1b5cc93f9715f8d46900634003eba9506d30f4594",
   "tests": [
     {
       "case": "native world data",
@@ -228,8 +246,8 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 81.684,
-      "speedMS": 22.769,
+      "distanceM": 82.927,
+      "speedMS": 22.833,
       "pass": true
     },
     {
@@ -250,8 +268,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 13.862,
-      "yawDegrees": 90.112,
+      "speedMS": 14.694,
+      "yawDegrees": 98.385,
       "pass": true
     },
     {
@@ -262,7 +280,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.3,
+      "clearanceCM": 510.699,
       "rollDegrees": 0,
       "pass": true
     },
@@ -274,7 +292,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.98,
+      "clearanceCM": 507.384,
       "rollDegrees": 0,
       "pass": true
     },
@@ -286,7 +304,7 @@
     },
     {
       "case": "region 2 camera",
-      "clearanceCM": 639.833,
+      "clearanceCM": 639.32,
       "rollDegrees": 0,
       "pass": true
     },
@@ -298,7 +316,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 612.673,
+      "clearanceCM": 614.393,
       "rollDegrees": 0,
       "pass": true
     },
@@ -310,7 +328,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 526.961,
+      "clearanceCM": 526.843,
       "rollDegrees": 0,
       "pass": true
     },
@@ -322,7 +340,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 674.422,
+      "clearanceCM": 673.347,
       "rollDegrees": 0,
       "pass": true
     },
@@ -334,7 +352,7 @@
     },
     {
       "case": "region 6 camera",
-      "clearanceCM": 515.998,
+      "clearanceCM": 516.005,
       "rollDegrees": 0,
       "pass": true
     },
@@ -346,7 +364,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 491.756,
+      "clearanceCM": 477.991,
       "rollDegrees": 0,
       "pass": true
     },
@@ -357,12 +375,12 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 0.3143,
+      "value": 0.297,
       "pass": true
     },
     {
       "case": "rolled vehicle camera stays above terrain",
-      "value": 521.9028,
+      "value": 521.9022,
       "pass": true
     },
     {
@@ -372,17 +390,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 69711.2266,
+      "value": 85907.4219,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 498,
+      "value": 509,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 4943.3809,
+      "value": 4876.3701,
       "pass": true
     },
     {
@@ -392,7 +410,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 1.7923,
+      "value": 1.3178,
       "pass": true
     },
     {
@@ -402,7 +420,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 2.5119,
+      "value": 2.5258,
       "pass": true
     },
     {
@@ -447,7 +465,7 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 526.433,
+      "value": 528.4235,
       "pass": true
     },
     {
@@ -532,7 +550,7 @@
     },
     {
       "case": "engine upgrade changes packaged driving performance",
-      "value": 22.565,
+      "value": 22.5646,
       "pass": true
     },
     {
@@ -547,12 +565,12 @@
     },
     {
       "case": "lower pressure enlarges the live soil footprint",
-      "value": 1.588,
+      "value": 1.5887,
       "pass": true
     },
     {
       "case": "lower pressure improves live loose terrain grip",
-      "value": 1.159,
+      "value": 1.1575,
       "pass": true
     },
     {
@@ -582,17 +600,17 @@
     },
     {
       "case": "vehicle 0 launches through shared W input",
-      "value": 16.9697,
+      "value": 16.8768,
       "pass": true
     },
     {
       "case": "vehicle 0 Space stops and holds against held throttle",
-      "value": 0.0003,
+      "value": 0,
       "pass": true
     },
     {
       "case": "vehicle 1 launches through shared W input",
-      "value": 19.819,
+      "value": 19.5349,
       "pass": true
     },
     {
@@ -602,7 +620,7 @@
     },
     {
       "case": "vehicle 2 launches through shared W input",
-      "value": 9.316,
+      "value": 9.3394,
       "pass": true
     },
     {
@@ -612,17 +630,17 @@
     },
     {
       "case": "vehicle 3 launches through shared W input",
-      "value": 13.7854,
+      "value": 13.6972,
       "pass": true
     },
     {
       "case": "vehicle 3 Space stops and holds against held throttle",
-      "value": 0.0001,
+      "value": 0,
       "pass": true
     },
     {
       "case": "vehicle 4 launches through shared W input",
-      "value": 22.724,
+      "value": 22.1275,
       "pass": true
     },
     {
@@ -632,7 +650,7 @@
     },
     {
       "case": "vehicle 5 launches through shared W input",
-      "value": 25.5382,
+      "value": 24.4957,
       "pass": true
     },
     {
@@ -642,17 +660,17 @@
     },
     {
       "case": "W launch before S brake check",
-      "value": 17.1599,
+      "value": 17.0492,
       "pass": true
     },
     {
       "case": "held S brakes then selects physical reverse without a release",
-      "value": -12.6624,
+      "value": -9.8775,
       "pass": true
     },
     {
       "case": "S maintains physical reverse drive after reapplication",
-      "value": -20.8152,
+      "value": -20.692,
       "pass": true
     },
     {
@@ -662,32 +680,32 @@
     },
     {
       "case": "Space holds contact speed on a twelve degree incline",
-      "value": 0.0002,
+      "value": 0,
       "pass": true
     },
     {
       "case": "brake holding friction prevents sustained downhill creep",
-      "value": 0.0018,
+      "value": 0.0019,
       "pass": true
     },
     {
       "case": "Hummer stock suspension settles at its intended ride height",
-      "value": 0.7816,
+      "value": 0.7785,
       "pass": true
     },
     {
       "case": "Hummer stage III suspension physically raises the body",
-      "value": 0.1038,
+      "value": 0.1095,
       "pass": true
     },
     {
       "case": "Hummer lifted driving height matches garage target",
-      "value": 0.0004,
+      "value": 0.0031,
       "pass": true
     },
     {
       "case": "Hummer tire and lift combination retains intended driving height",
-      "value": 0.0003,
+      "value": 0.0029,
       "pass": true
     },
     {
@@ -1077,12 +1095,12 @@
     },
     {
       "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.0211,
+      "value": 0.0216,
       "pass": true
     },
     {
       "case": "hard dirt actual driven pass compacts contact footprints",
-      "value": 0.9981,
+      "value": 0.9963,
       "pass": true
     },
     {
@@ -1092,27 +1110,27 @@
     },
     {
       "case": "hard dirt driven path advances beyond stationary footprint",
-      "value": 1482.5734,
+      "value": 1498.2126,
       "pass": true
     },
     {
       "case": "hard dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.0138,
+      "value": 0.0143,
       "pass": true
     },
     {
       "case": "mud actual driven pass leaves loaded terrain deformation",
-      "value": 0.1914,
+      "value": 0.2239,
       "pass": true
     },
     {
       "case": "mud actual driven pass compacts contact footprints",
-      "value": 0.9973,
+      "value": 0.9984,
       "pass": true
     },
     {
       "case": "mud actual driven pass pushes up side berms",
-      "value": 0.1439,
+      "value": 0.1569,
       "pass": true
     },
     {
@@ -1122,27 +1140,27 @@
     },
     {
       "case": "mud driven path advances beyond stationary footprint",
-      "value": 1470.9114,
+      "value": 1342.6171,
       "pass": true
     },
     {
       "case": "mud displaced and compacted volumes conserve excavated soil",
-      "value": 3.9812,
+      "value": 3.6894,
       "pass": true
     },
     {
       "case": "snow actual driven pass leaves loaded terrain deformation",
-      "value": 0.4205,
+      "value": 0.4308,
       "pass": true
     },
     {
       "case": "snow actual driven pass compacts contact footprints",
-      "value": 0.9959,
+      "value": 0.9993,
       "pass": true
     },
     {
       "case": "snow actual driven pass pushes up side berms",
-      "value": 0.1003,
+      "value": 0.0846,
       "pass": true
     },
     {
@@ -1152,27 +1170,27 @@
     },
     {
       "case": "snow driven path advances beyond stationary footprint",
-      "value": 770.4566,
+      "value": 744.8525,
       "pass": true
     },
     {
       "case": "snow displaced and compacted volumes conserve excavated soil",
-      "value": 1.9803,
+      "value": 1.4149,
       "pass": true
     },
     {
       "case": "wetland actual driven pass leaves loaded terrain deformation",
-      "value": 0.2215,
+      "value": 0.2392,
       "pass": true
     },
     {
       "case": "wetland actual driven pass compacts contact footprints",
-      "value": 0.9992,
+      "value": 0.9976,
       "pass": true
     },
     {
       "case": "wetland actual driven pass pushes up side berms",
-      "value": 0.1751,
+      "value": 0.1711,
       "pass": true
     },
     {
@@ -1182,27 +1200,27 @@
     },
     {
       "case": "wetland driven path advances beyond stationary footprint",
-      "value": 1506.1748,
+      "value": 1599.736,
       "pass": true
     },
     {
       "case": "wetland displaced and compacted volumes conserve excavated soil",
-      "value": 3.9452,
+      "value": 3.0101,
       "pass": true
     },
     {
       "case": "sand actual driven pass leaves loaded terrain deformation",
-      "value": 0.1784,
+      "value": 0.1704,
       "pass": true
     },
     {
       "case": "sand actual driven pass compacts contact footprints",
-      "value": 0.9972,
+      "value": 0.9849,
       "pass": true
     },
     {
       "case": "sand actual driven pass pushes up side berms",
-      "value": 0.1171,
+      "value": 0.1719,
       "pass": true
     },
     {
@@ -1212,27 +1230,27 @@
     },
     {
       "case": "sand driven path advances beyond stationary footprint",
-      "value": 1558.6184,
+      "value": 1755.6881,
       "pass": true
     },
     {
       "case": "sand displaced and compacted volumes conserve excavated soil",
-      "value": 2.2217,
+      "value": 2.3016,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.1512,
+      "value": 0.1986,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass compacts contact footprints",
-      "value": 0.9956,
+      "value": 0.9982,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass pushes up side berms",
-      "value": 0.0896,
+      "value": 0.0841,
       "pass": true
     },
     {
@@ -1242,12 +1260,12 @@
     },
     {
       "case": "soft dirt driven path advances beyond stationary footprint",
-      "value": 1478.6161,
+      "value": 1499.3209,
       "pass": true
     },
     {
       "case": "soft dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.3528,
+      "value": 0.3724,
       "pass": true
     },
     {
@@ -1322,7 +1340,7 @@
     },
     {
       "case": "Urus quarry drive stays upright with a controlled trail line",
-      "value": 144.1265,
+      "value": 137.9745,
       "pass": true
     },
     {
@@ -1382,7 +1400,7 @@
     },
     {
       "case": "vehicle 0 can reverse out of the quarry compression",
-      "value": 14.1964,
+      "value": 14.4368,
       "pass": true
     },
     {
@@ -1397,7 +1415,7 @@
     },
     {
       "case": "vehicle 1 can reverse out of the quarry compression",
-      "value": 31.1218,
+      "value": 30.7183,
       "pass": true
     },
     {
@@ -1407,12 +1425,12 @@
     },
     {
       "case": "vehicle 2 tires stay above the hard quarry floor",
-      "value": 0.0001,
+      "value": 0.0002,
       "pass": true
     },
     {
       "case": "vehicle 2 can reverse out of the quarry compression",
-      "value": 11.1106,
+      "value": 11.0992,
       "pass": true
     },
     {
@@ -1427,7 +1445,7 @@
     },
     {
       "case": "vehicle 3 can reverse out of the quarry compression",
-      "value": 17.6174,
+      "value": 17.4637,
       "pass": true
     },
     {
@@ -1442,7 +1460,7 @@
     },
     {
       "case": "vehicle 4 can reverse out of the quarry compression",
-      "value": 28.4601,
+      "value": 28.8078,
       "pass": true
     },
     {
@@ -1452,12 +1470,12 @@
     },
     {
       "case": "vehicle 5 tires stay above the hard quarry floor",
-      "value": 0.0001,
+      "value": 0.0002,
       "pass": true
     },
     {
       "case": "vehicle 5 can reverse out of the quarry compression",
-      "value": 26.7112,
+      "value": 27.0508,
       "pass": true
     }
   ],
@@ -1465,7 +1483,7 @@
   "core": {
     "checks": 143,
     "pass": true,
-    "log": "Saved/all-models-core.log"
+    "log": "Saved/gpu-rocks-core.log"
   },
   "assets": {
     "terrainSamples": 1000,
@@ -2103,61 +2121,80 @@
     }
   ],
   "focused": {
-    "garageChecks": 30,
-    "garageExit": 0,
-    "allModelCloseChecks": 42,
-    "allModelCloseExit": 0
+    "rockChecks": 69,
+    "rockViews": 44,
+    "processExit": 0,
+    "qualitySmokeChecks": 16,
+    "qualitySmokeTestCap": 20
   },
   "renderedInspection": {
-    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-0.png": "668fc2cc1b94e17a23b76da97b8a790f1e1d04672ad7ec8fa801b145dad562f4",
-    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-1.png": "7168f9131f340cdf4d9d92c485cbbc198490e4cf3862c2b32ba8b77ca6dd1e0b",
-    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-2.png": "8db5ee5b6e4f7f8955daa80dbe3617886fbe8ef737f0afcf8ac060628188ed7f",
-    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-3.png": "0486d17e3bd5539fb7cbe6e83155e5ca678fdae12d2edd08b6241bfc4d45340e",
-    "Saved/AllModelsReview/final-trim/native-model-0-view-3.png": "9214add737ffdb01fe6df3434794aa96b09dd6815bbbbc01a801d84b2d196633",
-    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-0.png": "08dbad303edd2ece2d8170a2ce2c708b54630766d4f0762507a9cca7dfff8b95",
-    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-1.png": "3287286299b7179f19cff0ef4271a3fdf2966b5ddf1d06df14a87b8ec3e3c219",
-    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-2.png": "f98e3bf16da11013569bda858d3f9a838ddfee7490ec43330f404090c48ce9ec",
-    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-3.png": "6afaeaef9d5ff64f3a2f4f0dda07cb8c5999d5ec1c463fb9557dd0b7a402da86",
-    "Saved/AllModelsReview/final-trim/native-model-1-view-3.png": "1bdfbbbba33e73ea2e6e0ba651b8d725b3864ce51ffc38ae9dd06d8e6182b277",
-    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-0.png": "d8870f5c4e14e72b2b4bd819f939973f45e61bba939385a21a750ad0bea1ec82",
-    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-1.png": "78da8f88e21d25875b920f2bd3ddca6c11f282011cbb3cbb792ddb245c2f3372",
-    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-2.png": "625b6da395713b88e2569ff8b49db356548cdb122af5f17ddffdec0bfb5c0b82",
-    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-3.png": "06cf9439e9b34e470a2364b9ff34a88e52323bc353148639fcd013706deff186",
-    "Saved/AllModelsReview/final-trim/native-model-2-view-3.png": "2b294c5c3eafd117fc3dfedc148bf58bdd28bb1216bd3365074d587d44171105",
-    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-0.png": "85236934f1f976c6a3ccfa433a110ac1e68d24d7551c7434c25b5549ad77dca1",
-    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-1.png": "b12e36752ef4d2566093b945b4079b7c251b7889fd8faa52fcb6c24deb031474",
-    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-2.png": "44cc31902661ace19d8e375af798b65e01f33d645664a72ab3c02f9fbb6e80df",
-    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-3.png": "c411f94f1326c63d872d05dfa1991eddff84185f6d589cbbb43c9f929c06763c",
-    "Saved/AllModelsReview/final-trim/native-model-3-view-3.png": "54e65152ac083f243c69353c3ef02098301e341fec689acfbfae55074873f5bd",
-    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-0.png": "df0d3be039ad77ada9ad3ca0ddd4c5da6ce0f64ef6c887f952a9cb955a74c836",
-    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-1.png": "a72293774e5fe743668f7c5249719b8935c4dbb451226eb1e9b7246c557d92e9",
-    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-2.png": "aaf17c8bc5a48b5768b1e4b5717a0908020348faeffead28c3c8201f143284ee",
-    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-3.png": "ccc6663102864b6501fc2286134a9dfc29130ada896340eb035cf97eff7f6f03",
-    "Saved/AllModelsReview/final-trim/native-model-4-view-3.png": "d7927a3c464ae881f1632041d1036d7d5f0247dcf3f260db987632ef4f6fd68c",
-    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-0.png": "75b3df35fc7a081c2a79a059875d8fc07daf6d14d6fd082702da943eff0edd47",
-    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-1.png": "9670489ef47f2ed0b9ddf584923b78063a44234eb829e0bc1bcf1d5ef1ff4941",
-    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-2.png": "b8d01b91d7c5bb835f64dabbbbd3696a7f62a65e39fd89ea7c9d303090ef6599",
-    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-3.png": "a258c1d916f78ed9a7c84a7941407a91f61712bb5155c21c5cac9a23f347f030",
-    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-4.png": "7dae564c1c4448bcf5379a6b3fbfff85607b37035b34526f818d5576541640b6",
-    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-5.png": "21f186eb0a5e320231276b8305d300caf1f87083f1b8d9b12bd81a6c7ba0261b",
-    "Saved/AllModelsReview/final-trim/native-model-5-view-3.png": "280831a9c8075b246c7901b55dffc4444c36b7bc6db828c3d807f31ec6d3c8c6"
+    "native-rock-Winter_Cliff02-view-0.png": "2661dc6ad5c678b23c9e17e542b6019ba4892d65f3ddca092875943f3824e51b",
+    "native-rock-Winter_Cliff02-view-1.png": "217bab6d8737b88b3197a5040120894a4eed3653b3583328ace3d8af590b82bd",
+    "native-rock-Winter_Cliff02-view-2.png": "be6a9758a6a833b335de65bb0472653f872f06966e50980b5e593505ccd55b5c",
+    "native-rock-Winter_Cliff02-view-3.png": "91d9cda2fe71c5ce07efa5667a8423a5887da866ae9f20063d4afacc29d72673",
+    "native-rock-Winter_Rock01-view-0.png": "d335c786d3e74b1c6e079e78cf97bea1a01630b24a4997e41d6b119115fc054d",
+    "native-rock-Winter_Rock01-view-1.png": "3be3d96df66730938c209f9e8b9d73901eb89578d29200729632e7d902643f92",
+    "native-rock-Winter_Rock01-view-2.png": "adae893a30f063816cd98b0ec3c2809b2a1b4593cbdcdd76d01c7af1c8806144",
+    "native-rock-Winter_Rock01-view-3.png": "97b4bbb323d25944a343fcc489f96504bac032ab0e52255baf4155de54e6ffd8",
+    "native-rock-Winter_Rock02-view-0.png": "6fea8bd559bceb20a8c80fb384c5ec33481c0e2a4df2f77c5f3c9ecfbf0a1fed",
+    "native-rock-Winter_Rock02-view-1.png": "b94a82a599a21b42f7b5bc78796cee34721b9a273fc8d545aceb826951383400",
+    "native-rock-Winter_Rock02-view-2.png": "ab8ba2a82e445bd0562f978fd0f705b1adebf81ec74190a7c183aa14f38203c9",
+    "native-rock-Winter_Rock02-view-3.png": "c93dd7cc6d4e46d7663356e2e466b38bd89c015ea0e893cb539ed5faa9a1a966",
+    "native-rock-xbkgdbu-view-0.png": "8e20f98ea0623f2e63eb6d6a4064cabf3c24a87da58d6ad00b7767dd0d4c0923",
+    "native-rock-xbkgdbu-view-1.png": "6fef2ee5f88df0b7850a897f23590cdb925baa732bcc5d1a3a7e5d2d4f55e58f",
+    "native-rock-xbkgdbu-view-2.png": "7701de9a876fdb628fa76442674c17e1e35d27b132519f79954f7da2a50933fe",
+    "native-rock-xbkgdbu-view-3.png": "d83a202e461494f313880d9e4378a139393fdfc573f646fdf6dc7552a305d73f",
+    "native-rock-xbkndhe-view-0.png": "7c2c435ae2ffe4ced8b98f536611cce233ae9bb4fe04fe8dbef445fbe10a4605",
+    "native-rock-xbkndhe-view-1.png": "5a75c11fb4e9a8015bd1025148818d16b44d6715c1b17956147b050de2998f8c",
+    "native-rock-xbkndhe-view-2.png": "c8226dff7ca9cb5263f4ac89bf9928b69dc6e9023d7f6d4417dfb698438f751a",
+    "native-rock-xbkndhe-view-3.png": "06f55421e0d0843361f3e16139ae2774e3de2084c315b8566d77fe316f4bea15",
+    "native-rock-xbrdfck-view-0.png": "ed81d80ccfa743ac25a0f4d1e00ed37392f7da09f9eb4e29b48881b1ff2f092b",
+    "native-rock-xbrdfck-view-1.png": "8885b5edd2760709be0f5cdef4cb23caaa2672d0a214ead8382d3dc9a02cacd4",
+    "native-rock-xbrdfck-view-2.png": "f445293aa01ffa6f08840936efd41abc8a94fd4d43f5d61ebc59f22444cac26d",
+    "native-rock-xbrdfck-view-3.png": "c0c07e9705b0fe1a53c57a59c79304d54fe46f19ee1937e104cc66de30db7cb0",
+    "native-rock-xbsfdip-view-0.png": "1be3ed2072298ce6dc7f200219d2855708b99c7d6e46e5db85d32eb9989ba169",
+    "native-rock-xbsfdip-view-1.png": "685306440451e763a9ea2653e81fd9c3a3e79718d130eba0ad37864561210326",
+    "native-rock-xbsfdip-view-2.png": "acb77fb967a3d535f47e5b7723ba87d052998d475b2b15aac36ab58d8f46989a",
+    "native-rock-xbsfdip-view-3.png": "dc4e3f420a62d0e540dfcbd6177d416c63cacb9ba15a021903495c082bbac63b",
+    "native-rock-xcghcfe-view-0.png": "88dcc6adc9296c78089243940326b1d4dc618d369d1544b427b9d592815debae",
+    "native-rock-xcghcfe-view-1.png": "d4c974428df0452a2f2494a8f5ecf0eca99a2d7a4b52ab71248687343c1046f8",
+    "native-rock-xcghcfe-view-2.png": "70d8c57226434f7b512aa9ae71c6ea5b6c2a1e00e340d37594e9627eeaeb2362",
+    "native-rock-xcghcfe-view-3.png": "fcabb51cc844a97b175fba69295a946255b88a32155142c4b55a22964c0b97be",
+    "native-rock-xckifaf-view-0.png": "99f1dfb25b001c5593054ef033d2a7e7b1825363fc9d3f4330e5264e4a25cf0c",
+    "native-rock-xckifaf-view-1.png": "ad4ca28522e2bae857bcfec762564a7b6d90d7b8d342bf44d7f2d7f802d197d5",
+    "native-rock-xckifaf-view-2.png": "92806bcf787f7cdf5d7713b9748e909e72e8c85b700d87d5b85721a9d1a54057",
+    "native-rock-xckifaf-view-3.png": "a9a4289d38460848544b37a1da0d0a63ea285604f2a84efc0c5c59f3d9001a19",
+    "native-rock-xckjagi-view-0.png": "4aaa14f4e7152c60154b38060ea900ff2469dd55d9b4a5d163a83ad99caaec36",
+    "native-rock-xckjagi-view-1.png": "44939a1305e218379597f318957059339fd787d88e523c4e72e7675f88f546c5",
+    "native-rock-xckjagi-view-2.png": "9bd6eaed5281e864f50036cc1b35fd346677bb5baf98ab7703a852c35a667e4e",
+    "native-rock-xckjagi-view-3.png": "1daea3f7aa111a71893aab1d6e337c9443e7bdef5bbfe9095f0a19e734bea062",
+    "native-rock-xckjajs-view-0.png": "e6264993190e4ae4d06849e14f90d01a8c9ca6b6c0ad42dca7c681cfbdee7d72",
+    "native-rock-xckjajs-view-1.png": "154def386b4d930de8a272e2bc38f5adc8262d7ac80322fb50d670ccc2703f40",
+    "native-rock-xckjajs-view-2.png": "215ebf4f136add84acf28816eb332727ed536cda611bce547347f076d21f2df1",
+    "native-rock-xckjajs-view-3.png": "0344b5eda629d5b805c76a2fd88de5be5b9bc0c096405a70b86a11671300f112",
+    "native-graphics-menu.png": "d6aa8347c81c5d1c70c3487947a00b815fe41c2bd92823c7f8628085d026d644",
+    "native-gpu-preset-0.png": "53e233a6c96109c799359927142d6e6140b7a04dffbbb93345c9a7d1b031ab3c",
+    "native-gpu-preset-1.png": "ffe2a0da1f5f72445e53f06aeb7cdb169b3f5bcc7c90bce4a21f7cec62c85896",
+    "native-gpu-preset-2.png": "ca63eb25f18e9b6cc91debb155cd2795bad7b992eec3109ee47ac5a2eb09c6f4"
   },
   "packagedContentSHA256": {
     "global.ucas": "9de4b5cec4b89e8edbe7675cc42f9064fcce79829d4b0794af7b40c9bfc71631",
     "global.utoc": "89e25c926368c8f06557107c344589ed6d84157d2518309963ff7bd18c8e9a89",
-    "TerraDrive-Windows.pak": "ae4e2f5003284b13cd52e97aed28fc0d24c17519b24f0325f8c85c4404b544e5",
-    "TerraDrive-Windows.ucas": "25b98809ddaa4f896a0a333172eb2b8c9dcc667700549a55b6cc9a10b8492082",
-    "TerraDrive-Windows.utoc": "1a41a9d23f0c74b835e91c6732c422cd32ece18922d54a3f5c87609ed17fe958"
+    "TerraDrive-Windows.pak": "706542a65fc11af1f5b4d7a471843613c321c35a0992ea459f5c75e9d67ef207",
+    "TerraDrive-Windows.ucas": "b1ed1647ace7eed92a09e94aea24b6299826d7662397da35e166087b41b28742",
+    "TerraDrive-Windows.utoc": "d0e98d2cefade013364d86c203c83636db47916dd3083bbde892f021a66240b2"
   },
   "sourceSHA256": {
     "Source/TerraDrive/TerraContact.h": "eebefcf6e4b07f8602d7dd6d881bb14e50794befb1047befa369a54e17ec00d1",
     "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
     "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
     "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
-    "Source/TerraDrive/TerraGameMode.cpp": "a9f0400a1d9269026ab7a702cd8dc9946158de0fd0303151715d5e1611a2be5f",
-    "Source/TerraDrive/TerraGameMode.h": "04b497d508bf47ca2a4e908da57f09dce65f1b4cb14a61cbc7766596862b1bb7",
-    "Source/TerraDrive/TerraGarage.cpp": "9992957178f45405bb2667fe46a6dd905ee96a468aa6af65feb61990977cd049",
-    "Source/TerraDrive/TerraGarage.h": "35e4eaa7188968df3493497dedc68368c28e24d28a9bf32ff7b0de56006c6849",
+    "Source/TerraDrive/TerraGameMode.cpp": "97e319ade9aff881a34f75136a2a1b2ccc968b781aa27cc91fcd97aea6c52fd0",
+    "Source/TerraDrive/TerraGameMode.h": "45a7dddca8be5c0ab65ee07b6be88c8ac4e20e77edadcac7e59c71d56361b099",
+    "Source/TerraDrive/TerraGarage.cpp": "a09d14b53b03530ae5d48fc84818908fd3158694e160a29b1eccc8c0b21e645c",
+    "Source/TerraDrive/TerraGarage.h": "cb9489528e07d71aa58bb0dc0726274b4345ef40c7f18ecedece991a37213d17",
+    "Source/TerraDrive/TerraGraphics.cpp": "13814fd17d7ceb7cc0a6b156daad6e99d9e05b584c0b9ee02f0c6aa96c85e671",
+    "Source/TerraDrive/TerraGraphics.h": "3671653f6296e715dcfb1094315c857e2eac7cc4048440f89d9aaeeb6f459ad3",
     "Source/TerraDrive/TerraSimCore.h": "23562b87dfa05f21b61bbb6a061d005b63905958f9fd3796f1ceef0ac2939ba9",
     "Source/TerraDrive/TerraTireMarks.cpp": "63eb1f83324ac2e2b91a8c4ff7fa0f8712be47a29919e9501bf7be6f14c1a280",
     "Source/TerraDrive/TerraUnits.h": "253f36297c9a94020eb6c5556042b05b2433e8e7d8ba2a3b2f72828dc1488914",
@@ -2167,11 +2204,11 @@
     "Source/TerraDrive/TerraVehicleGarage.cpp": "f899b3c0ce40b86a2ed1669ecd623d91495bfd6d321cd39bd2dc5e38f777d5f9",
     "Source/TerraDrive/TerraVehicleLamps.cpp": "ee679571f1f2b9cb4094c894c4286ea32db118d0e19a97272a5c7a2027493969",
     "Source/TerraDrive/TerraVehicleVisuals.cpp": "3abfd71e2a695e5fb9981bb520eaabc2af572ba41f372e281c97ae29677f5bd7",
-    "Source/TerraDrive/TerraWorld.cpp": "0496b72c7b837c18434ef9da009123864239a41a9f6e94d8d6e7775ec7773bf3",
+    "Source/TerraDrive/TerraWorld.cpp": "5dc9ed39d5d0d161396087f74272767c89bb9a31b60e0eb8148306d3d864aa94",
     "Source/TerraDrive/TerraWorld.h": "0e617334c31c358bb8fe9ae601d6355c4962dd95272167f8a46e3557b6d5137d",
     "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
     "Source/TerraDriveEditor.Target.cs": "57232ee6bc870cca86e6f7bdd83daa4674607633d9d8791c7671481d29edf534",
-    "Config/DefaultEngine.ini": "051c43c515d4d3007bdc7a04c99908ec158d02192e3e33332a747be728a2e967",
+    "Config/DefaultEngine.ini": "1cbd2785d9d1cc0d5e7d71efda8c4ad97e1445958d507cf0f1f8ef47d7516d08",
     "Config/DefaultGame.ini": "f39824b22f76eaa48d005c19c25a2eb39a412bf67d572161cb53688ecc7e4ba7",
     "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f",
     "Tools/automotive-materials.py": "e8958e2a84d8ecfc14afde4aa997b9eacc126582a5dc4a52722d61f05fded634",
@@ -2179,13 +2216,14 @@
     "Tools/body-surface.mjs": "6a6bee7dfad9845c5bbe8c2bf98755658e2b815a29b12e87169de164367e43e2",
     "Tools/build-native.ps1": "63064b61da5395efbfeb66410df1547d31c4f27d3507a1e42ccd293d68c59b77",
     "Tools/civic-body.mjs": "3bcefe9f4c7bd6a319b448a4a0d890f6385a0f0870648b356b88c196f57bb00a",
+    "Tools/close-rocks.py": "37c1286880bfba0f91cb424069531e50cdfb17b19d7b0bc44792fee3fcc1f249",
     "Tools/export-source.mjs": "c478ef87d71f5ee98b0fe803a6bd86421bb63fc3d36f5087cf75ba8404268e05",
     "Tools/fab-scenery.json": "d7fd91f7f754079da960f12192ccad569b96d55612089a7798c406b9b04d9c03",
     "Tools/fab-scenery.mjs": "a5af9c434168b011b4009f536c51d16f837e9e35b589b0edde5dd8279e79d05b",
     "Tools/fetch-environment-assets.py": "3048d13230862aaa787c075523c6230c0c044cc8c0605cbe980e68b9a31d1225",
     "Tools/hummer-body.mjs": "b9be95a4b3a37993c2b6344eaf231ca263469580155716394d08f6aabe61c058",
     "Tools/import-assets.py": "8ba23b94f1e0ada870801259bde6ff916804f6fcfa6428ed30b8026053f32a2e",
-    "Tools/import-fab.py": "ed9827bcd71fad2d27c6b24a4bcf7ac2988d08ec7b56a98f5f36b280b5663d8f",
+    "Tools/import-fab.py": "dd20fc4bc1bbe15a0721eee01bf0a81a2ca157a78630dd9f5e3702c5dd98e072",
     "Tools/native-challenge-course.mjs": "54626ee9d34fa0e74ef8ab4d0b8f3b3d4d89f4d3c5674aa8cc2431a073be8a13",
     "Tools/native-models.mjs": "ccac739bbcfc5629c5a1c4b8a827cf3263b4a87803a7946d598587e09ab645c2",
     "Tools/native-terrain.mjs": "34a64cbd67262df12155d560df25c6256e5b4dac541b7c04a9716b6ac4f41cdf",
@@ -2213,17 +2251,17 @@
     "Tools/vehicle-geometry.mjs": "f9c0a5c94cfe90beea145c84f606843e777a782f631c2c4e8d4bf2d5fc4b7910",
     "Tools/vehicle-realism.mjs": "1c2d410db90146ba387796a4b67be54f3a7125ec115fe84022c82c7f573749b3",
     "Tools/verify-model-art.ps1": "4a3641908dabbe367fef7966371a0dd84b5b6698d8a9df239bea99271a8fba78",
-    "Tools/verify-native.ps1": "4d8b732ce6994accd1f1c6bd63cc4a38f1d25d6ed65e10fab4996d2449fbd722"
+    "Tools/verify-native.ps1": "0a58253a028ced3942cc71a50c1321dbcfa5ff6c7299a7fe70f52e34383131e2",
+    "Tools/verify-render.ps1": "543518a43a7cc2eb6d3e053ce7118f4ecf7ba50f7e442aabdd2e3c7903b4f2ea"
   },
   "sourceManifestSHA256": "3fc75e7fa25fa00161f41efeaaddd84cb503b73db8d8f6074f43592cb4b4cb6f",
   "worldDataSHA256": "c5a4c5e88a8f7e07413d758191bf3bf24841a70c62d66d8197be1fcc8af07cea",
   "terrainDataSHA256": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
   "logs": {
-    "build": "Saved/all-models-build-4.log",
-    "full": "Saved/all-models-full-final.log",
+    "build": "Saved/gpu-rocks-build-accepted.log",
+    "full": "Saved/gpu-rocks-full.log",
     "fullEngine": "Saved/Validation/packaged-game.log",
-    "garage": "Saved/all-models-garage-final.log",
-    "allModelsArt": "Saved/all-models-art-final.log"
+    "rocks": "Saved/gpu-rocks-render.log"
   },
   "interactive": {
     "performed": false,
@@ -2233,6 +2271,268 @@
     "Authored vehicle reconstructions remain below production racing-game art quality; no OEM CAD accuracy claim.",
     "Only Slate Rim is verified as a complete continuous route; other routes and full loop traversal remain unproven.",
     "No long-session stability or controller-hardware test.",
-    "Initial all-model art renders were revised after visual review; only final-candidate captures are accepted."
-  ]
+    "Initial all-model art renders were revised after visual review; only final-candidate captures are accepted.",
+    "Short capped GPU samples are not a long-session stability or thermal-cause diagnosis.",
+    "Cool and Balanced samples use one identical stationary quarry view; results are not whole-map averages."
+  ],
+  "update": "quarry-visibility-and-gpu",
+  "gpu": {
+    "Cool": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "samples": 23,
+      "sampleSeconds": 25.006,
+      "fps": 29.9878,
+      "averageGPUPercent": 37.391304347826086,
+      "averagePowerW": 19.170869565217394,
+      "maximumTemperatureC": 59,
+      "maximumRunTemperatureC": 60,
+      "processExit": 0,
+      "aborted": false
+    },
+    "Balanced": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "samples": 23,
+      "sampleSeconds": 25.005999999999997,
+      "fps": 44.9829,
+      "averageGPUPercent": 50.26086956521739,
+      "averagePowerW": 25.434347826086952,
+      "maximumTemperatureC": 62,
+      "maximumRunTemperatureC": 62,
+      "processExit": 0,
+      "aborted": false
+    }
+  },
+  "previousModelArtEvidence": {
+    "commit": "bc131f5269e79c767e9196a1342be304d36f547a",
+    "vehicleGeometryUnchanged": true,
+    "closeArtChecks": 42,
+    "garageChecks": 30
+  },
+  "rockGeometry": {
+    "meshes": [
+      {
+        "mesh": "/Game/FabScenery/Meshes/xcghcfe.xcghcfe",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 153
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/xckjagi.xckjagi",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 104
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/xckifaf.xckifaf",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 160
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/xbrdfck.xbrdfck",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 198
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/xbkgdbu.xbkgdbu",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": true,
+            "filledHoles": 0,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 0
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/xbkndhe.xbkndhe",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 152
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/xckjajs.xckjajs",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 109
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/xbsfdip.xbsfdip",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 2,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 0
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/Winter_Rock01.Winter_Rock01",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 119
+          },
+          {
+            "lod": 1,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 30,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 664
+          },
+          {
+            "lod": 2,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 26,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 606
+          },
+          {
+            "lod": 3,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 16,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 484
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/Winter_Rock02.Winter_Rock02",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 221
+          }
+        ]
+      },
+      {
+        "mesh": "/Game/FabScenery/Meshes/Winter_Cliff02.Winter_Cliff02",
+        "lods": [
+          {
+            "lod": 0,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 1,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 340
+          },
+          {
+            "lod": 1,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 94,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 1774
+          },
+          {
+            "lod": 2,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 60,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 1518
+          },
+          {
+            "lod": 3,
+            "hiRes": false,
+            "wasClosed": false,
+            "filledHoles": 33,
+            "failedFills": 0,
+            "closedReadback": true,
+            "capTriangles": 1108
+          }
+        ]
+      }
+    ]
+  },
+  "gpuFullValidation": {
+    "testCap": 20,
+    "samples": 355,
+    "maximumTemperatureC": 59,
+    "averageGPUPercent": 30.738028169014086,
+    "averagePowerW": 10.51814084507042,
+    "cutoffTemperatureC": 77,
+    "aborted": false
+  }
 }

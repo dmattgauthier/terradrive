@@ -737,7 +737,11 @@ void ATerraWorld::LoadScenery() {
       if(!Solid)C->SetMobility(EComponentMobility::Movable);
       if(Solid){C->ComponentTags.Add(TEXT("TerraConstructed"));C->ComponentTags.Add(TEXT("TerraRock"));}
       C->ComponentTags.Add(TEXT("TerraFabScenery"));
-      C->SetCullDistances(16000,36000);C->RegisterComponent();Scenery.Add(C);++FabAssetCount;
+      // Small grass clumps need neither distant draws nor shadow-map passes.
+      // Solid formations keep their original visibility and collision range.
+      C->SetCastShadow(Solid);
+      C->SetCullDistances(Solid?16000:3500,Solid?36000:8000);
+      C->RegisterComponent();Scenery.Add(C);++FabAssetCount;
       const FBox Bounds=Mesh->GetBoundingBox();
       const FVector Anchor(Bounds.GetCenter().X,Bounds.GetCenter().Y,Bounds.Min.Z);
       int Snapped=0,Traced=0;

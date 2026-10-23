@@ -3,6 +3,7 @@ recipe=json.load(open(os.path.join(root,'Tools','fab-scenery.json'),encoding='ut
 cache=os.environ.get('TERRA_FAB_CACHE',os.path.join(os.environ.get('ProgramData','C:/ProgramData'),
     'Epic/EpicGamesLauncher/VaultCache/FabLibrary',recipe['cacheFolder']))
 fab_report=[]
+exec(compile(open(os.path.join(root,'Tools','close-rocks.py'),encoding='utf8').read(),'close-rocks.py','exec'))
 if data.get('fabScenery',{}).get('enabled'):
     if not os.path.isdir(cache):
         raise RuntimeError('Acquired Fab pack is enabled but missing. Set TERRA_FAB_CACHE to the extracted African Slate Quarry directory.')
@@ -28,8 +29,12 @@ if data.get('fabScenery',{}).get('enabled'):
         # the OpenGL CC0 textures used by the original terrain pipeline.
         if normal.get_editor_property('flip_green_channel'):
             normal.set_editor_property('flip_green_channel',False);lib.save_loaded_asset(normal)
-        if mat.get_editor_property('two_sided'):
-            mat.set_editor_property('two_sided',False);edit.recompile_material(mat);lib.save_loaded_asset(mat)
+        # These scans have open backs/undersides. Backface culling made entire
+        # surfaces vanish when approached from the reverse direction.
+        if not mat.get_editor_property('two_sided'):
+            mat.set_editor_property('two_sided',True);edit.recompile_material(mat);lib.save_loaded_asset(mat)
+        if mat.get_editor_property('blend_mode')!=unreal.BlendMode.BLEND_OPAQUE:
+            raise RuntimeError('Quarry rock must remain opaque: '+asset_id)
         digest=hashlib.sha256(open(filename,'rb').read()).hexdigest();dest='/Game/FabScenery/Meshes/'+asset_id
         mesh=lib.load_asset(dest) if lib.does_asset_exist(dest) else None
         if not mesh or lib.get_metadata_tag(mesh,'TerraFabHash')!=digest:
@@ -49,7 +54,8 @@ if data.get('fabScenery',{}).get('enabled'):
         bounds=mesh.get_bounding_box();size=bounds.max-bounds.min
         if not (5<size.z<500 and 5<max(size.x,size.y)<1000):raise RuntimeError('Unexpected Fab dimensions/orientation: '+asset_id+' '+str(size))
         lib.set_metadata_tag(mesh,'TerraFabHash',digest);lib.save_loaded_asset(mesh)
-        fab_report.append({'id':asset_id,'mesh':dest,'boundsCM':{'min':[bounds.min.x,bounds.min.y,bounds.min.z],'max':[bounds.max.x,bounds.max.y,bounds.max.z]},'sourceSHA256':digest})
+        close_rock_mesh(mesh,digest)
+        fab_report.append({'id':asset_id,'mesh':dest,'opaque':mat.get_editor_property('blend_mode')==unreal.BlendMode.BLEND_OPAQUE,'twoSided':mat.get_editor_property('two_sided'),'boundsCM':{'min':[bounds.min.x,bounds.min.y,bounds.min.z],'max':[bounds.max.x,bounds.max.y,bounds.max.z]},'sourceSHA256':digest})
     for entry in recipe.get('unrealAssets',[]):
         source=entry['source'];dest='/Game/FabScenery/Meshes/'+entry['id']
         if not lib.does_asset_exist(source):raise RuntimeError('Missing acquired scenery: '+source)
@@ -61,6 +67,7 @@ if data.get('fabScenery',{}).get('enabled'):
         if entry['id'].startswith('Winter_') and 'Ice' not in entry['id']:
             finish=lib.load_asset('/Game/Materials/Terrain_rock')
             for slot in range(len(mesh.get_editor_property('static_materials'))):mesh.set_material(slot,finish)
+            close_rock_mesh(mesh,source)
         body=mesh.get_editor_property('body_setup')
         if body and entry.get('solid',True):body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
         lib.save_loaded_asset(mesh)
@@ -68,3 +75,4 @@ if data.get('fabScenery',{}).get('enabled'):
     unreal.log('TERRA_FAB_IMPORTED %d acquired scenery meshes'%len(fab_report))
 os.makedirs(os.path.join(root,'Saved'),exist_ok=True)
 json.dump({'enabled':bool(fab_report),'pack':recipe['pack'],'assets':fab_report},open(os.path.join(root,'Saved','fab-import-report.json'),'w'),indent=2)
+json.dump({'meshes':rock_closure_report},open(os.path.join(root,'Saved','rock-closure-report.json'),'w'),indent=2)

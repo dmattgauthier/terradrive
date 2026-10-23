@@ -2,6 +2,8 @@
 
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
+The [rendering and GPU update](docs/rendering-and-gpu.md) corrects angle-dependent quarry rock visibility and adds **Tab → 03 Graphics**. The new default is Cool at 30 FPS; Balanced at 45 FPS and Quality at 60 FPS are selectable. Garage previews run at 20 FPS and background rendering at 15 FPS. Native verification is capped and records GPU telemetry with a conservative temperature cutoff.
+
 The [all-vehicle coachwork round](docs/model-refinement-6.md) revises the six models' glazing, cabin surfaces and body details. It includes open Urus windshield/hatch surrounds, native seat/headrest shading, flatter SUV fender shelves, Civic panel changes, Sprinter liners and HUMMER haunch/mirror changes. Use `node Tools/validate-models.mjs` for the geometry and glazing regression checks; native build evidence is in `docs/native-validation.json`.
 
 The latest [vehicle and landscape pass](docs/realism-terrain.md) adds curved-surface normals and rounded fittings, automotive finishes across all six vehicles, lighter view-dependent glazing, MW landscape textures/foliage and scanned Winter Scene snow, rock and ice. It requires the acquired **MW Landscape Auto Material** and **Automotive Winter Scene** packs as well as Automotive Materials. The document explains how the packs feed the deformable native terrain and how to add them from your Epic library.
