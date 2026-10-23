@@ -2,23 +2,28 @@
 // Mechanical hardpoints and the preserved browser implementation are untouched.
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {buildNativeHummer} from './hummer-body.mjs';
-import {buildCivic} from '../../TerraDrive-v1.13/dist/src/vehicle-civic.js';
-import {buildSprinter} from '../../TerraDrive-v1.13/dist/src/vehicle-sprinter.js';
-import {buildSUV} from '../../TerraDrive-v1.13/dist/src/vehicle-suv.js';
+import {buildCivic} from './civic-body.mjs';
+import {buildSprinter} from './sprinter-body.mjs';
+import {buildSUV} from './suv-body.mjs';
 import {nativeGeometry as geo,mergeStaticMeshes} from './vehicle-geometry.mjs';
+import {nativeInterior} from './vehicle-cabin.mjs';
+import {nativeFender} from './vehicle-fenders.mjs';
 import {urusView} from './urus-body.mjs';
 export function nativeVehicle(spec){
   if(spec.bodyStyle==='urus')return urusView(spec);
   const view=new VehicleView(new geo.THREE.Scene(),spec);
   const old=new Set();view.body.traverse(o=>{if(o.isMesh)old.add(o.geometry);});
   view.body.clear();old.forEach(g=>g.dispose());view.lamps=[];
+  view._interior=nativeInterior;view._fender=nativeFender;
+  const palette={jeep:['#252a2c','#303335'],bronco:['#292d30','#3d4448'],sedan:['#202428','#2d3136'],van:['#303538','#363c40'],hummer:['#202529','#343a3d']}[spec.bodyStyle];
+  view.materials.interior.color.set(palette[0]);view.materials.upholstery.color.set(palette[1]);
   if(spec.bodyStyle==='hummer')buildNativeHummer(view,geo);
   else if(spec.bodyStyle==='sedan')buildCivic(view,geo);
   else if(spec.bodyStyle==='van')buildSprinter(view,geo);
   else buildSUV(view,geo,spec.bodyStyle==='bronco');
   view._underbody();mergeStaticMeshes(view.body);
   geo.roundBodyEnds(view.body,spec.bodyStyle);geo.roundRoofShoulders(view.body,spec.bodyStyle);
-  view.root.userData.nativeConstruction={version:1,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true};
+  view.root.userData.nativeConstruction={version:2,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle)};
   return view;
 }
 export function vehicleFinishes(view,spec){
@@ -34,5 +39,5 @@ export function vehicleFinishes(view,spec){
     if(mat.userData.vehicleGlass){mat.color.set(key==='privacyGlass'?'#26343a':'#445359');mat.opacity=key==='privacyGlass'?.65:key==='windscreen'?.30:.38;mat.roughness=.045;}
     if(mat.userData.vehicleLampLens){mat.roughness=.075;mat.opacity=mat.userData.vehicleTintedLens?.42:.18;}
   }
-  view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,version:1,automotiveFinishes:true};
+  view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,version:2,automotiveFinishes:true};
 }

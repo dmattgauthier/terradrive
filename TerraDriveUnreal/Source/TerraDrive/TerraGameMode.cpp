@@ -103,6 +103,7 @@ void ATerraGameMode::Tick(float Dt) {
   auto Next = [&](int NewStage) { Stage=NewStage; StageTime=0; Captured=false; MaxProgress=0; };
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))Next(61);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly")))Next(64);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"))){ModelVehicle=0;Next(64);}
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraGroundOnly")))Next(66);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){
     BrakeVehicle=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
@@ -783,7 +784,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==5);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==6);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
@@ -841,29 +842,41 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>1.6f)Next(64);
   }else if(Stage==64){
     if(!Captured){
-      V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
+      const bool AllModels=FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"));
+      const int PhotoVehicle=AllModels?ModelVehicle:5;
+      V->SelectVehicle(PhotoVehicle);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
       V->TestDriverInput=false;V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;
       int AutomotiveSlots=0;bool HasPaint=false,HasCarbon=false;
+      const FString Style=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[PhotoVehicle]->AsObject()->GetStringField(TEXT("bodyStyle"));
+      const FString Prefix=PhotoVehicle==5?TEXT("MI_Urus_"):FString::Printf(TEXT("MI_Vehicle_%s_"),*Style);
       for(int I=0;I<V->Body->GetNumMaterials();++I)if(auto *M=V->Body->GetMaterial(I)){
-        const FString Name=M->GetName();AutomotiveSlots+=Name.StartsWith(TEXT("MI_Urus_"));
-        HasPaint|=Name.StartsWith(TEXT("MI_Urus_paint_"));HasCarbon|=Name.StartsWith(TEXT("MI_Urus_carbon_"));
+        const FString Name=M->GetName();AutomotiveSlots+=Name.StartsWith(Prefix);
+        HasPaint|=Name.StartsWith(Prefix+TEXT("paint_"));HasCarbon|=Name.StartsWith(Prefix+TEXT("carbon_"));
       }
-      Check(TEXT("Urus cooked body uses Epic automotive paint, carbon and trim instances"),HasPaint&&HasCarbon&&AutomotiveSlots>=6,AutomotiveSlots);
+      Check(FString::Printf(TEXT("Vehicle %d cooked body uses Epic automotive paint and trim"),PhotoVehicle),HasPaint&&(PhotoVehicle!=5||HasCarbon)&&AutomotiveSlots>=6,AutomotiveSlots);
       if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;}
       Captured=true;
     }
     if(StageTime>5){ModelView=0;Next(65);}
   }else if(Stage==65){
+    const bool AllModels=FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"));
     const FVector Target=V->GetActorLocation()+FVector(0,0,18),F=V->GetActorForwardVector(),S=V->GetActorRightVector();
     const FVector Offsets[]={F*850+FVector(0,0,160),S*900+FVector(0,0,90),-F*850+FVector(0,0,150),F*650+S*560+FVector(0,0,280),-F*680+S*570+FVector(0,0,230),F*690-S*550+FVector(0,0,100)};
-    const FVector Eye=Target+Offsets[ModelView];SoilCamera->GetCameraComponent()->SetFieldOfView(40);
+    const float PhotoScale=AllModels?FMath::Clamp(float(V->Terrain->Data->GetArrayField(TEXT("vehicles"))[ModelVehicle]->AsObject()->GetNumberField(TEXT("length"))/5.137),.86f,1.18f):1.f;
+    const FVector Eye=Target+Offsets[ModelView]*PhotoScale;SoilCamera->GetCameraComponent()->SetFieldOfView(40);
     SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
     if(StageTime>2&&!Captured){
-      Check(FString::Printf(TEXT("Urus body renders in close photo view %d"),ModelView),V->Body->WasRecentlyRendered(.4f));
-      Capture(*FString::Printf(TEXT("native-urus-hero-%d.png"),ModelView));Captured=true;
+      Check(FString::Printf(TEXT("Vehicle %d body renders in close photo view %d"),AllModels?ModelVehicle:5,ModelView),V->Body->WasRecentlyRendered(.4f));
+      const FString Name=AllModels?FString::Printf(TEXT("native-vehicle-%d-hero-%d.png"),ModelVehicle,ModelView):FString::Printf(TEXT("native-urus-hero-%d.png"),ModelView);
+      Capture(*Name);Captured=true;
     }
-    if(StageTime>2.5f){if(++ModelView==6){if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);}else Next(65);}
+    if(StageTime>2.5f){
+      if(++ModelView==6){
+        if(AllModels){if(++ModelVehicle==6)FinishValidation();else Next(64);}
+        else if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);
+      }else Next(65);
+    }
   }else if(Stage==66){
     // Query the actual cooked rock course, including compressed and banked
     // tire poses. A mesh-load or spawn check cannot catch missing wheel support.

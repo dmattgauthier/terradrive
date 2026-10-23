@@ -314,6 +314,17 @@ function windowPanel(parent, materials, points, inset = 0.035, radius = 0.065, o
   for (let i = 0; i < inner.length; i++) normal.add(v3(...inner[i]).sub(center).cross(v3(...inner[(i + 1) % inner.length]).sub(center)));
   normal.normalize();
   if (normal.dot(new THREE.Vector3(center.x, 0, center.z)) < 0) normal.negate();
+  // A real glazing flange has depth and an inward-facing dark return. The
+  // former single painted ring exposed body color through the opposite glass.
+  if(materials.glass.userData.vehicleGlass){
+    const trim=materials.interior||materials.black,depth=.016,returnPos=[],returnIds=[];
+    for(const loop of [inner,inner.map(p=>v3(...p).addScaledVector(normal,-depth).toArray())])returnPos.push(...loop.flat());
+    for(let i=0;i<inner.length;i++){const j=(i+1)%inner.length,k=inner.length;returnIds.push(i,i+k,j,j,i+k,j+k);}
+    const reveal=new THREE.BufferGeometry();reveal.setAttribute('position',new THREE.Float32BufferAttribute(returnPos,3));reveal.setIndex(returnIds);reveal.computeVertexNormals();
+    finish(new THREE.Mesh(reveal,trim),parent).name='glazing-inset-flange';
+    const liner=seal.clone();liner.translate(-normal.x*depth,-normal.y*depth,-normal.z*depth);
+    finish(new THREE.Mesh(liner,trim),parent).name='inner-window-trim';
+  }
   const bulge = options.bow ?? (Math.abs(normal.x) < .45 ? (materials.glass.userData.endGlassBow ?? .020) : .006), rings = 12, count = inner.length;
   const positions = center.clone().addScaledVector(normal, bulge).toArray(), normals = normal.toArray(), indices = [], uvs = [.5, .5];
   for (let ring = 1; ring <= rings; ring++) for (let i = 0; i < count; i++) {
@@ -340,7 +351,7 @@ function ellipseRing(parent, material, x, y, z, rx, ry, radius = 0.009) {
 function profile(parent, material, points, width, bevel = 0.018) {
   const shape = new THREE.Shape();
   points.forEach(([z, y], i) => i ? shape.lineTo(-z, y) : shape.moveTo(-z, y)); shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: bevel > 0, bevelSegments: 1, steps: 1, bevelSize: bevel, bevelThickness: bevel });
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: bevel > 0, bevelSegments: 4, steps: 1, bevelSize: bevel, bevelThickness: bevel });
   geo.translate(0, 0, -width / 2); geo.rotateY(Math.PI / 2);
   return finish(new THREE.Mesh(geo, material), parent);
 }

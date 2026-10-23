@@ -116,19 +116,26 @@ export function urusView(spec){
   curve(g,black,[[.64,1.135],[-.58,1.207],[-1.38,1.260],[-1.94,1.296]].map(([z,y])=>canopyPoint(s,z,y,.004)),.004);
   const stemA=canopyPoint(s,.49,1.162),stemB=[s*.965,1.207,.49];line(g,black,[stemA,stemB],.014);
   // Aerodynamic angular mirror cap and recessed reflecting face.
-  const cap=mesh(g,new T.SphereGeometry(1,40,24),carbon,[s*.991,1.210,.48]);cap.scale.set(.0995,.057,.105);
-  box(g,m.chrome,[s*.994,1.208,.394],[.152,.066,.006],.007);
+  const mirrorShape=[[-.085,-.035],[-.092,.008],[-.065,.043],[.051,.044],[.094,.022],[.099,-.026],[.051,-.043],[-.060,-.044]];
+  const mirrorLoop=new T.CatmullRomCurve3(mirrorShape.map(([x,y])=>new T.Vector3(x,y,0)),true,'centripetal');
+  surface(g,carbon,96,28,(u,v)=>{const p=mirrorLoop.getPoint(u),r=Math.cos(v*Math.PI/2);return[s*(.991+p.x*r),1.210+p.y*r,.394+.177*Math.sin(v*Math.PI/2)];},s<0);
+  mappedPolygon(g,black,mirrorShape,(x,y)=>[s*(.991+x),1.210+y,.393],[],s<0,14);
+  mappedPolygon(g,m.chrome,mirrorShape.map(p=>p.map(n=>n*.85)),(x,y)=>[s*(.991+x),1.210+y,.391-.002*(1-(x/.09)**2)],[],s<0,14);
  }
  const canopy=(u,z,off=0)=>{const t=u*2-1;return[t*station(roof,z,2),station(roof,z,1)+.009*(1-t*t)+off,z];};
  surface(g,carbon,72,76,(u,v)=>canopy(u,lerp(-1.13,-.06,v)),true);
  surface(g,m.headliner,64,64,(u,v)=>{const p=canopy(lerp(.025,.975,u),lerp(-1.13,-.06,v));p[1]-=.016;return p;});
- // Windshield lies within a black ceramic perimeter, with two physical wipers.
- surface(g,black,72,48,(u,v)=>canopy(u,lerp(-.06,.72,v)),true);
+ // Open ceramic perimeter: no opaque backing sheet behind the windscreen.
+ const frontFrame=[[0,-.06],[1,-.06],[1,.72],[0,.72]],frontAperture=[[.025,-.035],[.975,-.035],[.975,.695],[.025,.695]];
+ mappedPolygon(g,black,frontFrame,(u,z)=>canopy(u,z),[frontAperture],true,14);
+ mappedPolygon(g,m.headliner,frontFrame,(u,z)=>canopy(u,z,-.014),[frontAperture],false,14);
  surface(g,m.windscreen,72,48,(u,v)=>canopy(lerp(.025,.975,u),lerp(-.035,.695,v),.0025),true);
  for(const s of [-1,1])curve(g,rubber,[[s*.10,1.175,.68],[s*.31,1.189,.653],[s*.61,1.191,.647]],.005);
  // Rear hatch glass is bounded by a substantial painted D-pillar and spoiler.
- surface(g,m.paint,76,60,(u,v)=>canopy(u,lerp(-2.20,-1.13,v)),true);
- surface(g,black,68,48,(u,v)=>canopy(lerp(.095,.905,u),lerp(-2.12,-1.22,v),.003),true);
+ const rearFrame=[[0,-2.20],[1,-2.20],[1,-1.13],[0,-1.13]],rearOuter=[[.095,-2.12],[.905,-2.12],[.905,-1.22],[.095,-1.22]],rearAperture=[[.112,-2.093],[.888,-2.093],[.888,-1.235],[.112,-1.235]];
+ mappedPolygon(g,m.paint,rearFrame,(u,z)=>canopy(u,z),[rearOuter],true,16);
+ mappedPolygon(g,m.headliner,rearFrame,(u,z)=>canopy(u,z,-.016),[rearOuter],false,16);
+ mappedPolygon(g,black,rearOuter,(u,z)=>canopy(u,z,.003),[rearAperture],true,14);
  surface(g,m.privacyGlass,64,44,(u,v)=>canopy(lerp(.112,.888,u),lerp(-2.093,-1.235,v),.006),true);
  for(let j=0;j<8;j++)curve(g,rubber,Array.from({length:24},(_,k)=>canopy(lerp(.13,.87,k/23),-2.04+j*.105,.008)),.0006);
  curve(g,black,[canopy(.49,-2.05,.011),canopy(.37,-2.01,.013),canopy(.24,-1.95,.013)],.005);
@@ -169,6 +176,7 @@ export function urusView(spec){
   line(g,drl,[[.515,.943],[.806,.945],[.892,.978]].map(light),.0045);
   line(g,drl,[[.806,.945],[.914,.939]].map(light),.0045);
   for(let j=0;j<3;j++){const p=face(s*(.644+j*.076),.981,.015);box(g,grille,p,[.053,.026,.010],.004);box(g,m.headlampReflector,[p[0],p[1],p[2]+.007],[.032,.016,.007],.003);}
+  mappedPolygon(g,m.lens,inset(outline,.94),(x,y)=>face(s*x,y,.027+.003*(1-((x-.70)/.27)**2)),[],s<0,16);
   // Long air curtain wraps around the outside of each side intake.
   mappedPolygon(g,carbon,[[.941,.818],[.987,.764],[.994,.441],[.921,.315],[.902,.374],[.953,.504]],(x,y)=>face(s*x,y,.006),[],s<0,12);
  }
@@ -204,13 +212,12 @@ export function urusView(spec){
  }
  for(let j=-2;j<=2;j++)box(g,carbon,tail(j*.145,.303,.060),[.010,.094,.265],.002);
  const marque=geometryText(g,'LAMBORGHINI',.46,.028,m.chrome);marque.position.set(0,1.080,rear-.016);marque.rotation.y=Math.PI;
- const badge=geometryText(g,'URUS',.143,.025,m.chrome);badge.position.set(-.61,.909,rear+.075);badge.rotation.y=Math.PI;
  // Roof spoiler is a broad blade, with vertical end fins and a continuous
  // lower rear lip. The trailing edge follows the sloping hatch silhouette.
  surface(g,carbon,72,22,(u,v)=>{const x=(u*2-1)*lerp(.763,.855,v);return[x,1.608-.025*v-.012*(x/.855)**2,lerp(-1.20,-1.58,v)];},true);
  for(const s of [-1,1])polygon(g,carbon,[[s*.758,1.607,-1.20],[s*.855,1.578,-1.58],[s*.872,1.491,-1.65],[s*.799,1.512,-1.39]],0);
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
- urusCabin(g,m,carbon);
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:5,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ urusCabin(g,m,carbon,{sidePoint,belt});
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:6,openGlazing:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

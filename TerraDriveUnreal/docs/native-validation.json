@@ -1,9 +1,9 @@
 {
   "date": "2026-10-23",
-  "verifiedAt": "2026-10-23T13:59:16.780Z",
+  "verifiedAt": "2026-10-23T17:21:59.993Z",
   "engine": "5.8.3",
   "configuration": "Windows Development",
-  "nativeRevision": "realism-terrain-5",
+  "nativeRevision": "all-models-6",
   "displayUnits": "imperial",
   "diagnosticUnits": "SI except explicitly named fields; player displays use imperial units",
   "graphics": {
@@ -15,7 +15,7 @@
     ]
   },
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "432e825d0623ee7865c97c44c65ece657a116099350d15bc225ef75b3ca75e3c",
+  "executableSHA256": "7eff4e08a98416524c4d1c894fd2ed190b09f96fd8a4f540ce7c63090eadf7ba",
   "tests": [
     {
       "case": "native world data",
@@ -228,8 +228,8 @@
     },
     {
       "case": "native acceleration",
-      "distanceM": 82.29,
-      "speedMS": 22.829,
+      "distanceM": 81.684,
+      "speedMS": 22.769,
       "pass": true
     },
     {
@@ -250,8 +250,8 @@
     },
     {
       "case": "EV steered launch",
-      "speedMS": 13.609,
-      "yawDegrees": 91.275,
+      "speedMS": 13.862,
+      "yawDegrees": 90.112,
       "pass": true
     },
     {
@@ -262,7 +262,7 @@
     },
     {
       "case": "region 0 camera",
-      "clearanceCM": 510.293,
+      "clearanceCM": 510.3,
       "rollDegrees": 0,
       "pass": true
     },
@@ -274,7 +274,7 @@
     },
     {
       "case": "region 1 camera",
-      "clearanceCM": 506.983,
+      "clearanceCM": 506.98,
       "rollDegrees": 0,
       "pass": true
     },
@@ -298,7 +298,7 @@
     },
     {
       "case": "region 3 camera",
-      "clearanceCM": 612.331,
+      "clearanceCM": 612.673,
       "rollDegrees": 0,
       "pass": true
     },
@@ -310,7 +310,7 @@
     },
     {
       "case": "region 4 camera",
-      "clearanceCM": 527.191,
+      "clearanceCM": 526.961,
       "rollDegrees": 0,
       "pass": true
     },
@@ -322,7 +322,7 @@
     },
     {
       "case": "region 5 camera",
-      "clearanceCM": 674.116,
+      "clearanceCM": 674.422,
       "rollDegrees": 0,
       "pass": true
     },
@@ -334,7 +334,7 @@
     },
     {
       "case": "region 6 camera",
-      "clearanceCM": 515.997,
+      "clearanceCM": 515.998,
       "rollDegrees": 0,
       "pass": true
     },
@@ -346,7 +346,7 @@
     },
     {
       "case": "region 7 camera",
-      "clearanceCM": 471.654,
+      "clearanceCM": 491.756,
       "rollDegrees": 0,
       "pass": true
     },
@@ -357,7 +357,7 @@
     },
     {
       "case": "rolled chassis rests on roof",
-      "value": 0.0629,
+      "value": 0.3143,
       "pass": true
     },
     {
@@ -372,17 +372,17 @@
     },
     {
       "case": "tire debris moves and renders in world space",
-      "value": 81261.5391,
+      "value": 69711.2266,
       "pass": true
     },
     {
       "case": "airborne debris expires after impact",
-      "value": 525,
+      "value": 498,
       "pass": true
     },
     {
       "case": "low range respects engine rev limit",
-      "value": 5330.499,
+      "value": 4943.3809,
       "pass": true
     },
     {
@@ -392,7 +392,7 @@
     },
     {
       "case": "locked axles climb farther than open axles",
-      "value": 1.7869,
+      "value": 1.7923,
       "pass": true
     },
     {
@@ -402,7 +402,7 @@
     },
     {
       "case": "descent assist controls rocky downhill speed",
-      "value": 2.519,
+      "value": 2.5119,
       "pass": true
     },
     {
@@ -447,7 +447,7 @@
     },
     {
       "case": "inverted loop camera can see the vehicle",
-      "value": 526.4702,
+      "value": 526.433,
       "pass": true
     },
     {
@@ -532,7 +532,7 @@
     },
     {
       "case": "engine upgrade changes packaged driving performance",
-      "value": 22.5609,
+      "value": 22.565,
       "pass": true
     },
     {
@@ -547,12 +547,12 @@
     },
     {
       "case": "lower pressure enlarges the live soil footprint",
-      "value": 1.5954,
+      "value": 1.588,
       "pass": true
     },
     {
       "case": "lower pressure improves live loose terrain grip",
-      "value": 1.1593,
+      "value": 1.159,
       "pass": true
     },
     {
@@ -582,7 +582,7 @@
     },
     {
       "case": "vehicle 0 launches through shared W input",
-      "value": 16.8512,
+      "value": 16.9697,
       "pass": true
     },
     {
@@ -592,17 +592,17 @@
     },
     {
       "case": "vehicle 1 launches through shared W input",
-      "value": 19.8099,
+      "value": 19.819,
       "pass": true
     },
     {
       "case": "vehicle 1 Space stops and holds against held throttle",
-      "value": 0.0004,
+      "value": 0,
       "pass": true
     },
     {
       "case": "vehicle 2 launches through shared W input",
-      "value": 9.3115,
+      "value": 9.316,
       "pass": true
     },
     {
@@ -612,7 +612,7 @@
     },
     {
       "case": "vehicle 3 launches through shared W input",
-      "value": 13.7899,
+      "value": 13.7854,
       "pass": true
     },
     {
@@ -622,7 +622,7 @@
     },
     {
       "case": "vehicle 4 launches through shared W input",
-      "value": 22.7209,
+      "value": 22.724,
       "pass": true
     },
     {
@@ -632,7 +632,7 @@
     },
     {
       "case": "vehicle 5 launches through shared W input",
-      "value": 25.5604,
+      "value": 25.5382,
       "pass": true
     },
     {
@@ -642,27 +642,27 @@
     },
     {
       "case": "W launch before S brake check",
-      "value": 17.1481,
+      "value": 17.1599,
       "pass": true
     },
     {
       "case": "held S brakes then selects physical reverse without a release",
-      "value": -12.7125,
+      "value": -12.6624,
       "pass": true
     },
     {
       "case": "S maintains physical reverse drive after reapplication",
-      "value": -20.8148,
+      "value": -20.8152,
       "pass": true
     },
     {
       "case": "Space stops and holds while S requests reverse",
-      "value": 0.0015,
+      "value": 0,
       "pass": true
     },
     {
       "case": "Space holds contact speed on a twelve degree incline",
-      "value": 0,
+      "value": 0.0002,
       "pass": true
     },
     {
@@ -672,12 +672,12 @@
     },
     {
       "case": "Hummer stock suspension settles at its intended ride height",
-      "value": 0.7798,
+      "value": 0.7816,
       "pass": true
     },
     {
       "case": "Hummer stage III suspension physically raises the body",
-      "value": 0.1056,
+      "value": 0.1038,
       "pass": true
     },
     {
@@ -792,7 +792,7 @@
     },
     {
       "case": "vehicle 4 cooked body uses acquired automotive paint and trim",
-      "value": 15,
+      "value": 16,
       "pass": true
     },
     {
@@ -1077,12 +1077,12 @@
     },
     {
       "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.0207,
+      "value": 0.0211,
       "pass": true
     },
     {
       "case": "hard dirt actual driven pass compacts contact footprints",
-      "value": 0.9977,
+      "value": 0.9981,
       "pass": true
     },
     {
@@ -1092,27 +1092,27 @@
     },
     {
       "case": "hard dirt driven path advances beyond stationary footprint",
-      "value": 1481.6387,
+      "value": 1482.5734,
       "pass": true
     },
     {
       "case": "hard dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.0137,
+      "value": 0.0138,
       "pass": true
     },
     {
       "case": "mud actual driven pass leaves loaded terrain deformation",
-      "value": 0.202,
+      "value": 0.1914,
       "pass": true
     },
     {
       "case": "mud actual driven pass compacts contact footprints",
-      "value": 0.9966,
+      "value": 0.9973,
       "pass": true
     },
     {
       "case": "mud actual driven pass pushes up side berms",
-      "value": 0.1533,
+      "value": 0.1439,
       "pass": true
     },
     {
@@ -1122,27 +1122,27 @@
     },
     {
       "case": "mud driven path advances beyond stationary footprint",
-      "value": 1466.4054,
+      "value": 1470.9114,
       "pass": true
     },
     {
       "case": "mud displaced and compacted volumes conserve excavated soil",
-      "value": 4.0876,
+      "value": 3.9812,
       "pass": true
     },
     {
       "case": "snow actual driven pass leaves loaded terrain deformation",
-      "value": 0.4596,
+      "value": 0.4205,
       "pass": true
     },
     {
       "case": "snow actual driven pass compacts contact footprints",
-      "value": 0.9937,
+      "value": 0.9959,
       "pass": true
     },
     {
       "case": "snow actual driven pass pushes up side berms",
-      "value": 0.0838,
+      "value": 0.1003,
       "pass": true
     },
     {
@@ -1152,27 +1152,27 @@
     },
     {
       "case": "snow driven path advances beyond stationary footprint",
-      "value": 851.1534,
+      "value": 770.4566,
       "pass": true
     },
     {
       "case": "snow displaced and compacted volumes conserve excavated soil",
-      "value": 2.0802,
+      "value": 1.9803,
       "pass": true
     },
     {
       "case": "wetland actual driven pass leaves loaded terrain deformation",
-      "value": 0.2395,
+      "value": 0.2215,
       "pass": true
     },
     {
       "case": "wetland actual driven pass compacts contact footprints",
-      "value": 0.9991,
+      "value": 0.9992,
       "pass": true
     },
     {
       "case": "wetland actual driven pass pushes up side berms",
-      "value": 0.1771,
+      "value": 0.1751,
       "pass": true
     },
     {
@@ -1182,27 +1182,27 @@
     },
     {
       "case": "wetland driven path advances beyond stationary footprint",
-      "value": 1498.9902,
+      "value": 1506.1748,
       "pass": true
     },
     {
       "case": "wetland displaced and compacted volumes conserve excavated soil",
-      "value": 4.1317,
+      "value": 3.9452,
       "pass": true
     },
     {
       "case": "sand actual driven pass leaves loaded terrain deformation",
-      "value": 0.188,
+      "value": 0.1784,
       "pass": true
     },
     {
       "case": "sand actual driven pass compacts contact footprints",
-      "value": 0.9983,
+      "value": 0.9972,
       "pass": true
     },
     {
       "case": "sand actual driven pass pushes up side berms",
-      "value": 0.1132,
+      "value": 0.1171,
       "pass": true
     },
     {
@@ -1212,27 +1212,27 @@
     },
     {
       "case": "sand driven path advances beyond stationary footprint",
-      "value": 1512.6123,
+      "value": 1558.6184,
       "pass": true
     },
     {
       "case": "sand displaced and compacted volumes conserve excavated soil",
-      "value": 2.2202,
+      "value": 2.2217,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass leaves loaded terrain deformation",
-      "value": 0.1811,
+      "value": 0.1512,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass compacts contact footprints",
-      "value": 0.9987,
+      "value": 0.9956,
       "pass": true
     },
     {
       "case": "soft dirt actual driven pass pushes up side berms",
-      "value": 0.1185,
+      "value": 0.0896,
       "pass": true
     },
     {
@@ -1242,12 +1242,12 @@
     },
     {
       "case": "soft dirt driven path advances beyond stationary footprint",
-      "value": 1476.693,
+      "value": 1478.6161,
       "pass": true
     },
     {
       "case": "soft dirt displaced and compacted volumes conserve excavated soil",
-      "value": 0.3489,
+      "value": 0.3528,
       "pass": true
     },
     {
@@ -1322,7 +1322,7 @@
     },
     {
       "case": "Urus quarry drive stays upright with a controlled trail line",
-      "value": 142.9256,
+      "value": 144.1265,
       "pass": true
     },
     {
@@ -1331,37 +1331,37 @@
       "pass": true
     },
     {
-      "case": "Urus cooked body uses Epic automotive paint, carbon and trim instances",
+      "case": "Vehicle 5 cooked body uses Epic automotive paint and trim",
       "value": 11,
       "pass": true
     },
     {
-      "case": "Urus body renders in close photo view 0",
+      "case": "Vehicle 5 body renders in close photo view 0",
       "value": 0,
       "pass": true
     },
     {
-      "case": "Urus body renders in close photo view 1",
+      "case": "Vehicle 5 body renders in close photo view 1",
       "value": 0,
       "pass": true
     },
     {
-      "case": "Urus body renders in close photo view 2",
+      "case": "Vehicle 5 body renders in close photo view 2",
       "value": 0,
       "pass": true
     },
     {
-      "case": "Urus body renders in close photo view 3",
+      "case": "Vehicle 5 body renders in close photo view 3",
       "value": 0,
       "pass": true
     },
     {
-      "case": "Urus body renders in close photo view 4",
+      "case": "Vehicle 5 body renders in close photo view 4",
       "value": 0,
       "pass": true
     },
     {
-      "case": "Urus body renders in close photo view 5",
+      "case": "Vehicle 5 body renders in close photo view 5",
       "value": 0,
       "pass": true
     },
@@ -1382,7 +1382,7 @@
     },
     {
       "case": "vehicle 0 can reverse out of the quarry compression",
-      "value": 14.2362,
+      "value": 14.1964,
       "pass": true
     },
     {
@@ -1392,12 +1392,12 @@
     },
     {
       "case": "vehicle 1 tires stay above the hard quarry floor",
-      "value": 0.0002,
+      "value": 0.0001,
       "pass": true
     },
     {
       "case": "vehicle 1 can reverse out of the quarry compression",
-      "value": 31.0892,
+      "value": 31.1218,
       "pass": true
     },
     {
@@ -1412,7 +1412,7 @@
     },
     {
       "case": "vehicle 2 can reverse out of the quarry compression",
-      "value": 11.2519,
+      "value": 11.1106,
       "pass": true
     },
     {
@@ -1427,7 +1427,7 @@
     },
     {
       "case": "vehicle 3 can reverse out of the quarry compression",
-      "value": 17.6821,
+      "value": 17.6174,
       "pass": true
     },
     {
@@ -1437,12 +1437,12 @@
     },
     {
       "case": "vehicle 4 tires stay above the hard quarry floor",
-      "value": 0,
+      "value": 0.0001,
       "pass": true
     },
     {
       "case": "vehicle 4 can reverse out of the quarry compression",
-      "value": 28.6315,
+      "value": 28.4601,
       "pass": true
     },
     {
@@ -1457,7 +1457,7 @@
     },
     {
       "case": "vehicle 5 can reverse out of the quarry compression",
-      "value": 25.7404,
+      "value": 26.7112,
       "pass": true
     }
   ],
@@ -1465,7 +1465,7 @@
   "core": {
     "checks": 143,
     "pass": true,
-    "log": "Saved/realism-core.log"
+    "log": "Saved/all-models-core.log"
   },
   "assets": {
     "terrainSamples": 1000,
@@ -1550,7 +1550,7 @@
     "pass": true,
     "gradedTrailSamples": 363,
     "terrainGrade": "slate-rim-heightfield-1",
-    "materialRecords": 346
+    "materialRecords": 347
   },
   "garage": {
     "originalBytesPreserved": true,
@@ -1867,6 +1867,63 @@
     ],
     "placements": 818
   },
+  "modelGeometry": {
+    "revision": "all-models-6",
+    "vehicles": [
+      {
+        "vehicle": "Jeep Wrangler Rubicon",
+        "vertices": 424812,
+        "normalizedFraction": 0.9999858761051947,
+        "visibility": [],
+        "pass": true
+      },
+      {
+        "vehicle": "Ford Bronco Badlands",
+        "vertices": 417214,
+        "normalizedFraction": 0.9999760314850412,
+        "visibility": [],
+        "pass": true
+      },
+      {
+        "vehicle": "Honda Civic Sport",
+        "vertices": 307953,
+        "normalizedFraction": 0.9999058297857141,
+        "visibility": [],
+        "pass": true
+      },
+      {
+        "vehicle": "Mercedes-Benz Sprinter 2500",
+        "vertices": 588348,
+        "normalizedFraction": 0.9999881022796032,
+        "visibility": [],
+        "pass": true
+      },
+      {
+        "vehicle": "GMC HUMMER EV SUV",
+        "vertices": 332963,
+        "normalizedFraction": 0.9998228031342822,
+        "visibility": [],
+        "pass": true
+      },
+      {
+        "vehicle": "Lamborghini Urus Performante",
+        "vertices": 493186,
+        "normalizedFraction": 0.9999351157575438,
+        "visibility": [
+          {
+            "pane": "windshield",
+            "clearDepthM": 1.0058104689656513
+          },
+          {
+            "pane": "hatch",
+            "clearDepthM": 0.3289344801444405
+          }
+        ],
+        "pass": true
+      }
+    ],
+    "pass": true
+  },
   "bodyShapes": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
@@ -1877,17 +1934,20 @@
         "bodyClearcoat": true,
         "geometryLettering": true,
         "construction": {
-          "version": 1,
+          "version": 2,
           "analyticSurfaceNormals": true,
           "roundedSolidParts": true,
           "thinnerWindowSeals": true,
+          "glazingReturns": true,
+          "continuousUpholsteryNormals": true,
+          "nativeFenders": true,
           "automotiveFinishes": true
         },
         "upgradeTireBeads": true,
         "bodyShape": {
-          "version": 1,
+          "version": 2,
           "style": "jeep",
-          "vertices": 400542,
+          "vertices": 424772,
           "maximumSurfaceChangeM": 0.01910155605602605,
           "hardpointsPreserved": true
         }
@@ -1902,17 +1962,20 @@
         "bodyClearcoat": true,
         "geometryLettering": true,
         "construction": {
-          "version": 1,
+          "version": 2,
           "analyticSurfaceNormals": true,
           "roundedSolidParts": true,
           "thinnerWindowSeals": true,
+          "glazingReturns": true,
+          "continuousUpholsteryNormals": true,
+          "nativeFenders": true,
           "automotiveFinishes": true
         },
         "upgradeTireBeads": true,
         "bodyShape": {
-          "version": 1,
+          "version": 2,
           "style": "bronco",
-          "vertices": 392902,
+          "vertices": 417134,
           "maximumSurfaceChangeM": 0.02814205564805858,
           "hardpointsPreserved": true
         }
@@ -1927,17 +1990,20 @@
         "bodyClearcoat": true,
         "geometryLettering": true,
         "construction": {
-          "version": 1,
+          "version": 2,
           "analyticSurfaceNormals": true,
           "roundedSolidParts": true,
           "thinnerWindowSeals": true,
+          "glazingReturns": true,
+          "continuousUpholsteryNormals": true,
+          "nativeFenders": false,
           "automotiveFinishes": true
         },
         "upgradeTireBeads": true,
         "bodyShape": {
-          "version": 1,
+          "version": 2,
           "style": "sedan",
-          "vertices": 280355,
+          "vertices": 307983,
           "maximumSurfaceChangeM": 0.017543011705320577,
           "hardpointsPreserved": true
         }
@@ -1952,17 +2018,20 @@
         "bodyClearcoat": true,
         "geometryLettering": true,
         "construction": {
-          "version": 1,
+          "version": 2,
           "analyticSurfaceNormals": true,
           "roundedSolidParts": true,
           "thinnerWindowSeals": true,
+          "glazingReturns": true,
+          "continuousUpholsteryNormals": true,
+          "nativeFenders": false,
           "automotiveFinishes": true
         },
         "upgradeTireBeads": true,
         "bodyShape": {
-          "version": 1,
+          "version": 2,
           "style": "van",
-          "vertices": 495651,
+          "vertices": 588367,
           "maximumSurfaceChangeM": 0.03752181772052887,
           "hardpointsPreserved": true
         }
@@ -1977,17 +2046,20 @@
         "bodyClearcoat": true,
         "geometryLettering": true,
         "construction": {
-          "version": 1,
+          "version": 2,
           "analyticSurfaceNormals": true,
           "roundedSolidParts": true,
           "thinnerWindowSeals": true,
+          "glazingReturns": true,
+          "continuousUpholsteryNormals": true,
+          "nativeFenders": false,
           "automotiveFinishes": true
         },
         "upgradeTireBeads": true,
         "bodyShape": {
-          "version": 1,
+          "version": 2,
           "style": "hummer",
-          "vertices": 311189,
+          "vertices": 332879,
           "maximumSurfaceChangeM": 0.03692691556309541,
           "hardpointsPreserved": true
         }
@@ -2002,13 +2074,14 @@
         "bodyClearcoat": true,
         "geometryLettering": true,
         "construction": {
-          "version": 1,
+          "version": 2,
           "automotiveFinishes": true
         },
         "upgradeTireBeads": true,
         "bodyShape": {
           "type": "Reference-built continuous coachwork and cabin",
-          "version": 5,
+          "version": 6,
+          "openGlazing": true,
           "importedManufacturerCAD": false,
           "landmarks": {
             "length": 5.137,
@@ -2032,53 +2105,56 @@
   "focused": {
     "garageChecks": 30,
     "garageExit": 0,
-    "urusChecks": 7,
-    "urusExit": 0
+    "allModelCloseChecks": 42,
+    "allModelCloseExit": 0
   },
   "renderedInspection": {
-    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-0.png": "68454f3c5ea58a918ebe8c68001db9e49459e934bde7c41b9b3d4caf5ebc4c49",
-    "Saved/RealismTerrainReview/iteration-2/native-model-0-view-1.png": "94999a7666c49145a77839a05477f6c6ac4fcb6dc0cdc89589cc8514e3a08fe4",
-    "Saved/RealismTerrainReview/iteration-2/native-model-0-view-3.png": "72e123e07088ac8d1583449e21c4dc23aeea2b49c8cc3929c9d819d9a762f335",
-    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-1.png": "57f17b4c4cda2daba0c36d71bbac7f7db3ec5e3b69a40ae4ad5322439df72488",
-    "Saved/RealismTerrainReview/iteration-2/native-model-1-view-1.png": "39b31290f22511593005ef7e0148ad6e1b0b52deb67a27cc21dddf9055df8e3f",
-    "Saved/RealismTerrainReview/iteration-2/native-model-1-view-3.png": "cd2138c770ea8f51605235dea34b22e94d3ffbddc516a950d8441ecbcda26e65",
-    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-2.png": "2ca017d6df5a2d299de5afe83b7820fef9446109687bd6fc4889705045700b77",
-    "Saved/RealismTerrainReview/iteration-2/native-model-2-view-1.png": "474f5146fad874a02324753b9c1ba406de28c9ddf1cc8d6ed230a2c329f30979",
-    "Saved/RealismTerrainReview/iteration-2/native-model-2-view-3.png": "f67f863677a820e80f98844a47d10d98b7c6d49f6f64d6b9313094ad4ae15051",
-    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-3.png": "e5f5bd25596c570966c47613c0d8128e8e12852af2fa84a29480d83e868e240b",
-    "Saved/RealismTerrainReview/iteration-2/native-model-3-view-1.png": "c8aa36877e11f10ac693b911235e0be870726e9b654cb733c020de9ac837886f",
-    "Saved/RealismTerrainReview/iteration-2/native-model-3-view-3.png": "34c52c25891b02c49269d31ec2a7466539528e035953cc7a07272fd8333af93d",
-    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-4.png": "cf2cc1c3d5e79d3589f75117b98d6a2217a619a25db452c79488abc720ec081f",
-    "Saved/RealismTerrainReview/iteration-2/native-model-4-view-1.png": "ec18a4bdd4d1415b4077c748943ff69e795751134794b48bf2b1907fcce16c0f",
-    "Saved/RealismTerrainReview/iteration-2/native-urus-hero-5.png": "9fc16dd46fe24034c312a78457d69810892f31230707b7ae64ba0a54de892060",
-    "Saved/RealismTerrainReview/iteration-2/native-model-5-view-1.png": "8d4f4b384fd32bc6c0d72ff88375c1197ac5102d3b7660c1552a3cca6a8db2d8",
-    "Saved/RealismTerrainReview/iteration-2/native-model-4-view-0.png": "33965751e84fed31bd5eec27ab67213c305cd9288bbd1b821611f96b07a27339",
-    "Saved/RealismTerrainReview/iteration-2/native-model-5-view-0.png": "32971e77b80572dbb17cd5a6715a8ad6ac9217b70fe1e084ef456feda0deb5b4",
-    "Saved/RealismTerrainReview/iteration-2/native-region-1.png": "9ff4b61cf1d270e435644628f346897eabfda2de4cde30e5ea7deff45056f146",
-    "Saved/RealismTerrainReview/iteration-2/native-region-6.png": "51f21c9d1f83d5b3a0ea48876e5c2c17dd304eb42675bb6aeb079ce9aa05f98f",
-    "Saved/RealismTerrainReview/iteration-2/native-region-8.png": "d9220ed6ed6cc11e84263efa385c92715c6d2fa09e826cab38b2c4a90d18fae5",
-    "Saved/RealismTerrainReview/final/native-region-3.png": "222d847badb25b4ecfc0aecb0011e33fec1efa2c0a1a5efad90e00d3ab767278",
-    "Saved/RealismTerrainReview/final/native-driven-snow.png": "9309eefbb41f54f7f62dbe379fb3178847219ccd429ead1a97dd856f447a79e3",
-    "Saved/RealismTerrainReview/final/native-driven-mud.png": "53dd4ddf6ffcdc72b2b91bca91eae9042eb28e96a37f13eb6fbff008b90ac7ed",
-    "Saved/RealismTerrainReview/final/native-crushed-grass.png": "953e8e2dca981b125c954a50df8c7ea4177e43deba6881a1ddb0b8eff5879296",
-    "Saved/RealismTerrainReview/final/native-urus-hero-3.png": "67e384c65d764a4aea351788935487e50654e4244f1ecbba2faae164eb65b5fa",
-    "Saved/RealismTerrainReview/final/native-model-4-view-3.png": "11657b3d1e19660703c6fcc5c8908f6404c09c236d10884a11022db1f8ca683f",
-    "Saved/RealismTerrainReview/final/native-slate-rim-trail.png": "17f6978f9495eeaeefd2afdc4e00f0af06c1e5205aede050a29d65a4bb366f77",
-    "Saved/RealismTerrainReview/final/native-ground-contact-4.png": "f3d5dbb4236a0b5f80ac7f3c37edefc708f96c9fd199e709f1ed59b0ceb4588c"
+    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-0.png": "668fc2cc1b94e17a23b76da97b8a790f1e1d04672ad7ec8fa801b145dad562f4",
+    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-1.png": "7168f9131f340cdf4d9d92c485cbbc198490e4cf3862c2b32ba8b77ca6dd1e0b",
+    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-2.png": "8db5ee5b6e4f7f8955daa80dbe3617886fbe8ef737f0afcf8ac060628188ed7f",
+    "Saved/AllModelsReview/final-trim/native-vehicle-0-hero-3.png": "0486d17e3bd5539fb7cbe6e83155e5ca678fdae12d2edd08b6241bfc4d45340e",
+    "Saved/AllModelsReview/final-trim/native-model-0-view-3.png": "9214add737ffdb01fe6df3434794aa96b09dd6815bbbbc01a801d84b2d196633",
+    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-0.png": "08dbad303edd2ece2d8170a2ce2c708b54630766d4f0762507a9cca7dfff8b95",
+    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-1.png": "3287286299b7179f19cff0ef4271a3fdf2966b5ddf1d06df14a87b8ec3e3c219",
+    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-2.png": "f98e3bf16da11013569bda858d3f9a838ddfee7490ec43330f404090c48ce9ec",
+    "Saved/AllModelsReview/final-trim/native-vehicle-1-hero-3.png": "6afaeaef9d5ff64f3a2f4f0dda07cb8c5999d5ec1c463fb9557dd0b7a402da86",
+    "Saved/AllModelsReview/final-trim/native-model-1-view-3.png": "1bdfbbbba33e73ea2e6e0ba651b8d725b3864ce51ffc38ae9dd06d8e6182b277",
+    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-0.png": "d8870f5c4e14e72b2b4bd819f939973f45e61bba939385a21a750ad0bea1ec82",
+    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-1.png": "78da8f88e21d25875b920f2bd3ddca6c11f282011cbb3cbb792ddb245c2f3372",
+    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-2.png": "625b6da395713b88e2569ff8b49db356548cdb122af5f17ddffdec0bfb5c0b82",
+    "Saved/AllModelsReview/final-trim/native-vehicle-2-hero-3.png": "06cf9439e9b34e470a2364b9ff34a88e52323bc353148639fcd013706deff186",
+    "Saved/AllModelsReview/final-trim/native-model-2-view-3.png": "2b294c5c3eafd117fc3dfedc148bf58bdd28bb1216bd3365074d587d44171105",
+    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-0.png": "85236934f1f976c6a3ccfa433a110ac1e68d24d7551c7434c25b5549ad77dca1",
+    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-1.png": "b12e36752ef4d2566093b945b4079b7c251b7889fd8faa52fcb6c24deb031474",
+    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-2.png": "44cc31902661ace19d8e375af798b65e01f33d645664a72ab3c02f9fbb6e80df",
+    "Saved/AllModelsReview/final-trim/native-vehicle-3-hero-3.png": "c411f94f1326c63d872d05dfa1991eddff84185f6d589cbbb43c9f929c06763c",
+    "Saved/AllModelsReview/final-trim/native-model-3-view-3.png": "54e65152ac083f243c69353c3ef02098301e341fec689acfbfae55074873f5bd",
+    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-0.png": "df0d3be039ad77ada9ad3ca0ddd4c5da6ce0f64ef6c887f952a9cb955a74c836",
+    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-1.png": "a72293774e5fe743668f7c5249719b8935c4dbb451226eb1e9b7246c557d92e9",
+    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-2.png": "aaf17c8bc5a48b5768b1e4b5717a0908020348faeffead28c3c8201f143284ee",
+    "Saved/AllModelsReview/final-trim/native-vehicle-4-hero-3.png": "ccc6663102864b6501fc2286134a9dfc29130ada896340eb035cf97eff7f6f03",
+    "Saved/AllModelsReview/final-trim/native-model-4-view-3.png": "d7927a3c464ae881f1632041d1036d7d5f0247dcf3f260db987632ef4f6fd68c",
+    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-0.png": "75b3df35fc7a081c2a79a059875d8fc07daf6d14d6fd082702da943eff0edd47",
+    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-1.png": "9670489ef47f2ed0b9ddf584923b78063a44234eb829e0bc1bcf1d5ef1ff4941",
+    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-2.png": "b8d01b91d7c5bb835f64dabbbbd3696a7f62a65e39fd89ea7c9d303090ef6599",
+    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-3.png": "a258c1d916f78ed9a7c84a7941407a91f61712bb5155c21c5cac9a23f347f030",
+    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-4.png": "7dae564c1c4448bcf5379a6b3fbfff85607b37035b34526f818d5576541640b6",
+    "Saved/AllModelsReview/final-trim/native-vehicle-5-hero-5.png": "21f186eb0a5e320231276b8305d300caf1f87083f1b8d9b12bd81a6c7ba0261b",
+    "Saved/AllModelsReview/final-trim/native-model-5-view-3.png": "280831a9c8075b246c7901b55dffc4444c36b7bc6db828c3d807f31ec6d3c8c6"
   },
   "packagedContentSHA256": {
     "global.ucas": "9de4b5cec4b89e8edbe7675cc42f9064fcce79829d4b0794af7b40c9bfc71631",
     "global.utoc": "89e25c926368c8f06557107c344589ed6d84157d2518309963ff7bd18c8e9a89",
-    "TerraDrive-Windows.pak": "f83601709ee00a1bd6d14088caf742e794d11cf0bca2da173dc55c139174893e",
-    "TerraDrive-Windows.ucas": "93902e43d707c75a5889339090731e2ae13cd942e4c0b9ca5b486bbe8f6d6ce0",
-    "TerraDrive-Windows.utoc": "2880fae7c9eafca1c631ec473adc717a67747518cb0dce6cdfc91ee51ae5e247"
+    "TerraDrive-Windows.pak": "ae4e2f5003284b13cd52e97aed28fc0d24c17519b24f0325f8c85c4404b544e5",
+    "TerraDrive-Windows.ucas": "25b98809ddaa4f896a0a333172eb2b8c9dcc667700549a55b6cc9a10b8492082",
+    "TerraDrive-Windows.utoc": "1a41a9d23f0c74b835e91c6732c422cd32ece18922d54a3f5c87609ed17fe958"
   },
   "sourceSHA256": {
     "Source/TerraDrive/TerraContact.h": "eebefcf6e4b07f8602d7dd6d881bb14e50794befb1047befa369a54e17ec00d1",
     "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
     "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
     "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
-    "Source/TerraDrive/TerraGameMode.cpp": "010cce4148bc5bef3851677abe994db957f88bacc639b8c08ef5926928a69964",
+    "Source/TerraDrive/TerraGameMode.cpp": "a9f0400a1d9269026ab7a702cd8dc9946158de0fd0303151715d5e1611a2be5f",
     "Source/TerraDrive/TerraGameMode.h": "04b497d508bf47ca2a4e908da57f09dce65f1b4cb14a61cbc7766596862b1bb7",
     "Source/TerraDrive/TerraGarage.cpp": "9992957178f45405bb2667fe46a6dd905ee96a468aa6af65feb61990977cd049",
     "Source/TerraDrive/TerraGarage.h": "35e4eaa7188968df3493497dedc68368c28e24d28a9bf32ff7b0de56006c6849",
@@ -2099,18 +2175,19 @@
     "Config/DefaultGame.ini": "f39824b22f76eaa48d005c19c25a2eb39a412bf67d572161cb53688ecc7e4ba7",
     "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f",
     "Tools/automotive-materials.py": "e8958e2a84d8ecfc14afde4aa997b9eacc126582a5dc4a52722d61f05fded634",
-    "Tools/body-refinement.mjs": "e0b090d51bbf4c36cd384372a9cc10b8c3af8d35184c0dbd2c2751de00a8ee4d",
+    "Tools/body-refinement.mjs": "e82ffbdca9f798df11dfd8400606406e8beb45a1f332cdd16e2079eaeb9dada9",
     "Tools/body-surface.mjs": "6a6bee7dfad9845c5bbe8c2bf98755658e2b815a29b12e87169de164367e43e2",
     "Tools/build-native.ps1": "63064b61da5395efbfeb66410df1547d31c4f27d3507a1e42ccd293d68c59b77",
-    "Tools/export-source.mjs": "ac82e67ee1343c9e6765cafd7fb3ce73e58dd4e7829da0215d4f6978008b90c6",
+    "Tools/civic-body.mjs": "3bcefe9f4c7bd6a319b448a4a0d890f6385a0f0870648b356b88c196f57bb00a",
+    "Tools/export-source.mjs": "c478ef87d71f5ee98b0fe803a6bd86421bb63fc3d36f5087cf75ba8404268e05",
     "Tools/fab-scenery.json": "d7fd91f7f754079da960f12192ccad569b96d55612089a7798c406b9b04d9c03",
     "Tools/fab-scenery.mjs": "a5af9c434168b011b4009f536c51d16f837e9e35b589b0edde5dd8279e79d05b",
     "Tools/fetch-environment-assets.py": "3048d13230862aaa787c075523c6230c0c044cc8c0605cbe980e68b9a31d1225",
-    "Tools/hummer-body.mjs": "b697f94ee33906012cb2e92a94257f73fba5c8d5d52b713a7c6f45cbb9e8869c",
+    "Tools/hummer-body.mjs": "b9be95a4b3a37993c2b6344eaf231ca263469580155716394d08f6aabe61c058",
     "Tools/import-assets.py": "8ba23b94f1e0ada870801259bde6ff916804f6fcfa6428ed30b8026053f32a2e",
     "Tools/import-fab.py": "ed9827bcd71fad2d27c6b24a4bcf7ac2988d08ec7b56a98f5f36b280b5663d8f",
     "Tools/native-challenge-course.mjs": "54626ee9d34fa0e74ef8ab4d0b8f3b3d4d89f4d3c5674aa8cc2431a073be8a13",
-    "Tools/native-models.mjs": "1d5d022821efc17596c96b3fe37d44e181ba22471d91f1ee527e8d1a20986de2",
+    "Tools/native-models.mjs": "ccac739bbcfc5629c5a1c4b8a827cf3263b4a87803a7946d598587e09ab645c2",
     "Tools/native-terrain.mjs": "34a64cbd67262df12155d560df25c6256e5b4dac541b7c04a9716b6ac4f41cdf",
     "Tools/native-vehicles.mjs": "73032fa5f62f622edcd1bbf562d718aa13c99a082fe21687c7ad911a3e48657b",
     "Tools/offroad-courses.mjs": "cdb11b0ee7f16c88a36a08dfa38cbd76276c49ecba2ac72ac7650b53ca48c178",
@@ -2118,29 +2195,35 @@
     "Tools/quarry-trail.mjs": "be3d89aa125527dccdcaa2e6de7a742ec3e390bcad50d877bcf83442323257ef",
     "Tools/scanned-environment.mjs": "13c7aeb35ab48370bc79c67e332412e89e4a92c810532ba3cff5c227db70b431",
     "Tools/sky-material.py": "f2e9c58393ae51fc31e07512fd64b8b286a007758a0ff6651ad8654192554925",
+    "Tools/sprinter-body.mjs": "0457a3dab2c0663e63bd9237d9cbb65191dd721f0fbf1fb2072a6c06e3bac128",
+    "Tools/suv-body.mjs": "aa3e8d4c3a7b5f4b25b57b1be0212180785527794968c3cc263e8aa8d4d51520",
     "Tools/terrain-materials.py": "66f851910241bcfbf64bf303a613760127dab6ef4211ec1bdb62f4f66ee2c213",
     "Tools/terrain-surface.hlsl": "938e380bb857bc8e2c2fbf6ce1355b2fde3e80d30cbf9424374ec98091034002",
     "Tools/test-core.cmd": "06f3e8dbde5ccdfa032422eff1fbccc0b777e0ec9a67f61c411333c11e0b72ad",
     "Tools/test-core.cpp": "39525ee42613e691d01a597d42498ff5af6a58669dae478c86748d3bd2f6faed",
     "Tools/tire-mark-materials.py": "9d28390c9c4aea23effbdddfea18411a5a39756ae362be1c643fe27270188617",
-    "Tools/urus-body.mjs": "58c6fb9fcdea3951ef910fb19a93a53f31e463fedf4580d199d95284c0ceb161",
-    "Tools/urus-cabin.mjs": "682762766a66dfad030aa9871db3e49b66d2bcc508f791ba4dafb4feed7452bb",
+    "Tools/urus-body.mjs": "783c84bf06943815056ab9fbbf0d712c2adb82633802a5642a7d4e1656672fe1",
+    "Tools/urus-cabin.mjs": "3e9b071df2aec7da1744b6bf8dabd606ff16059863f3cbdaf55da3bdbdb4d66e",
     "Tools/urus-model.mjs": "dc7e9c69574d582c9e8beabcf108d367578b921a9899d32378aa05934986215b",
-    "Tools/validate-export.mjs": "09ac1d97b0d163bbef8c53c76810e70b3ed9ef21ec0efdd494d32361ec6d0048",
-    "Tools/vehicle-fidelity.mjs": "c9e9f71e0a485660ce9f76e186f8957b4ce13049a94b5b92f365f35b98a31a6a",
-    "Tools/vehicle-geometry.mjs": "f1b30b1c75b737f1dc1beb86e6f53d5cecada7db4ffb3d4b12db05477ce58cf7",
-    "Tools/vehicle-realism.mjs": "2d1bddac59324e1b8e5d7aae29e4006febcd7d3a4fabce7bff8b9271ff0923ca",
+    "Tools/validate-export.mjs": "041b526dce7334e543ba8c85f55cca4c116e276e7cb5f2413bb71d70f68b2941",
+    "Tools/validate-models.mjs": "02d0f704074351e193383072f62d0eab583c661f3e5ddd13ed6613df806cc27a",
+    "Tools/vehicle-cabin.mjs": "4b3184004628eeee829b6ec06ed208b7de16b1b7c3343d1d0dd881b6084e1b7f",
+    "Tools/vehicle-fenders.mjs": "29ec5521a4993436be54207e8bc25f249b8fb098eb1123a8e66a0ded86abe871",
+    "Tools/vehicle-fidelity.mjs": "933873e26ee667cf40695cb0b5688b64e4a50a053cf6644ce108b9ee0b8c908c",
+    "Tools/vehicle-geometry.mjs": "f9c0a5c94cfe90beea145c84f606843e777a782f631c2c4e8d4bf2d5fc4b7910",
+    "Tools/vehicle-realism.mjs": "1c2d410db90146ba387796a4b67be54f3a7125ec115fe84022c82c7f573749b3",
+    "Tools/verify-model-art.ps1": "4a3641908dabbe367fef7966371a0dd84b5b6698d8a9df239bea99271a8fba78",
     "Tools/verify-native.ps1": "4d8b732ce6994accd1f1c6bd63cc4a38f1d25d6ed65e10fab4996d2449fbd722"
   },
-  "sourceManifestSHA256": "cca644f85072e44a1ea29f6f00a7a4387038ec03be193b44f1ea6a47e6cf9d60",
-  "worldDataSHA256": "a57b2b6df8733cb30a6e5d5eef511495e0febafef537d68650f9addab5e14ca3",
+  "sourceManifestSHA256": "3fc75e7fa25fa00161f41efeaaddd84cb503b73db8d8f6074f43592cb4b4cb6f",
+  "worldDataSHA256": "c5a4c5e88a8f7e07413d758191bf3bf24841a70c62d66d8197be1fcc8af07cea",
   "terrainDataSHA256": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
   "logs": {
-    "build": "Saved/realism-build-4.log",
-    "full": "Saved/realism-full-final.log",
+    "build": "Saved/all-models-build-4.log",
+    "full": "Saved/all-models-full-final.log",
     "fullEngine": "Saved/Validation/packaged-game.log",
-    "garage": "Saved/realism-visual-final.log",
-    "urus": "Saved/realism-hero-final.log"
+    "garage": "Saved/all-models-garage-final.log",
+    "allModelsArt": "Saved/all-models-art-final.log"
   },
   "interactive": {
     "performed": false,
@@ -2150,6 +2233,6 @@
     "Authored vehicle reconstructions remain below production racing-game art quality; no OEM CAD accuracy claim.",
     "Only Slate Rim is verified as a complete continuous route; other routes and full loop traversal remain unproven.",
     "No long-session stability or controller-hardware test.",
-    "Earlier candidate full run was stopped for a scenery material correction and is not accepted evidence."
+    "Initial all-model art renders were revised after visual review; only final-candidate captures are accepted."
   ]
 }

@@ -2,6 +2,8 @@
 
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
+The [all-vehicle coachwork round](docs/model-refinement-6.md) revises the six models' glazing, cabin surfaces and body details. It includes open Urus windshield/hatch surrounds, native seat/headrest shading, flatter SUV fender shelves, Civic panel changes, Sprinter liners and HUMMER haunch/mirror changes. Use `node Tools/validate-models.mjs` for the geometry and glazing regression checks; native build evidence is in `docs/native-validation.json`.
+
 The latest [vehicle and landscape pass](docs/realism-terrain.md) adds curved-surface normals and rounded fittings, automotive finishes across all six vehicles, lighter view-dependent glazing, MW landscape textures/foliage and scanned Winter Scene snow, rock and ice. It requires the acquired **MW Landscape Auto Material** and **Automotive Winter Scene** packs as well as Automotive Materials. The document explains how the packs feed the deformable native terrain and how to add them from your Epic library.
 
 The latest physics correction restores finite-tread support on uneven rigid ledges after the sphere query rejects a side contact. See [ground-contact.md](docs/ground-contact.md) and run `Tools/verify-native.ps1 -GroundOnly` for the focused regression. Current bodies remain procedural approximations; [vehicle-art-production.md](docs/vehicle-art-production.md) describes the recommended mesh, material and reference-review pipeline for a substantial visual improvement.

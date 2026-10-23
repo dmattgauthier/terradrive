@@ -44,9 +44,9 @@ export function buildNativeHummer(view, geometry) {
     // broad, shallow dishing and the swept rear shoulder break up a flat slab;
     // these are contours in the skin, not trim lines laid over it.
     const rearEdge = -.980 - .154 * THREE.MathUtils.smoothstep(y, .64, 1.25);
-    const rearHaunch = .031 * Math.exp(-(((z - rearEdge + .070) / .118) ** 2)) * panel;
-    const frontHaunch = .021 * Math.exp(-(((z - 1.078) / .125) ** 2)) * panel;
-    const waist = -.010 * Math.exp(-(((y - .752) / .039) ** 2)) * door;
+    const rearHaunch = .021 * Math.exp(-(((z - rearEdge + .070) / .165) ** 2)) * panel;
+    const frontHaunch = .016 * Math.exp(-(((z - 1.078) / .165) ** 2)) * panel;
+    const waist = -.005 * Math.exp(-(((y - .752) / .078) ** 2)) * door;
     return bodyWidth - .034 * (1 - t) + .020 * Math.sin(t * Math.PI) - .019 * Math.exp(-(((t - .22) / .085) ** 2))
       - .012 * door * panel + rearHaunch + frontHaunch + waist;
   };
@@ -238,6 +238,9 @@ export function buildNativeHummer(view, geometry) {
       const y=qp.getY(i),h=.0003,slope=(upperSideX(y+h)-upperSideX(y-h))/(2*h),normal=v3(side,-side*slope,0).normalize();
       qn.setXYZ(i,normal.x,normal.y,normal.z);
     }
+    const quarterLiner=quarterPanel.geometry.clone(),ql=quarterLiner.attributes.position;
+    for(let i=0;i<ql.count;i++)ql.setX(i,ql.getX(i)-side*.014);
+    finish(new THREE.Mesh(quarterLiner,m.interior),g);
     windowPanel(g,{...m,glass:m.privacyGlass},quarterWindow.map(([z,y])=>[upperSideX(y)+side*.004,y,z]),.035,.071,{bow:.004});
     const pillar=(a,b,width,material)=>surface(g,material,8,20,(u,v)=>{
       const z=THREE.MathUtils.lerp(a[0],b[0],v)+(u-.5)*width,y=THREE.MathUtils.lerp(a[1],b[1],v);
@@ -340,10 +343,14 @@ export function buildNativeHummer(view, geometry) {
     // Wide low mirror body, painted cap and an actual rear-facing glass inset.
     const mx=side*(2.37998/2-.100),my=1.511,mz=.737;
     profile(g,m.black,[[.821,1.387],[.951,1.390],[.944,1.446],[.842,1.488]],.077,.012).position.x=side*1.012;
-    roundedBox(g,m.black,mx,my,mz,.200,.154,.160,.031);
-    roundedBox(g,m.paint,mx,my+.044,mz+.009,.198,.065,.157,.025);
-    roundedBox(g,m.chrome,mx,my-.009,mz-.085,.170,.096,.012,.015);
-    roundedBox(g,m.glass,mx,my-.008,mz-.093,.164,.089,.009,.014);
+    const capOutline=roundedOutline([[-.100,-.069,0],[.100,-.058,0],[.093,.071,0],[-.094,.079,0]],.027,10);
+    const capPoint=(u,v)=>{
+      const q=u*capOutline.length,i=Math.min(capOutline.length-1,Math.floor(q)),t=q-i,a=capOutline[i],b=capOutline[(i+1)%capOutline.length],r=Math.cos(v*Math.PI/2);
+      return [mx+THREE.MathUtils.lerp(a[0],b[0],t)*r,my+THREE.MathUtils.lerp(a[1],b[1],t)*r,mz-.074+.160*Math.sin(v*Math.PI/2)];
+    };
+    surface(g,m.black,capOutline.length/2,28,(u,v)=>capPoint(u*.5,v));
+    surface(g,m.paint,capOutline.length/2,28,(u,v)=>capPoint(u*.5+.5,v));
+    windowPanel(g,{black:m.black,glass:m.chrome},capOutline.map(([x,y])=>[mx+x,my+y,mz-.075]),.060,.014,{bow:.003});
     roundedBox(g,m.white,mx,my+.006,mz+.090,.175,.014,.010,.004);
   }
   // Steep windshield, three independently modeled wipers and central marker trio.
@@ -396,6 +403,8 @@ export function buildNativeHummer(view, geometry) {
   // Door trim stays inside the newly formed outer skins. The former generic
   // full-length slab could emerge through a realistic shallow door pressing.
   for(const side of [-1,1])for(const [rear,front,armZ]of [[-.176,.899,.127],[-1.072,-.241,-.691]]){
+    surface(g,m.interior,48,12,(u,v)=>[side*.976,THREE.MathUtils.lerp(1.225,belt-.009,v),THREE.MathUtils.lerp(rear,front,u)],side>0);
+    surface(g,m.interior,48,6,(u,v)=>[side*THREE.MathUtils.lerp(.923,.994,v),belt-.010,THREE.MathUtils.lerp(rear,front,u)],side>0);
     roundedBox(g,m.black,side*.923,.933,(rear+front)/2,.029,.659,front-rear,.015);
     roundedBox(g,m.hummerInteriorAccent,side*.903,1.143,(rear+front)/2,.024,.049,(front-rear)*.87,.010);
     roundedBox(g,m.interior,side*.883,1.023,armZ,.093,.061,.388,.015);

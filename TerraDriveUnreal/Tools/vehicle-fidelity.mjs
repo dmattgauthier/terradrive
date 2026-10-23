@@ -143,15 +143,15 @@ export function refineVehicle(view,spec){
   // Replace lost canvas text with real geometry, and keep native body identity
   // independent of any font/HTML renderer in the shipped game.
   if(spec.bodyStyle==='jeep')for(const side of [-1,1]){
-    const label=text(view.body,'RUBICON',.63,.057,decal);label.position.set(side*.626,1.211,1.385);label.rotation.y=side*Math.PI/2;
+    const label=text(view.body,'RUBICON',.63,.029,decal);label.position.set(side*.699,1.215,1.385);label.rotation.y=side*Math.PI/2;
   }
   if(spec.bodyStyle==='van'){
-    const label=text(view.body,'SPRINTER',.31,.045,alloy);label.position.set(-.57,.947,-3.027);label.rotation.y=Math.PI;
-    const badge=text(view.body,'2500',.15,.033,alloy);badge.position.set(.66,.949,-3.027);badge.rotation.y=Math.PI;
+    const label=text(view.body,'SPRINTER',.31,.045,alloy);label.position.set(.57,.947,-3.027);label.rotation.y=Math.PI;
+    const badge=text(view.body,'2500',.15,.033,alloy);badge.position.set(-.66,.949,-3.027);badge.rotation.y=Math.PI;
   }
   if(spec.bodyStyle==='sedan'){
-    const label=text(view.body,'CIVIC',.19,.033,alloy);label.position.set(-.49,.927,-2.368);label.rotation.y=Math.PI;
-    const sport=text(view.body,'SPORT',.13,.025,alloy);sport.position.set(.52,.925,-2.369);sport.rotation.y=Math.PI;
+    const label=text(view.body,'CIVIC',.19,.033,alloy);label.position.set(.49,.927,-2.368);label.rotation.y=Math.PI;
+    const sport=text(view.body,'SPORT',.13,.025,alloy);sport.position.set(-.52,.925,-2.369);sport.rotation.y=Math.PI;
   }
   // Fine heater lines occupy the rear glass, avoiding the absent canvas maps.
   const rear={jeep:[-2.079,1.32,1.74,.70],bronco:[-2.083,1.34,1.73,.73],van:[-3.029,1.12,1.98,.78],sedan:[-1.44,1.02,1.32,.59],hummer:[-2.52,1.50,1.86,.84]}[spec.bodyStyle];

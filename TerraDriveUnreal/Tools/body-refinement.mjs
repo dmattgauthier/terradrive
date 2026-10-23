@@ -18,13 +18,13 @@ export function bodyRefinement(view,spec){
   let dx=0,dy=0,dz=0;
   if(style==='jeep'){
    // JL's separate narrow bonnet, upright cabin and softly drawn door skins.
-   dx+=sign*sheet*(.014*Math.sin(level*Math.PI)-.010*gauss(y,.69,.12));
+   dx+=sign*sheet*(.009*Math.sin(level*Math.PI)-.004*gauss(y,.69,.12));
    dx-=sign*cab*side*.019*smooth(y,1.32,1.84);
    dy+=.017*gauss(x,0,.56)*gauss(z,1.36,.62)*smooth(y,1.20,1.27);
    dy+=.010*cab*gauss(x,0,.65)*smooth(y,1.78,1.86);
   }else if(style==='bronco'){
    // Wide flatter bonnet, more tucked upper cabin, gentle door crown.
-   dx+=sign*sheet*(.020*Math.sin(level*Math.PI)-.012*gauss(y,.72,.09));
+   dx+=sign*sheet*(.008*Math.sin(level*Math.PI)-.005*gauss(y,.72,.12));
    dx-=sign*cab*side*.028*smooth(y,1.31,1.85);
    dy+=.012*gauss(x,0,.72)*gauss(z,1.45,.64)*smooth(y,1.24,1.28);
    dy+=.014*cab*gauss(x,0,.71)*smooth(y,1.80,1.87);
@@ -71,5 +71,5 @@ export function bodyRefinement(view,spec){
   }
   geo.computeBoundingBox();geo.computeBoundingSphere();
  });
- view.root.userData.bodyRefinement={version:1,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true};
+ view.root.userData.bodyRefinement={version:2,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true};
 }
