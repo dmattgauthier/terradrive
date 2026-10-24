@@ -82,16 +82,42 @@ color*=broad*lerp(float3(.94,.98,1.02),float3(1.05,1.01,.91),mineral);
 float wet=smoothstep(.51,.77,patches)*Wetness;
 color*=lerp(1,.61,wet);
 float packed=saturate(1-Wear);
+// Detailed soil supplies signed physical height and tire tangent. Coarse
+// untouched vertices use exact UNorm8 neutral B=128/255 / A=0, so these changes never paint
+// a dark ribbon across every surface or alter road and rock materials.
+float signedSoil=(SoilDisplacement*255-128)/127;
+signedSoil=sign(signedSoil)*signedSoil*signedSoil*.8;
+float excavation=max(0,-signedSoil);
+float bank=max(0,signedSoil);
+float floorWear=packed*smoothstep(.0015,.012,excavation);
+float looseBank=smoothstep(.001,.024,bank);
+float churn=saturate(Churn);
 if(Biome==0){
   float loose=saturate(LooseSoil);color*=lerp(1,.85,loose);
   float3 dry=lerp(color,color*lerp(1.16,.90,loose)+float3(.022,.018,.009)*(1-loose),packed*.65);
   float3 crushed=lerp(bc,bc*float3(1.23,1.04,.68),packed*.78);
   color=lerp(dry,crushed,b*packed*.62);
+  // Excavating grassy ground exposes soil below its green root mat. The
+  // shallow hard-dirt trail stays pale; a deep groove cannot remain turf.
+  float rootBreak=smoothstep(.012,.055,excavation)*packed;
+  float3 exposedEarth=ac*float3(.52,.41,.29);
+  color=lerp(color,exposedEarth,rootBreak*.85);
 }
-if(Biome==2||Biome==3)color*=1-packed*.24;
-if(Biome==5)color*=1+packed*.09;
+if(Biome==2||Biome==3){
+  // Fresh wet clay is moderately darker and smoother in the loaded floor;
+  // the loose banks retain clod roughness and the original soil colour.
+  color*=float3(.79,.76,.70);
+  float3 moistEarth=ac*float3(.34,.29,.25);
+  color=lerp(color,moistEarth,floorWear*.94);
+  // Wet-grass cover tears to damp earth below the sod, while the displaced
+  // shoulder keeps irregular pieces of the original root/soil surface.
+  color=lerp(color,ac*float3(.61,.55,.45),looseBank*.58);
+}
+if(Biome==5){color*=1-floorWear*.09;color*=1-looseBank*.035;}
 Roughness=clamp(lerp(.66+rough*.31,.53,wet),.52,.99);
-SurfaceNormal=normalize(n+relief*(Biome==0?.78:.48)*(1-packed*.66));
+if(Biome==2||Biome==3)Roughness=lerp(Roughness,.32+rough*.10,floorWear*.94*(1-churn*.15));
+if(Biome==0||Biome==2||Biome==3||Biome==5)Roughness=lerp(Roughness,.94,looseBank*.70);
+SurfaceNormal=normalize(n+relief*(Biome==0?.78:.48)*(1-floorWear*.70));
 if(Biome==6){
   // The Winter Scene's clean snow and crushed snow-road scans remain visible
   // at tire scale. Broken wet cover at the fringe becomes granular slush;
@@ -100,16 +126,49 @@ if(Biome==6){
   float slush=Wetness*smoothstep(.30,.67,grit)*(1-c);
   float hollow=.5+.5*sin(p.x*.39+p.y*.17+sin(p.y*.11)*1.4);
   // Scale exposure instead of clipping the bright scan into a white plateau.
-  color*=float3(.78,.81,.84)*lerp(float3(.82,.89,.97),float3(1.02,1.01,.98),hollow);
+  color*=float3(.66,.71,.76)*lerp(float3(.79,.87,.97),float3(1.02,1.01,.98),hollow);
   color*=lerp(.91,1.02,granular);
   color=lerp(color,color*float3(.45,.49,.51),slush*.82);
-  color=lerp(color,color*float3(.69,.79,.89),packed*.66*(1-c));
+  color=lerp(color,color*float3(.34,.47,.63),floorWear*.94*(1-c*.35));
+  color*=1+looseBank*.055;
   float scanGrain=(rough-.5)*.22;
-  Roughness=lerp(lerp(lerp(.86,.62,b)+scanGrain,.57+scanGrain*.6,packed),.29+scanGrain*.3,slush);
+  Roughness=lerp(lerp(lerp(.86,.62,b)+scanGrain,.40+scanGrain*.35,floorWear),.29+scanGrain*.3,slush);
+  Roughness=lerp(Roughness,.87+scanGrain*.35,looseBank);
   Roughness=lerp(Roughness,.81,c);
   Roughness=clamp(Roughness,.24,.97);
   float phase=p.x*4.2+p.y*1.7+f.noise(p.xy*.31)*3;
   float2 wind=float2(.075,.030)*cos(phase)*(1-packed)*(1-slush);
-  SurfaceNormal=normalize(n+relief*1.5*(1-packed*.45)+float3(wind,0));
+  SurfaceNormal=normalize(n+relief*1.5*(1-floorWear*.90)+float3(wind,0));
+}
+if(Biome!=1&&Biome!=4&&looseBank>.01){
+  // Small broken clods/grains belong to the raised loose shoulders, not
+  // collision spikes. Footprint filtering suppresses distant shimmer.
+  float sampling=max(length(ddx(p.xy)),length(ddy(p.xy)));
+  float visible=1-smoothstep(.015,.070,sampling);
+  float2 q=p.xy*(Biome==6?19:Biome==5?24:13);
+  float gx=f.noise(q+float2(.21,0))-f.noise(q-float2(.21,0));
+  float gy=f.noise(q+float2(0,.21))-f.noise(q-float2(0,.21));
+  float clods=f.noise(q+17);
+  float strength=(Biome==6?.25:Biome==5?.19:.38)*looseBank*visible;
+  SurfaceNormal=normalize(SurfaceNormal+float3(float2(gx,gy)*strength,0));
+  color*=1+(clods-.5)*looseBank*visible*(Biome==6?.12:.20);
+}
+if(Biome!=1&&Biome!=4&&packed>.01){
+  // Subtle rolling tread impressions in the actual loaded strip, aligned to
+  // its last tire tangent. These are filtered normal detail, never additional
+  // collision spikes. High slip breaks up a clear tread into churned soil.
+  float2 direction=TireDirection/max(length(TireDirection),.001);
+  float2 side=float2(-direction.y,direction.x);
+  float along=dot(p.xy,direction),across=dot(p.xy,side);
+  float chevron=sin(across*34);
+  float phase=along*48+abs(chevron)*.95;
+  float sampling=max(length(ddx(p.xy)),length(ddy(p.xy)));
+  float filtered=1-smoothstep(.020,.085,sampling);
+  float tread=(Biome==2||Biome==3?.14:Biome==6?.10:.075)*packed*filtered*(1-churn*.83);
+  float2 gradient=direction*cos(phase)+side*cos(phase)*sign(chevron)*cos(across*34)*.67;
+  float breakup=(f.noise(p.xy*8.3+19)-.5)*churn*packed*filtered*.15;
+  SurfaceNormal=normalize(SurfaceNormal+float3(gradient*tread+float2(breakup,-breakup),0));
+  float lug=smoothstep(.66,.94,.5+.5*cos(phase));
+  color*=1-lug*packed*filtered*(1-churn*.83)*(Biome==6?.14:Biome==2||Biome==3?.12:.065);
 }
 return max(color*.92,.006);

@@ -9,6 +9,7 @@ automotive_parents = {
     'black': 'Exterior/Plastic/MI_Plastic_Glossy',
     'rubber': 'Exterior/Rubber/MI_Rubber_Rough',
     'metal': 'Exterior/Metal/MI_Metal_Chrome_01',
+    'satinMetal': 'Exterior/Metal/MI_Metal_Chrome_01',
     'plastic': 'Interior/Plastic/MI_Plastic_SmallGrain_black',
     'alcantara': 'Interior/Leather/MI_Suede_Grey',
     'wheel': 'Exterior/CarPaint/MI_CarPaint_Black',
@@ -18,10 +19,11 @@ automotive_parents = {
 automotive_overrides = {
     'paint': {'PaintRoughness': .48, 'MinRoughness': .075, 'MaxRoughness': .12,
               'OrangePeelIntensity': .025, 'ClearcoatIntensity': 1.},
-    'carbon': {'Clear Coat Amount': .75, 'Clear Coat Roughness': .30,
-               'Normal Intensity': .20, 'Roughness Min': .36, 'Roughness Max': .48, 'Anisotropy': 0.},
+    'carbon': {'Clear Coat Amount': .85, 'Clear Coat Roughness': .18,
+               'Normal Intensity': .14, 'Roughness Min': .32, 'Roughness Max': .42, 'Anisotropy': 0.},
     'black': {'Roughness Min': .13, 'Roughness Max': .22, 'Normal Intensity': .12},
     'metal': {'Roughness Min': .16, 'Roughness Max': .26},
+    'satinMetal': {'Roughness Min': .34, 'Roughness Max': .46},
     'wheel': {'MinRoughness': .22, 'MaxRoughness': .30, 'OrangePeelIntensity': .015, 'PaintRoughness': .45},
     'rotor': {'Roughness Min': .36, 'Roughness Max': .51, 'Crack Intensity': .15},
     'brakeSteel': {'Roughness Min': .31, 'Roughness Max': .47, 'Normal Intensity': .20},
@@ -68,7 +70,10 @@ for record in data['materials']:
             if abs(edit.get_material_instance_scalar_parameter_value(instance, parameter)-value)>1.e-5:
                 raise RuntimeError('Could not set automotive scalar: ' + parameter)
     color = record['color']
-    if role == 'carbon': color = [.14, .14, .14]
+    # THREE source colors have already been converted from sRGB to linear.
+    # The former .14 linear override made authored near-black carbon a pale
+    # grey (about .41 sRGB), flattening the bonnet, intakes and spoiler. Keep
+    # the designed charcoal tint and the acquired parent's weave/clear coat.
     if role == 'rotor': color = [.20, .20, .20]
     color_name = 'BaseColor' if role in ('paint', 'wheel') else 'Tint'
     if color_name in vectors:
@@ -85,7 +90,10 @@ for record in data['materials']:
     materials[record['id']] = instance
     switches = {str(n): edit.get_material_instance_static_switch_parameter_value(instance,n)
                 for n in edit.get_static_switch_parameter_names(instance)}
-    automotive_bindings.append({'slot': record['id'], 'role': role, 'owner': owner, 'instance': dest, 'parent': parent_path, 'switches': switches})
+    automotive_bindings.append({'slot': record['id'], 'role': role, 'owner': owner, 'instance': dest, 'parent': parent_path, 'switches': switches,
+        'sourceLinearColor':record['color'], 'boundLinearColor':list(color),
+        'scalarReadback':{parameter:edit.get_material_instance_scalar_parameter_value(instance,parameter)
+                          for parameter in values if parameter in scalars}})
 with open(os.path.join(root, 'Saved', 'automotive-bindings.json'), 'w', encoding='utf8') as stream:
     json.dump({'publisher': 'Epic Games', 'pack': 'Automotive Materials', 'bindings': automotive_bindings}, stream, indent=2)
 if automotive_bindings:

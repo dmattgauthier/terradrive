@@ -110,10 +110,41 @@ inline float WheelOmega(float freeOmega, float stiffness, float longitudinalSpee
            (1.f + stiffness * radius * radius * dt / inertia);
 }
 inline float SoilTarget(float maxSink, float load, float width, float length,
-                        float slip) {
+                        float slip,float churn=0) {
     const float stress = load / std::max(.025f, width * length);
+    // Maximum available depth is a dig/soil-layer limit, not the ordinary
+    // static deflection. A parked tire must not excavate half that layer.
+    // Reaching the deepest limit requires accumulated shear work in one area.
+    const float ordinary=.20f+std::min(1.5f,std::abs(slip))*.12f;
+    const float disturbed=ordinary+(1-ordinary)*std::clamp(churn,0.f,1.f);
     return maxSink * std::clamp(std::pow(stress / 150000.f, .68f), 0.f, 1.f) *
-           (.55f + std::min(1.5f, std::abs(slip)) * .30f);
+           disturbed;
+}
+inline float SoilChurnDose(float previous,float slip,float speed,float dt,float coverage) {
+    const float excess=std::clamp(std::abs(slip)-.35f,0.f,1.65f);
+    // Sustained stationary spin can dig a hole. A passing rolling footprint
+    // has little exposure and must not instantly behave like fully fluid mud.
+    const float working=.25f+.75f/(1+std::abs(speed)*.8f);
+    return std::clamp(previous+std::max(0.f,dt)*std::clamp(coverage,0.f,1.f)*excess*.055f*working,0.f,1.f);
+}
+struct SoilContactPatch { float Length,Depth; };
+inline SoilContactPatch SoftSoilFootprint(float pressurePatch,float load,float width,float radius,
+                                        float maxSink,float slip,float churn,float oldDepth=0) {
+    const float base=std::max(.025f,pressurePatch),r=std::max(.05f,radius);
+    if(maxSink<=0||load<=0)return {base,0};
+    float depth=SoilTarget(maxSink,load,width,base,slip,churn),length=base;
+    // A tire sinking into soil contacts a finite rolling arc, not just its
+    // short hard-road pressure patch. Solve area and pressure/sink together;
+    // otherwise a 10 cm centre stamp digs a wall below the front support
+    // witness and traps a fully loaded vehicle in its own parked footprint.
+    for(int i=0;i<8;++i){
+        const float d=std::clamp(std::max(depth,oldDepth),0.f,r);
+        length=std::max(base,2.f*std::sqrt(std::max(0.f,2*r*d-d*d)));
+        depth=(depth+SoilTarget(maxSink,load,width,length,slip,churn))*.5f;
+    }
+    const float d=std::clamp(std::max(depth,oldDepth),0.f,r);
+    length=std::max(base,2.f*std::sqrt(std::max(0.f,2*r*d-d*d)));
+    return {length,SoilTarget(maxSink,load,width,length,slip,churn)};
 }
 inline float SoilResponse(float dt,float speed,float patchLength,float slip,float packing) {
     // Respond within a passing footprint, rather than requiring seconds of
@@ -121,6 +152,53 @@ inline float SoilResponse(float dt,float speed,float patchLength,float slip,floa
     const float rate=(10.f+std::abs(speed)/std::max(.1f,patchLength)*3.f+
                       std::min(2.f,std::abs(slip))*8.f)*(1.f-packing*.55f);
     return 1.f-std::exp(-std::max(0.f,dt)*rate);
+}
+inline float SoilCutDepth(float currentHeight,float targetDepth,float coverage,float response) {
+    // Exponential convergence is bounded by the target. An absolute 5 cm
+    // per-stamp cap made short patches depend on frame rate and grid phase.
+    return std::max(0.f,(currentHeight+targetDepth*std::clamp(coverage,0.f,1.f))*std::clamp(response,0.f,1.f));
+}
+inline float FilteredSoilLoad(float previous,float supportedLoad,float dt) {
+    // Soil responds to a supported load over a finite footprint passage,
+    // rather than chasing a single rolling-envelope witness/load spike.
+    const float response=1.f-std::exp(-std::max(0.f,dt)/.10f);
+    return std::max(0.f,previous+(std::max(0.f,supportedLoad)-previous)*response);
+}
+// A tire leaves a loaded flat-ish floor and rounded collapsing walls. The
+// former rectangular target put nearly vertical sides onto a 6.25 cm grid.
+// A quintic falloff has zero first/second derivatives at both joins, so the
+// physical normals stay continuous as a wheel crosses successive grid cells.
+inline float SmoothSoilEdge(float t) {
+    t=std::clamp(t,0.f,1.f);
+    return std::clamp(t*t*t*(t*(t*6.f-15.f)+10.f),0.f,1.f);
+}
+inline float GrooveOuterHalfWidth(float halfWidth,float depth) {
+    return std::max(.09f,halfWidth)+std::clamp(.035f+std::max(0.f,depth)*.65f,.055f,.18f);
+}
+inline float GrooveCrossSection(float lateral,float halfWidth,float depth) {
+    const float core=std::max(.09f,halfWidth)*.64f;
+    const float outer=GrooveOuterHalfWidth(halfWidth,depth);
+    return 1.f-SmoothSoilEdge((std::abs(lateral)-core)/(outer-core));
+}
+struct SoilBank {
+    float fraction,width,height;
+};
+inline SoilBank SoilBankShape(int surface,float tireWidth,float depth,float loose,float slip) {
+    const float churn=std::clamp(std::abs(slip),0.f,1.5f)/1.5f;
+    // Snow loses pore space under load; sand and wet soil displace more of
+    // their volume sideways. Low broad banks cannot repeatedly turn into the
+    // tire-high volcanoes made by re-cutting the old rolling front pile.
+    if(surface==6)return {.22f,.17f+depth*.35f,std::min(.10f,depth*(.40f+churn*.08f))};
+    if(surface==5)return {.74f,std::max(.17f,tireWidth*.70f)+depth*.30f,std::min(.13f,depth*.62f)};
+    if(surface==0)return {.08f+std::clamp(loose,0.f,1.f)*.66f,.14f+depth*.40f,std::min(.11f,depth*.58f)};
+    return {.80f,std::max(.16f,tireWidth*.58f)+depth*.30f,std::min(.09f,depth*.64f)};
+}
+inline float SoilBankProfile(float lateral,float inner,float width) {
+    const float t=(std::abs(lateral)-inner)/std::max(.05f,width);
+    if(t<=.000001f||t>=.999999f)return 0;
+    // Unit peak, compact support and C2 joins at undisturbed ground.
+    const float a=t*(1-t);
+    return 64.f*a*a*a;
 }
 inline float FrictionScale(float longitudinal, float lateral, float mu,
                            float load) {

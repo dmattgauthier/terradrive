@@ -179,6 +179,34 @@ export function buildCivic(view, geometry) {
       rearPatch(m.black,inner,[],-.030);
     };
     const faceSample=(x,y)=>frontLamp.point([x,y,front],0);
+    // A molded, open hexagonal lattice replaces the old square wire grid.
+    // Only complete cells inside the actual aperture are cut; the boundary
+    // retains its solid mounting flange. Each cell also has a short return,
+    // so an oblique view sees mesh depth rather than a painted pattern.
+    const meshGrille=(outline,radius,depth)=>{
+      const polygon=outline.map(p=>[p[0],p[1]]),inside=([x,y])=>{
+        let hit=false;for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+          const a=polygon[i],b=polygon[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit;
+        }return hit;
+      };
+      const minX=Math.min(...polygon.map(p=>p[0])),maxX=Math.max(...polygon.map(p=>p[0])),minY=Math.min(...polygon.map(p=>p[1])),maxY=Math.max(...polygon.map(p=>p[1]));
+      const dx=radius*Math.sqrt(3),dy=radius*1.5,holes=[];
+      for(let row=0,y=minY+radius;y<maxY-radius*.65;row++,y+=dy)for(let x=minX+dx*.5+(row%2)*dx*.5;x<maxX-dx*.4;x+=dx){
+        const hole=Array.from({length:6},(_,k)=>{const angle=Math.PI/6+k*Math.PI/3;return [x+Math.cos(angle)*radius*.83,y+Math.sin(angle)*radius*.83];});
+        if(hole.every(inside))holes.push(hole);
+      }
+      const sheet=perforatedFace(g,m.glossBlack||m.black,polygon,holes,(x,y)=>{const p=faceSample(x,y);p[2]-=depth;return p;},.030);sheet.name='civic-open-hex-mesh';
+      const positions=[],indices=[];
+      for(const hole of holes)for(let edge=0;edge<6;edge++){
+        const a=hole[edge],b=hole[(edge+1)%6],base=positions.length/3;
+        for(const [point,offset]of [[a,depth],[b,depth],[a,depth+.009],[b,depth+.009]]){const p=faceSample(...point);p[2]-=offset;positions.push(...p);}
+        indices.push(base,base+1,base+2,base+1,base+3,base+2);
+      }
+      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setIndex(indices);geo.computeVertexNormals();
+      finish(new THREE.Mesh(geo,m.black),g).name='civic-hex-mesh-cell-returns';
+      const centre=holes.map(hole=>hole.reduce((a,p)=>a.map((v,k)=>v+p[k]/6),[0,0])).sort((a,b)=>Math.hypot(a[0]-.16,a[1]-.46)-Math.hypot(b[0]-.16,b[1]-.46))[0];
+      return {cells:holes.length,probe:{hole:centre,web:[centre[0]+radius*.86,centre[1]]}};
+    };
     // Honda's pre-facelift 11th-generation sedan: pulled-back A pillars,
     // a lightly crowned roof and a separate upswept boot, not a hatchback.
     const roofStations=[[-.805,.639,1.343],[-.57,.668,1.365],[-.19,.678,1.376],[.14,.671,1.364],[.405,.642,1.337]];
@@ -357,19 +385,11 @@ export function buildCivic(view, geometry) {
     apertures.push(xy(upper));recessedOpening(g,m.dark,m.black,xy(upper),faceSample,.025,.05);
     // The upper grille widens into thin black wings beneath the headlamps,
     // instead of floating as a small isolated trapezoid in a painted wall.
-    for(let row=0;row<3;row++){
-      const y=.660+row*.032,span=.292+row*.042;
-      frontLamp.strip(m.dark,[[-span,y,front],[0,y-.003,front],[span,y,front]],.0032);
-    }
-    for(let col=-7;col<=7;col++){
-      const x=col*.049,bottom=.651+.035*THREE.MathUtils.smoothstep(Math.abs(x),.255,.357);
-      frontLamp.strip(m.black,[[x,bottom,front],[x,.744,front]],.0017);
-    }
+    const upperMesh=meshGrille(upper,.017,.011);
     for(const side of [-1,1])frontLamp.patch(m.glossBlack||m.black,[[side*.355,.708,front],[side*.410,.710,front],[side*.440,.776,front],[side*.422,.755,front]],.005);
     const lower=roundedOutline([[-.558,.348,0],[.558,.348,0],[.482,.559,0],[-.482,.559,0]],.027);
     apertures.push(xy(lower));recessedOpening(g,m.dark,m.black,xy(lower),faceSample,.040,.045);
-    for(let row=0;row<6;row++){const y=.365+row*.034,span=.539-row*.0108;frontLamp.strip(m.dark,[[-span,y,front],[0,y+.002,front],[span,y,front]],.0044);}
-    for(let i=-10;i<=10;i++){const x=i*.048;frontLamp.strip(m.black,[[x,.354,front],[x,.548,front]],.0020);}
+    const lowerMesh=meshGrille(lower,.021,.015);
     // Close against the actual convex side/rolled-shoulder edge, including
     // its mid-height bulge. A straight vertical edge leaves a visible slit.
     const sideEdge=v=>[.868-.018*(1-v)+.022*Math.sin(v*Math.PI),THREE.MathUtils.lerp(.277,.743,v)];
@@ -479,8 +499,11 @@ export function buildCivic(view, geometry) {
         // Concave bumper cheeks connect the lamp shelf to the lower corner
         // inserts, as on the 2022–24 Sport. The map also moves the actual
         // apertures and glazing, so there is no layered panel intersection.
-        const end=THREE.MathUtils.smoothstep(q.z,1.910,2.220),cheek=Math.exp(-(((Math.abs(q.x)-.670)/.185)**2+((q.y-.612)/.079)**2));
-        q.z-=.038*end*cheek;
+        const end=THREE.MathUtils.smoothstep(q.z,1.910,2.220),cheek=Math.exp(-(((Math.abs(q.x)-.670)/.191)**2+((q.y-.612)/.094)**2));
+        // Deep, broad cheek undercut under the lamp and a rolled upper jaw
+        // break the former flat vertical face into the real bumper volumes.
+        const jaw=.010*Math.exp(-(((q.y-.643)/.029)**2))*(1-THREE.MathUtils.smoothstep(Math.abs(q.x),.53,.84));
+        q.z+=end*(jaw-.058*cheek);
       }
       if(q.z<-1.91&&q.y<.493){
         const rear=1-THREE.MathUtils.smoothstep(q.z,-2.34,-1.91),low=1-THREE.MathUtils.smoothstep(q.y,.283,.493);
@@ -652,4 +675,5 @@ export function buildCivic(view, geometry) {
     roundedBox(g,m.black,0,1.226,.533,.222,.061,.031,.011);
     roundedBox(g,m.chrome,0,1.226,.515,.198,.043,.006,.005);
     line(g,m.black,[0,1.252,.546],[0,1.312,.494],.009);
+    view.root.userData.coachworkDetail={revision:8,openHexMeshCells:upperMesh.cells+lowerMesh.cells,lowerGrilleProbe:lowerMesh.probe,compoundBumperCheeks:true};
   }

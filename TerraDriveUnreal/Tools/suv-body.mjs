@@ -59,10 +59,19 @@ export function buildSUV(view, geometry, bronco) {
       for(const center of [-.282,-1.042])depth+=.009*Math.exp(-(((z-center)/.103)**4+((y-(belt-.104))/.029)**4));
       return depth*ends*height;
     };
-    const skinX=(y,z)=>{
+    const skinX=(y,z,side=0)=>{
       const width=interpolate(stations,z,1),upper=interpolate(stations,z,2)-shoulder;
       const height=clamp((y-.50)/(upper-.50),0,1);
-      return width-.018*(1-height)+sideBulge*Math.sin(height*Math.PI)-doorSculpt(y,z);
+      // The real outer wings rise out of a drawn wheel haunch. The former
+      // sheet remained almost planar behind the separate plastic flares.
+      // The broad stamped shoulder stays inside the flare's factory envelope.
+      const wing=bronco?.014:.008;
+      const haunch=wing*(Math.exp(-(((z-f)/.52)**4))+Math.exp(-(((z-r)/.51)**4)))
+        *Math.exp(-(((y-(bronco?1.035:.996))/.235)**2))
+        *(1-THREE.MathUtils.smoothstep(y,upper-.035,upper));
+      const fuelRadius=Math.hypot((z+1.825)/.073,(y-1.077)/.073);
+      const fuelCup=!bronco&&side>0?.014*(1-THREE.MathUtils.smoothstep(fuelRadius,.78,1.18)):0;
+      return width-.018*(1-height)+sideBulge*Math.sin(height*Math.PI)-doorSculpt(y,z)+haunch-fuelCup;
     };
     for(const [sideIndex,mesh] of bodySkin.slice(6,8).entries()){
       // Shared physical-height rows keep the narrow stamping smooth across
@@ -71,8 +80,8 @@ export function buildSUV(view, geometry, bronco) {
       for(const level of rows)for(let j=0;j<=zSteps;j++){
         const z=THREE.MathUtils.lerp(tail,nose,j/zSteps),upper=interpolate(stations,z,2)-shoulder;
         let low=.50;for(const axle of [r,f]){const dz=z-axle;if(Math.abs(dz)<.494)low=Math.max(low,.435+Math.sqrt(Math.max(0,.494**2-dz**2)));}
-        const y=clamp(level,Math.min(low,upper-.012),upper),epsilon=.00005,x=skinX(y,z);
-        const dy=(skinX(y+epsilon,z)-skinX(y-epsilon,z))/(2*epsilon),dz=(skinX(y,z+epsilon)-skinX(y,z-epsilon))/(2*epsilon),normal=v3(side,-dy,-dz).normalize();
+        const y=clamp(level,Math.min(low,upper-.012),upper),epsilon=.00005,x=skinX(y,z,side);
+        const dy=(skinX(y+epsilon,z,side)-skinX(y-epsilon,z,side))/(2*epsilon),dz=(skinX(y,z+epsilon,side)-skinX(y,z-epsilon,side))/(2*epsilon),normal=v3(side,-dy,-dz).normalize();
         positions.push(side*x,y,z);normals.push(normal.x,normal.y,normal.z);uvs.push(j/zSteps,(y-.5)/.651);
       }
       const stride=zSteps+1;
@@ -92,26 +101,32 @@ export function buildSUV(view, geometry, bronco) {
       curvedLine(g,m.dark,sampled,radius);
     };
     // Separate hood skin gives the flared fenders and tall narrow Jeep bonnet their actual silhouette.
-    const hoodWidth = bronco ? 1.63 : 1.39;
+    const hoodWidth = bronco ? 1.63 : 1.39, hoodRear=bronco?.700:.748;
     const hoodHalf=v=>{
       const t=clamp((v-.68)/.32,0,1);
       return hoodWidth/2-v*.008+(bronco?0:.075*t*t*(3-2*t));
     };
     const hoodSample=(u,v)=>{
-      const z = THREE.MathUtils.lerp(0.56, nose + .030, v), x = u * 2 - 1;
+      const z = THREE.MathUtils.lerp(hoodRear, nose + .030, v), x = u * 2 - 1;
       const shoulder = Math.exp(-Math.pow((Math.abs(x) - (bronco ? .83 : .75)) / .14, 2));
-      const y = THREE.MathUtils.lerp(hood + .032, 1.218, v) + (bronco ? .030 : .037) * (1 - x * x) + (bronco ? .012 : .021) * shoulder * Math.sin(v * Math.PI);
+      const fade=THREE.MathUtils.smoothstep(v,0,.14)*(1-THREE.MathUtils.smoothstep(v,.79,1));
+      // Bronco's broad, low central plateau and the JL's narrower bonnet
+      // shoulders are stamped into the skin, with continuous rolled returns.
+      const plateau=bronco?.020*(1-THREE.MathUtils.smoothstep(Math.abs(x),.57,.73))*fade:
+        -.010*Math.exp(-((x/.46)**6))*fade;
+      const y = THREE.MathUtils.lerp(hood + .032, 1.218, v) + (bronco ? .017 : .037) * (1 - x * x)
+        + (bronco ? .014 : .025) * shoulder * Math.sin(v * Math.PI)+plateau;
       return [x * hoodHalf(v), y, z];
     };
     const hoodPoint=(x,z)=>{
-      const v=(z-.56)/(nose+.030-.56),u=(x/hoodHalf(v)+1)/2;
+      const v=(z-hoodRear)/(nose+.030-hoodRear),u=(x/hoodHalf(v)+1)/2;
       return hoodSample(u,v);
     };
     const hoodVents=bronco?[]:[-1,1].map(side=>roundedOutline([
       [side*.435-.100,.795,0],[side*.435+.100,.795,0],
       [side*.435+.100,1.065,0],[side*.435-.100,1.065,0]
     ],.024).map(([x,z])=>[x,z]));
-    if(bronco)surface(g,m.paint,44,46,hoodSample,true);
+    if(bronco)surface(g,m.paint,64,64,hoodSample,true).name='bronco-stamped-bonnet-plateau';
     else {
       // The Rubicon bonnet vents are apertures in the curved sheet metal.
       // Their reveals and louvers sit down inside that opening, following the
@@ -137,6 +152,54 @@ export function buildSUV(view, geometry, bronco) {
           return [p[0],p[1]-.007+.003*Math.sin(v*Math.PI),p[2]];
         },true);
       }
+    }
+    // The bonnet used to extend back underneath the windshield. A separate
+    // formed cowl now occupies the correct short interval behind it, with a
+    // real recessed ventilation opening rather than a dark patch on paint.
+    const cowlRear=.604,cowlWidth=bronco?.827:.760;
+    const cowlPoint=(x,z)=>{
+      const t=clamp((z-cowlRear)/(hoodRear-cowlRear),0,1),half=THREE.MathUtils.lerp(cowlWidth,hoodWidth/2,t);
+      const front=hoodPoint(x,hoodRear)[1]-.009;
+      return [x,THREE.MathUtils.lerp(belt+.057,front,t)+.006*(1-(x/half)**2)*Math.sin(t*Math.PI),z];
+    };
+    const cowlOutline=[[-cowlWidth,cowlRear],[cowlWidth,cowlRear],[hoodWidth/2,hoodRear],[-hoodWidth/2,hoodRear]];
+    const cowlVent=roundedOutline([[-.343,cowlRear+.022,0],[.343,cowlRear+.022,0],[.343,hoodRear-.018,0],[-.343,hoodRear-.018,0]],.013,6).map(([x,z])=>[x,z]);
+    // The lower shell is an internal closure below the separate bonnet. Cut
+    // back its hidden triangles beneath this vent too, so it cannot fill the
+    // new cowl aperture with painted metal just above its recessed floor.
+    const closure=bodySkin[3].geometry,closureP=closure.attributes.position,closureI=closure.index.array,keep=[];
+    for(let i=0;i<closureI.length;i+=3){
+      const ids=[closureI[i],closureI[i+1],closureI[i+2]],xs=ids.map(j=>closureP.getX(j)),zs=ids.map(j=>closureP.getZ(j));
+      if(Math.max(...xs)>-.350&&Math.min(...xs)<.350&&Math.max(...zs)>cowlRear+.016&&Math.min(...zs)<hoodRear-.012)continue;
+      keep.push(...ids);
+    }
+    closure.setIndex(keep);
+    const cowl=perforatedFace(g,m.paint,cowlOutline,[cowlVent],cowlPoint,.025);
+    const cowlGeo=cowl.geometry,cp=cowlGeo.attributes.position,cn=cowlGeo.attributes.normal,ci=cowlGeo.index.array;
+    for(let i=0;i<ci.length;i+=3)[ci[i+1],ci[i+2]]=[ci[i+2],ci[i+1]];
+    for(let i=0;i<cp.count;i++){
+      const x=cp.getX(i),z=cp.getZ(i),e=.0001,dyx=(cowlPoint(x+e,z)[1]-cowlPoint(x-e,z)[1])/(e*2),dyz=(cowlPoint(x,z+e)[1]-cowlPoint(x,z-e)[1])/(e*2);
+      const normal=v3(-dyx,1,-dyz).normalize();cn.setXYZ(i,normal.x,normal.y,normal.z);
+    }
+    cowl.name=(bronco?'bronco':'wrangler')+'-apertured-cowl';
+    const inset=cowlVent.map(([x,z])=>[x*.985,THREE.MathUtils.lerp(z,(cowlRear+hoodRear)/2,.08)]);
+    const walls=[],wallsIx=[],nn=cowlVent.length;
+    for(const [depth,loop]of [[0,cowlVent],[.014,inset]])for(const [x,z]of loop){const p=cowlPoint(x,z);walls.push(p[0],p[1]-depth,p[2]);}
+    for(let i=0;i<nn;i++){const j=(i+1)%nn;wallsIx.push(i,j,i+nn,j,j+nn,i+nn);}
+    const cg=new THREE.BufferGeometry();cg.setAttribute('position',new THREE.Float32BufferAttribute(walls,3));cg.setIndex(wallsIx);cg.computeVertexNormals();finish(new THREE.Mesh(cg,m.black),g);
+    const floor=perforatedFace(g,m.black,inset,[],(x,z)=>{const p=cowlPoint(x,z);p[1]-=.015;return p;},.026),fi=floor.geometry.index.array;
+    for(let i=0;i<fi.length;i+=3)[fi[i+1],fi[i+2]]=[fi[i+2],fi[i+1]];floor.geometry.computeVertexNormals();
+    for(let i=0;i<19;i++)surface(g,m.grille,3,5,(u,v)=>{
+      const x=(i-9)*.034+(u-.5)*.008,z=THREE.MathUtils.lerp(cowlRear+.030,hoodRear-.026,v),p=cowlPoint(x,z);
+      return [p[0],p[1]-.007+.002*Math.sin(u*Math.PI),p[2]];
+    },true);
+    for(const side of [-1,1]){
+      const edge=Array.from({length:41},(_,i)=>{const x=(i/20-1)*hoodWidth/2,p=hoodPoint(x,hoodRear);p[1]+=.001;return p;});
+      if(side===1)curvedLine(g,m.dark,edge,.0018);
+      const hingeX=side*(bronco?.692:.611),hingeZ=hoodRear+.012,p=hoodPoint(hingeX,hingeZ);
+      const hinge=roundedBox(g,bronco?m.paint:m.dark,p[0],p[1]+.004,p[2],.057,.010,.112,.005);hinge.rotation.x=bronco?-.042:-.037;
+      for(const dz of [-.030,.033]){const q=hoodPoint(hingeX,hingeZ+dz);cylinder(g,m.dark,q[0],q[1]+.011,q[2],.004,.003,'y',8);}
+      const jet=hoodPoint(side*.252,hoodRear+.111);roundedBox(g,m.black,jet[0],jet[1]+.005,jet[2],.027,.010,.032,.004);
     }
     surface(g,m.paint,44,10,(u,v)=>{
       const p=hoodSample(u,1),a=v*Math.PI/2;
@@ -284,14 +347,36 @@ export function buildSUV(view, geometry, bronco) {
           const flap=roundedOutline([[-1.778,1.080,0],[-1.581,1.080,0],[-1.581,1.218,0],[-1.778,1.218,0]],.028,8);
           curvedLine(g,m.dark,[...flap,flap[0]].map(([z,y])=>[side*(skinX(y,z)+.0018),y,z]),.0017);
         }
-      } else sideText(g,'RUBICON',side*(hoodWidth/2-.004+.006),1.225,1.385,.63,.076,'#292523',side);
+      } else {
+        sideText(g,'RUBICON',side*(hoodWidth/2-.004+.006),1.225,1.385,.63,.076,'#292523',side);
+        if(side>0){
+          // The JL's exposed circular filler is drawn into the left quarter;
+          // it is a closed inset cap, not a proud black disc over flat paint.
+          const cy=1.077,cz=-1.825;
+          surface(g,m.black,80,12,(u,v)=>{
+            const angle=u*Math.PI*2,rad=.065*v,y=cy+Math.sin(angle)*rad,z=cz+Math.cos(angle)*rad;
+            return [skinX(y,z,side)+.0018+.002*(1-v*v),y,z];
+          }).name='wrangler-recessed-fuel-cap';
+          const edge=Array.from({length:81},(_,i)=>{const a=i*Math.PI/40,y=cy+Math.sin(a)*.067,z=cz+Math.cos(a)*.067;return [skinX(y,z,side)+.003,y,z];});
+          curvedLine(g,m.dark,edge,.0023);
+          const capX=skinX(cy,cz,side)+.006;
+          roundedBox(g,m.grille,capX,cy,cz,.006,.012,.065,.003);
+        }
+        // Cast fold-down windshield hinges have two leaves and a pin, rather
+        // than reading as a solid rectangular pillar end above the bonnet.
+        const hx=side*(half-.052),hy=belt+.050,hz=.601;
+        roundedBox(g,m.paint,hx,hy-.014,hz+.023,.091,.019,.070,.007);
+        const leaf=roundedBox(g,m.paint,hx,hy+.026,hz-.006,.091,.076,.015,.006);leaf.rotation.x=.12;
+        cylinder(g,m.paint,hx,hy+.005,hz+.006,.013,.098,'x',24);
+        for(const xx of [hx-.031,hx+.031])cylinder(g,m.dark,xx,hy-.003,hz+.047,.004,.003,'y',8);
+      }
     }
-    const windshield = [[-half + 0.033, belt + 0.049, 0.605], [half - 0.033, belt + 0.049, 0.605], [roofHalf - 0.042, top - 0.091, frontRoof + 0.035], [-roofHalf + 0.042, top - 0.091, frontRoof + 0.035]];
+    const windshield = [[-half + 0.033, belt + 0.049, 0.605], [half - 0.033, belt + 0.049, 0.605], [roofHalf - 0.042, top - 0.075, frontRoof + 0.035], [-roofHalf + 0.042, top - 0.075, frontRoof + 0.035]];
     windowPanel(g, {...m,black:m.paint,glass:m.windscreen||m.glass}, windshield, bronco?.035:.068,.065);
     // Wide painted windshield header, separate from the removable hardtop.
     surface(g,m.paint,48,8,(u,v)=>{
-      const x=(u*2-1)*(roofHalf-.009),y=THREE.MathUtils.lerp(top-.102,top-.006,v);
-      return [x,y,frontRoof+.049-.027*v+.008*(1-(x/roofHalf)**2)];
+      const x=(u*2-1)*(roofHalf-.009),y=THREE.MathUtils.lerp(top-.082,top-.006,v);
+      return [x,y,frontRoof+.049-.027*v+.008*(1-(x/roofHalf)**2)+.003*Math.sin(v*Math.PI)];
     });
     surface(g,m.paint,48,5,(u,v)=>[(u*2-1)*(roofHalf-.009),top-.006+.004*Math.sin(v*Math.PI),THREE.MathUtils.lerp(frontRoof+.022,roofFront-.009,v)],true);
     surface(g,m.paint,44,6,(u,v)=>{
@@ -299,8 +384,20 @@ export function buildSUV(view, geometry, bronco) {
       return [x,y,.615+.012*Math.sin(v*Math.PI)];
     });
     windowPanel(g, {...m,glass:m.privacyGlass||m.glass}, [[half - 0.043, belt + 0.025, tail - 0.003], [-half + 0.043, belt + 0.025, tail - 0.003], [-roofHalf + 0.034, top - 0.065, tail + 0.012], [roofHalf - 0.034, top - 0.065, tail + 0.012]], 0.044);
-    line(g, m.black, [-0.61, belt + 0.080, 0.59], [-0.09, belt + 0.112, 0.57], 0.010);
-    line(g, m.black, [0.06, belt + 0.080, 0.59], [0.63, belt + 0.112, 0.57], 0.010);
+    // Two articulated arms and bowed rubber blades follow the windscreen.
+    // The old thick single rods read as horizontal bars across the glazing.
+    const windshieldPoint=(x,y,offset=.008)=>{
+      const t=clamp((y-belt-.049)/(top-.075-belt-.049),0,1);
+      return [x,y,THREE.MathUtils.lerp(.605,frontRoof+.035,t)+.010*(1-(x/(half-.033))**2)+offset];
+    };
+    for(const [pivotX,centerX]of [[-.579,-.302],[.071,.350]]){
+      const pivot=windshieldPoint(pivotX,belt+.065,.016),joint=windshieldPoint(centerX-.061,belt+.116,.017),center=windshieldPoint(centerX,belt+.140,.018);
+      cylinder(g,m.black,pivot[0],pivot[1],pivot[2],.014,.013,'z',20);
+      line(g,m.dark,pivot,joint,.0041);line(g,m.black,joint,center,.0032);
+      const blade=Array.from({length:27},(_,i)=>{const t=i/26-.5;return windshieldPoint(centerX+t*.474,belt+.140+t*.035,.021+.003*(1-(t*2)**2));});
+      curvedLine(g,m.black,blade,.0040);
+      curvedLine(g,m.grille,blade.map(([x,y,z])=>[x,y+.003,z+.0015]),.0012);
+    }
     line(g, m.black, [-0.23, 1.25, tail - 0.017], [0.29, 1.29, tail - 0.017], 0.010);
     for (const z of (bronco?[-.42,-1.13]:[-.46])) {
       const pts=Array.from({length:49},(_,i)=>{const x=(i/24-1)*(roofHalf-.007);return [x,roofProfile(x,roofWidth(z))+.001,z];});
@@ -527,6 +624,10 @@ export function buildSUV(view, geometry, bronco) {
     }
     const spareRise=Math.max(0,spec.tireRadius-(spec.visualBase?.tireRadius??spec.tireRadius));
     const spare = view._wheel(true); spare.root.position.set(0, 1.092+spareRise, tail - 0.20); spare.root.rotation.y = Math.PI / 2; g.add(spare.root);
+    const cameraZ=tail-.20-spec.tireWidth*.52-.011;
+    cylinder(g,m.black,0,1.092+spareRise,cameraZ+.011,.031,.035,'z',28);
+    cylinder(g,m.grille,0,1.092+spareRise,cameraZ-.009,.023,.007,'z',28);
+    cylinder(g,m.lens,0,1.092+spareRise,cameraZ-.014,.015,.006,'z',24);
     roundedBox(g, m.black, 0, 1.40+spareRise*2, tail - 0.18, 0.11, 0.43, 0.045, 0.01);
     roundedBox(g, m.red, 0, 1.57+spareRise*2, tail - 0.242, 0.225, 0.046, 0.031, 0.006);
     roundedBox(g,m.dark,.559,1.138,tail-.030,.179,.060,.019,.013);
@@ -539,6 +640,8 @@ export function buildSUV(view, geometry, bronco) {
     const gateSeam=roundedOutline([[-.706,.687,tail-.003],[.706,.687,tail-.003],[.706,belt-.014,tail-.003],[-.706,belt-.014,tail-.003]],.030);
     curvedLine(g,m.dark,[...gateSeam,gateSeam[0]],.0020);
     for(const x of [-.515,.515])roundedBox(g,m.black,x,top-.064,tail-.026,.045,.124,.028,.007);
+    view.root.userData.visualModel.suv={revision:8,style:bronco?'bronco':'jeep',hoodRearM:hoodRear,
+      stampedBonnet:true,drawnWheelHaunches:true,physicalCowlAperture:true,hoodHingeAssemblies:true,recessedFuelCap:!bronco,spareCamera:true};
   }
 
 /** Reference-shaped 2024 cabins; the shared seat and suspension rig is unchanged. */

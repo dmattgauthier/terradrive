@@ -22,7 +22,8 @@ struct FTerraWheel {
   float LongSpeed = 0, LateralSpeed = 0, Angle = 0, Grip = 0,
         Footprint = .14f, RutDepth = 0, FrictionLimit = 0;
   bool ContactValid = false, Constructed = false;
-  FVector LastSoil=FVector::ZeroVector;
+  FVector LastSoil=FVector::ZeroVector,LastSoilForward=FVector::ForwardVector;
+  float SoilLoad=0,SoilSlip=0,LastSoilLoad=0,LastSoilSlip=0;
   bool SoilConnected=false;
 };
 struct FTerraParcel {

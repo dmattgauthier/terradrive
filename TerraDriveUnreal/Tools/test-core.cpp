@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <vector>
 
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
@@ -177,6 +178,126 @@ int main(){
     }
     check(TerraSim::SoilTarget(.6f,9000,.32f,.2f,0)>TerraSim::SoilTarget(.6f,3000,.32f,.2f,0),"heavy axles compact deeper snow than light axles without requiring tire spin");
     check(TerraSim::SoilResponse(.04f,2,.2f,0,.9f)<TerraSim::SoilResponse(.04f,2,.2f,0,0),"previously packed ground resists further disturbance");
+    for(float sink:{.14f,.30f,.48f})for(float slip:{0.f,1.5f}){
+        const auto patch=TerraSim::SoftSoilFootprint(.10f,5500,.32f,.4154f,sink,slip,0);
+        const float arc=2*std::sqrt(2*.4154f*patch.Depth-patch.Depth*patch.Depth);
+        check(patch.Length>.20f&&patch.Length<.831f&&patch.Depth>0&&patch.Depth<sink,"soft soil contact expands beyond the hard-road patch while respecting the layer");
+        check(std::abs(patch.Depth-TerraSim::SoilTarget(sink,5500,.32f,patch.Length,slip))<.000001f&&std::abs(arc-patch.Length)<.002f,"soft contact area and pressure-dependent sink solve the same rolling-circle geometry");
+    }
+    const auto rigidPatch=TerraSim::SoftSoilFootprint(.12f,5500,.32f,.4154f,0,0,0);
+    check(rigidPatch.Length==.12f&&rigidPatch.Depth==0,"rigid ground retains its carcass pressure footprint");
+    const auto trackPatch=TerraSim::SoftSoilFootprint(1.35f,5500,.48f,.4154f,.30f,1,0);
+    check(trackPatch.Length==1.35f&&trackPatch.Depth>0,"flotation tracks retain their full supported length without an artificial tire arc");
+    const auto deepPatch=TerraSim::SoftSoilFootprint(.10f,5500,.32f,.4154f,.30f,1,0,.15f);
+    check(deepPatch.Length>1.2f*.4154f,"a tire in an existing deep rut works the leading rolling-envelope wall instead of only digging its centre");
+    const auto unloadedPatch=TerraSim::SoftSoilFootprint(.10f,0,.32f,.4154f,.30f,1,0);
+    check(unloadedPatch.Length==.10f&&unloadedPatch.Depth==0,"unsupported tires cannot create a soft-contact sink target");
+    for(float depth:{.015f,.08f,.18f,.32f}){
+        const float halfWidth=.16f,outer=TerraSim::GrooveOuterHalfWidth(halfWidth,depth),core=halfWidth*.64f;
+        check(TerraSim::GrooveCrossSection(0,halfWidth,depth)==1&&TerraSim::GrooveCrossSection(outer+.001f,halfWidth,depth)==0,"tire groove has a loaded floor and an exact undisturbed outer boundary");
+        float peakSlope=0,previous=1;bool monotone=true,symmetric=true;
+        for(int i=1;i<=1000;++i){const float x=outer*i/1000.f,value=TerraSim::GrooveCrossSection(x,halfWidth,depth);
+            monotone&=value<=previous+.00001f&&value>=0;
+            symmetric&=std::abs(value-TerraSim::GrooveCrossSection(-x,halfWidth,depth))<.00001f;
+            peakSlope=std::max(peakSlope,std::abs(value-previous)*depth/(outer/1000.f));previous=value;}
+        check(monotone&&symmetric,"rounded tire walls are symmetric and cannot introduce secondary crater teeth");
+        const float e=.0002f;
+        const float innerSlope=std::abs(TerraSim::GrooveCrossSection(core+e,halfWidth,depth)-TerraSim::GrooveCrossSection(core-e,halfWidth,depth))/(2*e);
+        const float outerSlope=std::abs(TerraSim::GrooveCrossSection(outer+e,halfWidth,depth)-TerraSim::GrooveCrossSection(outer-e,halfWidth,depth))/(2*e);
+        check(innerSlope<.003f&&outerSlope<.015f,"quintic walls meet the floor and undisturbed ground with flat tangents");
+        check(std::isfinite(peakSlope)&&peakSlope<4.5f,"deep soil groove walls remain finite instead of vertical grid cliffs");
+    }
+    for(int surface:{0,2,3,5,6}){
+        const float depth=TerraSim::SoilTarget(surface==6?.6f:surface==5?.28f:.36f,5500,.32f,.30f,.08f);
+        const auto bank=TerraSim::SoilBankShape(surface,.32f,depth,.8f,.08f);
+        check(bank.fraction>0&&bank.fraction<1&&bank.width>=.14f&&bank.height>0&&bank.height<.1016f,"rolling bank budget and repose cap stay bounded for each loose surface");
+        const float inner=TerraSim::GrooveOuterHalfWidth(.16f,depth);
+        check(TerraSim::SoilBankProfile(inner,inner,bank.width)==0&&TerraSim::SoilBankProfile(inner+bank.width,inner,bank.width)==0&&std::abs(TerraSim::SoilBankProfile(inner+bank.width*.5f,inner,bank.width)-1)<.00001f,"side banks have compact support and a single smooth unit peak");
+        float integral=0,peakSlope=0,previous=0;
+        for(int i=1;i<=1000;++i){const float value=TerraSim::SoilBankProfile(inner+bank.width*i/1000.f,inner,bank.width);
+            integral+=value*bank.width/1000.f;peakSlope=std::max(peakSlope,std::abs(value-previous)*bank.height/(bank.width/1000.f));previous=value;}
+        check(std::abs(integral-bank.width*(16.f/35.f))<.00001f,"side bank cross-section has a stable integrable displacement envelope");
+        check(peakSlope<1.7f,"ordinary rolling side banks cannot turn into tire-high pointed mounds");
+    }
+    const auto snowBank=TerraSim::SoilBankShape(6,.32f,.18f,.8f,.08f),sandBank=TerraSim::SoilBankShape(5,.32f,.18f,.8f,.08f);
+    check(snowBank.fraction<sandBank.fraction*.4f&&snowBank.height<sandBank.height,"snow compacts pore volume and leaves lower banks than displaced sand");
+    check(TerraSim::SoilBankShape(0,.32f,.02f,0,0).fraction<TerraSim::SoilBankShape(0,.32f,.02f,1,0).fraction,"firm dirt compresses with a light trail while loose dirt bunches sideways");
+    for(float frameStep:{1.f/20,1.f/30,1.f/60,1.f/120})for(float phase:{0.f,.021f,.046f}){
+        // Independent sampled strip: a continuously rolling contact crosses
+        // grid phases at four simulation rates. This does not assert the
+        // implementation's own target, but bounds the final longitudinal
+        // roughness and minimum supported depth of the resulting profile.
+        constexpr float cell=.0625f,speed=2.f,patch=.30f;
+        const float target=TerraSim::SoilTarget(.6f,5500,.32f,patch,.08f);
+        std::vector<float> height(97,0),packing(97,0);
+        float previousPosition=-3.f+phase,previousTime=0;
+        for(int frame=1;frame<=int(6.f/speed/frameStep)+1;++frame){
+            const float now=std::min(6.f/speed,frame*frameStep),position=-3.f+phase+now*speed;
+            const int substeps=std::max(1,int(std::ceil(std::abs(position-previousPosition)/cell)));
+            for(int s=1;s<=substeps;++s){
+                const float center=previousPosition+(position-previousPosition)*s/substeps,dt=(now-previousTime)/substeps;
+                for(int i=0;i<int(height.size());++i){const float x=-3.f+i*cell;
+                    const float edge=TerraSim::FootprintCoverage(x-center,patch*.5f,cell*.5f)*TerraSim::GrooveCrossSection(0,.16f,target);
+                    const float response=TerraSim::SoilResponse(dt*edge,speed,patch,.08f,packing[i]);
+                    height[i]-=TerraSim::SoilCutDepth(height[i],target,1,response);
+                    packing[i]=std::clamp(packing[i]+(1-packing[i])*response,0.f,1.f);
+                }
+            }
+            previousPosition=position;previousTime=now;
+        }
+        float minimum=1,peakStep=0,peakCurvature=0;
+        // Ignore contact entry/exit, which are intentionally rounded ramps.
+        for(int i=12;i<84;++i){minimum=std::min(minimum,-height[i]);
+            peakStep=std::max(peakStep,std::abs(height[i]-height[i-1]));
+            peakCurvature=std::max(peakCurvature,std::abs(height[i+1]-2*height[i]+height[i-1]));}
+        check(minimum>target*.86f,"swept rolling snow footprint converges to its calibrated loaded target across frame rates and grid phases");
+        check(peakStep<.018f&&peakCurvature<.025f,"swept groove avoids repeated longitudinal crater teeth across frame rates and grid phases");
+    }
+    for(float dt:{1.f/20,1.f/30,1.f/60,1.f/120}){
+        const float staticMud=TerraSim::SoilTarget(.36f,5500,.32f,.10f,0);
+        const float instantSpin=TerraSim::SoilTarget(.36f,5500,.32f,.10f,1.5f);
+        check(staticMud>.05f&&staticMud<.09f,"ordinary static mud compression stays below running-board clearance rather than half the dig layer");
+        check(instantSpin>staticMud&&instantSpin<.15f,"brief wheelspin cannot instantly excavate the full loose layer");
+        float dose=0;
+        for(int i=0;i<int(12.f/dt);++i)dose=TerraSim::SoilChurnDose(dose,2,0,dt,1);
+        check(dose>.99f&&TerraSim::SoilTarget(.36f,5500,.32f,.10f,2,dose)>.35f,"sustained stationary shear work can reach the full available mud depth");
+        float brief=0;
+        for(int i=0;i<int(.10f/dt);++i)brief=TerraSim::SoilChurnDose(brief,2,2,dt,1);
+        check(brief<.01f&&TerraSim::SoilTarget(.36f,5500,.32f,.10f,2,brief)<.145f,"a passing high-slip tire leaves a groove instead of an instant deep pit");
+        check(TerraSim::SoilChurnDose(.2f,0,0,10,1)==.2f&&TerraSim::SoilChurnDose(.2f,2,0,10,0)==.2f,"parking and zero footprint exposure add no shear-dose excavation");
+        float load=0;
+        for(int i=0;i<int(2.f/dt);++i)load=TerraSim::FilteredSoilLoad(load,5000,dt);
+        check(std::abs(load-5000)<.01f,"supported soil load converges consistently at 20/30/60/120 FPS");
+        float low=10000,high=0;
+        for(int i=0;i<int(2.f/dt);++i){load=TerraSim::FilteredSoilLoad(load,i%2?10000:0,dt);if(i>int(1.f/dt)){low=std::min(low,load);high=std::max(high,load);}}
+        check(high-low<2600&&low>3600&&high<6400,"soil-only load response does not chase alternating contact spikes");
+        const float previous=load;
+        load=TerraSim::FilteredSoilLoad(load,0,.5f);
+        check(load<previous*.01f,"unsupported soil history decays instead of preserving stale load");
+    }
+    for(float dt:{1.f/20,1.f/30,1.f/60,1.f/120})for(float speed:{2.f,6.f,12.f})for(float phase:{0.f,.021f,.046f}){
+        constexpr float cell=.0625f,patch=.10f;
+        const float target=TerraSim::SoilTarget(.6f,5500,.32f,patch,.08f);
+        std::vector<float> height(161,0),packing(161,0);
+        float previous=-5.f+phase,lastTime=0;
+        for(int frame=1;frame<=int(10.f/speed/dt)+1;++frame){
+            const float time=std::min(10.f/speed,frame*dt),position=-5.f+phase+time*speed;
+            const int count=std::max(1,int(std::ceil(std::abs(position-previous)/.025f)));
+            for(int k=1;k<=count;++k){const float p=previous+(position-previous)*k/count,step=(time-lastTime)/count;
+                for(int i=0;i<int(height.size());++i){
+                    const float along=TerraSim::FootprintCoverage(-5.f+i*cell-p,patch*.5f,cell*.5f);
+                    const float response=TerraSim::SoilResponse(step*along,speed,patch,.08f,packing[i]);
+                    height[i]-=TerraSim::SoilCutDepth(height[i],target,1,response);
+                    packing[i]=std::clamp(packing[i]+(1-packing[i])*response,0.f,1.f);
+                }
+            }
+            previous=position;lastTime=time;
+        }
+        float minimum=1,maximum=0,peakCurvature=0;
+        for(int i=16;i<144;++i){minimum=std::min(minimum,-height[i]);maximum=std::max(maximum,-height[i]);peakCurvature=std::max(peakCurvature,std::abs(height[i+1]-2*height[i]+height[i-1]));}
+        check(minimum>target*.86f&&maximum<=target+.00001f,"short real-pressure patch leaves continuous bounded depth at real driving speeds and frame rates");
+        check(maximum-minimum<.014f&&peakCurvature<.018f,"short-patch sweep has no grid-phase crater or per-stamp cut-cap teeth");
+    }
     float s=TerraSim::FrictionScale(5000,6000,.45f,5200);
     check(std::abs(std::hypot(5000*s,6000*s)-.45f*5200)<.001f,"steering and drive share a finite force budget");
     check(TerraSim::FrictionScale(1000,1000,.8f,0)==0,"airborne tire applies no grip");

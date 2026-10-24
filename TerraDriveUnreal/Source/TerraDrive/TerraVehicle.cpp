@@ -523,6 +523,8 @@ void ATerraVehicle::Simulate(float Dt) {
     W.PointVelocity = Chassis->GetPhysicsLinearVelocityAtPoint(W.Contact)/100;
     W.Load = Support.Hit ? FMath::Clamp(TerraSim::ProgressiveSuspensionForce(Rest-W.Distance,
         FVector::DotProduct(MountVelocity,Normal),Spring,Damping,StaticLoad/9.81f,Normal.Z,Dt,Bump),0.f,StaticLoad*6) : 0;
+    W.SoilLoad=TerraSim::FilteredSoilLoad(W.SoilLoad,
+        W.ContactValid&&!W.Constructed?W.Load:0,Dt);
     TotalLoad += W.Load;
     if (W.Load>50) ++ContactCount;
     W.ForceForward = (WF-Normal*FVector::DotProduct(WF,Normal)).GetSafeNormal();
@@ -628,19 +630,41 @@ void ATerraVehicle::Simulate(float Dt) {
     if(AutoTest&&RouteIndex==8&&int(RouteTime)!=int(RouteTime+Dt))
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_CONTACT t=%.1f wheel=%d dt=%.3f fx=%.0f fy=%.0f omega=%.2f long=%.2f lateral=%.2f distance=%.3f normal=%s"),RouteTime,I,Dt,FX,FY,W.Omega,W.LongSpeed,W.LateralSpeed,W.Distance,*W.Ground.Normal.ToString());
     W.Slip=(W.Omega*R-W.LongSpeed)/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
+    W.SoilSlip+=(FMath::Clamp(W.Slip,-2.f,2.f)-W.SoilSlip)*(1-FMath::Exp(-Dt/.10f));
     if (W.Load>0 && W.ContactValid) {
       Chassis->AddForceAtLocation((W.Ground.Normal*W.Load+W.ForceForward*FX+W.ForceSide*FY)*100,W.Contact);
       LastTireForceN+=FMath::Abs(FX)+FMath::Abs(FY);
-      if (SoilTimer>=.025f && !W.Constructed){
+      if (SoilTimer>=.025f && !W.Constructed && W.Load>=50){
         const float TireWidth=Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth);
-        const float Travel=FVector::Dist2D(W.LastSoil,W.Contact);
-        const bool Connected=W.SoilConnected&&Travel<250&&FMath::Abs(W.LastSoil.Z-W.Contact.Z)<100;
-        const int Steps=Connected?FMath::Clamp(FMath::CeilToInt(Travel/FMath::Max(6.25f,W.Footprint*45)),1,48):1;
+        // The rolling support witness can switch +/- 0.6 tire radii as
+        // a rut opens. It is correct for forces but not the footprint centre:
+        // painting there chased alternating high spots into crater teeth.
+        const FVector Bottom=W.Center-Up*Radius*100;
+        const FVector SoilPoint(Bottom.X,Bottom.Y,Terrain->Height(Bottom.X,Bottom.Y));
+        FVector SoilForward=FQuat(Up,W.Angle).RotateVector(Forward);SoilForward.Z=0;SoilForward.Normalize();
+        const auto SoilSurface=Terrain->Sample(SoilPoint);
+        const float PressurePatch=TerraSim::FootprintLength(W.SoilLoad,Pressure,TireWidth,Radius,Tracks);
+        const float Patch=TerraSim::SoftSoilFootprint(PressurePatch,W.SoilLoad,TireWidth,Radius,
+            SoilSurface.MaxSink,W.SoilSlip,SoilSurface.Churn,SoilSurface.RutDepth).Length;
+        const float Travel=FVector::Dist2D(W.LastSoil,SoilPoint);
+        const bool Connected=W.SoilConnected&&Travel<250&&FMath::Abs(W.LastSoil.Z-SoilPoint.Z)<100;
+        const float Spacing=FMath::Min(3.125f,Patch*25);
+        const int Steps=Connected?FMath::Clamp(FMath::CeilToInt(Travel/Spacing),1,96):1;
         for(int Step=1;Step<=Steps;++Step){
-          const FVector Point=Connected?FMath::Lerp(W.LastSoil,W.Contact,float(Step)/Steps):W.Contact;
-          Terrain->Deform(Point,W.ForceForward,W.Load,Pressure,TireWidth,W.Footprint,W.Slip,W.LongSpeed,SoilTimer/Steps);
+          const float Blend=float(Step)/Steps;
+          const FVector Point=Connected?FMath::Lerp(W.LastSoil,SoilPoint,Blend):SoilPoint;
+          const FVector Tangent=Connected?(W.LastSoilForward*(1-Blend)+SoilForward*Blend).GetSafeNormal():SoilForward;
+          const float SupportedLoad=Connected?FMath::Lerp(W.LastSoilLoad,W.SoilLoad,Blend):W.SoilLoad;
+          const float Slip=Connected?FMath::Lerp(W.LastSoilSlip,W.SoilSlip,Blend):W.SoilSlip;
+          // Tire carcass pressure and sink-dependent rolling arc determine
+          // the same supported area used by the soil's pressure solve.
+          const float PressureFootprint=TerraSim::FootprintLength(SupportedLoad,Pressure,TireWidth,Radius,Tracks);
+          const float Footprint=TerraSim::SoftSoilFootprint(PressureFootprint,SupportedLoad,TireWidth,Radius,
+              SoilSurface.MaxSink,Slip,SoilSurface.Churn,SoilSurface.RutDepth).Length;
+          Terrain->Deform(Point,Tangent,SupportedLoad,Pressure,TireWidth,Footprint,Slip,W.LongSpeed,SoilTimer/Steps);
         }
-        W.LastSoil=W.Contact;W.SoilConnected=true;
+        W.LastSoil=SoilPoint;W.LastSoilForward=SoilForward;
+        W.LastSoilLoad=W.SoilLoad;W.LastSoilSlip=W.SoilSlip;W.SoilConnected=true;
       }
       const float Water=W.Ground.Water/100;
       if (Water>.01f) Chassis->AddForceAtLocation((-W.PointVelocity*Water*260+FVector::UpVector*Water*350)*100,W.Contact);

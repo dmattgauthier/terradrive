@@ -413,7 +413,7 @@ export function buildSprinter(view, geometry) {
       const y=a*a*a*startY+3*a*a*t*startY+3*a*t*t*(endY+.046)+t*t*t*endY;
       return [v*sideX(1,edgeY,0,z),y,z];
     },true);
-    windowPanel(g,{...m,glass:m.windscreen||m.glass},[[-0.893,1.450,2.175],[0.893,1.450,2.175],[0.861,2.298,1.629],[-0.861,2.298,1.629]],0.028);
+    windowPanel(g,{...m,glass:m.windscreen||m.glass},[[-0.893,1.450,2.175],[0.893,1.450,2.175],[0.861,2.298,1.629],[-0.861,2.298,1.629]],0.028,.065,{bow:.032});
     for(const side of [-1,1]) {
       // The A-pillar bridges the windscreen and door aperture with a broad
       // rolled face; a painted round tube cannot form the factory sheet metal.
@@ -833,6 +833,20 @@ export function buildSprinter(view, geometry) {
       return {mesh,geo};
     });
     const frontCorrection=frontExtent-frontLimit,rearCorrection=rearExtent+rearLimit;
+    // W906's long lower wall is a drawn sheet with a waist swage and slightly
+    // fuller wheel haunches. Move the surrounding trim/seams with the skin;
+    // separate raised strips formerly left the broad sheet visually flat.
+    // Rounded handle cups are a negative pressing in that same surface.
+    const formedSheetOffset=(x,y,z)=>{
+      const side=Math.sign(x),weight=THREE.MathUtils.smoothstep(Math.abs(x),.70,.95),gauss=(value,centre,width)=>Math.exp(-(((value-centre)/width)**2));
+      const length=THREE.MathUtils.smoothstep(z,tail+.035,tail+.205)*(1-THREE.MathUtils.smoothstep(z,2.04,2.37));
+      let draw=.011*gauss(y,1.053,.076)-.009*gauss(y,1.166,.076)+.0045*gauss(y,1.337,.045);
+      for(const axle of [-f,f])draw+=.009*gauss(z,axle,.46)*gauss(y,.876,.16);
+      for(const centre of [.711,...(side<0?[.150]:[])]){
+        const q=Math.hypot((y-1.179)/.045,(z-centre)/.132);draw-=.012*(1-THREE.MathUtils.smoothstep(q,.18,1));
+      }
+      return side*weight*length*draw;
+    };
     for(const {mesh,geo} of prepared){
       const p=geo.attributes.position,n=geo.attributes.normal;
       for(let i=0;i<p.count;i++){
@@ -840,7 +854,16 @@ export function buildSprinter(view, geometry) {
         const q=clamp((Math.abs(z)-start)/(extent-start),0,1),weight=q*q*(3-2*q),scale=1-correction*6*q*(1-q)/(extent-start);
         p.setZ(i,z+(front?-1:1)*correction*weight);
         if(n&&q>0){const normal=v3(n.getX(i),n.getY(i),n.getZ(i)/Math.max(.4,scale)).normalize();n.setXYZ(i,normal.x,normal.y,normal.z);}
+        const x=p.getX(i),y=p.getY(i),zz=p.getZ(i),offset=formedSheetOffset(x,y,zz);
+        if(Math.abs(offset)>1e-12){
+          if(n){
+            const epsilon=.0001,dx=(formedSheetOffset(x+epsilon,y,zz)-formedSheetOffset(x-epsilon,y,zz))/(2*epsilon),dy=(formedSheetOffset(x,y+epsilon,zz)-formedSheetOffset(x,y-epsilon,zz))/(2*epsilon),dz=(formedSheetOffset(x,y,zz+epsilon)-formedSheetOffset(x,y,zz-epsilon))/(2*epsilon);
+            const nx=n.getX(i)/(1+dx),normal=v3(nx,n.getY(i)-dy*nx,n.getZ(i)-dz*nx).normalize();n.setXYZ(i,normal.x,normal.y,normal.z);
+          }
+          p.setX(i,x+offset);
+        }
       }
       mesh.geometry.dispose();mesh.geometry=geo;mesh.parent.remove(mesh);g.add(mesh);mesh.position.set(0,0,0);mesh.quaternion.identity();mesh.scale.set(1,1,1);geo.computeBoundingSphere();
     }
+    view.root.userData.coachworkDetail={revision:8,formedWaistSwage:true,pressedHandleCups:true,bowedCabGlass:true};
   }

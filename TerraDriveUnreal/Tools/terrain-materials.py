@@ -68,7 +68,7 @@ def terrain_material(name, layers, biome, wetness, scales):
     custom.set_editor_property('code', terrain_code)
     custom.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     inputs = []
-    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','SecondaryRough','AccentRough','NormalSigns','RoughChannels','Scales','Biome','Wetness','Wear','LooseSoil']:
+    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','SecondaryRough','AccentRough','NormalSigns','RoughChannels','Scales','Biome','Wetness','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection']:
         item = unreal.CustomInput()
         item.set_editor_property('input_name', name)
         inputs.append(item)
@@ -88,6 +88,11 @@ def terrain_material(name, layers, biome, wetness, scales):
     wear=edit.create_material_expression(m,unreal.MaterialExpressionVertexColor,-600,-80)
     edit.connect_material_expressions(wear,'R',custom,'Wear')
     edit.connect_material_expressions(wear,'G',custom,'LooseSoil')
+    edit.connect_material_expressions(wear,'B',custom,'SoilDisplacement')
+    edit.connect_material_expressions(wear,'A',custom,'Churn')
+    tangent=edit.create_material_expression(m,unreal.MaterialExpressionTextureCoordinate,-600,-20)
+    tangent.set_editor_property('coordinate_index',0)
+    edit.connect_material_expressions(tangent,'',custom,'TireDirection')
     maps = [(layer['maps'][kind],kind,pin) for layer,pins in zip(layers,[['Primary','NormalMap','RoughMap'],['Secondary','SecondaryNormal','SecondaryRough'],['Accent','AccentNormal','AccentRough']]) for kind,pin in enumerate(pins)]
     for i, (texture,kind,pin) in enumerate(maps):
         obj = edit.create_material_expression(m, unreal.MaterialExpressionTextureObject,-600,i*140)

@@ -10,7 +10,7 @@ class UCapsuleComponent;
 class UMaterialInterface;
 struct FTerraSample {
   float Height = 0, Water = 0, Mu = .7f, Rolling = .025f, Softness = .05f,
-        MaxSink = .025f, Packing = 0, RutDepth = 0, Displacement = 0;
+        MaxSink = .025f, Packing = 0, RutDepth = 0, Displacement = 0,Churn=0;
   uint8 Surface = 0;
   FVector Normal = FVector::UpVector;
 };
@@ -34,11 +34,16 @@ struct FTerraTile {
   TArray<FVector> Vertices, Normals;
   TArray<FVector2D> UV;
   TArray<FLinearColor> Colors;
-  TArray<float> Delta, Packing;
+  TArray<float> Delta, Packing, Churn,SinkLimit;
   FIntPoint Key;
   bool Dirty = true;
 };
-struct FTerraSoilState { TArray<float> Delta,Packing; };
+struct FTerraSoilState {
+  // Churn is accumulated physical shear work as well as a shading input.
+  // Preserve it in full precision along with height/packing offscreen.
+  TArray<float> Delta,Packing,Churn;
+  TArray<uint16> Heading;
+};
 struct FTerraTree {
   FVector Base, Direction = FVector::UpVector, Push = FVector::ForwardVector;
   float Radius = 25, Height = 1000, Damage = 0, Angle = 0, Omega = 0;
@@ -122,6 +127,7 @@ private:
   float BaseHeight(float X, float Y) const;
   uint8 SurfaceAt(float X, float Y) const;
   float LooseDirt(float X,float Y) const;
+  float SoilSinkLimit(float X,float Y,const FTerraSurfaceBlend &Blend,uint8 Surface) const;
   FTerraSupport GroundSupport(FVector Mount,FVector Up,float RadiusCM,float MinCM,float MaxCM) const;
   FTerraTile *EnsureTile(FIntPoint Key);
   void RebuildGround(FIntPoint Key);

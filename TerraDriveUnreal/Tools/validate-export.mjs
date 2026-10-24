@@ -13,7 +13,8 @@ assert.equal(data.loopFrames.length,25);
 for(const f of data.loopFrames){assert.ok(Math.abs(Math.hypot(f.p[0]-5800,f.p[2]-2472)-2000)<1e-6);assert.ok(Math.abs(Math.hypot(...f.n)-1)<1e-6);}
 assert.ok(Math.abs(data.loopFrames[6].p[0]-7800)<1e-6);
 assert.ok(Math.abs(data.loopFrames[18].p[0]-3800)<1e-6);
-assert.equal(data.vehicles[5].nativeModel.bodyShape.version,7);
+assert.equal(data.vehicles[5].nativeModel.bodyShape.version,8);
+assert.ok(data.vehicles[5].nativeModel.bodyShape.camberedClosedSpoiler&&data.vehicles[5].nativeModel.bodyShape.crownedGreenhouse);
 assert.equal(data.vehicles[5].nativeModel.bodyShape.landmarks.wheelbase,3.006);
 for(const v of data.vehicles.slice(0,5)){assert.ok(v.nativeModel.bodyShape.vertices>10000);assert.ok(v.nativeModel.bodyShape.maximumSurfaceChangeM>.01&&v.nativeModel.bodyShape.maximumSurfaceChangeM<.12);}
 assert.equal(data.fabScenery.groups.length,19);

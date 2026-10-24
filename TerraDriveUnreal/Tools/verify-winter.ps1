@@ -13,7 +13,7 @@ $arguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=160
 if($Mode -eq 'Detail'){$arguments+='-TerraTerrainDetailOnly'}
 if($Mode -eq 'Movement'){$arguments+='-TerraMomentumOnly'}
 if($Mode -eq 'Winter'){$arguments+='-TerraWinterOnly';$TimeoutSeconds=420}
-if($Mode -eq 'Art'){$arguments+='-TerraModelHeroOnly'}
+if($Mode -eq 'Art'){$arguments+='-TerraModelHeroOnly';$arguments+='-TerraGraphicsMode=2'}
 if($FullTextureDiagnostic){$arguments+='-ExecCmds="r.Streaming.FullyLoadUsedTextures 1"'}
 $info=[System.Diagnostics.ProcessStartInfo]::new()
 $info.FileName=Join-Path $projectRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'

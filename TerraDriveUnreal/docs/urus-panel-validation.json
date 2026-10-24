@@ -1,0 +1,15 @@
+{
+  "kind": "source-geometry",
+  "nativeAcceptance": false,
+  "revision": 8,
+  "intakeGridProbes": 1134,
+  "perOpening": [
+    165,
+    511,
+    229,
+    229
+  ],
+  "bonnetGridProbes": 90,
+  "paintedIntrusions": 0,
+  "pass": true
+}

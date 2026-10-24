@@ -28,6 +28,7 @@
 #include "TerraGraphics.h"
 #include "TerraMomentumValidation.h"
 #include "TerraWinterValidation.h"
+#include "TerraRutValidation.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
@@ -113,6 +114,10 @@ void ATerraGameMode::Tick(float Dt) {
     if (FParse::Param(FCommandLine::Get(),TEXT("TerraCapture")))
       FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraRutOnly"))){
+    if(TerraRutValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraWinterOnly"))){
     if(TerraWinterValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
@@ -983,7 +988,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==7);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==8);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
@@ -1281,6 +1286,16 @@ void ATerraGameMode::Tick(float Dt) {
     V->SetActorLocationAndRotation(Floor+FVector(0,0,V->ExpectedRideHeight()*100-24),FRotator(0,0,18),false,nullptr,ETeleportType::TeleportPhysics);
     Start=Floor;Next(68);
   }else if(Stage==68){
+    if(StageTime>2&&!Captured){
+      // A stationary oblique view shows the tire/floor relationship; the
+      // inherited chase orbit could otherwise leave a roof-only photograph.
+      if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
+      const float Scale=FMath::Clamp(float(V->Terrain->Data->GetArrayField(TEXT("vehicles"))[ModelVehicle]->AsObject()->GetNumberField(TEXT("length")))/5.137f,.86f,1.2f);
+      const FVector Focus=V->GetActorLocation()+FVector(0,0,20);
+      const FVector Eye=Focus+(-V->GetActorForwardVector()*500-V->GetActorRightVector()*600+FVector(0,0,160))*Scale;
+      SoilCamera->SetActorLocationAndRotation(Eye,(Focus-Eye).Rotation());SoilCamera->GetCameraComponent()->SetFieldOfView(58);
+      if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;}
+    }
     if(StageTime>3&&!Captured){
       float Buried=0;int Solid=0;
       for(const auto &W:V->WheelState){

@@ -1,11 +1,16 @@
 {
-  "revision": "winter-models-7",
+  "revision": "models-ruts-8",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 457794,
-      "normalizedFraction": 0.9999868936683312,
-      "visibility": [],
+      "vertices": 486952,
+      "normalizedFraction": 0.9999856248665167,
+      "visibility": [
+        {
+          "pane": "recessed cowl",
+          "floorHeightM": 1.2700761883922378
+        }
+      ],
       "tire": {
         "revision": 3,
         "type": "all-terrain",
@@ -16,9 +21,18 @@
     },
     {
       "vehicle": "Ford Bronco Badlands",
-      "vertices": 431122,
-      "normalizedFraction": 0.9999768047095717,
-      "visibility": [],
+      "vertices": 458537,
+      "normalizedFraction": 0.9999781915090822,
+      "visibility": [
+        {
+          "pane": "recessed cowl",
+          "floorHeightM": 1.2904390451230412
+        },
+        {
+          "pane": "bonnet plateau",
+          "reliefM": 0.020034465205901242
+        }
+      ],
       "tire": {
         "revision": 3,
         "type": "all-terrain",
@@ -29,9 +43,15 @@
     },
     {
       "vehicle": "Honda Civic Sport",
-      "vertices": 311601,
-      "normalizedFraction": 0.9999069322627334,
-      "visibility": [],
+      "vertices": 307789,
+      "normalizedFraction": 0.9998797877766912,
+      "visibility": [
+        {
+          "pane": "open lower mesh",
+          "cells": 263,
+          "backingSetbackM": 0.029316214360059156
+        }
+      ],
       "tire": {
         "revision": 3,
         "type": "all-season",
@@ -42,9 +62,14 @@
     },
     {
       "vehicle": "Mercedes-Benz Sprinter 2500",
-      "vertices": 593136,
-      "normalizedFraction": 0.9999881983221386,
-      "visibility": [],
+      "vertices": 593157,
+      "normalizedFraction": 0.9999881987399626,
+      "visibility": [
+        {
+          "pane": "waist swage",
+          "reliefM": 0.015250005420466506
+        }
+      ],
       "tire": {
         "revision": 3,
         "type": "highway-commercial",
@@ -55,9 +80,18 @@
     },
     {
       "vehicle": "GMC HUMMER EV SUV",
-      "vertices": 338014,
-      "normalizedFraction": 0.9998254510168217,
-      "visibility": [],
+      "vertices": 374293,
+      "normalizedFraction": 0.9998423694805941,
+      "visibility": [
+        {
+          "pane": "recessed bonnet vent",
+          "floorHeightM": 1.4510544215348409
+        },
+        {
+          "pane": "bonnet crest",
+          "reliefM": 0.051366326556056
+        }
+      ],
       "tire": {
         "revision": 3,
         "type": "mud-terrain",
@@ -68,24 +102,44 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 513652,
-      "normalizedFraction": 0.9999377010115799,
+      "vertices": 689127,
+      "normalizedFraction": 0.9995936888265878,
       "visibility": [
         {
           "pane": "windshield",
-          "clearDepthM": 1.0058104689656513
+          "clearDepthM": 1.0255480290258188
         },
         {
           "pane": "hatch",
-          "clearDepthM": 0.3289344801444405
+          "clearDepthM": 0.3430328424642908
         },
         {
           "pane": "bonnet vent",
-          "firstSurfaceYM": 1.086287352932957
+          "firstSurfaceYM": 1.0933536656382905
         },
         {
           "pane": "hatch plate well",
           "firstSurfaceZM": -2.476158668539801
+        },
+        {
+          "pane": "roof crown",
+          "centreHeightM": 1.617997546049787,
+          "transverseCrownM": 0.021960227739866944
+        },
+        {
+          "pane": "closed spoiler",
+          "thicknessM": 0.018905834159153256
+        },
+        {
+          "pane": "sculpted door",
+          "shoulderOutsetM": 0.05385014624785911
+        },
+        {
+          "pane": "partitioned bonnet and open intakes",
+          "carbonProbes": 90,
+          "handles": 4,
+          "returns": 24,
+          "paintedIntakeProbes": 10
         }
       ],
       "tire": {

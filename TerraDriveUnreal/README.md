@@ -1,5 +1,24 @@
 # Terra Drive native port
 
+The [coachwork refinement 8](docs/model-refinement-8.md) develops all six vehicle
+bodies, including Urus compound surfaces, open Civic grille cells, formed
+Sprinter side panels, and SUV bonnet/cowl details. Project-owned Epic Automotive
+Materials instances preserve the authored dark carbon tint. The
+[rut refinement](docs/rut-refinement.md) replaces repeated pointed soil piles
+with continuous rounded grooves, broad bounded shoulders, packed snow and
+surface-specific exposed-soil shading. Run `Tools/verify-ruts.ps1` for the
+physical profile fixtures and `Tools/verify-winter.ps1 -Mode Art` for all six
+vehicles' close native views. Art and rut fixtures use the Quality preset at a
+20 FPS test cap; player saves and graphics settings are isolated.
+
+Soft-ground footprints now couple tire pressure, sink and the rolling contact
+arc, so a loaded tire works the soil supporting its front edge instead of
+digging a short pocket beneath its centre. Snow compaction respects a finite
+local layer, and sustained wheelspin develops deeper disturbance over time.
+`Tools/verify-ruts.ps1 -DrivenOnly` runs the two actual stock-Jeep mud/snow
+trials; the complete rut check includes those trials and the six-surface
+physical profile fixtures.
+
 The winter round adds a **Winter Expedition** destination containing the complete acquired Automotive Winter Scene, including its road, landscape, cliffs, foliage, snow clumps and lighting. Use the garage destination button or **0** to travel between it and the proving ground. The selected vehicle and upgrades carry across. See [winter-level.md](docs/winter-level.md) for setup and the authored-landscape deformation limitation.
 
 The proving ground gains sharper acquired snow/grass scans, physical snow relief, slushy fringes and more meadow planting. See [winter-ground-detail.md](docs/winter-ground-detail.md). The [vehicle model refinement](docs/model-refinement-7.md) adds recessed Urus geometry, body-detail corrections and revised factory tires/wheels. [Momentum and suspension](docs/momentum-and-suspension.md) explains the shaped undertray and progressive suspension stops. Use `Tools/verify-winter.ps1 -Mode Detail`, `Movement`, `Winter` or `Art` for the focused native checks.

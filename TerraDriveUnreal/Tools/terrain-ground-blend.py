@@ -20,7 +20,7 @@ dest='/Game/Materials/Terrain_GroundBlend';m=lib.load_asset(dest) if lib.does_as
 if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
     edit.delete_all_material_expressions(m);m.set_editor_property('two_sided',True);m.set_editor_property('tangent_space_normal',False);m.set_editor_property('blend_mode',unreal.BlendMode.BLEND_OPAQUE)
     pins=['Primary','NormalMap','RoughMap','Secondary','SecondaryNormal','SecondaryRough','Accent','AccentNormal','AccentRough']
-    params=','.join('Texture2D '+p for p in pins)+',SamplerState Shared,float3 World,float3 GeoNormal,float Wear,float LooseSoil,float3 Scales,float3 NormalSigns,float3 RoughChannels,float Biome,float Wetness,out float Roughness,out float3 SurfaceNormal'
+    params=','.join('Texture2D '+p for p in pins)+',SamplerState Shared,float3 World,float3 GeoNormal,float Wear,float LooseSoil,float SoilDisplacement,float Churn,float2 TireDirection,float3 Scales,float3 NormalSigns,float3 RoughChannels,float Biome,float Wetness,out float Roughness,out float3 SurfaceNormal'
     for p in pins:body=body.replace(p+'Sampler','Shared')
     library=prefix+'\nfloat3 evaluate('+params+'){\n'+body+'\n}\n};\nTerraSurface f;\n'
     textures={};calls=[]
@@ -35,7 +35,7 @@ if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
         wet_arg='saturate((1-w[6])*2.4)' if biome==6 else str(wetness)
         # Match Material Shared:Wrap, including World-group anisotropic filtering.
         # The global trilinear sampler blurs scan detail at grazing angles.
-        args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','Wear','LooseSoil',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
+        args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
         calls.append('[branch] if(w[%d]>.0005){float rr;float3 nn;float3 cc=f.evaluate(%s);color+=cc*w[%d];rough+=rr*w[%d];normal+=nn*w[%d];}'%(biome,','.join(args),biome,biome,biome))
     code=library+'''float2 uv=(World.yx*.01+400.0)/800.5+(.25/800.5);
 float4 a=Texture2DSample(BlendA,GlobalTrilinearClampedSampler,uv);
@@ -51,7 +51,7 @@ w[i]=pow(w[i],lerp(3.2,1.5,paved))*exp2(grain*lerp(i==6?8.0:7.0,.35,paved));}sum
 float3 color=0,normal=0;float rough=0;
 '''+ '\n'.join(calls)+'\nRoughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return color;'
     custom=edit.create_material_expression(m,unreal.MaterialExpressionCustom,0,0);custom.set_editor_property('code',code);custom.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    all_inputs=['World','GeoNormal','Wear','LooseSoil','BlendA','BlendB']+[pin for tex,pin in textures.values()]
+    all_inputs=['World','GeoNormal','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection','BlendA','BlendB']+[pin for tex,pin in textures.values()]
     inputs=[]
     for name in all_inputs:item=unreal.CustomInput();item.set_editor_property('input_name',name);inputs.append(item)
     custom.set_editor_property('inputs',inputs)
@@ -59,7 +59,7 @@ float3 color=0,normal=0;float rough=0;
     for name,kind in [('Roughness',unreal.CustomMaterialOutputType.CMOT_FLOAT1),('SurfaceNormal',unreal.CustomMaterialOutputType.CMOT_FLOAT3),('Specular',unreal.CustomMaterialOutputType.CMOT_FLOAT1)]:
         item=unreal.CustomOutput();item.set_editor_property('output_name',name);item.set_editor_property('output_type',kind);outputs.append(item)
     custom.set_editor_property('additional_outputs',outputs)
-    for name,klass,output in [('World',unreal.MaterialExpressionWorldPosition,''),('GeoNormal',unreal.MaterialExpressionVertexNormalWS,''),('Wear',unreal.MaterialExpressionVertexColor,'R'),('LooseSoil',unreal.MaterialExpressionVertexColor,'G')]:
+    for name,klass,output in [('World',unreal.MaterialExpressionWorldPosition,''),('GeoNormal',unreal.MaterialExpressionVertexNormalWS,''),('Wear',unreal.MaterialExpressionVertexColor,'R'),('LooseSoil',unreal.MaterialExpressionVertexColor,'G'),('SoilDisplacement',unreal.MaterialExpressionVertexColor,'B'),('Churn',unreal.MaterialExpressionVertexColor,'A'),('TireDirection',unreal.MaterialExpressionTextureCoordinate,'')]:
         node=edit.create_material_expression(m,klass,-600,-200);edit.connect_material_expressions(node,output,custom,name)
     for tex,pin in [(masks[0],'BlendA'),(masks[1],'BlendB')]+list(textures.values()):
         obj=edit.create_material_expression(m,unreal.MaterialExpressionTextureObject,-600,100);obj.set_editor_property('texture',tex)

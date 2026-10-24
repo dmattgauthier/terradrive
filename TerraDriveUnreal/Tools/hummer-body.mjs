@@ -4,7 +4,7 @@
  * side elevation and published photographs. This is not imported OEM CAD.
  * Coordinates: ground datum Y=0, axle midpoint Z=0, nose +Z, driver side +X.
  */
-export const HUMMER_MODEL_VERSION = '1.15.0';
+export const HUMMER_MODEL_VERSION = '1.16.0';
 
 export function buildNativeHummer(view, geometry) {
   const { THREE, clamp, v3, finish, box, roundedBox, cylinder, panel, polygon, surface,
@@ -92,20 +92,39 @@ export function buildNativeHummer(view, geometry) {
   const hoodPoint = (u, v) => {
     const x = (u * 2 - 1) * THREE.MathUtils.lerp(.941, .960, v), z = THREE.MathUtils.lerp(.928, nose - .012, v);
     const fade = THREE.MathUtils.smoothstep(v, 0, .16) * (1 - THREE.MathUtils.smoothstep(v, .84, 1));
-    const shoulder = .038 * Math.exp(-(((Math.abs(x) - .704) / .110) ** 2)) * fade;
-    const centerDish = -.012 * Math.exp(-((x / .55) ** 6)) * Math.sin(v * Math.PI) ** 2;
+    const ridgeX=THREE.MathUtils.lerp(.676,.752,v);
+    const shoulder = .046 * Math.exp(-(((Math.abs(x) - ridgeX) / .086) ** 2)) * fade;
+    // The twin crests taper forward around a broad shallow central well.
+    // Their rolled, pressed transitions now remain visible in reflections.
+    const centerDish = -.020 * Math.exp(-((x / .56) ** 6)) * Math.sin(v * Math.PI) ** 2;
     const y = THREE.MathUtils.lerp(1.462, 1.318, v) + .023 * (1 - (x / .97) ** 2) + shoulder + centerDish;
     return [x, y, z];
   };
-  surface(g, m.paint, 54, 48, hoodPoint, true);
+  const hoodXZ=(x,z)=>hoodPoint((x/THREE.MathUtils.lerp(.941,.960,(z-.928)/(nose-.012-.928))+1)/2,(z-.928)/(nose-.012-.928));
+  const hoodOutline=[...Array.from({length:61},(_,i)=>hoodPoint(1,i/60)),...Array.from({length:61},(_,i)=>hoodPoint(0,1-i/60))].map(([x,y,z])=>[x,z]);
+  const vents=[-1,1].map(side=>roundedOutline([[side*.754-.106,.985,0],[side*.754+.106,.985,0],[side*.754+.106,1.091,0],[side*.754-.106,1.091,0]],.018,8).map(([x,z])=>[x,z]));
+  const bonnet=perforatedFace(g,m.paint,hoodOutline,vents,hoodXZ,.033),bp=bonnet.geometry.attributes.position,bn=bonnet.geometry.attributes.normal,bi=bonnet.geometry.index.array;
+  for(let i=0;i<bi.length;i+=3)[bi[i+1],bi[i+2]]=[bi[i+2],bi[i+1]];
+  for(let i=0;i<bp.count;i++){
+    const x=bp.getX(i),z=bp.getZ(i),e=.0002,dx=(hoodXZ(x+e,z)[1]-hoodXZ(x-e,z)[1])/(e*2),dz=(hoodXZ(x,z+e)[1]-hoodXZ(x,z-e)[1])/(e*2),normal=v3(-dx,1,-dz).normalize();bn.setXYZ(i,normal.x,normal.y,normal.z);
+  }
+  bonnet.name='hummer-pressed-bonnet-cooling-apertures';
   for (const side of [-1, 1]) {
     curvedLine(g, m.dark, Array.from({ length: 49 }, (_, i) => {
       const p = hoodPoint(side > 0 ? 1 : 0, i / 48); return [p[0], p[1] + .0014, p[2]];
     }), .0021);
-    // The raised outer cowl meets a dark, inset vent at the windshield base.
-    const vent = roundedBox(g, m.black, side * .754, 1.459, 1.035, .220, .012, .126, .023);
-    vent.rotation.x = -.10;
-    for (let i = 0; i < 6; i++) line(g, m.grille, [side * .754 - .092 + i * .035, 1.469, .994], [side * .754 - .092 + i * .035, 1.469, 1.078], .003);
+    // Vent reveals and individual vanes sit down in the real aperture; an
+    // unbroken hood with a black slab on it gave no physical cavity.
+    const opening=vents[side>0?1:0],inner=opening.map(([x,z])=>[THREE.MathUtils.lerp(x,side*.754,.08),THREE.MathUtils.lerp(z,1.038,.10)]),vertices=[],indices=[];
+    for(const [j,loop]of [opening,inner].entries())for(const [x,z]of loop){const p=hoodXZ(x,z);vertices.push(p[0],p[1]-(j?.017:.0003),p[2]);}
+    for(let i=0;i<opening.length;i++){const k=opening.length,j=(i+1)%k;indices.push(i,j,i+k,j,j+k,i+k);}
+    const reveal=new THREE.BufferGeometry();reveal.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));reveal.setIndex(indices);reveal.computeVertexNormals();finish(new THREE.Mesh(reveal,m.black),g);
+    const back=perforatedFace(g,m.black,inner,[],(x,z)=>{const p=hoodXZ(x,z);p[1]-=.020;return p;},.030);
+    const ii=back.geometry.index.array;for(let i=0;i<ii.length;i+=3)[ii[i+1],ii[i+2]]=[ii[i+2],ii[i+1]];back.geometry.computeVertexNormals();
+    for(let i=0;i<6;i++)surface(g,m.grille,4,9,(u,v)=>{
+      const x=side*.754-.087+i*.035+(u-.5)*.010,z=THREE.MathUtils.lerp(.998,1.078,v),p=hoodXZ(x,z);
+      return [p[0],p[1]-.008+.002*Math.sin(u*Math.PI),p[2]];
+    },true);
   }
   curvedLine(g, m.dark, Array.from({ length: 55 }, (_, i) => {
     const p = hoodPoint(i / 54, 1); return [p[0], p[1] + .001, p[2] + .001];
@@ -192,7 +211,7 @@ export function buildNativeHummer(view, geometry) {
   surface(g, accent, 42, 30, (u, v) => {
     const x = (u * 2 - 1) * (.579 - .069 * v), y = interpolate(skidSection, v, 1), z = interpolate(skidSection, v, 2);
     return [x, y - .011 * (Math.abs(x) / .579) ** 4, z - .019 * (x / .579) ** 2];
-  }).name = 'hummer-formed-front-skid';
+  },true).name = 'hummer-formed-front-skid';
   for(const side of [-1,1]){
     curvedLine(g,m.dark,[[side*.574,.806,nose+.106],[side*.554,.665,nose+.102],[side*.516,.510,nose-.088],[side*.497,.437,nose-.293]],.0031);
     for(const y of [.569,.790])cylinder(g,m.dark,side*.272,y,nose+(y>.70?.124:.012),.006,.004,'z',6);
@@ -309,7 +328,10 @@ export function buildNativeHummer(view, geometry) {
       const innerCurve=roundedArch(inner), outerCurve=roundedArch(outerYZ);
       surface(g,m.black,80,12,(u,v)=>{
         const a=innerCurve.getPoint(u),b=outerCurve.getPoint(u);
-        return [side*(outer-.043+.042*Math.sin(v*Math.PI*.72)),THREE.MathUtils.lerp(a.y,b.y,v),axle+THREE.MathUtils.lerp(a.x,b.x,v)];
+        // A flatter molded face with a small rolled outer lip replaces the
+        // inflated semicircular highlight of the old arch trim.
+        const shoulder=THREE.MathUtils.smoothstep(v,0,.22)*(1-THREE.MathUtils.smoothstep(v,.81,1));
+        return [side*(outer-.039+.028*shoulder+.008*Math.sin(v*Math.PI)),THREE.MathUtils.lerp(a.y,b.y,v),axle+THREE.MathUtils.lerp(a.x,b.x,v)];
       },side>0);
       // Each outside lower end flows into its black bumper corner. It is not
       // an isolated painted tab hanging below that bumper.
@@ -375,6 +397,33 @@ export function buildNativeHummer(view, geometry) {
   // road-matching spare. The spare axis is horizontal along the vehicle, not a
   // wheel facing sideways as on the driving hubs.
   windowPanel(g,{...m,glass:m.privacyGlass},[[.902,1.413,tail-.021],[-.902,1.413,tail-.021],[-.935,roofTop-.065,roofRear-.021],[.935,roofTop-.065,roofRear-.021]],.052,.039,{bow:.009});
+  // Rear D-pillars turn continuously from the side quarter into the slanted
+  // rear-glass reveal. The old quarter and rear pane ended independently,
+  // leaving a real unglazed opening beside each lower/outer glass corner.
+  const rearSideWidth=y=>{
+    const t=clamp((y-belt)/(roofTop-belt),0,1);
+    return THREE.MathUtils.lerp(half,roofHalf+.005,t)+.006*Math.sin(t*Math.PI);
+  };
+  for(const side of [-1,1]){
+    const wrap=(u,v)=>{
+      const y=THREE.MathUtils.lerp(1.413,roofTop-.065,v),t=clamp((y-belt-.004)/(roofTop-.046-belt-.004),0,1);
+      const glassX=THREE.MathUtils.lerp(.902,.935,v),glassZ=THREE.MathUtils.lerp(tail-.021,roofRear-.021,v),quarterZ=THREE.MathUtils.lerp(tail+.076,-2.328,t),a=u*Math.PI/2;
+      return [side*(glassX+(rearSideWidth(y)-glassX)*Math.sin(a)),y,glassZ+(quarterZ-glassZ)*(1-Math.cos(a))];
+    };
+    for(const [from,to,mat]of [[0,.20,m.glossBlack],[.20,1,m.paint]])surface(g,mat,18,38,(u,v)=>wrap(THREE.MathUtils.lerp(from,to,u),v),side>0).name='hummer-closed-rear-d-pillar';
+    // The painted lower corner also joins the gate cap to the quarter. A
+    // narrow black inner return meets the lower rear-glass belt molding.
+    const lowerWrap=(u,v)=>{
+      const y=THREE.MathUtils.lerp(1.365,1.425,v),innerX=THREE.MathUtils.lerp(.874,.902,v),innerZ=THREE.MathUtils.lerp(tail-.039,tail-.021,v),outerZ=tail+.076,a=u*Math.PI/2;
+      const outerX=sideX(Math.min(y,1.421),outerZ);
+      return [side*(innerX+(outerX-innerX)*Math.sin(a)),y,innerZ+(outerZ-innerZ)*(1-Math.cos(a))];
+    };
+    for(const [from,to,mat]of [[0,.20,m.glossBlack],[.20,1,m.paint]])surface(g,mat,18,12,(u,v)=>lowerWrap(THREE.MathUtils.lerp(from,to,u),v),side>0).name='hummer-rear-corner-belt-closure';
+  }
+  surface(g,m.glossBlack,80,8,(u,v)=>{
+    const x=(u*2-1)*.905,y=THREE.MathUtils.lerp(1.377,1.416,v),z=THREE.MathUtils.lerp(tail-.039,tail-.021,v);
+    return [x,y,z-.002*(1-(x/.905)**2)*Math.sin(v*Math.PI)];
+  },true).name='hummer-lower-rear-glass-belt-closure';
   roundedBox(g,m.paint,0,1.081,tail-.010,1.748,.613,.058,.035);
   for(const side of [-1,1]){
     roundedBox(g,m.glossBlack,side*.971,1.103,tail-.024,.158,.547,.079,.027);
@@ -441,7 +490,7 @@ export function buildNativeHummer(view, geometry) {
   roundedBox(steering,m.black,0,0,.006,.148,.096,.043,.020);
   for(const side of [-1,1])line(steering,m.hummerInteriorAccent,[side*.053,-.023,.012],[side*.132,-.016,.012],.018);
   line(steering,m.black,[0,-.038,0],[0,-.138,0],.025);
-  view.root.userData.visualModel.hummer = {version:HUMMER_MODEL_VERSION,source:'Original mesh from GMC MY24 brochure and reference photographs',
+  view.root.userData.visualModel.hummer = {version:HUMMER_MODEL_VERSION,bodySurfaceRevision:8,physicalBonnetVents:true,rolledArchMoldings:true,closedRearGlazingCorners:true,source:'Original mesh from GMC MY24 brochure and reference photographs',
     wheelbase:wb,bodyWidth:2.1971,bodyLength:4.99872,frontAxleZ:frontAxle,rearAxleZ:rearAxle,
     roofPanels:4,wipers:3,roadMatchingSpare:true,batteryUnderfloor:true,independentAxles:2,
     nose:bumperFront,hoodFront:nose,tail,opaqueRoof:true,trim:'3X Extreme Off-Road Package',airSuspensionUsesPhysicalChassisPose:true};

@@ -27,6 +27,13 @@ constexpr int Div = 64;
 // A 2.46-inch grid resolves tire shoulders instead of a two-vertex trough.
 constexpr float TileCM = 400, CellCM = 6.25f;
 constexpr float CellArea = .0625f*.0625f;
+uint16 StoreSoilHeading(FVector2D Direction){
+  return uint16(FMath::Clamp(FMath::RoundToInt((FMath::Atan2(Direction.Y,Direction.X)+PI)*(65535.f/(2*PI))),0,65535));
+}
+FVector2D ReadSoilHeading(uint16 Heading){
+  const float Angle=Heading*((2*PI)/65535.f)-PI;
+  return FVector2D(FMath::Cos(Angle),FMath::Sin(Angle));
+}
 float Smooth(float A, float B, float X) {
   float T = FMath::Clamp((X - A) / (B - A), 0.f, 1.f);
   return T * T * (3 - 2 * T);
@@ -137,6 +144,17 @@ float ATerraWorld::Height(float X, float Y) const {
              : Z(A + Div + 2) + (Z(A + Div + 1) - Z(A + Div + 2)) * (1 - U) +
                    (Z(A + 1) - Z(A + Div + 2)) * (1 - V);
 }
+float ATerraWorld::SoilSinkLimit(float X,float Y,const FTerraSurfaceBlend &Blend,uint8 Surface) const {
+  if(Surface==1||Surface==4)return 0;
+  static const float Sink[]={.025f,0,.36f,.48f,0,.28f,.6f};
+  float Limit=0;for(int K=0;K<7;++K)Limit+=Sink[K]*Blend.Weight[K];
+  if(Blend.Weight[6]>0){
+    const float SnowLayer=SnowDrift(X,Y)*.01f+.12f;
+    Limit+=(FMath::Min(Sink[6],SnowLayer*.70f)-Sink[6])*Blend.Weight[6];
+  }
+  if(Blend.Weight[0]>0)Limit+=LooseDirt(X,Y)*Blend.Weight[0]*.24f;
+  return FMath::Max(0.f,Limit);
+}
 FTerraSample ATerraWorld::Sample(FVector P) const {
   if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Sample(GetWorld(),P);
   FTerraSample S;
@@ -149,14 +167,14 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
                  .GetSafeNormal();
   static const float Mu[] = {.72, .98, .48, .36, .84, .58, .30},
                      RR[] = {.03, .013, .11, .13, .022, .08, .085},
-                     Soft[] = {.06, 0, .83, .92, 0, .75, .88},
-                     Sink[] = {.025, 0, .36, .48, 0, .28, .6};
+                     Soft[] = {.06, 0, .83, .92, 0, .75, .88};
   const auto Blend=SurfaceBlend(P.X,P.Y);
   S.Mu=S.Rolling=S.Softness=S.MaxSink=0;
-  for(int K=0;K<7;++K){const float W=Blend.Weight[K];S.Mu+=Mu[K]*W;S.Rolling+=RR[K]*W;S.Softness+=Soft[K]*W;S.MaxSink+=Sink[K]*W;}
+  for(int K=0;K<7;++K){const float W=Blend.Weight[K];S.Mu+=Mu[K]*W;S.Rolling+=RR[K]*W;S.Softness+=Soft[K]*W;}
+  S.MaxSink=SoilSinkLimit(P.X,P.Y,Blend,S.Surface);
   S.Mu*=Rain?.76f:1.f;
   if(Blend.Weight[0]>0){const float Loose=LooseDirt(P.X,P.Y)*Blend.Weight[0];
-    S.MaxSink+=Loose*.24f;S.Softness+=Loose*.65f;S.Rolling*=1+Loose*2.f;}
+    S.Softness+=Loose*.65f;S.Rolling*=1+Loose*2.f;}
   // Thin soil at a rock/pavement edge cannot excavate the rigid substrate.
   if(S.Surface==1||S.Surface==4){S.Softness=0;S.MaxSink=0;}
   if (N) {
@@ -170,11 +188,18 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
   FIntPoint K(FMath::FloorToInt(P.X / TileCM), FMath::FloorToInt(P.Y / TileCM));
   const auto *T = Detail.Find(K);const auto *Cached=T?nullptr:SoilCache.Find(K);
   if (T||Cached) {
-    int I = FMath::Clamp(FMath::RoundToInt((P.X - K.X * TileCM) / CellCM), 0,
-                         Div),
-        J = FMath::Clamp(FMath::RoundToInt((P.Y - K.Y * TileCM) / CellCM), 0,
-                         Div);
-    S.Packing = T?T->Packing[J*(Div+1)+I]:Cached->Packing[J*(Div+1)+I];
+    const float GX=FMath::Clamp((P.X-K.X*TileCM)/CellCM,0.f,float(Div)-.0001f),
+                GY=FMath::Clamp((P.Y-K.Y*TileCM)/CellCM,0.f,float(Div)-.0001f);
+    const int I=FMath::FloorToInt(GX),J=FMath::FloorToInt(GY),A=J*(Div+1)+I;
+    const float U=GX-I,V=GY-J;
+    const auto &Packing=T?T->Packing:Cached->Packing;
+    // Use the same two triangles as rendered height. Nearest-node packing
+    // made the grip, roughness and rolling response jump at each cell centre.
+    S.Packing=U+V<=1?Packing[A]+(Packing[A+1]-Packing[A])*U+(Packing[A+Div+1]-Packing[A])*V:
+      Packing[A+Div+2]+(Packing[A+Div+1]-Packing[A+Div+2])*(1-U)+(Packing[A+1]-Packing[A+Div+2])*(1-V);
+    const auto &Churn=T?T->Churn:Cached->Churn;
+    S.Churn=U+V<=1?Churn[A]+(Churn[A+1]-Churn[A])*U+(Churn[A+Div+1]-Churn[A])*V:
+      Churn[A+Div+2]+(Churn[A+Div+1]-Churn[A+Div+2])*(1-U)+(Churn[A+1]-Churn[A+Div+2])*(1-V);
     S.Mu += S.Surface == 6 ? S.Packing * .23f : 0;
     S.Rolling *= 1 - S.Packing * .35f;
   }
@@ -429,8 +454,10 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
       Nr.Add(FVector(BaseHeight(X - 25, Y) - BaseHeight(X + 25, Y),
                      BaseHeight(X, Y - 25) - BaseHeight(X, Y + 25), 50)
                  .GetSafeNormal());
-      UV.Add(FVector2D(X / 350, Y / 350));
-      C.Add(FLinearColor(1,LooseDirt(X,Y),1));
+      // Ground textures use world position. UV0 is reserved for the local
+      // tire tangent on detailed tiles, neutral on untouched coarse ground.
+      UV.Add(FVector2D(1,0));
+      C.Add(FLinearColor(1,LooseDirt(X,Y),128.f/255.f,0));
     }
   for (int J = 0; J < D; J++)
     for (int I = 0; I < D; I++) {
@@ -459,6 +486,8 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
       if(D>Distance){Distance=D;Farthest=Pair.Key;}}
     auto &Old=Detail.FindChecked(Farthest);
     FTerraSoilState State;State.Delta=MoveTemp(Old.Delta);State.Packing=MoveTemp(Old.Packing);
+    State.Churn=MoveTemp(Old.Churn);State.Heading.SetNumUninitialized(Old.UV.Num());
+    for(int I=0;I<Old.UV.Num();++I)State.Heading[I]=StoreSoilHeading(Old.UV[I]);
     SoilCache.Add(Farthest,MoveTemp(State));Old.Mesh->DestroyComponent();Detail.Remove(Farthest);
     RebuildGround({FMath::FloorToInt(Farthest.X/8.f),FMath::FloorToInt(Farthest.Y/8.f)});
     // Bound offscreen history separately. Exhausting render tiles must never
@@ -473,9 +502,13 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
   FTerraTile T;
   T.Key = Key;
   if(auto *Stored=SoilCache.Find(Key)){
-    T.Delta=MoveTemp(Stored->Delta);T.Packing=MoveTemp(Stored->Packing);SoilCache.Remove(Key);
+    T.Delta=MoveTemp(Stored->Delta);T.Packing=MoveTemp(Stored->Packing);
+    T.Churn=MoveTemp(Stored->Churn);T.UV.SetNumUninitialized(Stored->Heading.Num());
+    for(int I=0;I<Stored->Heading.Num();++I)T.UV[I]=ReadSoilHeading(Stored->Heading[I]);
+    SoilCache.Remove(Key);
   }else{
     T.Delta.Init(0,(Div+1)*(Div+1));T.Packing.Init(0,T.Delta.Num());
+    T.Churn.Init(0,T.Delta.Num());T.UV.Init(FVector2D(1,0),T.Delta.Num());
   }
   T.Mesh = NewObject<UProceduralMeshComponent>(this);
   T.Mesh->SetupAttachment(RootComponent);
@@ -488,8 +521,12 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
       float X = Key.X * TileCM + I * CellCM, Y = Key.Y * TileCM + J * CellCM;
       T.Vertices.Add(FVector(X, Y, BaseHeight(X, Y)));
       T.Normals.Add(FVector::UpVector);
-      T.UV.Add(FVector2D(X / 350, Y / 350));
-      T.Colors.Add(FLinearColor(1,LooseDirt(X,Y),1));
+      T.Colors.Add(FLinearColor(1,LooseDirt(X,Y),128.f/255.f,0));
+      // Immutable local layer limit is cached once, not re-evaluated for
+      // every swept substep. It protects neighbouring thin-snow vertices
+      // from a footprint centred over a deeper drift.
+      const uint8 Surface=SurfaceAt(X,Y);
+      T.SinkLimit.Add(SoilSinkLimit(X,Y,SurfaceBlend(X,Y),Surface));
     }
   FTerraTile &New = Detail.Add(Key, MoveTemp(T));
   UpdateTile(New);
@@ -521,6 +558,12 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
       T.Normals[A] = FVector(Left-Right,Down-Up,CellCM*2)
                          .GetSafeNormal();
       T.Colors[A].R=1-T.Packing[A];
+      // PMC packs vertex colour to UNorm8. Use its exact 128/255 neutral,
+      // plus signed square-root encoding for millimetre-scale shallow marks.
+      // The decoder spans +/- 80 cm; A stores churn, not opacity.
+      const float Encoded=FMath::Sign(T.Delta[A])*FMath::Sqrt(FMath::Min(1.f,FMath::Abs(T.Delta[A])/80.f));
+      T.Colors[A].B=(128.f+127.f*Encoded)/255.f;
+      T.Colors[A].A=T.Churn[A];
     }
   if(Create)for (int J = 0; J < Div; J++)
     for (int I = 0; I < Div; I++) {
@@ -535,7 +578,7 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
     // Topology is fixed. Update both render and collision vertices in place;
     // repeatedly cooking new bodies for every rut wastes memory and CPU.
     if (Section)
-      T.Mesh->UpdateMeshSection_LinearColor(S,V,T.Normals,T.UV,T.Colors,{});
+      T.Mesh->UpdateMeshSection_LinearColor(S,V,T.Normals,T.UV,T.Colors,{},false);
     else{
       T.Mesh->CreateMeshSection_LinearColor(S,V,Idx[S],T.Normals,T.UV,T.Colors,{},true);
       T.Mesh->SetMaterial(S, GroundBlendMaterial?GroundBlendMaterial.Get():Materials[S].Get());
@@ -554,16 +597,34 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   if(!F.Normalize())return;
   FVector Side(-F.Y, F.X, 0);
   const float CellReach=CellCM*.5f*(FMath::Abs(F.X)+FMath::Abs(F.Y));
-  float HalfL = FMath::Max(.025f, Length * .5f) * 100,
-        HalfW = FMath::Max(.09f, Width * .5f) * 100;
+  const float HalfL = FMath::Max(.025f, Length * .5f) * 100,
+              HalfW = FMath::Max(.09f, Width * .5f) * 100;
+  // Bounded continuous soil-strength variation makes banks organic without
+  // introducing per-stamp random teeth. The shortest wavelength is ~4 ft;
+  // all extra relief still comes from the measured excavation budget.
+  const float Natural=1+.035f*FMath::Sin(P.X*.017f+P.Y*.011f)+.020f*FMath::Sin(P.X*.043f-P.Y*.037f);
+  const float Ordinary=TerraSim::SoilTarget(1,Load,Width,Length,Slip,0),
+              Churned=TerraSim::SoilTarget(1,Load,Width,Length,Slip,1);
+  const float Target=FMath::Min(S.MaxSink,S.MaxSink*FMath::Lerp(Ordinary,Churned,S.Churn)*Natural);
+  const float GrooveOuter=TerraSim::GrooveOuterHalfWidth(HalfW*.01f,Target)*100;
+  auto Bank=TerraSim::SoilBankShape(S.Surface,Width,Target,LooseDirt(P.X,P.Y),Slip);
+  Bank.width*=1+.06f*FMath::Sin(P.X*.025f+P.Y*.031f);
+  const float BankWidth=Bank.width*100;
+  FVector2D Heading(F.X,F.Y);
+  // A tire's imprint has the same tangent when the vehicle reverses. Select
+  // one hemisphere before averaging, avoiding an artificial zero direction.
+  if(Heading.X<-.001f||(FMath::Abs(Heading.X)<=.001f&&Heading.Y<0))Heading=-Heading;
   struct FCell {
     FTerraTile *T;
     int I;
-    float W;
+    float W,Ceiling;
   };
   TArray<FCell> Receivers;
   double Removed = 0;
-  const float Radius = FMath::Max(HalfL, HalfW) + 55;
+  float MaximumDose=0;
+  // A rectangle's rotated corners extend beyond max(halfLength,halfWidth).
+  // The former bound clipped long track footprints and bank envelopes.
+  const float Radius=FMath::Sqrt(FMath::Square(HalfL+20)+FMath::Square(GrooveOuter+BankWidth))+CellCM;
   // Allocate the bounded stencil before taking pointers (TMap growth moves
   // values).
   for (int X = FMath::FloorToInt((P.X - Radius) / TileCM);
@@ -571,7 +632,6 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
     for (int Y = FMath::FloorToInt((P.Y - Radius) / TileCM);
          Y <= FMath::FloorToInt((P.Y + Radius) / TileCM); Y++)
       EnsureTile({X, Y});
-  const float Target = TerraSim::SoilTarget(S.MaxSink,Load,Width,Length,Slip);
   for (int X = FMath::FloorToInt((P.X - Radius) / TileCM);
        X <= FMath::FloorToInt((P.X + Radius) / TileCM); X++)
     for (int Y = FMath::FloorToInt((P.Y - Radius) / TileCM);
@@ -591,54 +651,71 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
           FVector D = T->Vertices[A] - P;
           D.Z = 0;
           float U = FVector::DotProduct(D, F), V = FVector::DotProduct(D, Side);
-          if (FMath::Abs(U) > HalfL + 42 || FMath::Abs(V) > HalfW + 42)
+          if (FMath::Abs(U) > HalfL + 20 || FMath::Abs(V) > GrooveOuter+BankWidth)
             continue;
           if (SurfaceAt(T->Vertices[A].X, T->Vertices[A].Y) != S.Surface)
             continue;
-          if (FMath::Abs(U) < HalfL+CellReach && FMath::Abs(V) < HalfW+CellReach) {
+          const float Along=TerraSim::FootprintCoverage(U,HalfL,CellReach);
+          const float Across=TerraSim::GrooveCrossSection(V*.01f,HalfW*.01f,Target);
+          if (Along>0&&Across>0) {
             // Area-weighted cells keep short contact patches effective even
             // when their center lies between grid nodes.
-            float Edge=TerraSim::FootprintCoverage(U,HalfL,CellReach)*
-                       TerraSim::FootprintCoverage(V,HalfW,CellReach);
+            // Longitudinal overlap weights contact exposure, not the final
+            // floor depth. A 10 cm patch must converge to the same groove
+            // as it passes nodes at different sub-cell phases.
+            const float Edge=Across;
             // Packing stiffens subsequent passes but never raises an already
             // compacted groove. Rolling load creates a rut without wheelspin.
-            float Aim = -Target * 100 * Edge;
-            const float Response=TerraSim::SoilResponse(Dt,Speed,Length,Slip,T->Packing[A]);
-            float Delta = FMath::Max(
-                0.f, (T->Delta[A] - Aim) * Response);
-            Delta = FMath::Min(Delta, 5.f);
+            const float Response=TerraSim::SoilResponse(Dt*Along,Speed,Length,Slip,T->Packing[A]);
+            T->Churn[A]=TerraSim::SoilChurnDose(T->Churn[A],Slip,Speed,Dt,Along*Across);
+            MaximumDose=FMath::Max(MaximumDose,T->Churn[A]);
+            const float NodeLimit=T->SinkLimit[A];
+            const float NodeTarget=FMath::Min(NodeLimit,NodeLimit*FMath::Lerp(Ordinary,Churned,T->Churn[A])*Natural);
+            const float Delta=TerraSim::SoilCutDepth(T->Delta[A]*.01f,NodeTarget,Edge,Response)*100;
             T->Delta[A] -= Delta;
             Removed += Delta * .01 * CellArea;
             T->Packing[A] =
                 FMath::Clamp(T->Packing[A]+(1-T->Packing[A])*Response*Edge,0.f,1.f);
+            const float Influence=FMath::Clamp(Response*Edge*2,0.f,1.f);
+            T->UV[A]=(T->UV[A]*(1-Influence)+Heading*Influence).GetSafeNormal();
             T->Dirty = true;
           } else {
-            float SideB = FMath::Exp(-FMath::Square(
-                              (FMath::Abs(V) - HalfW - 9) / 9.f)) *
-                          (1 - Smooth(HalfL, HalfL + 14, FMath::Abs(U)));
-            float Leading =
-                FMath::Exp(-FMath::Square(
-                    (U * (Speed < 0 ? -1 : 1) - HalfL - 9) / 12.f)) *
-                (1 - Smooth(HalfW, HalfW + 12, FMath::Abs(V)));
-            float W = SideB + Leading * .15f;
-            if (W > .01f)
-              Receivers.Add({T, A, W});
+            const float SideShape=TerraSim::SoilBankProfile(V*.01f,GrooveOuter*.01f,Bank.width);
+            const float Longitudinal=1-TerraSim::SmoothSoilEdge((FMath::Abs(U)-HalfL-2)/14.f);
+            // Ordinary rolling leaves a groove and banks. A front pile at
+            // every substep was re-excavated on the next step, amplifying
+            // snow into a repeated row of steep triangular mounds. A small
+            // forward toe is permitted only under substantial wheelspin,
+            // and is bound by the same low repose envelope as the banks.
+            const float Churn=FMath::Clamp((FMath::Abs(Slip)-.75f)/1.25f,0.f,1.f);
+            const float Ahead=U*(Speed<0?-1:1)-HalfL;
+            const float Toe=(Ahead>0?Churn:0)*.12f*(1-TerraSim::SmoothSoilEdge(FMath::Abs(V)/FMath::Max(1.f,HalfW)))*
+              TerraSim::SoilBankProfile(Ahead*.01f,.01f,.16f);
+            const float W=SideShape*Longitudinal+Toe;
+            if(W>.001f)Receivers.Add({T,A,W,Bank.height*100*FMath::Max(SideShape,Toe)});
           }
         }
     }
-  float Fraction = S.Surface == 6 ? .35f : S.Surface == 5 ? .78f : S.Surface==0?FMath::Lerp(.10f,.78f,LooseDirt(P.X,P.Y)):.82f;
-  double Available = Removed * Fraction, Placed = 0;
-  float Sum = 0;
-  for (const auto &C : Receivers)
-    Sum += C.W;
-  for (auto &C : Receivers) {
-    float Add =
-        Sum > 0 ? float(Available * C.W / Sum / CellArea * 100) : 0;
-    float Capacity = FMath::Max(0.f, 22 - C.T->Delta[C.I]);
-    Add = FMath::Min(Add, Capacity);
-    C.T->Delta[C.I] += Add;
-    C.T->Dirty = true;
-    Placed += Add * .01 * CellArea;
+  double Available = Removed * Bank.fraction, Placed = 0;
+  // Normalize using receivers that still have capacity. Once a low bank is
+  // full, distribute its unused share to neighbouring bank cells rather than
+  // growing an unlimited spike. Remaining pore-volume loss is compaction.
+  for(int Pass=0;Pass<4&&Available>1e-10;++Pass){
+    float Sum=0;
+    for(const auto &C:Receivers)if(C.Ceiling-C.T->Delta[C.I]>.0001f)Sum+=C.W;
+    if(Sum<=0)break;
+    double ThisPass=0;
+    for(auto &C:Receivers){
+      const float Capacity=FMath::Max(0.f,C.Ceiling-C.T->Delta[C.I]);
+      if(Capacity<=.0001f)continue;
+      const float Add=FMath::Min(float(Available*C.W/Sum/CellArea*100),Capacity);
+      C.T->Delta[C.I]+=Add;
+      C.T->UV[C.I]=Heading;
+      C.T->Churn[C.I]=FMath::Max(C.T->Churn[C.I],MaximumDose*.60f);
+      C.T->Dirty=true;
+      ThisPass+=Add*.01*CellArea;
+    }
+    Placed+=ThisPass;Available=FMath::Max(0.,Available-ThisPass);
   }
   DepressedVolume += Removed;
   DisplacedVolume += Placed;
@@ -651,8 +728,14 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
       auto Copy=[&](int Destination,FIntPoint SourceKey,int Source){
         const auto *Active=Detail.Find(SourceKey);const auto *Stored=Active?nullptr:SoilCache.Find(SourceKey);
         if(!Active&&!Stored)return;
-        const float D=Active?Active->Delta[Source]:Stored->Delta[Source],C=Active?Active->Packing[Source]:Stored->Packing[Source];
-        if(Delta[Destination]!=D||Packing[Destination]!=C){Delta[Destination]=D;Packing[Destination]=C;if(T)T->Dirty=true;}
+        const float D=Active?Active->Delta[Source]:Stored->Delta[Source],C=Active?Active->Packing[Source]:Stored->Packing[Source],H=Active?Active->Churn[Source]:Stored->Churn[Source];
+        const FVector2D Fwd=Active?Active->UV[Source]:ReadSoilHeading(Stored->Heading[Source]);
+        const float OldChurn=T?T->Churn[Destination]:Cached->Churn[Destination];
+        const FVector2D OldDirection=T?T->UV[Destination]:ReadSoilHeading(Cached->Heading[Destination]);
+        if(Delta[Destination]!=D||Packing[Destination]!=C||OldChurn!=H||OldDirection!=Fwd){
+          Delta[Destination]=D;Packing[Destination]=C;
+          if(T){T->Churn[Destination]=H;T->UV[Destination]=Fwd;T->Dirty=true;}
+          else {Cached->Churn[Destination]=H;Cached->Heading[Destination]=StoreSoilHeading(Fwd);}}
       };
       for(int I=0;I<Div;++I){Copy(I*(Div+1)+Div,{X+1,Y},I*(Div+1));Copy(Div*(Div+1)+I,{X,Y+1},I);}
       Copy(Div*(Div+1)+Div,{X+1,Y+1},0);

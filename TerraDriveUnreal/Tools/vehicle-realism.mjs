@@ -26,12 +26,12 @@ export function nativeVehicle(spec){
   else buildSUV(view,geo,spec.bodyStyle==='bronco');
   view._underbody();mergeStaticMeshes(view.body);
   geo.roundBodyEnds(view.body,spec.bodyStyle);geo.roundRoofShoulders(view.body,spec.bodyStyle);
-  view.root.userData.nativeConstruction={version:3,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle)};
+  view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:8,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle),formedCowls:['jeep','bronco'].includes(spec.bodyStyle),formedCabSheets:['sedan','van'].includes(spec.bodyStyle),recessedMeshGrilles:spec.bodyStyle==='sedan',recessedBonnetVents:spec.bodyStyle==='hummer'};
   return view;
 }
 export function vehicleFinishes(view,spec){
   const m=view.materials;
-  const roles={paint:'paint',glossBlack:'black',black:'plastic',dark:'plastic',hardtop:'plastic',chrome:'metal',satinMetal:'metal',badge:'metal',grille:'plastic',rubber:'rubber',tread:'rubber',interior:'plastic',upholstery:'alcantara',headliner:'alcantara',hummerAccent:'metal',hummerInteriorAccent:'plastic'};
+  const roles={paint:'paint',glossBlack:'black',black:'plastic',dark:'plastic',hardtop:'plastic',chrome:'metal',satinMetal:'satinMetal',badge:'metal',grille:'plastic',rubber:'rubber',tread:'rubber',interior:'plastic',upholstery:'alcantara',headliner:'alcantara',hummerAccent:'satinMetal',hummerInteriorAccent:'plastic'};
   for(const [key,role]of Object.entries(roles))if(m[key]){
     m[key].userData.automotive=role;m[key].userData.automotiveOwner=spec.bodyStyle;
   }
@@ -39,7 +39,7 @@ export function vehicleFinishes(view,spec){
   m.paint.metalness=0;
   for(const [key,mat]of Object.entries(m)){
     if(!mat?.isMaterial)continue;
-    if(mat.userData.vehicleGlass){mat.color.set(key==='privacyGlass'?'#26343a':'#445359');mat.opacity=key==='privacyGlass'?.65:key==='windscreen'?.30:.38;mat.roughness=.045;}
+    if(mat.userData.vehicleGlass){mat.color.set(key==='privacyGlass'?'#202c31':'#3d4c50');mat.opacity=key==='privacyGlass'?.79:key==='windscreen'?.40:.47;mat.roughness=.035;}
     if(mat.userData.vehicleLampLens){mat.roughness=.075;mat.opacity=mat.userData.vehicleTintedLens?.42:.18;}
   }
   view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,version:3,automotiveFinishes:true};
