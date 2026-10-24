@@ -6,6 +6,21 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const OWNED_TEXTURE_SLOTS = ['map', 'normalMap'];
 const clamp = THREE.MathUtils.clamp;
 const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+// Opaque ceramic enamel belongs to the pane perimeter. It is neither painted
+// coachwork nor the reflective exposed glass surface.
+const glazingFrit = new THREE.MeshStandardMaterial({color:'#080d10',roughness:.44,metalness:0,side:THREE.DoubleSide});
+glazingFrit.userData.nativeRole='glazingFrit';
+
+function ceramicBorder(parent, outline, center, normal, bulge, width=.012) {
+  const positions=[],ids=[],count=outline.length;
+  for(const inside of [false,true])for(const point of outline){
+    const radial=v3(...point).sub(center),r=inside?Math.max(.90,1-width/Math.max(radial.length(),.04)):1;
+    positions.push(...center.clone().addScaledVector(radial,r).addScaledVector(normal,bulge*(1-r*r)+.0008).toArray());
+  }
+  for(let i=0;i<count;i++){const j=(i+1)%count;ids.push(i,j,i+count,j,j+count,i+count);}
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(ids);geometry.computeVertexNormals();
+  return finish(new THREE.Mesh(geometry,glazingFrit),parent);
+}
 
 function finish(mesh, parent, x = 0, y = 0, z = 0) {
   mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
@@ -342,6 +357,9 @@ function windowPanel(parent, materials, points, inset = 0.035, radius = 0.065, o
   if (b.sub(a).cross(c.sub(a)).dot(normal) < 0) for (let i = 0; i < indices.length; i += 3) [indices[i + 1], indices[i + 2]] = [indices[i + 2], indices[i + 1]];
   const glass = new THREE.BufferGeometry(); glass.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   glass.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3)); glass.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); glass.setIndex(indices);
+  if(materials.glass.userData.vehicleGlass){
+    ceramicBorder(parent,inner,center,normal,bulge,Math.abs(normal.x)<.45?.016:.009).name='ceramic-glazing-perimeter';
+  }
   return finish(new THREE.Mesh(glass, materials.glass), parent);
 }
 function ellipseRing(parent, material, x, y, z, rx, ry, radius = 0.009) {

@@ -14,10 +14,26 @@ else:
 def terrain_map(stem, kind):
     filename = ('native/'+stem+'/'+stem+'_'+kind+'_2k.jpg') if stem in ['dry_ground_rocks','rocks_ground_05'] else stem+'_'+kind+'_1k.jpg'
     texture = load_texture(filename)
+    # These project-owned ground maps are sampled in world space, with tire
+    # direction in UV0. A streaming estimate from that UV stream cannot
+    # express their actual texel density. Bound and retain the ground maps;
+    # scenery atlases and the acquired source packs keep their own policies.
+    cap = 2048 if filename.endswith('_2k.jpg') else 1024
+    changed = texture.get_editor_property('lod_bias') != 0 or texture.get_editor_property('max_texture_size') != cap or not texture.get_editor_property('never_stream')
+    if changed:
+        texture.set_editor_property('lod_bias', 0)
+        texture.set_editor_property('max_texture_size', cap)
+        texture.set_editor_property('never_stream', True)
+    if kind == 'diff':
+        if not texture.get_editor_property('srgb'):
+            texture.set_editor_property('srgb', True)
+            changed = True
     if kind != 'diff':
         texture.set_editor_property('srgb', False)
         # Explicit RGB decode in HLSL preserves the supplied OpenGL normal.
         texture.set_editor_property('compression_settings', unreal.TextureCompressionSettings.TC_DEFAULT)
+        lib.save_loaded_asset(texture)
+    elif changed:
         lib.save_loaded_asset(texture)
     return texture
 
@@ -53,7 +69,10 @@ terrain_bindings=[]
 def terrain_material(name, layers, biome, wetness, scales):
     dest = '/Game/Materials/' + name
     paths=[[t.get_path_name() for t in layer['maps']] for layer in layers]
-    terrain_bindings.append({'material':dest,'textures':paths,'scalesM':scales})
+    residency = [[{'path':t.get_path_name(), 'maxTextureSize':t.get_editor_property('max_texture_size'),
+                   'lodBias':t.get_editor_property('lod_bias'), 'neverStream':t.get_editor_property('never_stream'), 'sRGB':t.get_editor_property('srgb')}
+                  for t in layer['maps']] for layer in layers]
+    terrain_bindings.append({'material':dest,'textures':paths,'scalesM':scales,'residency':residency})
     signature = hashlib.sha256((terrain_code+repr((paths,biome,wetness,scales,5))).encode()).hexdigest()
     m = lib.load_asset(dest) if lib.does_asset_exist(dest) else tools.create_asset(
         name, '/Game/Materials', unreal.Material, unreal.MaterialFactoryNew())
@@ -124,7 +143,7 @@ def terrain_material(name, layers, biome, wetness, scales):
     return m
 
 terrain_specs = [
-    ('dirt',[mw_layer('Dirt','dry_ground_rocks'),mw_layer('Grass','sparse_grass'),mw_layer('Stones','rocks_ground_05')],.32,[1.6,1.1,2.4]),
+    ('dirt',[mw_layer('Dirt','dry_ground_rocks'),source_layer('leafy_grass'),mw_layer('Stones','rocks_ground_05')],.32,[1.6,1.75,2.4]),
     ('asphalt',[source_layer(s) for s in ['asphalt_02','gravel_ground_01','brown_mud_02']],.15,[2.1,2.7,1.55]),
     ('mud',[source_layer(s) for s in ['brown_mud_02','dry_riverbed_rock','forest_ground_04']],.8,[2.1,2.7,1.55]),
     ('wetland',[source_layer('brown_mud_02'),mw_layer('Grass','leafy_grass'),source_layer('forest_ground_04')],.95,[2.1,2.7,1.55]),

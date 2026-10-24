@@ -1,10 +1,10 @@
 {
-  "revision": "models-ruts-8",
+  "revision": "terrain-models-9",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 486952,
-      "normalizedFraction": 0.9999856248665167,
+      "vertices": 488094,
+      "normalizedFraction": 0.9999856585002069,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -21,8 +21,8 @@
     },
     {
       "vehicle": "Ford Bronco Badlands",
-      "vertices": 458537,
-      "normalizedFraction": 0.9999781915090822,
+      "vertices": 459673,
+      "normalizedFraction": 0.9999782454048857,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -43,8 +43,8 @@
     },
     {
       "vehicle": "Honda Civic Sport",
-      "vertices": 307789,
-      "normalizedFraction": 0.9998797877766912,
+      "vertices": 308263,
+      "normalizedFraction": 0.9998799726207817,
       "visibility": [
         {
           "pane": "open lower mesh",
@@ -62,8 +62,8 @@
     },
     {
       "vehicle": "Mercedes-Benz Sprinter 2500",
-      "vertices": 593157,
-      "normalizedFraction": 0.9999881987399626,
+      "vertices": 593878,
+      "normalizedFraction": 0.9999882130673303,
       "visibility": [
         {
           "pane": "waist swage",
@@ -80,8 +80,8 @@
     },
     {
       "vehicle": "GMC HUMMER EV SUV",
-      "vertices": 374293,
-      "normalizedFraction": 0.9998423694805941,
+      "vertices": 374773,
+      "normalizedFraction": 0.9998425713698692,
       "visibility": [
         {
           "pane": "recessed bonnet vent",
@@ -102,8 +102,8 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 689127,
-      "normalizedFraction": 0.9995936888265878,
+      "vertices": 741537,
+      "normalizedFraction": 0.9996062232902742,
       "visibility": [
         {
           "pane": "windshield",

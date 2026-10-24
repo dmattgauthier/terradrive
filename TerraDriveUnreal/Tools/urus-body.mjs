@@ -15,6 +15,7 @@ export function urusView(spec){
  const rubber=finish(new T.MeshStandardMaterial({color:'#101213',roughness:.66}),'rubber');
  const grille=finish(new T.MeshStandardMaterial({color:'#303337',roughness:.34,metalness:.9}),'metal');
  const dark=new T.MeshStandardMaterial({color:'#050708',roughness:.9});
+ const frit=new T.MeshStandardMaterial({color:'#080d10',roughness:.44,side:T.DoubleSide});frit.userData.nativeRole='glazingFrit';
  const drl=new T.MeshStandardMaterial({color:'#e2efff',emissive:'#d5e6ff',emissiveIntensity:.85,roughness:.2});
  finish(m.paint,'paint');finish(m.chrome,'metal');finish(m.interior,'plastic');finish(m.upholstery,'alcantara');
  m.paint.color.set('#f0c800');m.paint.metalness=0;m.paint.roughness=.22;m.paint.clearcoat=1;
@@ -126,6 +127,7 @@ export function urusView(spec){
   for(const [i,contour]of sideGlass.entries()){
    const glass=inset(contour,.945),map=([z,y],off=0)=>canopyPoint(s,z,y,off);
    mappedPolygon(g,black,contour,(z,y)=>map([z,y],.002),[glass],s>0,12);
+   mappedPolygon(g,frit,glass,(z,y)=>map([z,y],-.0018),[inset(glass,.978)],s>0,12);
    // Fan patches curve into the center without stretching a single giant quad.
    const center=glass.reduce((c,p)=>c.map((v,k)=>v+p[k]/glass.length),[0,0]);
    for(let j=0;j<glass.length;j++)surface(g,i?m.privacyGlass:m.glass,16,16,(u,v)=>{
@@ -156,6 +158,7 @@ export function urusView(spec){
  mappedPolygon(g,black,frontFrame,(u,z)=>canopy(u,z),[frontAperture],true,14);
  mappedPolygon(g,m.headliner,frontFrame,(u,z)=>canopy(u,z,-.014),[frontAperture],false,14);
  surface(g,m.windscreen,72,48,(u,v)=>canopy(lerp(.025,.975,u),lerp(-.035,.695,v),.0025),true);
+ mappedPolygon(g,frit,frontAperture,(u,z)=>canopy(u,z,.0035),[[[.038,-.021],[.962,-.021],[.962,.677],[.038,.677]]],true,14);
  for(const s of [-1,1])curve(g,rubber,[[s*.10,1.175,.68],[s*.31,1.189,.653],[s*.61,1.191,.647]],.005);
  // Rear hatch glass is bounded by a substantial painted D-pillar and spoiler.
  const rearFrame=[[0,-2.20],[1,-2.20],[1,-1.13],[0,-1.13]],rearOuter=[[.095,-2.12],[.905,-2.12],[.905,-1.22],[.095,-1.22]],rearAperture=[[.112,-2.093],[.888,-2.093],[.888,-1.235],[.112,-1.235]];
@@ -163,6 +166,7 @@ export function urusView(spec){
  mappedPolygon(g,m.headliner,rearFrame,(u,z)=>canopy(u,z,-.016),[rearOuter],false,16);
  mappedPolygon(g,black,rearOuter,(u,z)=>canopy(u,z,.003),[rearAperture],true,14);
  surface(g,m.privacyGlass,64,44,(u,v)=>canopy(lerp(.112,.888,u),lerp(-2.093,-1.235,v),.006),true);
+ mappedPolygon(g,frit,rearAperture,(u,z)=>canopy(u,z,.007),[[[.125,-2.077],[.875,-2.077],[.875,-1.251],[.125,-1.251]]],true,14);
  for(let j=0;j<8;j++)curve(g,rubber,Array.from({length:24},(_,k)=>canopy(lerp(.13,.87,k/23),-2.04+j*.105,.008)),.0006);
  curve(g,black,[canopy(.49,-2.05,.011),canopy(.37,-2.01,.013),canopy(.24,-1.95,.013)],.005);
  // Bonnet: deep outer cooling apertures, raised fender ridges and a pointed
@@ -235,7 +239,15 @@ export function urusView(spec){
   // Lamborghini Y light guide, individual projector lenses and dark surround.
   line(g,drl,[[.515,.943],[.806,.945],[.892,.978]].map(light),.0045);
   line(g,drl,[[.806,.945],[.914,.939]].map(light),.0045);
-  for(let j=0;j<3;j++){const p=face(s*(.644+j*.076),.981,.015);box(g,grille,p,[.053,.026,.010],.004);box(g,m.headlampReflector,[p[0],p[1],p[2]+.007],[.032,.016,.007],.003);}
+  for(let j=0;j<3;j++){
+   const cx=s*(.644+j*.076),cy=.981,p=face(cx,cy,.007);
+   box(g,black,p,[.050,.026,.012],.004);
+   // A recessed optical bowl, raised rim and convex projector replace the
+   // flat bright rectangle. Everything stays behind the outer lamp cover.
+   surface(g,m.headlampReflector,32,10,(u,v)=>{const a=u*Math.PI*2,r=.24+.76*v;return face(cx+.020*Math.cos(a)*r,cy+.0098*Math.sin(a)*r,.009+.010*r*r);},true).name='urus-recessed-projector-reflector';
+   surface(g,m.headlampCore,24,8,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.009*Math.cos(a)*r,cy+.0058*Math.sin(a)*r,.011+.0035*(1-r*r));},true);
+   surface(g,m.lens,32,10,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.0178*Math.cos(a)*r,cy+.0085*Math.sin(a)*r,.018+.0035*(1-r*r));},true).name='urus-convex-projector-lens';
+  }
   mappedPolygon(g,m.lens,inset(outline,.94),(x,y)=>face(s*x,y,.027+.003*(1-((x-.70)/.27)**2)),[],s<0,16);
   // Long air curtain wraps around the outside of each side intake.
   mappedPolygon(g,carbon,[[.941,.818],[.987,.764],[.994,.441],[.921,.315],[.902,.374],[.953,.504]],(x,y)=>face(s*x,y,.006),[],s<0,12);
@@ -297,5 +309,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:8,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:9,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

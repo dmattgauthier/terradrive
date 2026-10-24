@@ -11,6 +11,7 @@ $arguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=160
     ('-TerraReport="'+$report+'"'),('-TerraGarage="'+(Join-Path $output 'winter-test-garage.json')+'"'),
     ('-TerraGraphics="'+(Join-Path $output 'winter-test-graphics.json')+'"'),('-abslog="'+$log+'"'))
 if($Mode -eq 'Detail'){$arguments+='-TerraTerrainDetailOnly'}
+if($Mode -in @('Detail','Winter')){$arguments+='-TerraGraphicsMode=2'}
 if($Mode -eq 'Movement'){$arguments+='-TerraMomentumOnly'}
 if($Mode -eq 'Winter'){$arguments+='-TerraWinterOnly';$TimeoutSeconds=420}
 if($Mode -eq 'Art'){$arguments+='-TerraModelHeroOnly';$arguments+='-TerraGraphicsMode=2'}

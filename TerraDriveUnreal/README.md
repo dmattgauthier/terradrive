@@ -1,5 +1,11 @@
 # Terra Drive native port
 
+The [terrain and vehicle detail pass 9](docs/terrain-models-9.md) adds varied
+grass/root patches, continuously warped texture coordinates and clearer snow
+wind detail. All six bodies gain curved ceramic glazing borders, and the Urus
+gains recessed optical bowls and convex projector lenses. Native evidence is
+recorded in [validation-native.md](docs/validation-native.md).
+
 The [coachwork refinement 8](docs/model-refinement-8.md) develops all six vehicle
 bodies, including Urus compound surfaces, open Civic grille cells, formed
 Sprinter side panels, and SUV bonnet/cowl details. Project-owned Epic Automotive

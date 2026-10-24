@@ -26,7 +26,7 @@ export function nativeVehicle(spec){
   else buildSUV(view,geo,spec.bodyStyle==='bronco');
   view._underbody();mergeStaticMeshes(view.body);
   geo.roundBodyEnds(view.body,spec.bodyStyle);geo.roundRoofShoulders(view.body,spec.bodyStyle);
-  view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:8,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle),formedCowls:['jeep','bronco'].includes(spec.bodyStyle),formedCabSheets:['sedan','van'].includes(spec.bodyStyle),recessedMeshGrilles:spec.bodyStyle==='sedan',recessedBonnetVents:spec.bodyStyle==='hummer'};
+  view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:9,ceramicGlazingBorders:true,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle),formedCowls:['jeep','bronco'].includes(spec.bodyStyle),formedCabSheets:['sedan','van'].includes(spec.bodyStyle),recessedMeshGrilles:spec.bodyStyle==='sedan',recessedBonnetVents:spec.bodyStyle==='hummer'};
   return view;
 }
 export function vehicleFinishes(view,spec){

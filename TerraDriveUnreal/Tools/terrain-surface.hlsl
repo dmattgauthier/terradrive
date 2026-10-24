@@ -67,15 +67,35 @@ if(Biome==1){b*=.15;c*=.10;}
 if(Biome==5){b*=.54;c*=.28;}
 if(Biome==6){b=.12+smoothstep(.34,.73,patches)*.62;c=(1-smoothstep(.38,.75,n.z))*.74;}
 if(Biome==0){ /*QUARRY_TRAIL*/ }
+// A continuous low-amplitude domain warp breaks the surviving photograph
+// motifs without new texture reads. Derivatives still follow the warped UVs.
+float3 texP=p;
+float2 warp=float2(f.noise(p.xy*.27+41),f.noise(p.xy*.27-79))-.5;
+texP.xy+=warp*.48;
 float3 ac,bc,cc,an,bn,cn;float ar,br,cr;
-f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,p/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
-f.layer(Secondary,SecondarySampler,SecondaryNormal,SecondaryNormalSampler,SecondaryRough,SecondaryRoughSampler,p/Scales.y,n,7,NormalSigns.y,RoughChannels.y,bc,bn,br);
-f.layer(Accent,AccentSampler,AccentNormal,AccentNormalSampler,AccentRough,AccentRoughSampler,p/Scales.z,n,29,NormalSigns.z,RoughChannels.z,cc,cn,cr);
-if(Biome==0)cc*=float3(.84,.83,.78);
+f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,texP/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
+f.layer(Secondary,SecondarySampler,SecondaryNormal,SecondaryNormalSampler,SecondaryRough,SecondaryRoughSampler,texP/Scales.y,n,7,NormalSigns.y,RoughChannels.y,bc,bn,br);
+f.layer(Accent,AccentSampler,AccentNormal,AccentNormalSampler,AccentRough,AccentRoughSampler,texP/Scales.z,n,29,NormalSigns.z,RoughChannels.z,cc,cn,cr);
+if(Biome==0){cc*=float3(.84,.83,.78);bc*=float3(.46,.72,.40);}
 if(Biome==5)cc*=float3(.62,.57,.47);
 float3 color=lerp(lerp(ac,bc,b),cc,c);
 float3 relief=lerp(lerp(an,bn,b),cn,c);
 float rough=lerp(lerp(ar,br,b),cr,c);
+float pixelFootprint=max(length(ddx(p.xy)),length(ddy(p.xy)));
+float nearDetail=1-smoothstep(.018,.085,pixelFootprint);
+float grassCover=(Biome==0||Biome==3)?b*(1-c):0;
+if(grassCover>.01){
+  // Meadow reads as groups of living blades, dry growth and exposed root
+  // patches instead of the same pale green photograph across every hill.
+  float dry=smoothstep(.37,.72,f.noise(p.xy*.19+53));
+  float roots=smoothstep(.56,.79,f.noise(p.xy*.71+warp*2));
+  float3 growth=lerp(float3(.69,.83,.60),float3(1.05,.92,.63),dry);
+  color=lerp(color,color*growth,grassCover*.36);
+  color=lerp(color,ac*float3(.83,.75,.61),roots*grassCover*.22);
+  float soilGrain=f.noise(p.xy*19+warp*4);
+  color*=1+(soilGrain-.5)*grassCover*nearDetail*.17;
+  relief+=bn*grassCover*.30;
+}
 float broad=lerp(.78,1.13,smoothstep(.16,.84,macro));
 float mineral=f.noise(p.xy*.012+p.z*.024);
 color*=broad*lerp(float3(.94,.98,1.02),float3(1.05,1.01,.91),mineral);
@@ -118,6 +138,11 @@ Roughness=clamp(lerp(.66+rough*.31,.53,wet),.52,.99);
 if(Biome==2||Biome==3)Roughness=lerp(Roughness,.32+rough*.10,floorWear*.94*(1-churn*.15));
 if(Biome==0||Biome==2||Biome==3||Biome==5)Roughness=lerp(Roughness,.94,looseBank*.70);
 SurfaceNormal=normalize(n+relief*(Biome==0?.78:.48)*(1-floorWear*.70));
+if(grassCover>.01){
+  float2 q=p.xy*17+warp*3;
+  float2 aggregate=float2(f.noise(q+float2(.12,0))-f.noise(q-float2(.12,0)),f.noise(q+float2(0,.12))-f.noise(q-float2(0,.12)));
+  SurfaceNormal=normalize(SurfaceNormal+float3(aggregate*.26*grassCover*nearDetail*(1-floorWear),0));
+}
 if(Biome==6){
   // The Winter Scene's clean snow and crushed snow-road scans remain visible
   // at tire scale. Broken wet cover at the fringe becomes granular slush;
@@ -126,10 +151,10 @@ if(Biome==6){
   float slush=Wetness*smoothstep(.30,.67,grit)*(1-c);
   float hollow=.5+.5*sin(p.x*.39+p.y*.17+sin(p.y*.11)*1.4);
   // Scale exposure instead of clipping the bright scan into a white plateau.
-  color*=float3(.66,.71,.76)*lerp(float3(.79,.87,.97),float3(1.02,1.01,.98),hollow);
-  color*=lerp(.91,1.02,granular);
+  color*=float3(.43,.49,.59)*lerp(float3(.70,.81,.95),float3(1.03,1.01,.97),hollow);
+  color*=lerp(.82,1.06,granular);
   color=lerp(color,color*float3(.45,.49,.51),slush*.82);
-  color=lerp(color,color*float3(.34,.47,.63),floorWear*.94*(1-c*.35));
+  color=lerp(color,color*float3(.55,.70,.85),floorWear*.94*(1-c*.35));
   color*=1+looseBank*.055;
   float scanGrain=(rough-.5)*.22;
   Roughness=lerp(lerp(lerp(.86,.62,b)+scanGrain,.40+scanGrain*.35,floorWear),.29+scanGrain*.3,slush);
@@ -137,8 +162,11 @@ if(Biome==6){
   Roughness=lerp(Roughness,.81,c);
   Roughness=clamp(Roughness,.24,.97);
   float phase=p.x*4.2+p.y*1.7+f.noise(p.xy*.31)*3;
-  float2 wind=float2(.075,.030)*cos(phase)*(1-packed)*(1-slush);
-  SurfaceNormal=normalize(n+relief*1.5*(1-floorWear*.90)+float3(wind,0));
+  // Crossing, gently meandering wind ridges have different physical scales;
+  // their fine component fades with the pixel footprint, avoiding shimmer.
+  float finePhase=p.x*18.4+p.y*6.8+f.noise(p.xy*.93)*2.5;
+  float2 wind=(float2(.180,.070)*cos(phase)*(.55+.45*granular)+float2(.140,.052)*cos(finePhase)*nearDetail*(1-granular*.5))*(1-packed)*(1-slush);
+  SurfaceNormal=normalize(n+relief*1.75*(1-floorWear*.90)+float3(wind,0));
 }
 if(Biome!=1&&Biome!=4&&looseBank>.01){
   // Small broken clods/grains belong to the raised loose shoulders, not
