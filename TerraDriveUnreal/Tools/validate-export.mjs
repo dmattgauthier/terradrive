@@ -13,10 +13,12 @@ assert.equal(data.loopFrames.length,25);
 for(const f of data.loopFrames){assert.ok(Math.abs(Math.hypot(f.p[0]-5800,f.p[2]-2472)-2000)<1e-6);assert.ok(Math.abs(Math.hypot(...f.n)-1)<1e-6);}
 assert.ok(Math.abs(data.loopFrames[6].p[0]-7800)<1e-6);
 assert.ok(Math.abs(data.loopFrames[18].p[0]-3800)<1e-6);
-assert.equal(data.vehicles[5].nativeModel.bodyShape.version,6);
+assert.equal(data.vehicles[5].nativeModel.bodyShape.version,7);
 assert.equal(data.vehicles[5].nativeModel.bodyShape.landmarks.wheelbase,3.006);
 for(const v of data.vehicles.slice(0,5)){assert.ok(v.nativeModel.bodyShape.vertices>10000);assert.ok(v.nativeModel.bodyShape.maximumSurfaceChangeM>.01&&v.nativeModel.bodyShape.maximumSurfaceChangeM<.12);}
-assert.equal(data.fabScenery.groups.length,16);
+assert.equal(data.fabScenery.groups.length,19);
+for(const asset of ['Snow_Chunk03','Snow_Chunk05','Snow_Chunk07'])assert.ok(data.fabScenery.groups.some(g=>g.asset===asset&&g.kind==='snowbank'&&!g.solid&&g.instances.length>0));
+assert.ok(data.fabScenery.groups.filter(g=>g.kind==='grass').reduce((n,g)=>n+g.instances.length,0)>=1000);
 assert.ok(data.fabScenery.groups.reduce((sum,g)=>sum+g.instances.length,0)>100);
 assert.equal(b.readUInt32LE(0),0x54445256);assert.equal(b.readUInt32LE(4),1601);
 assert.equal(b.length,16+1601*1601*9);
@@ -64,7 +66,7 @@ for(const t of data.trees)for(const p of t.parts){assert.ok(data.placements[p.gr
 assert.equal(data.displayUnits,'imperial');
 for(const v of data.vehicles)for(const part of ['armor','equipment'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
 for(const v of data.vehicles){
- assert.equal(v.nativeModel.version,2);assert.equal(v.nativeModel.splitTireAndRim,true);
+ assert.equal(v.nativeModel.version,3);assert.equal(v.nativeModel.splitTireAndRim,true);assert.equal(v.nativeModel.beveledTread,true);
  for(const part of ['tire','rim'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
  const rimRadius=Number(v.tireSize.match(/R(\d+)/)[1])*.0254*.5*100;
  const vertices=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_rim.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));

@@ -8,6 +8,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Engine/Texture2D.h"
+#include "Engine/StaticMesh.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -25,6 +26,8 @@
 #include "TerraUnits.h"
 #include "TerraContact.h"
 #include "TerraGraphics.h"
+#include "TerraMomentumValidation.h"
+#include "TerraWinterValidation.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
@@ -75,7 +78,7 @@ void ATerraHUD::DrawHUD() {
            FLinearColor(.85, .88, .88), 30, H - 80);
   DrawText(TEXT("1-9 Regions    J Next challenge    V Garage    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
            FLinearColor(.85, .88, .88), 30, H - 54);
-  DrawText(TEXT("Shift+W Crawl throttle    K Descent assist    R Recover / restart    Tab Garage    Esc Quit"),
+  DrawText(TEXT("Shift+W Crawl    K Descent assist    R Recover    0 Winter / proving ground    Tab Garage    Esc Quit"),
            FLinearColor(.85,.88,.88),30,H-30);
   if (V->WinchAttached)
     DrawText(FString::Printf(TEXT("WINCH %.0f lbf"), TerraUnits::PoundsForce(V->WinchTension)),
@@ -102,25 +105,93 @@ void ATerraGameMode::Tick(float Dt) {
   auto Check = [&](const FString &Name, bool Pass, float Value=0.f) {
     Results.Add(FString::Printf(TEXT("{\"case\":\"%s\",\"value\":%.4f,\"pass\":%s}"),*Name,Value,Pass?TEXT("true"):TEXT("false")));
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraMomentumOnly"))){
+    if(TerraMomentumValidation::Tick(V,Dt,Check))FinishValidation();
+    return;
+  }
   auto Capture = [&](const TCHAR *Name) {
     if (FParse::Param(FCommandLine::Get(),TEXT("TerraCapture")))
       FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraWinterOnly"))){
+    if(TerraWinterValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
   auto Next = [&](int NewStage) { Stage=NewStage; StageTime=0; Captured=false; MaxProgress=0; };
+  auto LogReverseBrake = [&](const TCHAR *Phase) {
+    const FVector Position=V->GetActorLocation(),Velocity=V->Chassis->GetPhysicsLinearVelocity()/100;
+    FString Contacts;
+    for(int I=0;I<4;++I){
+      const auto &Wheel=V->WheelState[I];
+      Contacts+=FString::Printf(TEXT(" wheel%d=%d/%d/%.3f/%.1f/%.3f"),I,Wheel.ContactValid,
+          int(Wheel.Ground.Surface),Wheel.Ground.Packing,Wheel.Load,Wheel.Ground.Normal.Z);
+    }
+    UE_LOG(LogTemp,Display,TEXT("TERRA_REVERSE_BRAKE phase=%s stage=%d t=%.3f positionCM=%s velocityMPS=%s signedSpeed=%.4f throttle=%.3f brake=%.3f direction=%d contacts=%d%s"),
+        Phase,Stage,StageTime,*Position.ToString(),*Velocity.ToString(),V->Speed,V->Throttle,V->Brake,V->Direction,V->ContactCount,*Contacts);
+  };
+  auto BeginReverseTrial = [&]() {
+    V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
+    // Keep the entire W/S/reapply/Space sequence on the same clear pavement.
+    // The default spawn is only 46 m from the west road end, so the reverse
+    // leg otherwise reaches the adjacent steep dirt hill before Space holds.
+    const FVector Original=V->GetActorLocation();
+    FVector Position=Original+FVector(4000,0,0);
+    Position.Z+=V->Terrain->Height(Position.X,Position.Y)-V->Terrain->Height(Original.X,Original.Y);
+    V->SetActorLocation(Position,false,nullptr,ETeleportType::TeleportPhysics);
+    V->TestDriverInput=true;V->TestSteer=0;V->TestForward=V->TestReverse=V->TestStop=false;
+    Next(36);LogReverseBrake(TEXT("start"));
+  };
   auto LockerTrial = [&](bool Locked) {
     // Each comparison needs virgin soil and the same stock vehicle. The open
     // pass must not leave ruts/packing for only the locked pass to negotiate.
     V->Terrain->ResetSoil();V->SelectVehicle(0);V->ResetUpgrades(false);
+    V->SetGarage(false);
     V->FourDrive=V->LowRange=true;V->FrontLocked=V->RearLocked=Locked;
-    V->TestDriverInput=false;V->TestSteer=0;V->TestBrake=0;V->TestThrottle=.35f;
-    V->TeleportRoute(4);Start=V->GetActorLocation();
-    UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_START locked=%d soilTiles=%d position=%s"),Locked,V->Terrain->DetailCount(),*Start.ToString());
+    V->TestDriverInput=false;V->TestSteer=0;V->TestBrake=1;V->TestThrottle=0;
+    V->TeleportRoute(4);
+    const auto &Route=V->Terrain->Routes[4];
+    const FVector Forward=FRotator(0,Route.Yaw,0).Vector(),Side(-Forward.Y,Forward.X,0);
+    // Follow the low side of the first articulated ledge in both trials.
+    // The centre ridge correctly high-centres the modeled running board;
+    // axle lockers cannot overcome a chassis supported by rock.
+    constexpr float TargetLateral=-.50f;
+    const FVector Requested=V->GetActorLocation()+Side*(TargetLateral*100);
+    FVector Position=Requested;
+    FHitResult Floor;FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraLockerStart),true,V);
+    const bool FloorHit=GetWorld()->LineTraceSingleByChannel(Floor,Position+FVector(0,0,500),Position-FVector(0,0,1000),ECC_Visibility,Query);
+    if(FloorHit)Position.Z+=Floor.ImpactPoint.Z-Route.Spawn.Z;
+    V->SetActorLocation(Position,false,nullptr,ETeleportType::TeleportPhysics);
+    Start=Route.Spawn; // Progress and the corridor retain the original course anchor.
+    LockerDriving=false;LockerDriveTime=LockerPeakLateral=LockerPeakYaw=0;LockerSampleSecond=-1;
+    LockerBodyEdge=LockerTireEdge=0;LockerClearance=10000;LockerGeometrySamples=0;LockerGeometryFinite=true;
+    LockerPostSamples=LockerPostOverlaps=0;LockerPostBases.Reset();
+    // offroad-courses.mjs bakes vertical 1.5 m posts with .16 m maximum
+    // radius at each gate side. Query the actual cooked top caps because
+    // the cross-axle deck gives the two sides different base heights.
+    for(int Gate=0;Gate<Route.Gates.Num();++Gate)for(int Sign:{-1,1}){
+      const FVector Axis=Route.Gates[Gate]+Side*(Sign*Route.GateWidth*50);
+      FHitResult Cap;FCollisionQueryParams PostQuery(SCENE_QUERY_STAT(TerraLockerPost),true,V);
+      const bool CapHit=GetWorld()->LineTraceSingleByChannel(Cap,Axis+FVector(0,0,1000),Axis-FVector(0,0,1000),ECC_Visibility,PostQuery);
+      const auto *PostMesh=Cast<UStaticMeshComponent>(Cap.GetComponent());
+      const bool Valid=CapHit&&PostMesh&&PostMesh->GetStaticMesh()&&PostMesh->GetStaticMesh()->GetName()==TEXT("granite_trials")&&
+          Cap.ImpactNormal.Z>.99f&&!Cap.ImpactPoint.ContainsNaN()&&FVector::DistSquared2D(Cap.ImpactPoint,Axis)<1;
+      LockerGeometryFinite&=Valid;
+      const FVector Base=Cap.ImpactPoint-FVector(0,0,150);
+      if(Valid)LockerPostBases.Add(Base);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_POST locked=%d gate=%d side=%d valid=%d base=%s top=%s radius=0.1600 height=1.5000 guard=0.0010"),
+          Locked,Gate,Sign,Valid,*Base.ToString(),*Cap.ImpactPoint.ToString());
+    }
+    LockerGeometryFinite&=LockerPostBases.Num()==8;
+    LockerWorstPosition=Position;LockerWorstRotation=V->GetActorRotation();
+    UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_START locked=%d soilTiles=%d targetLateral=%.2f requested=%s position=%s routeCenter=%s floorHit=%d floorZ=%.3f"),
+        Locked,V->Terrain->DetailCount(),TargetLateral,*Requested.ToString(),*V->GetActorLocation().ToString(),*Start.ToString(),FloorHit,FloorHit?Floor.ImpactPoint.Z:0);
   };
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))Next(61);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly")))Next(64);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"))){ModelVehicle=0;Next(64);}
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraGroundOnly")))Next(66);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTransitionsOnly")))Next(80);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTerrainDetailOnly")))Next(84);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraLockersOnly")))Next(16);
   if(Stage==0&&(FParse::Param(FCommandLine::Get(),TEXT("TerraRenderOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraPerfOnly"))))Next(69);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){
@@ -178,8 +249,8 @@ void ATerraGameMode::Tick(float Dt) {
     for(auto F:LoopFrames){const auto P=F->AsObject()->GetArrayField(TEXT("p"));RadiusError=FMath::Max(RadiusError,float(FMath::Abs(FMath::Sqrt(FMath::Square(P[0]->AsNumber()-5800)+FMath::Square(P[2]->AsNumber()-2472))-2000)));}
     Check(TEXT("loop side elevation is a 131-foot circle"),RadiusError<.01f,RadiusError);
     const bool FabEnabled=V->Terrain->Data->GetObjectField(TEXT("fabScenery"))->GetBoolField(TEXT("enabled"));
-    const bool TerrainPacks=LoadObject<UTexture2D>(nullptr,TEXT("/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_Grass_col"))&&
-      LoadObject<UTexture2D>(nullptr,TEXT("/Game/AutomotiveWinterScene/Megascans/Surfaces/CleanSnow/T_CleanSnow_BC"));
+    const bool TerrainPacks=LoadObject<UTexture2D>(nullptr,TEXT("/Game/Textures/Ground_TEX_MWAM_Grass_col"))&&
+      LoadObject<UTexture2D>(nullptr,TEXT("/Game/Textures/Ground_T_CleanSnow_BC"));
     Check(TEXT("MW landscape and scanned Winter snow textures are cooked and loadable"),TerrainPacks);
     Check(TEXT("all declared acquired scenery meshes load in packaged game"),!FabEnabled||V->Terrain->FabAssetCount==V->Terrain->Data->GetObjectField(TEXT("fabScenery"))->GetArrayField(TEXT("groups")).Num(),V->Terrain->FabAssetCount);
     Check(TEXT("acquired Fab scenery is placed with physical collision"),!FabEnabled||V->Terrain->FabInstanceCount>100,V->Terrain->FabInstanceCount);
@@ -304,10 +375,13 @@ void ATerraGameMode::Tick(float Dt) {
       static const float ExpectedHeights[] = {3.189869f, 3.585f, 7.332479f, 3.332015f,
           4.690650f, 11.039977f, 4.6f, 7.038291f};
       const FVector Spawn = V->Terrain->Spawns[Region];
+      // Snow alone has a deliberate native relief layer above the preserved
+      // browser/source elevation. These spawn references are metre-grid nodes.
+      const float ExpectedHeight=ExpectedHeights[Region]+V->Terrain->SnowDrift(Spawn.X,Spawn.Y)/100;
       const uint8 Surface = V->Terrain->Sample(Spawn).Surface;
       const bool Stable = !P.ContainsNaN() && FMath::IsFinite(V->Speed) &&
           FMath::Abs(P.Z - V->Terrain->Height(P.X, P.Y)) < 400 &&
-          Surface == ExpectedSurfaces[Region] && FMath::Abs(Spawn.Z / 100 - ExpectedHeights[Region]) < .01f;
+          Surface == ExpectedSurfaces[Region] && FMath::Abs(Spawn.Z / 100 - ExpectedHeight) < .01f;
       Results.Add(FString::Printf(TEXT("{\"case\":\"region %d spawn\",\"surface\":%d,\"expectedSurface\":%d,\"pass\":%s}"),
           Region, Surface, ExpectedSurfaces[Region], Stable ? TEXT("true") : TEXT("false")));
       const FVector CameraPosition = V->Camera->GetComponentLocation();
@@ -368,16 +442,117 @@ void ATerraGameMode::Tick(float Dt) {
     Check(TEXT("stopped tires leave no frozen debris"),V->SprayCount()==0&&Rendered==0,Rendered);
     LockerTrial(false);Next(17);
   } else if(Stage==17||Stage==18){
-    MaxProgress=FMath::Max(MaxProgress,float(V->GetActorLocation().X-Start.X)/100);
-    if(Stage==18&&StageTime>13&&!Captured){Capture(TEXT("native-locked-climb.png"));Captured=true;}
-    if(StageTime>14){
-      if(Stage==17){OpenProgress=MaxProgress;LockerTrial(true);Next(18);}
-      else {
-        Check(TEXT("locked axles climb farther than open axles"),MaxProgress>OpenProgress+.5f&&MaxProgress>8,MaxProgress-OpenProgress);
-        Check(TEXT("locked axle shaft speeds remain coupled"),FMath::Abs(V->WheelState[0].Omega-V->WheelState[1].Omega)<.001f&&FMath::Abs(V->WheelState[2].Omega-V->WheelState[3].Omega)<.001f);
-        UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER open=%.3f locked=%.3f"),OpenProgress,MaxProgress);
-        if(FParse::Param(FCommandLine::Get(),TEXT("TerraLockersOnly"))){FinishValidation();return;}
-        V->SelectVehicle(0);V->LowRange=true;V->DescentAssist=true;V->TeleportRoute(7);V->Chassis->SetPhysicsLinearVelocity(FVector(500,0,0));Start=V->GetActorLocation();V->TestThrottle=0;Next(19);
+    const auto &Route=V->Terrain->Routes[4];
+    const FVector Forward=FRotator(0,Route.Yaw,0).Vector(),Side(-Forward.Y,Forward.X,0);
+    const float Lateral=FVector::DotProduct(V->GetActorLocation()-Route.Spawn,Side)/100;
+    const float YawError=FMath::FindDeltaAngleDegrees(V->GetActorRotation().Yaw,Route.Yaw);
+    LockerPeakLateral=FMath::Max(LockerPeakLateral,FMath::Abs(Lateral));
+    LockerPeakYaw=FMath::Max(LockerPeakYaw,FMath::Abs(YawError));
+    // All tires must remain on the same ledges throughout the attempt. The
+    // coachwork may overhang between gates, but its entire bounding OBB must
+    // clear each real finite post; an invisible body wall would reject that
+    // physically valid articulation between widely separated markers.
+    const float StripHalfWidth=Route.GateWidth*.5f-.16f;
+    float BodyEdge=0,TireEdge=0;bool GeometryFinite=V->Body->GetStaticMesh()!=nullptr&&V->Wheels.Num()==4;
+    if(V->Body->GetStaticMesh()){
+      const FBox Bounds=V->Body->GetStaticMesh()->GetBoundingBox();
+      GeometryFinite&=Bounds.IsValid!=0;
+      const FBox PostGuard=Bounds.ExpandBy(16.1f); // .16 m post radius + 1 mm.
+      const FTransform BodyTransform=V->Body->GetComponentTransform();
+      GeometryFinite&=LockerPostBases.Num()==8;
+      for(const FVector &Base:LockerPostBases){
+        const FVector LocalBase=BodyTransform.InverseTransformPosition(Base);
+        const FVector LocalTop=BodyTransform.InverseTransformPosition(Base+FVector(0,0,150));
+        GeometryFinite&=!LocalBase.ContainsNaN()&&!LocalTop.ContainsNaN();
+        ++LockerPostSamples;
+        if(FMath::LineBoxIntersection(PostGuard,LocalBase,LocalTop,LocalTop-LocalBase))++LockerPostOverlaps;
+      }
+      for(int X=0;X<2;++X)for(int Y=0;Y<2;++Y)for(int Z=0;Z<2;++Z){
+        const FVector Corner(X?Bounds.Max.X:Bounds.Min.X,Y?Bounds.Max.Y:Bounds.Min.Y,Z?Bounds.Max.Z:Bounds.Min.Z);
+        const FVector Point=V->Body->GetComponentTransform().TransformPosition(Corner);
+        const float Edge=FMath::Abs(float(FVector::DotProduct(Point-Route.Spawn,Side)))/100;
+        GeometryFinite&=!Point.ContainsNaN()&&FMath::IsFinite(Edge);
+        if(FMath::IsFinite(Edge))BodyEdge=FMath::Max(BodyEdge,Edge);
+      }
+    }
+    for(auto Wheel:V->Wheels){
+      if(!Wheel||!Wheel->GetStaticMesh()){GeometryFinite=false;continue;}
+      const FBox Bounds=Wheel->GetStaticMesh()->GetBoundingBox();
+      const FVector Scale=Wheel->GetComponentScale().GetAbs(),Extent=Bounds.GetExtent();
+      const FVector Center=Wheel->GetComponentTransform().TransformPosition(Bounds.GetCenter());
+      const float AxleDot=FVector::DotProduct(Wheel->GetComponentQuat().GetAxisY(),Side);
+      const float Radius=FMath::Max(Extent.X*Scale.X,Extent.Z*Scale.Z)/100;
+      const float HalfWidth=Extent.Y*Scale.Y/100;
+      const float Envelope=Radius*FMath::Sqrt(FMath::Max(0.f,1-AxleDot*AxleDot))+HalfWidth*FMath::Abs(AxleDot);
+      const float Edge=FMath::Abs(float(FVector::DotProduct(Center-Route.Spawn,Side)))/100+Envelope;
+      GeometryFinite&=!Center.ContainsNaN()&&FMath::IsFinite(Edge)&&Radius>0&&HalfWidth>0;
+      if(FMath::IsFinite(Edge))TireEdge=FMath::Max(TireEdge,Edge);
+    }
+    const float Edge=FMath::Max(BodyEdge,TireEdge);
+    if(Edge>FMath::Max(LockerBodyEdge,LockerTireEdge)){
+      LockerWorstPosition=V->GetActorLocation();LockerWorstRotation=V->GetActorRotation();
+    }
+    LockerBodyEdge=FMath::Max(LockerBodyEdge,BodyEdge);LockerTireEdge=FMath::Max(LockerTireEdge,TireEdge);
+    LockerClearance=FMath::Min(LockerClearance,StripHalfWidth-TireEdge);
+    ++LockerGeometrySamples;LockerGeometryFinite&=GeometryFinite;
+    if(!LockerDriving){
+      // Let the same stock springs settle with the brakes held before each
+      // measured attempt; a previous trial's final physics frame must not
+      // become only the next vehicle's launch transient.
+      V->TestSteer=V->TestThrottle=0;V->TestBrake=1;
+      if(StageTime>2){
+        LockerDriving=true;LockerDriveTime=0;Start=Route.Spawn;
+        V->TestBrake=0;V->TestThrottle=.35f;
+        UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_DRIVE locked=%d targetLateral=-0.50 position=%s routeCenter=%s yaw=%.3f entrySpeed=%.4f mass=%.1f inertia=%s"),
+            Stage==18,*V->GetActorLocation().ToString(),*Start.ToString(),V->GetActorRotation().Yaw,V->Chassis->GetPhysicsLinearVelocity().Size()/100,
+            V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
+      }
+    }else{
+      LockerDriveTime+=Dt;
+      // A driver follows the same low-side line in both comparisons. Fixed
+      // zero steering allowed different paths and a legitimate running-board
+      // hang-up on the centre ridge, obscuring the traction comparison.
+      // This only requests ordinary steering; no body force or yaw is set.
+      const float Correction=FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(-.50f-Lateral,2.5f)),-18.f,18.f);
+      const float HeadingError=FMath::FindDeltaAngleDegrees(V->GetActorRotation().Yaw,Route.Yaw+Correction);
+      const float YawRate=V->Chassis->GetPhysicsAngularVelocityInDegrees().Z;
+      V->TestSteer=FMath::Clamp(HeadingError/24.f-YawRate*.012f,-1.f,1.f);
+      V->TestThrottle=.35f;V->TestBrake=0;
+      MaxProgress=FMath::Max(MaxProgress,float(FVector::DotProduct(V->GetActorLocation()-Start,Forward))/100);
+      const int Second=FMath::FloorToInt(LockerDriveTime);
+      if(Second!=LockerSampleSecond){
+        LockerSampleSecond=Second;
+        UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_SAMPLE locked=%d t=%.2f position=%s lateral=%.3f yaw=%.3f steer=%.3f speed=%.3f rpm=%.0f loads=%.0f/%.0f/%.0f/%.0f omega=%.3f/%.3f/%.3f/%.3f terrainHits=%d objectHits=%d"),
+            Stage==18,LockerDriveTime,*V->GetActorLocation().ToString(),Lateral,V->GetActorRotation().Yaw,V->TestSteer,V->Speed,V->RPM,
+            V->WheelState[0].Load,V->WheelState[1].Load,V->WheelState[2].Load,V->WheelState[3].Load,
+            V->WheelState[0].Omega,V->WheelState[1].Omega,V->WheelState[2].Omega,V->WheelState[3].Omega,
+            V->TerrainBodyHits,V->ObjectBodyHits);
+      }
+      if(LockerDriveTime>13&&!Captured){Capture(Stage==17?TEXT("native-open-climb.png"):TEXT("native-locked-climb.png"));Captured=true;}
+      if(LockerDriveTime>14){
+        UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_FINISH locked=%d progress=%.3f peakLateral=%.3f peakYaw=%.3f"),
+            Stage==18,MaxProgress,LockerPeakLateral,LockerPeakYaw);
+        UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_GEOMETRY locked=%d stripHalfWidth=%.4f bodyEdge=%.4f tireEdge=%.4f minClearance=%.4f samples=%d finite=%d posts=%d postSamples=%d postOverlaps=%d worstPosition=%s worstRotation=%s"),
+            Stage==18,StripHalfWidth,LockerBodyEdge,LockerTireEdge,LockerClearance,LockerGeometrySamples,LockerGeometryFinite,LockerPostBases.Num(),LockerPostSamples,LockerPostOverlaps,*LockerWorstPosition.ToString(),*LockerWorstRotation.ToString());
+        if(Stage==17){
+          OpenProgress=MaxProgress;LockerOpenPeakLateral=LockerPeakLateral;LockerOpenClearance=LockerClearance;
+          LockerOpenGeometrySamples=LockerGeometrySamples;LockerOpenGeometryFinite=LockerGeometryFinite;
+          LockerOpenPostSamples=LockerPostSamples;LockerOpenPostOverlaps=LockerPostOverlaps;
+          LockerTrial(true);Next(18);
+        }
+        else {
+          Check(TEXT("locked axles climb farther than open axles"),MaxProgress>OpenProgress+.5f&&MaxProgress>8,MaxProgress-OpenProgress);
+          Check(TEXT("locked axle shaft speeds remain coupled"),FMath::Abs(V->WheelState[0].Omega-V->WheelState[1].Omega)<.001f&&FMath::Abs(V->WheelState[2].Omega-V->WheelState[3].Omega)<.001f);
+          const float MinimumClearance=FMath::Min(LockerOpenClearance,LockerClearance);
+          Check(TEXT("both locker trials keep tires on course and body clear of real gate posts"),
+              LockerOpenGeometryFinite&&LockerGeometryFinite&&LockerOpenGeometrySamples>=240&&LockerGeometrySamples>=240&&MinimumClearance>=0&&
+              LockerOpenPostOverlaps==0&&LockerPostOverlaps==0&&LockerOpenPostSamples==LockerOpenGeometrySamples*8&&LockerPostSamples==LockerGeometrySamples*8,MinimumClearance);
+          UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER open=%.3f locked=%.3f stripHalfWidth=%.4f openLateral=%.4f lockedLateral=%.4f openClearance=%.4f lockedClearance=%.4f"),
+              OpenProgress,MaxProgress,StripHalfWidth,LockerOpenPeakLateral,LockerPeakLateral,LockerOpenClearance,LockerClearance);
+          V->TestSteer=0; // Subsequent straight-line trials own fresh input.
+          if(FParse::Param(FCommandLine::Get(),TEXT("TerraLockersOnly"))){FinishValidation();return;}
+          V->SelectVehicle(0);V->LowRange=true;V->DescentAssist=true;V->TeleportRoute(7);V->Chassis->SetPhysicsLinearVelocity(FVector(500,0,0));Start=V->GetActorLocation();V->TestThrottle=0;Next(19);
+        }
       }
     }
   } else if(Stage==19){
@@ -527,12 +702,13 @@ void ATerraGameMode::Tick(float Dt) {
           ActualSpeed<.15f&&V->Throttle==0&&V->Brake==1,ActualSpeed);
       UE_LOG(LogTemp,Display,TEXT("TERRA_SPACE vehicle=%d entry=%.3f stopped=%.4f distance=%.3f"),BrakeVehicle,BrakeEntrySpeed,ActualSpeed,FVector::Dist2D(Start,V->GetActorLocation())/100);
       if(++BrakeVehicle<ATerraVehicle::VehicleCount){V->SelectVehicle(BrakeVehicle);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestStop=false;Next(34);}
-      else{V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestStop=false;Next(36);}
+      else BeginReverseTrial();
     }
   } else if(Stage==36){
     V->TestForward=StageTime>.5f;V->TestReverse=V->TestStop=false;
     if(StageTime>4){
       Check(TEXT("W launch before S brake check"),V->Speed>3,V->Speed);
+      LogReverseBrake(TEXT("W_launch_end"));
       V->TestForward=false;V->TestReverse=true;Next(37);
     }
   } else if(Stage==37){
@@ -540,19 +716,23 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>5){
       const float ActualSpeed=V->Chassis->GetPhysicsLinearVelocity().Size2D()/100;
       Check(TEXT("held S brakes then selects physical reverse without a release"),V->Direction==-1&&V->Speed<-1,V->Speed);
+      LogReverseBrake(TEXT("held_S_end"));
       V->TestReverse=false;Next(38);
     }
   } else if(Stage==38){
     V->TestReverse=StageTime>.35f;V->TestForward=V->TestStop=false;
     if(StageTime>4){
       Check(TEXT("S maintains physical reverse drive after reapplication"),V->Direction==-1&&V->Speed<-2,V->Speed);
+      LogReverseBrake(TEXT("reapplied_S_end"));
       V->TestStop=true;Next(39);
     }
   } else if(Stage==39){
     V->TestReverse=true;V->TestStop=true;
+    if(StageTime<=Dt||FMath::FloorToInt(StageTime)!=FMath::FloorToInt(FMath::Max(0.f,StageTime-Dt)))LogReverseBrake(TEXT("Space_hold"));
     if(StageTime>4){
       const float ActualSpeed=V->Chassis->GetPhysicsLinearVelocity().Size2D()/100;
       Check(TEXT("Space stops and holds while S requests reverse"),ActualSpeed<.15f&&V->Throttle==0,ActualSpeed);
+      LogReverseBrake(TEXT("Space_hold_end"));
       V->SelectVehicle(0);V->ResetUpgrades(false);V->TeleportZone(1);V->TestForward=V->TestReverse=false;
       const FVector Origin(-22000,20000,V->Terrain->Height(-22000,20000)+700);
       const FRotator Rotation(12,0,0);const FVector Normal=Rotation.RotateVector(FVector::UpVector);
@@ -803,7 +983,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==6);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==7);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
@@ -913,14 +1093,19 @@ void ATerraGameMode::Tick(float Dt) {
     Check(TEXT("Axlebreaker cooked rock supports banked and compressed tires"),Tested>900&&Missing==0,Missing);
     ModelVehicle=0;Next(67);
   }else if(Stage==69){
-    V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(8);
-    V->TestThrottle=V->TestSteer=0;V->TestBrake=1;V->SetActorTickEnabled(false);V->Chassis->SetSimulatePhysics(false);
+    if(!Captured){
+      V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(8);
+      V->TestThrottle=V->TestSteer=0;V->TestBrake=1;Captured=true;return;
+    }
+    if(StageTime<3)return;
+    V->SetActorTickEnabled(false);V->Chassis->SetSimulatePhysics(false);
     SoilCamera=GetWorld()->SpawnActor<ACameraActor>();SoilCamera->GetCameraComponent()->SetFieldOfView(64);
     auto *PC=GetWorld()->GetFirstPlayerController();PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;
     TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
     for(auto *C:Components)if(C->ComponentHasTag(TEXT("TerraFabScenery"))&&C->GetStaticMesh()&&C->GetInstanceCount()>0){
       const FString Name=C->GetStaticMesh()->GetName();
       if(Name.StartsWith(TEXT("MW_"))){Check(Name+TEXT(" avoids distant grass shadow passes"),!C->CastShadow&&C->InstanceEndCullDistance==8000);continue;}
+      if(C->GetCollisionEnabled()==ECollisionEnabled::NoCollision)continue;
       if(Name.Contains(TEXT("Ice")))continue;
       bool Opaque=true,TwoSided=true;
       for(int Slot=0;Slot<C->GetNumMaterials();++Slot){auto *M=C->GetMaterial(Slot);Opaque&=M&&M->GetBlendMode()==BLEND_Opaque;TwoSided&=M&&M->IsTwoSided();}
@@ -1041,6 +1226,53 @@ void ATerraGameMode::Tick(float Dt) {
     Capture(*Name);Check(Name+TEXT(" camera remains above the ground"),SoilCamera->GetActorLocation().Z>V->Terrain->Height(SoilCamera->GetActorLocation().X,SoilCamera->GetActorLocation().Y)+100);
     if(++ModelView==2){ModelView=0;++ModelVehicle;}Next(ModelVehicle==7?83:81);
   }else if(Stage==83&&StageTime>.5f){FinishValidation();}
+  else if(Stage==84){
+    for(const TCHAR *Name:{TEXT("Ground_T_CleanSnow_BC"),TEXT("Ground_T_CleanSnow_N"),TEXT("Ground_T_Road_Extra_BC"),TEXT("Ground_TEX_MWAM_Grass_col"),TEXT("Ground_TEX_MWAM_Grass_nrm")}){
+      auto *Texture=LoadObject<UTexture2D>(nullptr,*FString::Printf(TEXT("/Game/Textures/%s"),Name));
+      const int SourceWidth=FString(Name)==TEXT("Ground_T_Road_Extra_BC")?512:2048;
+      Check(FString(Name)+TEXT(" retains the acquired ground scan resolution"),Texture&&Texture->GetSizeX()>=SourceWidth,Texture?Texture->GetSizeX():0);
+      if(Texture)UE_LOG(LogTemp,Display,TEXT("TERRA_GROUND_MIPS %s resident=%d total=%d"),Name,Texture->GetNumResidentMips(),Texture->GetNumMips());
+    }
+    float MinDrift=FLT_MAX,MaxDrift=0;bool Finite=true;
+    for(int X=21000;X<=28500;X+=150)for(int Y=17500;Y<=27000;Y+=150){
+      const float D=V->Terrain->SnowDrift(X,Y);MinDrift=FMath::Min(MinDrift,D);MaxDrift=FMath::Max(MaxDrift,D);
+      const auto S=V->Terrain->Sample(FVector(X,Y,0));Finite&=FMath::IsFinite(S.Height)&&S.Normal.Z>.25f;
+    }
+    Check(TEXT("snow drifts have physical height variation"),MaxDrift-MinDrift>20,MaxDrift-MinDrift);
+    Check(TEXT("wind relief retains finite driveable terrain"),Finite);
+    int Banks=0,Grass=0;
+    TArray<UInstancedStaticMeshComponent*> Instances;V->Terrain->GetComponents(Instances);
+    for(auto *C:Instances)if(C->GetStaticMesh()){
+      const FString Name=C->GetStaticMesh()->GetName();
+      if(Name.StartsWith(TEXT("Snow_Chunk")))Banks+=C->GetInstanceCount();
+      if(Name.StartsWith(TEXT("MW_Grass")))Grass+=C->GetInstanceCount();
+    }
+    Check(TEXT("Winter Scene snowbanks populate the native basin"),Banks>=30,Banks);
+    Check(TEXT("textured MW meadow clumps increase local coverage"),Grass>=1000,Grass);
+    V->SetGarage(false);V->TestThrottle=0;V->TestBrake=1;V->SetActorTickEnabled(false);V->Chassis->SetSimulatePhysics(false);
+    V->SetActorLocation(FVector(-19000,10000,200),false,nullptr,ETeleportType::TeleportPhysics);
+    SoilCamera=GetWorld()->SpawnActor<ACameraActor>();SoilCamera->GetCameraComponent()->SetFieldOfView(58);
+    auto *PC=GetWorld()->GetFirstPlayerController();PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;
+    ModelView=0;Next(85);
+  }else if(Stage==85){
+    const FVector2D Spots[]={{24400,19100},{24400,19100},{24800,15925},{24400,16300},{-4600,-1800},{-4600,-1800}};
+    const auto P=Spots[ModelView];const FVector Target(P.X,P.Y,V->Terrain->Height(P.X,P.Y)+8);
+    const bool Close=ModelView==1||ModelView==5;
+    FVector Eye=Target+(Close?FVector(-320,-420,135):FVector(-1350,-2100,760));
+    Eye.Z=FMath::Max(Eye.Z,V->Terrain->Height(Eye.X,Eye.Y)+(Close?100.f:500.f));
+    SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());Next(86);
+  }else if(Stage==86&&StageTime>2){
+    if(ModelView==1||ModelView==5){
+      for(const TCHAR *Name:{TEXT("Ground_T_CleanSnow_N"),TEXT("Ground_TEX_MWAM_Grass_col")}){
+        if(auto *Texture=LoadObject<UTexture2D>(nullptr,*FString::Printf(TEXT("/Game/Textures/%s"),Name)))
+          UE_LOG(LogTemp,Display,TEXT("TERRA_CAPTURE_MIPS view=%d %s resident=%d total=%d"),ModelView,Name,Texture->GetNumResidentMips(),Texture->GetNumMips());
+      }
+    }
+    const TCHAR *Names[]={TEXT("snow-drifts-wide"),TEXT("snow-scan-close"),TEXT("snow-slush-edge"),TEXT("snowbanks"),TEXT("meadow-wide"),TEXT("meadow-close")};
+    Capture(*FString::Printf(TEXT("native-detail-%s.png"),Names[ModelView]));
+    Check(FString(Names[ModelView])+TEXT(" camera above surface"),SoilCamera->GetActorLocation().Z>V->Terrain->Height(SoilCamera->GetActorLocation().X,SoilCamera->GetActorLocation().Y)+75);
+    if(++ModelView==6)Next(87);else Next(85);
+  }else if(Stage==87&&StageTime>.5f){FinishValidation();}
   else if(Stage==67){
     V->SelectVehicle(ModelVehicle);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(4);
     if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}

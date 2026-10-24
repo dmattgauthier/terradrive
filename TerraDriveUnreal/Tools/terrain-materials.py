@@ -24,7 +24,20 @@ def terrain_map(stem, kind):
 def acquired_map(path):
     if not lib.does_asset_exist(path):
         raise RuntimeError('Add the acquired terrain pack to this project: '+path)
-    return lib.load_asset(path)
+    # The showroom pack ships its snow maps with LOD bias 2 (256px effective
+    # here). Native close ground needs the actual scan detail. Keep the source
+    # pack untouched and bound the project-owned copies to 2K for GPU memory.
+    dest='/Game/Textures/Ground_'+path.rsplit('/',1)[-1]
+    texture=lib.load_asset(dest) if lib.does_asset_exist(dest) else lib.duplicate_asset(path,dest)
+    if not texture:raise RuntimeError('Could not prepare ground scan: '+path)
+    # Custom world-space UVs do not supply a reliable UV0 streaming scale.
+    # Keep only these bounded ground copies resident, not the scenery library.
+    if texture.get_editor_property('lod_bias')!=0 or texture.get_editor_property('max_texture_size')!=2048 or not texture.get_editor_property('never_stream'):
+        texture.set_editor_property('lod_bias',0)
+        texture.set_editor_property('max_texture_size',2048)
+        texture.set_editor_property('never_stream',True)
+        lib.save_loaded_asset(texture)
+    return texture
 
 mw='/Game/MWLandscapeAutoMaterial/Textures/Ground/TEX_MWAM_'
 winter='/Game/AutomotiveWinterScene/Megascans/Surfaces/'
@@ -97,7 +110,7 @@ def terrain_material(name, layers, biome, wetness, scales):
         if not edit.connect_material_property(custom,output,prop):
             raise RuntimeError('Could not connect terrain output '+output)
     specular = edit.create_material_expression(m,unreal.MaterialExpressionConstant,0,300)
-    specular.set_editor_property('r',.12)
+    specular.set_editor_property('r',.45 if biome==6 else .12)
     edit.connect_material_property(specular,'',unreal.MaterialProperty.MP_SPECULAR)
     edit.set_base_material_usage(m,unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES,True)
     edit.recompile_material(m)
@@ -106,13 +119,13 @@ def terrain_material(name, layers, biome, wetness, scales):
     return m
 
 terrain_specs = [
-    ('dirt',[mw_layer('Dirt','dry_ground_rocks'),mw_layer('Grass','sparse_grass'),mw_layer('Stones','rocks_ground_05')],.32,[3.5,2.8,2.4]),
+    ('dirt',[mw_layer('Dirt','dry_ground_rocks'),mw_layer('Grass','sparse_grass'),mw_layer('Stones','rocks_ground_05')],.32,[1.6,1.1,2.4]),
     ('asphalt',[source_layer(s) for s in ['asphalt_02','gravel_ground_01','brown_mud_02']],.15,[2.1,2.7,1.55]),
     ('mud',[source_layer(s) for s in ['brown_mud_02','dry_riverbed_rock','forest_ground_04']],.8,[2.1,2.7,1.55]),
     ('wetland',[source_layer('brown_mud_02'),mw_layer('Grass','leafy_grass'),source_layer('forest_ground_04')],.95,[2.1,2.7,1.55]),
     ('rock',[mw_layer('Rock','rocks_ground_05'),source_layer('mossy_rock'),winter_layer('RockWall','T_Rock','HRO')],.12,[5.,3.4,4.]),
     ('sand',[mw_layer('SandA','sand_03'),mw_layer('SandC','gravel_floor_02'),source_layer('dry_riverbed_rock')],.08,[3.2,2.7,1.55]),
-    ('snow',[winter_layer('CleanSnow','T_CleanSnow','TRO'),winter_layer('SnowRoad','T_Road_Extra','TRD'),mw_layer('Rock','rocks_ground_05')],0,[3.,3.4,4.5])]
+    ('snow',[winter_layer('CleanSnow','T_CleanSnow','TRO'),winter_layer('SnowRoad','T_Road_Extra','TRD'),winter_layer('Pebbles','T_Pebbles','HRO')],0,[4.0,2.4,2.4])]
 for biome, (surface, layers, wetness, scales) in enumerate(terrain_specs):
     terrain_material('Terrain_'+surface,layers,biome,wetness,scales)
 exec(compile(open(os.path.join(root,'Tools','terrain-ground-blend.py'),encoding='utf8').read(),'terrain-ground-blend.py','exec'))

@@ -290,6 +290,15 @@
       "asset": "kloofendal_48d_partly_cloudy_puresky",
       "license": "CC0-1.0",
       "page": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky"
+    },
+    {
+      "path": "grass_medium_01/textures/grass_medium_01_alpha_1k.png",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_medium_01/grass_medium_01_alpha_1k.png",
+      "bytes": 648718,
+      "sha256": "711a8e49af758d6a6ce1f610db858899a27be19da6d1866bd35c13bc7b8ffeff",
+      "asset": "grass_medium_01",
+      "license": "CC0-1.0",
+      "page": "https://polyhaven.com/a/grass_medium_01"
     }
   ]
 }

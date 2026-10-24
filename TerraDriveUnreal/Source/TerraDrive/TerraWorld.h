@@ -75,6 +75,7 @@ public:
   FTerraSupport CastTireSupport(FVector Mount,FVector Up,FVector Forward,
       float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const;
   float Height(float X, float Y) const;
+  float SnowDrift(float X,float Y) const;
   void Deform(FVector P, FVector Forward, float Load, float Pressure,
               float Width, float Length, float Slip, float Speed, float Dt);
   void HitTree(UPrimitiveComponent *Component, FVector Impulse, FVector Point);

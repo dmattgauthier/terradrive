@@ -1,45 +1,75 @@
 {
-  "revision": "all-models-6",
+  "revision": "winter-models-7",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 424812,
-      "normalizedFraction": 0.9999858761051947,
+      "vertices": 457794,
+      "normalizedFraction": 0.9999868936683312,
       "visibility": [],
+      "tire": {
+        "revision": 3,
+        "type": "all-terrain",
+        "diameterM": 0.8308000192046165,
+        "widthM": 0.2962500000042469
+      },
       "pass": true
     },
     {
       "vehicle": "Ford Bronco Badlands",
-      "vertices": 417214,
-      "normalizedFraction": 0.9999760314850412,
+      "vertices": 431122,
+      "normalizedFraction": 0.9999768047095717,
       "visibility": [],
+      "tire": {
+        "revision": 3,
+        "type": "all-terrain",
+        "diameterM": 0.8308000192046165,
+        "widthM": 0.2962500000042469
+      },
       "pass": true
     },
     {
       "vehicle": "Honda Civic Sport",
-      "vertices": 307953,
-      "normalizedFraction": 0.9999058297857141,
+      "vertices": 311601,
+      "normalizedFraction": 0.9999069322627334,
       "visibility": [],
+      "tire": {
+        "revision": 3,
+        "type": "all-season",
+        "diameterM": 0.6451999852433801,
+        "widthM": 0.24455000000424687
+      },
       "pass": true
     },
     {
       "vehicle": "Mercedes-Benz Sprinter 2500",
-      "vertices": 588348,
-      "normalizedFraction": 0.9999881022796032,
+      "vertices": 593136,
+      "normalizedFraction": 0.9999881983221386,
       "visibility": [],
+      "tire": {
+        "revision": 3,
+        "type": "highway-commercial",
+        "diameterM": 0.7740109752663406,
+        "widthM": 0.2548900000042469
+      },
       "pass": true
     },
     {
       "vehicle": "GMC HUMMER EV SUV",
-      "vertices": 332963,
-      "normalizedFraction": 0.9998228031342822,
+      "vertices": 338014,
+      "normalizedFraction": 0.9998254510168217,
       "visibility": [],
+      "tire": {
+        "revision": 3,
+        "type": "mud-terrain",
+        "diameterM": 0.88718133265356,
+        "widthM": 0.31693000000424687
+      },
       "pass": true
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 493186,
-      "normalizedFraction": 0.9999351157575438,
+      "vertices": 513652,
+      "normalizedFraction": 0.9999377010115799,
       "visibility": [
         {
           "pane": "windshield",
@@ -48,8 +78,22 @@
         {
           "pane": "hatch",
           "clearDepthM": 0.3289344801444405
+        },
+        {
+          "pane": "bonnet vent",
+          "firstSurfaceYM": 1.086287352932957
+        },
+        {
+          "pane": "hatch plate well",
+          "firstSurfaceZM": -2.476158668539801
         }
       ],
+      "tire": {
+        "revision": 3,
+        "type": "road-performance",
+        "diameterM": 0.786982939280423,
+        "widthM": 0.2962500000042469
+      },
       "pass": true
     }
   ],

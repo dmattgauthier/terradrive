@@ -160,7 +160,10 @@ export function buildNativeHummer(view, geometry) {
 
   // The molded bumper has inset lamp and air openings and a continuous swept
   // outer corner. A formed center skid rolls down and back below the hooks.
-  const bumperOutline = roundedXY([[-1.081, .667], [-.891, .549], [-.584, .500], [0, .487], [.584, .500], [.891, .549], [1.081, .667], [1.076, .994], [.998, 1.059], [.685, 1.065], [0, 1.047], [-.685, 1.065], [-.998, 1.059], [-1.076, .994]], .034);
+  // The center is open below the cooling mouth: the separate formed metal
+  // skid occupies that cutout. An uninterrupted black face hid the real skid
+  // almost completely, producing a deep featureless bumper in frontal views.
+  const bumperOutline = roundedXY([[-1.081, .667], [-.891, .549], [-.633, .500], [-.604, .813], [.604, .813], [.633, .500], [.891, .549], [1.081, .667], [1.076, .994], [.998, 1.059], [.685, 1.065], [0, 1.047], [-.685, 1.065], [-.998, 1.059], [-1.076, .994]], .020);
   const bumperFace = (x, y) => [x, y, nose + .112 - .244 * (Math.abs(x) / 1.095) ** 4 - .034 * (1 - clamp((y - .49) / .57, 0, 1)) ** 2];
   const lowerAir = roundedXY([[-.646, .824], [.646, .824], [.675, .982], [-.675, .982]], .027);
   const lowerLamps = [-1, 1].map(side => roundedXY([[side * .720, .885], [side * .966, .889], [side * .985, .995], [side * .734, .992]], .022));
@@ -190,6 +193,10 @@ export function buildNativeHummer(view, geometry) {
     const x = (u * 2 - 1) * (.579 - .069 * v), y = interpolate(skidSection, v, 1), z = interpolate(skidSection, v, 2);
     return [x, y - .011 * (Math.abs(x) / .579) ** 4, z - .019 * (x / .579) ** 2];
   }).name = 'hummer-formed-front-skid';
+  for(const side of [-1,1]){
+    curvedLine(g,m.dark,[[side*.574,.806,nose+.106],[side*.554,.665,nose+.102],[side*.516,.510,nose-.088],[side*.497,.437,nose-.293]],.0031);
+    for(const y of [.569,.790])cylinder(g,m.dark,side*.272,y,nose+(y>.70?.124:.012),.006,.004,'z',6);
+  }
   for (const side of [-1, 1]) {
     const hookOutline = roundedXY([[side * .391, .620], [side * .596, .620], [side * .583, .787], [side * .413, .787]], .021);
     const hookFace = (x, y) => [x, y, nose + .151 - .033 * (Math.abs(x) / .60) ** 4];

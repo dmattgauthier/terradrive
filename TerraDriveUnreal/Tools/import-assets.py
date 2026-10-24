@@ -151,9 +151,18 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_MASKED)
         m.set_editor_property('opacity_mask_clip_value', clip)
         mask = edit.create_material_expression(m, unreal.MaterialExpressionTextureSample, -500, 450)
+        separate_scan_grass = role=='scan' and alpha.get_name()=='grass_medium_01_alpha_1k'
+        if separate_scan_grass:
+            # The authored opacity map is grayscale, so use R rather than its
+            # constant alpha channel. Keep the original16-bitPNG unchanged.
+            alpha.set_editor_property('srgb',False)
+            alpha.set_editor_property('compression_settings',unreal.TextureCompressionSettings.TC_MASKS)
+            lib.save_loaded_asset(alpha)
         mask.set_editor_property('texture', alpha)
-        mask.set_editor_property('sampler_type', unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
-        edit.connect_material_property(mask, 'A' if role=='scan' else 'R', unreal.MaterialProperty.MP_OPACITY_MASK)
+        mask.set_editor_property('sampler_type',unreal.MaterialSamplerType.SAMPLERTYPE_MASKS if separate_scan_grass else unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
+        edit.connect_material_property(mask,'R' if separate_scan_grass else ('A' if role=='scan' else 'R'),unreal.MaterialProperty.MP_OPACITY_MASK)
+        if separate_scan_grass:
+            unreal.log('TERRA_SCAN_GRASS_OPACITY_READY material='+name+' texture='+alpha.get_path_name()+' channel=R clip='+str(clip))
     elif opacity < .95:
         m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
         if role in ('glass','lens'):
@@ -260,6 +269,11 @@ for i, asset in enumerate(data['assets']):
         unreal.SystemLibrary.collect_garbage()
 
 exec(compile(open(os.path.join(root,'Tools','import-fab.py'),encoding='utf8').read(),'import-fab.py','exec'),globals())
+# The complete acquired winter scene is loaded next. Release native import
+# working objects first on the 16 GB development machine.
+materials.clear()
+unreal.SystemLibrary.collect_garbage()
+exec(compile(open(os.path.join(root,'Tools','winter-level.py'),encoding='utf8').read(),'winter-level.py','exec'),globals())
 level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 if lib.does_asset_exist('/Game/Maps/ProvingGround'):
     ok = level.load_level('/Game/Maps/ProvingGround')

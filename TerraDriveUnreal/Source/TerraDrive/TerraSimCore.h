@@ -20,6 +20,39 @@ inline float SuspensionForce(float compression,float velocity,float spring,float
     const float step=std::max(0.f,dt),m=std::max(1.f,mass),response=damping+spring*step;
     return (spring*compression-response*velocity+response*9.81f*normalZ*step*ContactCoupling)/(1+response*step*ContactCoupling/m);
 }
+// The published travel is wheel travel about the loaded ride position, not
+// an extra 30 cm of compression for every vehicle. Rubber bump stops engage
+// only in the final third of bump travel. A tangent-stiffness solve keeps the
+// rapidly rising stop force stable at the game's capped frame rates.
+inline float SuspensionBumpTravel(float travel,float extraTravel) {
+    return std::max(.055f,travel*.58f+std::max(0.f,extraTravel)*.45f);
+}
+inline float ProgressiveSuspensionForce(float compression,float velocity,float spring,
+    float damping,float mass,float normalZ,float dt,float bumpTravel) {
+    const float m=std::max(1.f,mass),load=m*9.81f,k=std::max(1.f,spring);
+    const float travel=std::max(.04f,bumpTravel),preload=load/k;
+    const float stopLength=travel*.32f;
+    const float stop=std::max(0.f,(compression-preload-travel*.68f)/stopLength);
+    const float stopForce=load*2.4f*stop*stop;
+    const float tangent=k+load*4.8f*stop/stopLength;
+    // A high-speed compression valve lets the wheel rise over a sharp seam
+    // instead of transmitting the entire damper spike to the chassis. The
+    // rebound valve and ordinary body-motion damping remain unchanged.
+    const float compressionSpeed=std::max(0.f,-velocity);
+    const float valve=.28f+.72f*std::min(1.f,1.25f/std::max(.001f,compressionSpeed));
+    const float damper=damping*valve;
+    const float step=std::max(0.f,dt),response=damper+tangent*step;
+    const float compliant=(k*compression+stopForce-response*velocity+
+        response*9.81f*normalZ*step*ContactCoupling)/(1+response*step*ContactCoupling/m);
+    if(step<=0)return compliant;
+    // At full bump the rubber stop becomes a unilateral travel constraint.
+    // A tangent spring alone weakens as its implicit denominator grows and
+    // can let a long frame push the front axle through the body. Spend only
+    // the impulse needed to reach the end of travel, never a velocity reset.
+    const float stopConstraint=m*(9.81f*normalZ+
+        ((compression-preload-travel)/step-velocity)/step);
+    return std::max(compliant,stopConstraint);
+}
 inline float ContactStiffness(float raw,float mass,float dt){
     return std::max(0.f,raw)/(1+std::max(0.f,raw)*std::max(0.f,dt)*ContactCoupling/std::max(1.f,mass));
 }

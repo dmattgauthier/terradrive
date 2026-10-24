@@ -69,7 +69,9 @@ function factoryRim(spec){
   for(const side of [-1,1]){
     const face=side*w*.43;
     disc(g,brakeMaterial,face*.62,r*(style==='urus'?.78:.735),.020);disc(g,castMetal,face*.76,r*.31,.035);
-    for(let i=0;i<40;i++){
+    // Drilled carbon-ceramic rotors belong to the Performante. The other
+    // factory configurations use plain swept friction rings, not drilled discs.
+    for(let i=0;i<(style==='urus'?40:0);i++){
       const a=i*Math.PI/20;rod(g,black,[face*.62-side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],[face*.62+side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],.003);
     }
     if(style==='urus'){
@@ -114,6 +116,45 @@ function factoryRim(spec){
     }
     const valve=mesh(g,new THREE.CylinderGeometry(.004,.004,.024,10),black,[face+side*.016,r*.80,r*.23]);valve.rotation.z=Math.PI/2;
   }return g;
+}
+
+/** Native carcass and beveled tread. All dimensions use the mechanical tire. */
+function factoryTire(spec,materials){
+  const group=new THREE.Group(),radius=spec.tireRadius,width=spec.tireWidth;
+  const rim=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5,type=spec.tireType;
+  const mud=type==='mud-terrain',at=type==='all-terrain',performance=type==='road-performance',commercial=type==='highway-commercial';
+  const depth=mud?.018:at?.011:performance?.006:commercial?.008:.007;
+  const profile=[[rim*.97,-width*.425],[rim*1.045,-width*.447],[THREE.MathUtils.lerp(rim*1.045,radius,.45),-width*.495],[radius*.880,-width*.516],[radius*.947,-width*.484],[radius*.982,-width*.413],[radius,-width*.31],[radius,-width*.15],[radius,0],[radius,width*.15],[radius,width*.31],[radius*.982,width*.413],[radius*.947,width*.484],[radius*.880,width*.516],[THREE.MathUtils.lerp(rim*1.045,radius,.45),width*.495],[rim*1.045,width*.447],[rim*.97,width*.425]];
+  const carcass=mesh(group,new THREE.LatheGeometry(profile.map(([r,x])=>new THREE.Vector2(r-depth*THREE.MathUtils.smoothstep(r/radius,.82,1),x)),96),materials.rubber);carcass.rotation.z=Math.PI/2;carcass.name='native-formed-tire-carcass';
+  const count=mud?34:at?48:performance?86:commercial?66:76,rows=mud?3:5;
+  const blockW=width*(mud?.268:at?.162:commercial?.144:.143),blockL=radius*(mud?.096:at?.068:performance?.037:commercial?.046:.039),cut=Math.min(blockW,blockL)*.16;
+  const shape=new THREE.Shape(),hw=blockW*.5,hl=blockL*.5;
+  [[-hw+cut,-hl],[hw-cut,-hl],[hw,-hl+cut],[hw,hl-cut],[hw-cut,hl],[-hw+cut,hl],[-hw,hl-cut],[-hw,-hl+cut]].forEach(([x,y],i)=>shape[i?'lineTo':'moveTo'](x,y));shape.closePath();
+  const bevel=mud?.0017:at?.0013:.00075;
+  const treadGeo=new THREE.ExtrudeGeometry(shape,{depth:depth-bevel*2,bevelEnabled:true,bevelSegments:1,bevelSize:bevel,bevelThickness:bevel,steps:1,curveSegments:1});treadGeo.translate(0,0,-(depth-bevel*2)*.5);treadGeo.rotateX(Math.PI/2);
+  const blocks=new THREE.InstancedMesh(treadGeo,materials.tread,count*rows),dummy=new THREE.Object3D();
+  for(let row=0;row<rows;row++)for(let i=0;i<count;i++){
+    const across=row-(rows-1)*.5,shoulder=Math.abs(across)/((rows-1)*.5),phase=row%2?.48:0,a=(i+phase)*Math.PI*2/count;
+    dummy.position.set(across*width*(mud?.306:.173),Math.cos(a)*(radius*(1-shoulder*shoulder*.017)-depth*.5),Math.sin(a)*(radius*(1-shoulder*shoulder*.017)-depth*.5));
+    dummy.rotation.set(a,Math.sign(across||1)*(mud?.36:at?.20:performance?.08:commercial?.04:.12),0);dummy.updateMatrix();blocks.setMatrixAt(row*count+i,dummy.matrix);
+  }
+  blocks.name='native-beveled-'+type+'-tread';blocks.castShadow=blocks.receiveShadow=true;group.add(blocks);
+  for(const side of [-1,1]){
+    ring(group,materials.rubber,side*width*.454,rim*1.055,.004);
+    for(const r of [radius*.77,radius*.86])ring(group,materials.tread,side*width*.513,r,.0016);
+    // Low molded shoulder bars and fine flex/sipe edges soften the former
+    // square-cut floating blocks without changing contact radius or rim fit.
+    if(at||mud)for(let i=0;i<(mud?34:48);i++){
+      const a=i*Math.PI*2/(mud?34:48),r=radius*.917;
+      rod(group,materials.tread,[side*width*.503,Math.cos(a-.008)*r,Math.sin(a-.008)*r],[side*width*.503,Math.cos(a+.008)*radius*.954,Math.sin(a+.008)*radius*.954],mud?.004:.0025);
+    }
+  }
+  return group;
+}
+export function refineFactoryWheel(wheel,spec,materials){
+  wheel.tireSpin.clear();wheel.tireSpin.add(factoryTire(spec,materials));
+  wheel.rimSpin.clear();wheel.rimSpin.add(factoryRim(spec));
+  wheel.root.userData.factoryWheelRevision=3;
 }
 
 export function refineVehicle(view,spec){
@@ -170,15 +211,13 @@ export function refineVehicle(view,spec){
     const y=THREE.MathUtils.lerp(rear[1],rear[2],i/7),a=glassPoint(-rear[3],y),b=glassPoint(rear[3],y);
     if(a&&b&&Math.abs(a[2]-b[2])<.05)rod(view.body,heater,a,b,.0007);
   }
-  const wheel=view.wheels[0];
-  for(const child of [...wheel.rimSpin.children])wheel.rimSpin.remove(child);
-  wheel.rimSpin.add(factoryRim(spec));
+  const wheel=view.wheels[0];refineFactoryWheel(wheel,spec,view.materials);
   // Molded sidewall size marks, with raised lettering rather than a flat decal.
   const rr=spec.tireRadius;
   for(const side of [-1,1]){
     const label=text(wheel.tireSpin,spec.tireSize,.28,.015,black);label.position.set(side*spec.tireWidth*.517,rr*.76,0);label.rotation.set(0,side*Math.PI/2,0);
   }
-  view.root.userData.nativeFidelity={version:2,splitTireAndRim:true,factorySpokeProfile:spec.bodyStyle,bodyClearcoat:true,geometryLettering:true};
+  view.root.userData.nativeFidelity={version:3,splitTireAndRim:true,factorySpokeProfile:spec.bodyStyle,beveledTread:true,matchingFactorySpare:['jeep','bronco','hummer'].includes(spec.bodyStyle),bodyClearcoat:true,geometryLettering:true};
   return {tire:wheel.tireShape,rim:wheel.rimSpin};
 }
 

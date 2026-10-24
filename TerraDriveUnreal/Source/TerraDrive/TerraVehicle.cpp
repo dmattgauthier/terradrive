@@ -2,12 +2,14 @@
 #include "TerraSimCore.h"
 #include "TerraContact.h"
 #include "TerraDriving.h"
+#include "TerraWinter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -16,6 +18,7 @@
 #include "Misc/ConfigCacheIni.h"
 #include "Misc/Parse.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 float ATerraVehicle::Number(const TCHAR *Name, float Default) const {
   double N = Default;
@@ -44,6 +47,18 @@ ATerraVehicle::ATerraVehicle() {
   // Vehicle mass already includes the cabin. Its extra collision shape must
   // not add an automatically computed second mass to the welded rigid body.
   RoofCollision->BodyInstance.SetMassOverride(.001f,true);
+  FrontCollision=CreateDefaultSubobject<UBoxComponent>(TEXT("FrontApproachCollision"));
+  FrontCollision->SetupAttachment(Chassis);
+  FrontCollision->SetCollisionProfileName(TEXT("PhysicsActor"));
+  FrontCollision->SetNotifyRigidBodyCollision(true);
+  FrontCollision->BodyInstance.bAutoWeld=true;
+  FrontCollision->BodyInstance.SetMassOverride(.001f,true);
+  RearCollision=CreateDefaultSubobject<UBoxComponent>(TEXT("RearDepartureCollision"));
+  RearCollision->SetupAttachment(Chassis);
+  RearCollision->SetCollisionProfileName(TEXT("PhysicsActor"));
+  RearCollision->SetNotifyRigidBodyCollision(true);
+  RearCollision->BodyInstance.bAutoWeld=true;
+  RearCollision->BodyInstance.SetMassOverride(.001f,true);
   Body = CreateDefaultSubobject<UStaticMeshComponent>(
       TEXT("OriginalVehicleModel"));
   Body->SetupAttachment(Chassis);
@@ -90,7 +105,20 @@ void ATerraVehicle::BeginPlay() {
     break;
   }
   Chassis->OnComponentHit.AddDynamic(this, &ATerraVehicle::BodyHit);
+  FrontCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
+  RearCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
   AutoTest = FParse::Param(FCommandLine::Get(), TEXT("TerraValidate"));
+  // Tires supply terrain grip. A grounded metal/plastic undertray should
+  // slide over a crest rather than behaving like a second high-friction tire.
+  // Normal collision impulses remain active against terrain and solid props.
+  UndertrayMaterial=NewObject<UPhysicalMaterial>(this,TEXT("UndertraySlidingMaterial"));
+  UndertrayMaterial->Friction=.10f;UndertrayMaterial->StaticFriction=.12f;
+  UndertrayMaterial->bOverrideFrictionCombineMode=true;
+  UndertrayMaterial->FrictionCombineMode=EFrictionCombineMode::Min;
+  UndertrayMaterial->Restitution=0;
+  Chassis->SetPhysMaterialOverride(UndertrayMaterial);
+  FrontCollision->SetPhysMaterialOverride(UndertrayMaterial);
+  RearCollision->SetPhysMaterialOverride(UndertrayMaterial);
   CreateVisualDetails();
   SelectVehicle(0);
   TeleportZone(0);
@@ -144,10 +172,21 @@ void ATerraVehicle::SelectVehicle(int Index) {
   Damping = Suspension->GetNumberField(TEXT("damping"));
   Rest = Suspension->GetNumberField(TEXT("restLength"));
   Pressure = Number(TEXT("stockPSI"), 35);
-  Chassis->SetBoxExtent(
-      FVector(Number(TEXT("bodyLength"), Number(TEXT("length"), 4.8)) * .43f,
-              Number(TEXT("width"), 1.8) * .42f, VehicleIndex==5?CG-Number(TEXT("clearance"),.158f):.22f) *
-      100);
+  const float Length=Number(TEXT("bodyLength"),Number(TEXT("length"),4.8f));
+  const float HalfWidth=Number(TEXT("width"),1.8f)*.42f;
+  const float HalfHeight=VehicleIndex==5?CG-Number(TEXT("clearance"),.158f):.22f;
+  const float BellyLength=FMath::Min(Length*.36f,Wheelbase*.54f);
+  Chassis->SetBoxExtent(FVector(BellyLength,HalfWidth,HalfHeight)*100);
+  // The central undertray ends near the axles. Raised approach/departure
+  // boxes retain full-length object collisions without a square low bumper
+  // catching a gentle hill before the front tire reaches it.
+  const float End=Length*.46f,EndStart=BellyLength-.08f;
+  const float Rise=FMath::Min(.16f,HalfHeight*.55f);
+  for(int I=0;I<2;++I){
+    auto *C=I==0?FrontCollision.Get():RearCollision.Get();
+    C->SetBoxExtent(FVector((End-EndStart)*.5f,HalfWidth,HalfHeight-Rise*.5f)*100);
+    C->SetRelativeLocation(FVector((I==0?1.f:-1.f)*(End+EndStart)*.5f,0,Rise*.5f)*100);
+  }
   Chassis->SetMassOverrideInKg(NAME_None, Mass);
   RoofCollision->SetBoxExtent(FVector(Number(TEXT("length"),4.8)*.30f,
       Number(TEXT("width"),1.8)*.33f,Number(TEXT("height"),1.8)*.28f)*100);
@@ -212,10 +251,11 @@ void ATerraVehicle::TeleportZone(int Index) {
       Terrain->Spawns[Zone] + FVector(0, 0, CG * 100 + 12 + Tuning.Lift * 100 + (Radius-Number(TEXT("tireRadius"),.42f))*100);
   Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);
   Chassis->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-  SetActorLocationAndRotation(P, FRotator::ZeroRotator, false, nullptr,
+  SetActorLocationAndRotation(P, FRotator(0,TerraWinter::SpawnYaw(GetWorld(),Zone),0), false, nullptr,
                               ETeleportType::TeleportPhysics);
   for (auto &W : WheelState)
     W = FTerraWheel();
+  ResetContactTelemetry();
   WinchAttached = false;
   ReverseHold = 0;
   SpawnCooldown = .7f;
@@ -267,7 +307,7 @@ void ATerraVehicle::UpdateRoute(float Dt) {
     // Curving trails cross gate planes along their own tangent. Historical
     // loop gates retain their explicitly authored +/-X direction.
     FVector GateForward(GateDirection,0,0);
-    if(RouteIndex==8){const FVector Previous=GateIndex>0?Route.Gates[GateIndex-1]:Route.Spawn;GateForward=(G-Previous).GetSafeNormal2D();}
+    if(RouteIndex==8||TerraWinter::IsActive(GetWorld())){const FVector Previous=GateIndex>0?Route.Gates[GateIndex-1]:Route.Spawn;GateForward=(G-Previous).GetSafeNormal2D();}
     const FVector GateSide(-GateForward.Y,GateForward.X,0);
     if (FVector::DotProduct(PreviousRoutePosition-G,GateForward)<0 && FVector::DotProduct(P-G,GateForward)>=0 &&
         FMath::Abs(FVector::DotProduct(P-G,GateSide)) < Route.GateWidth*50 && FMath::Abs(P.Z-G.Z)<300) ++GateIndex;
@@ -290,6 +330,7 @@ void ATerraVehicle::Input(float Dt) {
   }
   auto Down = [&](FKey Key) { return PC->IsInputKeyDown(Key); };
   auto Press = [&](FKey Key) { return PC->WasInputKeyJustPressed(Key); };
+  if(Press(EKeys::Zero)){TerraWinter::Travel(this);return;}
   if (Press(EKeys::Escape)) {
     PC->ConsoleCommand(TEXT("quit"));
     return;
@@ -431,12 +472,9 @@ void ATerraVehicle::Simulate(float Dt) {
           ? FMath::Min(Number(TEXT("wheelTorqueNm"), 15000),
                        Power / FMath::Max(MeanOmega, 1.f))
           : Torque * Ratio * Final * Low * .84f * (Speed < 2 ? 1.35f : 1.f);
-  if (!Electric) {
-    const float Redline=Spec->GetObjectField(TEXT("engine"))->GetNumberField(TEXT("redlineRPM"));
-    // Low range holds first gear; cut drive near redline instead of allowing
-    // that fixed ratio to pull the engine to impossible RPM.
-    TotalTorque *= FMath::Clamp((Redline-RPM)/(Redline*.08f),0.f,1.f);
-  }
+  // The implicit wheel/axle limiter below supplies only the requested engine
+  // torque needed to balance tire reaction at redline. A second cut based on
+  // last frame's RPM made loaded locked axles alternate drive and zero torque.
   TotalTorque *=
       Throttle * Tuning.Power * Tuning.ElectricalPower * (1 - Damage * .35f) * Direction;
   const float WaterDepth=Terrain->Sample(GetActorLocation()).Water/100;
@@ -468,7 +506,8 @@ void ATerraVehicle::Simulate(float Dt) {
     W.ContactValid = Support.Hit;
     W.Constructed = Support.Constructed;
     W.Distance = Support.Hit ? Support.Distance/100 : Rest+Droop;
-    W.Center = Mount-Up*FMath::Clamp(W.Distance,Rest-.30f,Rest+Droop)*100;
+    const float Bump= BumpTravel(Front);
+    W.Center = Mount-Up*FMath::Clamp(W.Distance,Rest-Preload-Bump,Rest+Droop)*100;
     W.Contact = Support.Hit ? Support.Point : W.Center-Up*Radius*100;
     W.Ground = Terrain->Sample(W.Contact);
     if (Support.Hit) {
@@ -482,8 +521,8 @@ void ATerraVehicle::Simulate(float Dt) {
     const FVector Normal = W.Ground.Normal;
     const FVector MountVelocity=Chassis->GetPhysicsLinearVelocityAtPoint(Mount)/100;
     W.PointVelocity = Chassis->GetPhysicsLinearVelocityAtPoint(W.Contact)/100;
-    W.Load = Support.Hit ? FMath::Clamp(TerraSim::SuspensionForce(Rest-W.Distance,
-        FVector::DotProduct(MountVelocity,Normal),Spring,Damping,StaticLoad/9.81f,Normal.Z,Dt),0.f,StaticLoad*4) : 0;
+    W.Load = Support.Hit ? FMath::Clamp(TerraSim::ProgressiveSuspensionForce(Rest-W.Distance,
+        FVector::DotProduct(MountVelocity,Normal),Spring,Damping,StaticLoad/9.81f,Normal.Z,Dt,Bump),0.f,StaticLoad*6) : 0;
     TotalLoad += W.Load;
     if (W.Load>50) ++ContactCount;
     W.ForceForward = (WF-Normal*FVector::DotProduct(WF,Normal)).GetSafeNormal();
@@ -634,7 +673,7 @@ void ATerraVehicle::Simulate(float Dt) {
                   1.7f);
   } else
     WinchTension = 0;
-  if (GetActorLocation().Z < -3000 || GetActorLocation().Size2D() > 56000)
+  if (TerraWinter::OutsideBounds(GetWorld(),GetActorLocation()))
     TeleportZone(Zone);
 }
 void ATerraVehicle::UpdateSpray(float Dt) {
@@ -726,6 +765,7 @@ void ATerraVehicle::Tick(float Dt) {
   if (!Initialized) {
     if(!AutoTest)LoadGarage(GaragePath());
     SelectVehicle(AutoTest?0:LastVehicle);
+    TerraWinter::RestoreTravel(this);
     Initialized = true;
     if(!AutoTest)SetGarage(true);
   }
@@ -768,6 +808,21 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
                             const FHitResult &Result) {
   if (SpawnCooldown > 0)
     return;
+  const float Impact=Impulse.Size()/FMath::Max(1.f,Chassis->GetMass()*100);
+  const bool GroundHit=Other&&(Other->ComponentHasTag(TEXT("TerraGround"))||Other->ComponentHasTag(TEXT("TerraWinterTerrain"))||
+      Other->GetClass()->GetName().StartsWith(TEXT("Landscape")));
+  if(GroundHit){++TerrainBodyHits;TerrainImpactMPS=FMath::Max(TerrainImpactMPS,Impact);}
+  else {++ObjectBodyHits;ObjectImpactMPS=FMath::Max(ObjectImpactMPS,Impact);}
+  if(AutoTest&&(Impact>.25f||GetWorld()->GetTimeSeconds()>=NextBodyDiagnosticTime)){
+    NextBodyDiagnosticTime=GetWorld()->GetTimeSeconds()+1;
+    const auto *OtherMesh=Cast<UStaticMeshComponent>(Other);
+    FString ContactTags;if(Other)for(const auto &Tag:Other->ComponentTags){if(!ContactTags.IsEmpty())ContactTags+=TEXT(",");ContactTags+=Tag.ToString();}
+    const FVector Local=GetActorTransform().InverseTransformPosition(Result.ImpactPoint);
+    UE_LOG(LogTemp,Display,TEXT("TERRA_BODY_CONTACT terrain=%d impulseMPS=%.3f collider=%s actor=%s component=%s class=%s mesh=%s tags=%s item=%d face=%d position=%s local=%s normal=%s penetration=%.3f root=%s rotation=%s velocity=%s"),
+        GroundHit,Impact,*GetNameSafe(Hit),*GetPathNameSafe(OtherActor),*GetNameSafe(Other),Other?*Other->GetClass()->GetName():TEXT("None"),
+        *GetPathNameSafe(OtherMesh?OtherMesh->GetStaticMesh():nullptr),*ContactTags,Result.Item,Result.FaceIndex,*Result.ImpactPoint.ToString(),*Local.ToString(),
+        *Result.ImpactNormal.ToString(),Result.bStartPenetrating?Result.PenetrationDepth:0,*GetActorLocation().ToString(),*GetActorRotation().ToString(),*Chassis->GetPhysicsLinearVelocity().ToString());
+  }
   Damage = FMath::Clamp(Damage + ImpactDamage(Impulse.Size()), 0.f, 1.f);
   if (Terrain)
     Terrain->HitTree(Other, -Impulse, Result.ImpactPoint);
@@ -775,6 +830,13 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
 void ATerraVehicle::OnBodyHit(UPrimitiveComponent *Hit,
                               UPrimitiveComponent *Other, FVector Impulse,
                               const FHitResult &Result) {}
+float ATerraVehicle::BumpTravel(bool Front) const {
+  if(!Spec.IsValid())return .15f;
+  const auto S=Spec->GetObjectField(TEXT("suspension"));
+  double Travel=S->GetNumberField(TEXT("travel"));
+  S->TryGetNumberField(Front?TEXT("travelFront"):TEXT("travelRear"),Travel);
+  return TerraSim::SuspensionBumpTravel(float(Travel),Tuning.Travel);
+}
 void ATerraVehicle::SaveSetup() {
   if(AutoTest)return;
   SaveGarage(GaragePath());

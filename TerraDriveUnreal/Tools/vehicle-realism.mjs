@@ -9,9 +9,12 @@ import {nativeGeometry as geo,mergeStaticMeshes} from './vehicle-geometry.mjs';
 import {nativeInterior} from './vehicle-cabin.mjs';
 import {nativeFender} from './vehicle-fenders.mjs';
 import {urusView} from './urus-body.mjs';
+import {refineFactoryWheel} from './vehicle-fidelity.mjs';
 export function nativeVehicle(spec){
   if(spec.bodyStyle==='urus')return urusView(spec);
   const view=new VehicleView(new geo.THREE.Scene(),spec);
+  const originalWheel=view._wheel.bind(view);
+  view._wheel=function(spare=false){const wheel=originalWheel(spare);if(spare)refineFactoryWheel(wheel,spec,view.materials);return wheel;};
   const old=new Set();view.body.traverse(o=>{if(o.isMesh)old.add(o.geometry);});
   view.body.clear();old.forEach(g=>g.dispose());view.lamps=[];
   view._interior=nativeInterior;view._fender=nativeFender;
@@ -23,7 +26,7 @@ export function nativeVehicle(spec){
   else buildSUV(view,geo,spec.bodyStyle==='bronco');
   view._underbody();mergeStaticMeshes(view.body);
   geo.roundBodyEnds(view.body,spec.bodyStyle);geo.roundRoofShoulders(view.body,spec.bodyStyle);
-  view.root.userData.nativeConstruction={version:2,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle)};
+  view.root.userData.nativeConstruction={version:3,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle)};
   return view;
 }
 export function vehicleFinishes(view,spec){
@@ -39,5 +42,5 @@ export function vehicleFinishes(view,spec){
     if(mat.userData.vehicleGlass){mat.color.set(key==='privacyGlass'?'#26343a':'#445359');mat.opacity=key==='privacyGlass'?.65:key==='windscreen'?.30:.38;mat.roughness=.045;}
     if(mat.userData.vehicleLampLens){mat.roughness=.075;mat.opacity=mat.userData.vehicleTintedLens?.42:.18;}
   }
-  view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,version:2,automotiveFinishes:true};
+  view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,version:3,automotiveFinishes:true};
 }

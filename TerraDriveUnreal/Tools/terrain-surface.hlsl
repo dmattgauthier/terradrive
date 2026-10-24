@@ -19,11 +19,14 @@ struct TerraSurface {
     if(f.x+f.y<1){corners[0]=cell;corners[1]=cell+float2(1,0);corners[2]=cell+float2(0,1);weight=float3(1-f.x-f.y,f.x,f.y);}
     else{corners[0]=cell+1;corners[1]=cell+float2(0,1);corners[2]=cell+float2(1,0);weight=float3(f.x+f.y-1,1-f.x,1-f.y);}
     weight=pow(max(weight,0),4);weight/=max(dot(weight,1),.0001);
+    uint texWidth,texHeight;albedo.GetDimensions(texWidth,texHeight);
+    float2 aspect=float2(1,float(texWidth)/max(float(texHeight),1));
     float2 dx=ddx(uv),dy=ddy(uv);color=0;detail=0;r=0;
     [unroll]for(int k=0;k<3;++k){
       float h=hash(corners[k]+seed),q=floor(h*4);
       float2 coord=rotate(uv-corners[k],q)+float2(hash(corners[k]+31+seed),hash(corners[k]-17-seed))*23;
-      float2 gx=rotate(dx,q),gy=rotate(dy,q);
+      coord*=aspect;
+      float2 gx=rotate(dx,q)*aspect,gy=rotate(dy,q)*aspect;
       color+=Texture2DSampleGrad(albedo,asamp,coord,gx,gy).rgb*weight[k];
       float2 xy=Texture2DSampleGrad(normals,nsamp,coord,gx,gy).rg*2-1;
       xy.y*=normalY;xy=rotate(xy,fmod(4-q,4));
@@ -57,11 +60,12 @@ float patches=.52*macro+.30*f.noise(p.xy*.073+37)+.18*f.noise(p.xy*.29);
 float b=smoothstep(.34,.68,patches);
 float grit=.48*f.noise(p.xy*.041-46)+.32*f.noise(p.xy*.19+17)+.20*f.noise(p.xy*.81);
 float c=smoothstep(.46,.69,grit)*(1-b*.7);
-if(Biome==0||Biome==3)b=saturate((b+.12)*smoothstep(.38,.85,n.z));
+if(Biome==0)b=smoothstep(.24,.65,patches)*smoothstep(.38,.85,n.z);
+if(Biome==3)b=saturate((b+.12)*smoothstep(.38,.85,n.z));
 if(Biome==4){b*=smoothstep(.25,.88,n.z);c=max(c,(1-n.z)*.65);}
 if(Biome==1){b*=.15;c*=.10;}
 if(Biome==5){b*=.54;c*=.28;}
-if(Biome==6){b=smoothstep(.58,.78,patches)*.32;c=(1-smoothstep(.38,.75,n.z))*.74;}
+if(Biome==6){b=.12+smoothstep(.34,.73,patches)*.62;c=(1-smoothstep(.38,.75,n.z))*.74;}
 if(Biome==0){ /*QUARRY_TRAIL*/ }
 float3 ac,bc,cc,an,bn,cn;float ar,br,cr;
 f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,p/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
@@ -87,11 +91,25 @@ if(Biome==0){
 if(Biome==2||Biome==3)color*=1-packed*.24;
 if(Biome==5)color*=1+packed*.09;
 Roughness=clamp(lerp(.66+rough*.31,.53,wet),.52,.99);
-SurfaceNormal=normalize(n+relief*.48*(1-packed*.66));
+SurfaceNormal=normalize(n+relief*(Biome==0?.78:.48)*(1-packed*.66));
 if(Biome==6){
-  // Scanned snow/road albedo; exposed rock stays rock on steep faces.
-  color=lerp(color,color*float3(.76,.84,.92),packed*.66*(1-c));
-  Roughness=lerp(lerp(.94,.69,packed),.81,c);
-  SurfaceNormal=normalize(n+relief*.30*(1-packed*.7));
+  // The Winter Scene's clean snow and crushed snow-road scans remain visible
+  // at tire scale. Broken wet cover at the fringe becomes granular slush;
+  // blue-grey hollows and sheltered wind ripples retain relief in bright sun.
+  float granular=f.noise(p.xy*2.7+31);
+  float slush=Wetness*smoothstep(.30,.67,grit)*(1-c);
+  float hollow=.5+.5*sin(p.x*.39+p.y*.17+sin(p.y*.11)*1.4);
+  // Scale exposure instead of clipping the bright scan into a white plateau.
+  color*=float3(.78,.81,.84)*lerp(float3(.82,.89,.97),float3(1.02,1.01,.98),hollow);
+  color*=lerp(.91,1.02,granular);
+  color=lerp(color,color*float3(.45,.49,.51),slush*.82);
+  color=lerp(color,color*float3(.69,.79,.89),packed*.66*(1-c));
+  float scanGrain=(rough-.5)*.22;
+  Roughness=lerp(lerp(lerp(.86,.62,b)+scanGrain,.57+scanGrain*.6,packed),.29+scanGrain*.3,slush);
+  Roughness=lerp(Roughness,.81,c);
+  Roughness=clamp(Roughness,.24,.97);
+  float phase=p.x*4.2+p.y*1.7+f.noise(p.xy*.31)*3;
+  float2 wind=float2(.075,.030)*cos(phase)*(1-packed)*(1-slush);
+  SurfaceNormal=normalize(n+relief*1.5*(1-packed*.45)+float3(wind,0));
 }
 return max(color*.92,.006);

@@ -12,7 +12,7 @@ $preset=if($Mode -eq 'QualitySmoke'){2}elseif($Mode -eq 'Balanced'){1}else{0}
 $flag=if($Mode -eq 'Rocks'){'-TerraRenderOnly'}elseif($Mode -eq 'Transitions'){'-TerraTransitionsOnly'}else{'-TerraPerfOnly'}
 $limit=if($Mode -in @('Rocks','QualitySmoke','Transitions')){20}else{60}
 $started=Get-Date
-$arguments=@('-unattended','-windowed','-RenderOffscreen','-ResX=1920','-ResY=1080','-NoSound','-TerraValidate','-TerraCapture',$flag,
+$arguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1920','-ResY=1080','-NoSound','-TerraValidate','-TerraCapture',$flag,
   ('-TerraTestFPS='+$limit),('-TerraGraphicsMode='+$preset),('-TerraReport="'+$report+'"'),('-abslog="'+$log+'"'),
   ('-TerraGarage="'+(Join-Path $output 'render-garage.json')+'"'),('-TerraGraphics="'+(Join-Path $output 'render-settings.json')+'"'))
 $info=[System.Diagnostics.ProcessStartInfo]::new()

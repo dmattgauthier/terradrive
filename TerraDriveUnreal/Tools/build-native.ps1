@@ -15,6 +15,8 @@ if ($ImportAssets) {
         & node (Join-Path $PSScriptRoot 'export-source.mjs')
         if ($LASTEXITCODE) { throw 'Source conversion failed' }
     }
+    & node (Join-Path $PSScriptRoot 'bake-vehicle-ground-probes.mjs')
+    if($LASTEXITCODE){throw 'Vehicle lower-body probe generation failed'}
     $importMarker=Join-Path $projectRoot 'Saved\import-complete.json'
     & node (Join-Path $PSScriptRoot 'bake-terrain-transitions.mjs')
     if($LASTEXITCODE){throw 'Terrain transition mask generation failed'}

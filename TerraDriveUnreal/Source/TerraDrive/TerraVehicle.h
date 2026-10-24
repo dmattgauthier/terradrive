@@ -12,6 +12,7 @@ class UInstancedStaticMeshComponent;
 class STerraGarage;
 class URectLightComponent;
 class UMaterialInstanceDynamic;
+class UPhysicalMaterial;
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35;
@@ -50,6 +51,9 @@ public:
                const FHitResult &Result);
   UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Chassis;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> RoofCollision;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> FrontCollision;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> RearCollision;
+  UPROPERTY() TObjectPtr<UPhysicalMaterial> UndertrayMaterial;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Body;
   UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
@@ -71,6 +75,8 @@ public:
   bool FrontLocked = false, RearLocked = false, Overturned = false,
        DescentAssist = false;
   int ContactCount = 0, RouteIndex = -1, GateIndex = 0;
+  int TerrainBodyHits=0,ObjectBodyHits=0;
+  float TerrainImpactMPS=0,ObjectImpactMPS=0;
   float RouteTime = 0, LastTireForceN = 0;
   FString RouteStatus;
   int SprayEmitted = 0, SprayExpired = 0;
@@ -107,6 +113,8 @@ public:
   void UpdateWheelVisuals();
   FVector GarageViewState() const { return FVector(GarageYaw,GaragePitch,GarageDistance); }
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
+  float BumpTravel(bool Front) const;
+  void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0; }
   static constexpr int VehicleCount=6;
   TerraSim::UpgradeSetup Builds[VehicleCount];
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> BrakeLamps;
@@ -117,6 +125,7 @@ public:
   TerraSim::UpgradeTuning Tuning;
 
 private:
+  float NextBodyDiagnosticTime=0;
   TSharedPtr<FJsonObject> Spec;
   TArray<FTerraParcel> Parcels;
   FVector Anchor;

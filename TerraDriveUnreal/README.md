@@ -1,5 +1,9 @@
 # Terra Drive native port
 
+The winter round adds a **Winter Expedition** destination containing the complete acquired Automotive Winter Scene, including its road, landscape, cliffs, foliage, snow clumps and lighting. Use the garage destination button or **0** to travel between it and the proving ground. The selected vehicle and upgrades carry across. See [winter-level.md](docs/winter-level.md) for setup and the authored-landscape deformation limitation.
+
+The proving ground gains sharper acquired snow/grass scans, physical snow relief, slushy fringes and more meadow planting. See [winter-ground-detail.md](docs/winter-ground-detail.md). The [vehicle model refinement](docs/model-refinement-7.md) adds recessed Urus geometry, body-detail corrections and revised factory tires/wheels. [Momentum and suspension](docs/momentum-and-suspension.md) explains the shaped undertray and progressive suspension stops. Use `Tools/verify-winter.ps1 -Mode Detail`, `Movement`, `Winter` or `Art` for the focused native checks.
+
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
 The [terrain transition update](docs/terrain-transitions.md) replaces hard material boundaries with shared coverage: narrow pavement shoulders, damp mud/marsh fringes, scattered stone and broken snow cover. Ground color, normal detail, roughness, grip and rolling resistance grade through the fringes while terrain interiors stay distinct. Use `Tools/verify-render.ps1 -Mode Transitions` for the focused native checks and boundary captures.
@@ -34,6 +38,27 @@ Open `TerraDrive.uproject` to edit. Packaged output is under `Build/Windows/`. G
 
 Run editor import and packaging in a normal Windows process context. A restricted process sandbox can make Unreal exit before logging, and UE 5.8 staging writes a temporary `StagedBuild_TerraDrive.ini` under the installed engine's `Intermediate/Build/BuildCookRun` directory. Automation logs stay in `Saved/AutomationLogs`; importer diagnostics are in `Saved/Logs/import-assets.log`. The importer uses forward slashes in the Python script argument and requires a fresh completion marker and saved map. Interrupted mesh imports can be resumed.
 
+For an optional **ground-material-only iteration** after the initial asset import, `Tools/rebuild-ground.py` reuses the existing texture loader and ground recipes. It updates dirty project-owned textures/materials and leaves mesh, Fab and winter-map preparation out of that run. Existing exported data and baked transition masks are required. From this project directory, with the game and editor closed:
+
+```powershell
+$groundProject = (Resolve-Path '.\TerraDrive.uproject').Path
+$groundScript = (Resolve-Path '.\Tools\rebuild-ground.py').Path.Replace('\','/')
+$groundStarted = Get-Date
+$groundArgs = @(
+    ('"'+$groundProject+'"'), '-run=pythonscript', ('-script="'+$groundScript+'"'),
+    '-unattended', '-nullrhi', '-nosplash', '-NoSound', '-stdout', '-FullStdOutLogOutput'
+)
+$groundProcess = Start-Process -FilePath 'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' -ArgumentList $groundArgs -WindowStyle Hidden -PassThru
+$groundProcess.WaitForExit()
+$groundProcess.Refresh()
+$groundMarker = '.\Saved\ground-rebuild-complete.json'
+if ($groundProcess.ExitCode -ne 0 -or !(Test-Path -LiteralPath $groundMarker) -or (Get-Item -LiteralPath $groundMarker).LastWriteTime -lt $groundStarted) {
+    throw 'Ground material commandlet did not produce a fresh completion marker.'
+}
+```
+
+Wait for that commandlet to finish, then run `Tools/build-native.ps1 -Package` for a **full cook**. `-SkipCook` and the C++ staging helper do not incorporate changed materials or textures. The completion marker confirms the material commandlet finished; final rendering must still be checked in the newly cooked game.
+
 The unused Android File Server plugin is explicitly disabled. `Tools/prepare-github.mjs` rejects credential-like configuration values before preparing an upload; do not publish server tokens that Unreal may generate in local settings.
 
 After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows` directory together; the executable requires the adjacent cooked content. To run the native automated driving checks and capture the regions and challenge routes:
@@ -48,6 +73,8 @@ Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
 
+For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-native-code.ps1` builds the game target and copies the matching executable/symbols into the packaged folder, checking executable parity and unchanged package sizes/timestamps. It avoids repeatedly archiving the full winter scenery. It does not cook assets, update external runtime dependencies, or replace the full packaging workflow after content/configuration changes.
+
 ## Controls
 
 | Input | Action |
@@ -58,6 +85,7 @@ For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and
 | Right mouse + mouse | Orbit camera |
 | C | Near/far chase camera |
 | 1–9 | Trail, tarmac, rock, mud, marsh, sand, Summit park, snow, Granite Trials |
+| 0 | Travel between the complete Winter Expedition and native proving ground |
 | J | Cycle nine challenge routes |
 | V | Open vehicle selection while stopped |
 | T | Equip/remove flotation tracks while stopped; Civic excluded |

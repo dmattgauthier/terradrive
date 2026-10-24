@@ -2,6 +2,7 @@
 #include "TerraVehicle.h"
 #include "TerraUnits.h"
 #include "TerraGraphics.h"
+#include "TerraWinter.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
@@ -112,6 +113,10 @@ void STerraGarage::Construct(const FArguments &Args) {
               +SVerticalBox::Slot().AutoHeight()[Label(TEXT("YOUR GARAGE. YOUR SETUP."),12,Mint,true)]
               +SVerticalBox::Slot().AutoHeight().Padding(0,4)[Label(TEXT("All stages available  /  Saved per vehicle  /  Tab or Esc to drive"),11,Muted)]]
             +SHorizontalBox::Slot().AutoWidth().Padding(12,0)
+            [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(16,12)).VAlign(VAlign_Center).ButtonColorAndOpacity(FLinearColor(.13,.23,.29))
+              .OnClicked_Lambda([this]{if(Vehicle.IsValid())TerraWinter::Travel(Vehicle.Get());return FReply::Handled();})
+              [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()&&TerraWinter::IsActive(Vehicle->GetWorld())?TEXT("PROVING GROUND   >"):TEXT("WINTER EXPEDITION   >"));}).Font(Font(11,true)).ColorAndOpacity(White)]]
+            +SHorizontalBox::Slot().AutoWidth().Padding(12,0)
             [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(16,12)).VAlign(VAlign_Center).ButtonColorAndOpacity(FLinearColor(.14,.20,.19))
               .OnClicked_Lambda([this]{if(Vehicle.IsValid())Vehicle->ResetUpgrades();return FReply::Handled();})
               [Label(TEXT("RESET TO STOCK"),11)]]
@@ -156,6 +161,7 @@ FReply STerraGarage::OnKeyDown(const FGeometry&,const FKeyEvent &Event) {
   }
   if(Vehicle.IsValid()){
     const auto K=Event.GetKey();
+    if(K==EKeys::Zero){TerraWinter::Travel(Vehicle.Get());return FReply::Handled();}
     if(K==EKeys::Left||K==EKeys::Right){Vehicle->OrbitGarageCamera(K==EKeys::Left?15:-15,0);return FReply::Handled();}
     if(K==EKeys::Up||K==EKeys::Down){Vehicle->OrbitGarageCamera(0,K==EKeys::Up?-8:8);return FReply::Handled();}
     if(K==EKeys::PageUp||K==EKeys::PageDown){Vehicle->ZoomGarageCamera(K==EKeys::PageUp?1:-1);return FReply::Handled();}

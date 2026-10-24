@@ -1,6 +1,7 @@
 #include "TerraWorld.h"
 #include "TerraSimCore.h"
 #include "TerraContact.h"
+#include "TerraWinter.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -46,7 +47,23 @@ ATerraWorld::ATerraWorld() {
   PrimaryActorTick.bCanEverTick = true;
   RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("WorldRoot"));
 }
+float ATerraWorld::SnowDrift(float X,float Y) const {
+  if(TerraWinter::IsActive(GetWorld()))return 0;
+  const float Snow=SurfaceBlend(X,Y).Weight[6];
+  if(Snow<.001f)return 0;
+  // Broad wind-built shelves (in cm), not collision-only decoration. Sampling
+  // these at the same metre vertices as the rendered field keeps support and
+  // chassis collision on exactly the same surface. Original terrain.bin stays
+  // the recovery reference; tire deformation is applied above this snow base.
+  // X/Y are centimetres: these wavelengths are about 12–120 feet, rather
+  // than nearly basin-wide undulations that read as an untextured plane.
+  const float Shelf=.5f+.5f*FMath::Sin(X*.0017f+Y*.0011f+1.4f*FMath::Sin(Y*.0009f));
+  const float Wind=.5f+.5f*FMath::Sin(X*.0063f+Y*.0028f+FMath::Sin(Y*.0021f));
+  const float Ripple=3.f*(1+FMath::Sin(X*.016f+Y*.007f));
+  return Snow*Snow*(8.f+30.f*Wind*Wind*Wind+18.f*FMath::Pow(Shelf,6)+Ripple);
+}
 float ATerraWorld::BaseHeight(float X, float Y) const {
+  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Height(GetWorld(),X,Y);
   if (N < 2)
     return 0;
   float GX =
@@ -61,12 +78,12 @@ float ATerraWorld::BaseHeight(float X, float Y) const {
   float U = (GX - IX) / 2, V = (GY - IY) / 2;
   // The exported stream has source-Z rows and reversed source-X columns:
   // Unreal X is the row, Unreal Y is the column (not a conventional Y/X grid).
-  float A = Heights[IX * N + IY], B = Heights[(IX + 2) * N + IY],
-        C = Heights[IX * N + IY + 2], D = Heights[(IX + 2) * N + IY + 2];
-  return 100 * (U + V <= 1 ? A + (B - A) * U + (C - A) * V
-                           : D + (C - D) * (1 - U) + (B - D) * (1 - V));
+  auto Node=[&](int Row,int Col){return Heights[Row*N+Col]*100;};
+  const float A=Node(IX,IY),B=Node(IX+2,IY),C=Node(IX,IY+2),D=Node(IX+2,IY+2);
+  return U+V<=1?A+(B-A)*U+(C-A)*V:D+(C-D)*(1-U)+(B-D)*(1-V);
 }
 uint8 ATerraWorld::SurfaceAt(float X, float Y) const {
+  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Sample(GetWorld(),FVector(X,Y,TerraWinter::Height(GetWorld(),X,Y))).Surface;
   if (!N)
     return 0;
   int I = FMath::Clamp(FMath::RoundToInt((X / 100 - Origin) / Step), 0, N - 1),
@@ -90,6 +107,7 @@ float ATerraWorld::LooseDirt(float X,float Y) const {
 }
 FTerraSurfaceBlend ATerraWorld::SurfaceBlend(float X,float Y) const {
   FTerraSurfaceBlend Result;
+  if(TerraWinter::IsActive(GetWorld())){Result.Weight[SurfaceAt(X,Y)]=1;return Result;}
   if(N<2||BlendWeights.Num()!=N*N*7){Result.Weight[SurfaceAt(X,Y)]=1;return Result;}
   const float GX=FMath::Clamp((X/100-Origin)/Step,0.f,float(N-1)-.0001f),GY=FMath::Clamp((Y/100-Origin)/Step,0.f,float(N-1)-.0001f);
   const int I=FMath::FloorToInt(GX),J=FMath::FloorToInt(GY);const float U=GX-I,V=GY-J;
@@ -100,6 +118,7 @@ FTerraSurfaceBlend ATerraWorld::SurfaceBlend(float X,float Y) const {
   return Result;
 }
 float ATerraWorld::Height(float X, float Y) const {
+  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Height(GetWorld(),X,Y);
   FIntPoint K(FMath::FloorToInt(X / TileCM), FMath::FloorToInt(Y / TileCM));
   const FTerraTile *T = Detail.Find(K);
   const FTerraSoilState *Cached=T?nullptr:SoilCache.Find(K);
@@ -119,6 +138,7 @@ float ATerraWorld::Height(float X, float Y) const {
                    (Z(A + 1) - Z(A + Div + 2)) * (1 - V);
 }
 FTerraSample ATerraWorld::Sample(FVector P) const {
+  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Sample(GetWorld(),P);
   FTerraSample S;
   S.Height = Height(P.X, P.Y);
   S.Displacement=(S.Height-BaseHeight(P.X,P.Y))/100;
@@ -162,6 +182,7 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
 }
 FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM,
     float MinCM,float MaxCM) const {
+  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Support(GetWorld(),Mount,Up,RadiusCM,MinCM,MaxCM,nullptr);
   FTerraSupport Result;
   Up = Up.GetSafeNormal();
   // A tire's finite suspension ray points away from the ground on a rolled
@@ -187,6 +208,7 @@ FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM
 }
 FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM,
     float MinCM, float MaxCM, const AActor *Ignore, bool *RigidEncountered) const {
+  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Support(GetWorld(),Mount,Up,RadiusCM,MinCM,MaxCM,Ignore);
   Up=Up.GetSafeNormal();
   auto Result=GroundSupport(Mount,Up,RadiusCM,MinCM,MaxCM);
   FCollisionQueryParams Params(SCENE_QUERY_STAT(TerraSuspension), true, Ignore);
@@ -288,6 +310,7 @@ void ATerraWorld::BeginPlay() {
     UE_LOG(LogTemp, Error, TEXT("Terra world manifest missing"));
     return;
   }
+  if(TerraWinter::IsActive(GetWorld())){TerraWinter::Initialize(*this);return;}
   TArray<uint8> Bytes;
   if (!FFileHelper::LoadFileToArray(Bytes, *(FPaths::ProjectContentDir() /
                                              TEXT("NativeData/terrain.bin"))))
@@ -312,6 +335,16 @@ void ATerraWorld::BeginPlay() {
   if(FFileHelper::LoadFileToArray(BlendFile,*(FPaths::ProjectContentDir()/TEXT("NativeData/terrain-blend.bin")))&&BlendFile.Num()==16+N*N*7){
     FMemoryReader BR(BlendFile);uint32 BM=0;int BN=0;float BS=0,BO=0;BR<<BM;BR<<BN;BR<<BS;BR<<BO;
     if(BM==0x54425731&&BN==N&&BS==Step&&BO==Origin){BlendWeights.SetNum(N*N*7);FMemory::Memcpy(BlendWeights.GetData(),BlendFile.GetData()+16,BlendWeights.Num());}
+  }
+  // Bake the native wind relief once into this actor's in-memory height
+  // field. The source file stays untouched. Re-evaluating coverage/noise for
+  // every triangle/normal during soil activation and repair caused avoidable
+  // CPU stalls; all later render, collision and tire samples share this data.
+  for(int Row=0;Row<N;++Row)for(int Col=0;Col<N;++Col){
+    const int I=Row*N+Col;
+    if((BlendWeights.Num()==N*N*7&&BlendWeights[I*7+6]>0)||
+       (BlendWeights.IsEmpty()&&Surfaces[I]==6))
+      Heights[I]+=SnowDrift((Origin+Row*Step)*100,(Origin+Col*Step)*100)/100;
   }
   FString TransitionJson;
   if(FFileHelper::LoadFileToString(TransitionJson,*(FPaths::ProjectContentDir()/TEXT("NativeData/terrain-transitions.json"))))FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(TransitionJson),TransitionData);
@@ -465,6 +498,7 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
   return &New;
 }
 void ATerraWorld::ActivateSoil(FVector P,float RadiusCM){
+  if(TerraWinter::IsActive(GetWorld()))return;
   for(int X=FMath::FloorToInt((P.X-RadiusCM)/TileCM);X<=FMath::FloorToInt((P.X+RadiusCM)/TileCM);++X)
     for(int Y=FMath::FloorToInt((P.Y-RadiusCM)/TileCM);Y<=FMath::FloorToInt((P.Y+RadiusCM)/TileCM);++Y)
       if(SoilCache.Contains({X,Y}))EnsureTile({X,Y});
@@ -512,6 +546,7 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
 void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
                          float Width, float Length, float Slip, float Speed,
                          float Dt) {
+  if(TerraWinter::IsActive(GetWorld()))return;
   auto S = Sample(P);
   if (S.MaxSink <= 0 || Load < 50)
     return;
@@ -687,8 +722,13 @@ void ATerraWorld::LoadScenery() {
       while (C->GetInstanceCount() < Expected)
         C->AddInstance(FTransform(FQuat::Identity, FVector(0, 0, -100000),
                                   FVector::ZeroVector));
-      const int Instance=C->AddInstance(T);
       bool Bend=false;O->TryGetBoolField(TEXT("crushable"),Bend);
+      // Retain instance indices used by tree/plant references, but bury
+      // summer ground-cover cards under deep snow instead of sprouting
+      // oversized green leaves through the winter basin.
+      if(Bend&&SurfaceBlend(T.GetLocation().X,T.GetLocation().Y).Weight[6]>.65f)
+        T.SetScale3D(FVector::ZeroVector);
+      const int Instance=C->AddInstance(T);
       if(Bend)RegisterCrushable(C,Instance);
       const TArray<TSharedPtr<FJsonValue>> *Color=nullptr;
       for(int Channel=0;Channel<3;++Channel)
@@ -809,7 +849,10 @@ void ATerraWorld::LoadScenery() {
     C->RegisterComponent();Scenery.Add(C);
     for(auto I:O->GetArrayField(TEXT("instances"))){
       auto A=I->AsObject();const auto Q=A->GetArrayField(TEXT("q"));
-      const int Index=C->AddInstance(FTransform(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Vec(A->GetArrayField(TEXT("p"))),Vec(A->GetArrayField(TEXT("s")))));
+      const FVector Position=Vec(A->GetArrayField(TEXT("p")));
+      FVector Scale=Vec(A->GetArrayField(TEXT("s")));
+      if(!Solid&&SurfaceBlend(Position.X,Position.Y).Weight[6]>.65f)Scale=FVector::ZeroVector;
+      const int Index=C->AddInstance(FTransform(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Position,Scale));
       const auto Color=A->GetArrayField(TEXT("color"));
       if(!Solid)RegisterCrushable(C,Index);
       for(int Channel=0;Channel<3;++Channel)C->SetCustomDataValue(Index,Channel,Color[Channel]->AsNumber());

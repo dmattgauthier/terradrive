@@ -9,6 +9,9 @@
     {"id":"Winter_Cliff02","kind":"outcrop","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Quarry_Cliff_02/SM_Quarry_Cliff_02"},
     {"id":"Winter_Ice01","kind":"outcrop","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Ice_Cliff_01/SM_Ice_Cliff_01"},
     {"id":"Winter_Ice02","kind":"outcrop","source":"/Game/AutomotiveWinterScene/Megascans/3D_Assets/Ice_Cliff_02/SM_Ice_Cliff_02"},
+    {"id":"Snow_Chunk03","kind":"snowbank","solid":false,"source":"/Game/AutomotiveWinterScene/CustomAssets/Snow_Chunks/SM_Snow_Chunk_03"},
+    {"id":"Snow_Chunk05","kind":"snowbank","solid":false,"source":"/Game/AutomotiveWinterScene/CustomAssets/Snow_Chunks/SM_Snow_Chunk_05"},
+    {"id":"Snow_Chunk07","kind":"snowbank","solid":false,"source":"/Game/AutomotiveWinterScene/CustomAssets/Snow_Chunks/SM_Snow_Chunk_07"},
     {"id":"MW_GrassA","kind":"grass","solid":false,"source":"/Game/MWLandscapeAutoMaterial/Meshes/Plants/SM_MWAM_GrassA"},
     {"id":"MW_GrassB","kind":"grass","solid":false,"source":"/Game/MWLandscapeAutoMaterial/Meshes/Plants/SM_MWAM_GrassB"},
     {"id":"MW_GrassC","kind":"grass","solid":false,"source":"/Game/MWLandscapeAutoMaterial/Meshes/Plants/SM_MWAM_GrassC"}

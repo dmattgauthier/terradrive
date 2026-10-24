@@ -43,7 +43,14 @@ export function buildSUV(view, geometry, bronco) {
     // Jeep-like sides and raised decorative strips. Local depths are photo
     // reconstruction; the factory wheelbase and exterior envelope stay put.
     const doorSculpt=(y,z)=>{
-      if(!bronco)return 0;
+      if(!bronco){
+        // The JL door stamping is bounded by softly drawn vertical returns
+        // and a flatter central sheet, rather than a uniformly inflated slab.
+        const end=THREE.MathUtils.smoothstep(z,-1.16,-1.02)*(1-THREE.MathUtils.smoothstep(z,.415,.565));
+        const height=THREE.MathUtils.smoothstep(y,.570,.640)*(1-THREE.MathUtils.smoothstep(y,1.055,1.145));
+        let cup=0;for(const center of [-.282,-1.042])cup+=.010*Math.exp(-(((z-center)/.102)**4+((y-(belt-.096))/.034)**4));
+        return .009*end*height+cup;
+      }
       const ends=THREE.MathUtils.smoothstep(z,-1.405,-1.165)*(1-THREE.MathUtils.smoothstep(z,.532,.760));
       const upper=interpolate(stations,z,2)-shoulder;
       const height=THREE.MathUtils.smoothstep(y,.505,.565)*(1-THREE.MathUtils.smoothstep(y,upper-.030,upper));
@@ -57,7 +64,7 @@ export function buildSUV(view, geometry, bronco) {
       const height=clamp((y-.50)/(upper-.50),0,1);
       return width-.018*(1-height)+sideBulge*Math.sin(height*Math.PI)-doorSculpt(y,z);
     };
-    if(bronco)for(const [sideIndex,mesh] of bodySkin.slice(6,8).entries()){
+    for(const [sideIndex,mesh] of bodySkin.slice(6,8).entries()){
       // Shared physical-height rows keep the narrow stamping smooth across
       // columns; the lower rows collapse onto the actual open wheel arches.
       const side=sideIndex?1:-1,zSteps=156,rows=[.50,.52,...Array.from({length:43},(_,i)=>.54+i*.014),1.135,1.151,1.17,1.19,1.21,1.24,1.28],positions=[],normals=[],uvs=[],indices=[];
@@ -77,7 +84,7 @@ export function buildSUV(view, geometry, bronco) {
         }
       }
       const skin=new THREE.BufferGeometry();skin.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));skin.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));skin.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));skin.setIndex(indices);
-      mesh.geometry.dispose();mesh.geometry=skin;mesh.name='bronco-sculpted-door-sheet-'+(side>0?'left':'right');
+      mesh.geometry.dispose();mesh.geometry=skin;mesh.name=(bronco?'bronco':'wrangler')+'-sculpted-door-sheet-'+(side>0?'left':'right');
     }
     const sideSeam=(side,points,radius=.0021)=>{
       const curve=new THREE.CatmullRomCurve3(points.map(([z,y])=>v3(z,y,0)),false,'centripetal');
@@ -271,6 +278,12 @@ export function buildSUV(view, geometry, bronco) {
         polygon(g,m.black,shield.map(([z,y])=>[badgeX,y,z]));
         curvedLine(g,m.badlandsBadge,[...shield,shield[0]].map(([z,y])=>[badgeX+side*.001,y,z]),.0022);
         polygon(g,m.badlandsBadge,[[badgeX+side*.002,1.130,.786],[badgeX+side*.002,1.152,.802],[badgeX+side*.002,1.136,.812],[badgeX+side*.002,1.146,.822],[badgeX+side*.002,1.130,.840]]);
+        if(side===1){
+          // Ford's separate rounded fuel flap is behind the left rear door,
+          // with its narrow reveal following the actual quarter-panel skin.
+          const flap=roundedOutline([[-1.778,1.080,0],[-1.581,1.080,0],[-1.581,1.218,0],[-1.778,1.218,0]],.028,8);
+          curvedLine(g,m.dark,[...flap,flap[0]].map(([z,y])=>[side*(skinX(y,z)+.0018),y,z]),.0017);
+        }
       } else sideText(g,'RUBICON',side*(hoodWidth/2-.004+.006),1.225,1.385,.63,.076,'#292523',side);
     }
     const windshield = [[-half + 0.033, belt + 0.049, 0.605], [half - 0.033, belt + 0.049, 0.605], [roofHalf - 0.042, top - 0.091, frontRoof + 0.035], [-roofHalf + 0.042, top - 0.091, frontRoof + 0.035]];

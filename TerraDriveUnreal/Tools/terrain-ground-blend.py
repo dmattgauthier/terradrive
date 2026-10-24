@@ -32,7 +32,10 @@ if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
                 if key not in textures:textures[key]=(tex,'T'+str(len(textures)))
                 args.append(textures[key][1])
         vector=lambda values:'float3('+','.join(str(x) for x in values)+')'
-        args+=['GlobalTrilinearWrappedSampler','World','GeoNormal','Wear','LooseSoil',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),str(wetness),'rr','nn']
+        wet_arg='saturate((1-w[6])*2.4)' if biome==6 else str(wetness)
+        # Match Material Shared:Wrap, including World-group anisotropic filtering.
+        # The global trilinear sampler blurs scan detail at grazing angles.
+        args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','Wear','LooseSoil',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
         calls.append('[branch] if(w[%d]>.0005){float rr;float3 nn;float3 cc=f.evaluate(%s);color+=cc*w[%d];rough+=rr*w[%d];normal+=nn*w[%d];}'%(biome,','.join(args),biome,biome,biome))
     code=library+'''float2 uv=(World.yx*.01+400.0)/800.5+(.25/800.5);
 float4 a=Texture2DSample(BlendA,GlobalTrilinearClampedSampler,uv);
@@ -46,14 +49,14 @@ float grain=(f.noise(World.xy*.0025+seed)*.50+f.noise(World.xy*.011+seed*2.3)*.3
 w[i]=pow(w[i],lerp(3.2,1.5,paved))*exp2(grain*lerp(i==6?8.0:7.0,.35,paved));}sum+=w[i];}
 [unroll]for(int i=0;i<7;i++)w[i]/=max(sum,.0001);
 float3 color=0,normal=0;float rough=0;
-'''+ '\n'.join(calls)+'\nRoughness=rough;SurfaceNormal=normalize(normal);return color;'
+'''+ '\n'.join(calls)+'\nRoughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return color;'
     custom=edit.create_material_expression(m,unreal.MaterialExpressionCustom,0,0);custom.set_editor_property('code',code);custom.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     all_inputs=['World','GeoNormal','Wear','LooseSoil','BlendA','BlendB']+[pin for tex,pin in textures.values()]
     inputs=[]
     for name in all_inputs:item=unreal.CustomInput();item.set_editor_property('input_name',name);inputs.append(item)
     custom.set_editor_property('inputs',inputs)
     outputs=[]
-    for name,kind in [('Roughness',unreal.CustomMaterialOutputType.CMOT_FLOAT1),('SurfaceNormal',unreal.CustomMaterialOutputType.CMOT_FLOAT3)]:
+    for name,kind in [('Roughness',unreal.CustomMaterialOutputType.CMOT_FLOAT1),('SurfaceNormal',unreal.CustomMaterialOutputType.CMOT_FLOAT3),('Specular',unreal.CustomMaterialOutputType.CMOT_FLOAT1)]:
         item=unreal.CustomOutput();item.set_editor_property('output_name',name);item.set_editor_property('output_type',kind);outputs.append(item)
     custom.set_editor_property('additional_outputs',outputs)
     for name,klass,output in [('World',unreal.MaterialExpressionWorldPosition,''),('GeoNormal',unreal.MaterialExpressionVertexNormalWS,''),('Wear',unreal.MaterialExpressionVertexColor,'R'),('LooseSoil',unreal.MaterialExpressionVertexColor,'G')]:
@@ -62,9 +65,8 @@ float3 color=0,normal=0;float rough=0;
         obj=edit.create_material_expression(m,unreal.MaterialExpressionTextureObject,-600,100);obj.set_editor_property('texture',tex)
         if not tex.get_editor_property('srgb'):obj.set_editor_property('sampler_type',unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL if tex.get_editor_property('compression_settings')==unreal.TextureCompressionSettings.TC_NORMALMAP else unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
         edit.connect_material_expressions(obj,'',custom,pin)
-    for output,prop in [('',unreal.MaterialProperty.MP_BASE_COLOR),('Roughness',unreal.MaterialProperty.MP_ROUGHNESS),('SurfaceNormal',unreal.MaterialProperty.MP_NORMAL)]:
+    for output,prop in [('',unreal.MaterialProperty.MP_BASE_COLOR),('Roughness',unreal.MaterialProperty.MP_ROUGHNESS),('SurfaceNormal',unreal.MaterialProperty.MP_NORMAL),('Specular',unreal.MaterialProperty.MP_SPECULAR)]:
         if not edit.connect_material_property(custom,output,prop):raise RuntimeError('Ground blend output failed: '+output)
-    spec=edit.create_material_expression(m,unreal.MaterialExpressionConstant,0,300);spec.set_editor_property('r',.12);edit.connect_material_property(spec,'',unreal.MaterialProperty.MP_SPECULAR)
     edit.recompile_material(m);lib.set_metadata_tag(m,'TerraGroundBlendSignature',signature);lib.save_loaded_asset(m)
     open(os.path.join(root,'Saved','terrain-ground-shader.hlsl'),'w').write(code)
 json.dump({'version':1,'signature':signature,'material':dest,'coverageTextures':[t.get_path_name() for t in masks],'biomes':7,'sharedSamplers':True},open(os.path.join(root,'Saved','terrain-ground-bindings.json'),'w'),indent=2)

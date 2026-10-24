@@ -8,7 +8,7 @@ export const URUS={
  mass:2250,curbMass:2250,massStatus:'Simulation operating mass estimate; brochure dry mass is 2157 kg',
  length:5.137,width:2.026,height:1.618,wheelbase:3.006,track:1.695,
  frontWeightFraction:.58,cgHeight:.62,clearance:.158,
- tireSize:'285/40R22',tireWidth:.285,rearTireWidth:.325,tireRadius:.3934,tireType:'road',stockPSI:36,
+ tireSize:'285/40R22',tireWidth:.285,rearTireWidth:.325,tireRadius:.3934,tireType:'road-performance',stockPSI:36,
  transmissionName:'8-speed automatic',gears:[4.714,3.143,2.106,1.667,1.285,1,.839,.667],reverseRatio:3.317,finalDrive:3.204,
  lowRatio:1,defaultMode:'AWD',driveModes:['AWD'],frontTorqueFraction:.40,dragCoefficient:.36,
  engine:{idleRPM:750,redlineRPM:6800,peakTorqueRPM:2300,peakPowerRPM:6000,

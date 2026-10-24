@@ -67,6 +67,32 @@ int main(){
         const float omega=TerraSim::LimitedWheelOmega(3+(drive-200)*dt/3,20000,0,.42f,dt,3,1000);
         check(omega<=9.00001f&&omega>8.99f,"powered wheelspin reaches but cannot overshoot redline at different frame rates");
     }
+    for(float dt:{1.f/20,1.f/30,1.f/60,1.f/120})for(float direction:{1.f,-1.f}){
+        // A loaded locked shaft already at redline must retain its contact
+        // reaction torque. It must not coast every other frame just because
+        // engine RPM reached the cap. Unequal contacts represent one lightly
+        // loaded wheel during a slow cross-axle climb.
+        constexpr float radius=.4154f,inertia=6,maxOmega=8.948f,drag=60;
+        constexpr float c0=3000,c1=650,limit0=5000,limit1=750,requested=4000;
+        const float v0=direction*.4f,v1=direction*.1f;
+        const float reactionAtLimit=radius*(std::clamp(c0*(direction*maxOmega*radius-v0),-limit0,limit0)+
+                                           std::clamp(c1*(direction*maxOmega*radius-v1),-limit1,limit1));
+        float omega=direction*maxOmega,minimumGrip=limit0+limit1,maximumOmega=0,maximumResidual=0,maximumDrive=0;
+        for(int frame=0;frame<int(2/dt);++frame){
+            const float previous=omega;
+            const float drive=TerraSim::RevLimitedTorque(direction*requested,previous,inertia,dt,maxOmega,reactionAtLimit,direction*drag);
+            omega=TerraSim::BrakedAxleOmega(previous+drive*dt/inertia,c0,c1,v0,v1,limit0,limit1,radius,dt,inertia,drag);
+            const float force0=std::clamp(c0*(omega*radius-v0),-limit0,limit0),force1=std::clamp(c1*(omega*radius-v1),-limit1,limit1);
+            minimumGrip=std::min(minimumGrip,direction*(force0+force1));
+            maximumOmega=std::max(maximumOmega,std::abs(omega));
+            maximumDrive=std::max(maximumDrive,std::abs(drive));
+            maximumResidual=std::max(maximumResidual,std::abs(inertia*(omega-previous)/dt+(force0+force1)*radius+direction*drag-drive));
+        }
+        check(maximumOmega<=maxOmega+.0001f,"loaded locked shaft respects redline forward and reverse at 20/30/60/120 FPS");
+        check(minimumGrip>(limit0+limit1)*.995f,"loaded locked shaft retains sustained traction at its RPM cap");
+        check(maximumResidual<.03f,"sustained locked drive conserves wheel inertia, tire reaction and drag torque");
+        check(maximumDrive<=requested+.001f,"redline contact support never exceeds requested engine torque");
+    }
     for(float phase:{0.f,.03f,.0625f}){
         float area=0;for(int cell=-5;cell<=5;++cell)area+=TerraSim::FootprintCoverage(cell*.125f-phase,.05f,.0625f)*.125f;
         check(std::abs(area-.10f)<.000001f,"short tire footprints conserve covered area at every grid phase");
@@ -171,6 +197,52 @@ int main(){
         check(std::abs(TerraSim::SuspensionForce(load/47000,0,47000,5100,mass,1,dt)-load)<.01f,"implicit suspension preserves static support across frame times");
         const float c=TerraSim::ContactStiffness(14000,mass,dt);
         check(c>0&&c*dt/mass<1,"contact damping cannot reverse a supported mass in one frame");
+    }
+    for(float dt:{1.f/120,1.f/30,1.f/20,.1f}){
+        const float mass=550,load=mass*9.81f,spring=35000,damping=4300;
+        const float preload=load/spring,bump=TerraSim::SuspensionBumpTravel(.24f,0);
+        check(std::abs(TerraSim::ProgressiveSuspensionForce(preload,0,spring,damping,mass,1,dt,bump)-load)<.01f,
+            "progressive suspension preserves the loaded ride height at capped frame rates");
+        const float ordinary=TerraSim::SuspensionForce(preload+.02f,0,spring,damping,mass,1,dt);
+        check(std::abs(TerraSim::ProgressiveSuspensionForce(preload+.02f,0,spring,damping,mass,1,dt,bump)-ordinary)<.01f,
+            "bump stops do not stiffen ordinary suspension articulation");
+        check(TerraSim::ProgressiveSuspensionForce(preload+.02f,-5,spring,damping,mass,1,1.f/120,bump)<
+              TerraSim::SuspensionForce(preload+.02f,-5,spring,damping,mass,1,1.f/120),
+            "compression blow-off reduces a sharp terrain-edge damper impulse before full bump");
+        check(std::abs(TerraSim::ProgressiveSuspensionForce(preload+.02f,2,spring,damping,mass,1,dt,bump)-
+              TerraSim::SuspensionForce(preload+.02f,2,spring,damping,mass,1,dt))<.01f,
+            "rebound damping remains intact after compression blow-off");
+        float compression=preload,velocity=0,peak=preload;
+        for(int frame=0;frame<int(5/dt);++frame){
+            const float time=frame*dt,external=load*(time<.65f?2.2f:1.f);
+            const float force=std::clamp(TerraSim::ProgressiveSuspensionForce(compression,velocity,
+                spring,damping,mass,1,dt,bump),0.f,load*6);
+            velocity+=(force-external)/mass*dt;compression-=velocity*dt;peak=std::max(peak,compression);
+        }
+        check(std::isfinite(compression)&&peak-preload<bump+std::max(.0015f,1.25f*9.81f*dt*dt)&&std::abs(compression-preload)<.012f,
+            "progressive stops resist a 2.2-g dive and return to ride height without collapse");
+    }
+    check(TerraSim::SuspensionBumpTravel(.16f,0)<TerraSim::SuspensionBumpTravel(.3302f,0),
+        "a sedan has less physical bump travel than the Hummer");
+    check(TerraSim::SuspensionBumpTravel(.24f,.21f)>TerraSim::SuspensionBumpTravel(.24f,0)+.09f,
+        "suspension upgrades add usable compression travel as well as droop");
+    for(float dt:{1.f/120,1.f/30,1.f/20}){
+        // Coast over a road/loose-ground boundary through the actual tire
+        // solver. Changing grip/resistance alone must not become an impulse
+        // brake, although rolling losses must still remove kinetic energy.
+        const float mass=2250,radius=.4154f,inertia=3,load=mass*9.81f*.25f;
+        float speed=8,omega=speed/radius,peakDeceleration=0;
+        for(int frame=0;frame<int(1.f/dt);++frame){
+            const bool loose=frame*dt>=.25f;
+            const float rolling=loose?.20f:.013f,mu=loose?.36f:.98f;
+            const float stiffness=TerraSim::ContactStiffness(load*(loose?5.f:10.f)/speed,mass*.25f,dt);
+            omega=TerraSim::BrakedWheelOmega(omega,stiffness,speed,radius,dt,inertia,mu*load,rolling*load*radius);
+            const float force=std::clamp(stiffness*(omega*radius-speed),-mu*load,mu*load);
+            const float acceleration=4*force/mass;
+            peakDeceleration=std::max(peakDeceleration,-acceleration);speed+=acceleration*dt;
+        }
+        check(speed>6&&speed<8&&peakDeceleration<2.4f,
+            "coasting across a severe rolling-resistance transition preserves momentum without suppressing drag");
     }
     check(TerraSim::SuspensionForce(.12f,1,47000,5100,562.5f,1,.1f)<TerraSim::SuspensionForce(.12f,-1,47000,5100,562.5f,1,.1f),"suspension damps compression and rebound in the proper direction");
     check(TerraSim::TractionControlledTorque(1000,50,5,.4f,3,.03f,3000,3000,30,1)<0,"traction control brakes an overspeeding driven wheel");

@@ -24,6 +24,16 @@ private:
   int Stage = 0;
   FVector Start;
   float OpenProgress = 0, MaxProgress = 0;
+  bool LockerDriving=false;
+  float LockerDriveTime=0,LockerPeakLateral=0,LockerOpenPeakLateral=0,LockerPeakYaw=0;
+  int LockerSampleSecond=-1;
+  float LockerBodyEdge=0,LockerTireEdge=0,LockerClearance=10000,LockerOpenClearance=10000;
+  int LockerGeometrySamples=0,LockerOpenGeometrySamples=0;
+  int LockerPostSamples=0,LockerOpenPostSamples=0,LockerPostOverlaps=0,LockerOpenPostOverlaps=0;
+  TArray<FVector> LockerPostBases;
+  bool LockerGeometryFinite=true,LockerOpenGeometryFinite=true;
+  FVector LockerWorstPosition=FVector::ZeroVector;
+  FRotator LockerWorstRotation=FRotator::ZeroRotator;
   float StockUpgradeSpeed = 0, StockUpgradeDistance = 0;
   float StockFootprint = 0, StockTerrainGrip = 0;
   bool InvertedContactSeen = false;
