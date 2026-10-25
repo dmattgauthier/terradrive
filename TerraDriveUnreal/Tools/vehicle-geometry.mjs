@@ -199,8 +199,8 @@ function sweptBumper(parent,material,stations,power=.54) {
 
 function roundBodyEnds(body, style) {
   if (style === 'hummer') return; // Its full-size body supplies its own curved ends.
-  const depth = style === 'sedan' ? 0.255 : style === 'van' ? 0.175 : style === 'bronco' ? 0.13 : 0.062;
-  const exponent = style === 'sedan' ? 2.8 : style === 'van' ? 3.0 : style === 'bronco' ? 3.3 : 4;
+  const depth = style === 'sedan' ? 0.285 : style === 'van' ? 0.175 : style === 'bronco' ? 0.13 : 0.062;
+  const exponent = style === 'sedan' ? 2.1 : style === 'van' ? 3.0 : style === 'bronco' ? 3.3 : 4;
   const start = style === 'van' ? 2.20 : style === 'sedan' ? 1.73 : 1.71;
   const end = style === 'van' ? 2.88 : style === 'sedan' ? 2.37 : 2.29;
   const width = style === 'van' ? 1.02 : style === 'sedan' ? 0.94 : 1.0;

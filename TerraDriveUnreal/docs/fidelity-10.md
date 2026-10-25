@@ -14,4 +14,4 @@ These remain procedural reference-built vehicles. Fine surfacing, trim and inter
 
 ## Native acceptance
 
-The final Windows package passes 676 native and 382 core checks, with 116 actually reviewed current captures. Executable SHA-256: `f5b5fee6e4eb8f635f0d945e03d407479bb6a622ba8bb7860a3ac68b145b86cf`. See [validation-native.md](validation-native.md) for current package provenance, rendering scope, preservation and limitations.
+The current Windows package passes 684 native and 382 core checks, with 124 actually reviewed current captures. Executable SHA-256: `a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077`. See [validation-native.md](validation-native.md) for package provenance, rendering scope, preservation and limitations.

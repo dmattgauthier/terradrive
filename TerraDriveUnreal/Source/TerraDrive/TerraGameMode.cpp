@@ -988,7 +988,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==10);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==11);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
@@ -1068,15 +1068,27 @@ void ATerraGameMode::Tick(float Dt) {
     const FVector Target=V->GetActorLocation()+FVector(0,0,18),F=V->GetActorForwardVector(),S=V->GetActorRightVector();
     const FVector Offsets[]={F*850+FVector(0,0,160),S*900+FVector(0,0,90),-F*850+FVector(0,0,150),F*650+S*560+FVector(0,0,280),-F*680+S*570+FVector(0,0,230),F*690-S*550+FVector(0,0,100)};
     const float PhotoScale=AllModels?FMath::Clamp(float(V->Terrain->Data->GetArrayField(TEXT("vehicles"))[ModelVehicle]->AsObject()->GetNumberField(TEXT("length"))/5.137),.86f,1.18f):1.f;
-    const FVector Eye=Target+Offsets[ModelView]*PhotoScale;SoilCamera->GetCameraComponent()->SetFieldOfView(40);
-    SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
+    FVector Focus=Target,Eye;float PhotoFov=40;
+    if(ModelView<6)Eye=Target+Offsets[ModelView]*PhotoScale;
+    else if(ModelView==6){Focus=Target+F*135+FVector(0,0,35);Eye=Focus+(F*145+S*120+FVector(0,0,280))*PhotoScale;}
+    else if(ModelView==7){
+      FVector BoundsMin,BoundsMax;V->Body->GetLocalBounds(BoundsMin,BoundsMax);
+      const FVector RearFocus(FMath::Lerp(BoundsMin.X,BoundsMax.X,.08),0,FMath::Lerp(BoundsMin.Z,BoundsMax.Z,.47));
+      Focus=V->Body->GetComponentTransform().TransformPosition(RearFocus);
+      Eye=Focus+(-F*310+S*165+FVector(0,0,130))*PhotoScale;PhotoFov=45;
+    }
+    else if(ModelView==8){Focus=Target+F*60+S*45+FVector(0,0,55);Eye=Focus+(S*370+FVector(0,0,40))*PhotoScale;}
+    else{Focus=Target+FVector(0,0,15);Eye=Focus+(F*40+S*15+FVector(0,0,850))*PhotoScale;PhotoFov=70;}
+    SoilCamera->GetCameraComponent()->SetFieldOfView(PhotoFov);
+    SoilCamera->SetActorLocationAndRotation(Eye,(Focus-Eye).Rotation());
     if(StageTime>2&&!Captured){
       Check(FString::Printf(TEXT("Vehicle %d body renders in close photo view %d"),AllModels?ModelVehicle:5,ModelView),V->Body->WasRecentlyRendered(.4f));
       const FString Name=AllModels?FString::Printf(TEXT("native-vehicle-%d-hero-%d.png"),ModelVehicle,ModelView):FString::Printf(TEXT("native-urus-hero-%d.png"),ModelView);
       Capture(*Name);Captured=true;
     }
     if(StageTime>2.5f){
-      if(++ModelView==6){
+      const int PhotoViews=AllModels&&(ModelVehicle==2||ModelVehicle==5)?10:6;
+      if(++ModelView==PhotoViews){
         if(AllModels){if(++ModelVehicle==6)FinishValidation();else Next(64);}
         else if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);
       }else Next(65);

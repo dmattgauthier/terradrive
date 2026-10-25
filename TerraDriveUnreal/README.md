@@ -1,5 +1,10 @@
 # Terra Drive native port
 
+The [Civic and Urus contour revision 11](docs/body-contours-11.md) develops the
+bonnet, nose and rear closure shapes on both cars and straightens the Civic's
+A-pillar edges. Native Art mode adds close bonnet, rear, pillar and overhead
+views for those models. Geometry checks report physical relief in inches.
+
 The [fidelity pass 10](docs/fidelity-10.md) reshapes the Urus side panels with a
 continuous physical-height grid and shallower handle recesses. Smaller meadow
 tufts, lower scanned plant groups and a less saturated ground palette improve

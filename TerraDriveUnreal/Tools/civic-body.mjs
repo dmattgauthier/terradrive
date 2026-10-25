@@ -11,11 +11,19 @@ export function buildCivic(view, geometry) {
     const hoodRelief = (x,z) => {
       const fade = THREE.MathUtils.smoothstep(z,1.075,1.22) * (1-THREE.MathUtils.smoothstep(z,2.17,front));
       const edge = hoodWidth(z), crease = Math.exp(-(((Math.abs(x)-edge+.040)/.051)**2));
-      return .013 * fade * crease;
+      const t=clamp((z-1.075)/(front-1.075),0,1),drawLine=.655-.155*t;
+      // The inner bonnet draw lines converge toward the grille. A broad,
+      // shallow trough beside each ridge gives the stamping real curvature
+      // instead of two parallel lines along an otherwise flat rectangle.
+      const ridge=Math.exp(-(((Math.abs(x)-drawLine)/.052)**2));
+      const trough=Math.exp(-(((Math.abs(x)-drawLine+.085)/.104)**2));
+      return fade*(.004*crease+.018*ridge-.0045*trough);
     };
     const topPoint = (x,z,offset=0) => {
       const half=interpolate(stations,z,1)-.047;
-      return [x,interpolate(stations,z,2)+.018*(1-(x/half)**2)+hoodRelief(x,z)+offset,z];
+      const crown=.031*(1-(x/half)**2);
+      const deck= .010*THREE.MathUtils.smoothstep(-z,1.58,1.88)*(1-THREE.MathUtils.smoothstep(-z,2.16,2.35))*(1-(x/half)**2);
+      return [x,interpolate(stations,z,2)+crown+hoodRelief(x,z)+deck+offset,z];
     };
     // Extra rows are confined to the hood's crease and rolled leading edge.
     // A coarse diagonal across that small radius made a triangular highlight.
@@ -30,6 +38,16 @@ export function buildCivic(view, geometry) {
     for(let z=0;z<hoodZ.length-1;z++)for(let x=0;x<hoodStride-1;x++){const a=z*hoodStride+x,b=a+1,c=a+hoodStride,d=c+1;hoodIds.push(a,c,b,b,c,d);}
     const hoodGrid=new THREE.BufferGeometry();hoodGrid.setAttribute('position',new THREE.Float32BufferAttribute(hoodPos,3));hoodGrid.setAttribute('normal',new THREE.Float32BufferAttribute(hoodNormal,3));hoodGrid.setAttribute('uv',new THREE.Float32BufferAttribute(hoodUV,2));hoodGrid.setIndex(hoodIds);
     frontSkin[3].geometry.dispose();frontSkin[3].geometry=hoodGrid;
+    // The trunk receives its own continuous crown and fine trailing-edge
+    // rows. Reusing the coarse lower-shell deck hid the sedan's rolled lip.
+    const deckPos=[],deckNormal=[],deckUV=[],deckIds=[],deckRows=64,deckCols=48;
+    for(let j=0;j<=deckRows;j++)for(let i=0;i<=deckCols;i++){
+      const z=THREE.MathUtils.lerp(tail,-1.53,j/deckRows),half=interpolate(stations,z,1)-.047;
+      deckPos.push((i/deckCols*2-1)*half,0,z);deckNormal.push(0,1,0);deckUV.push(i/deckCols,j/deckRows);
+    }
+    for(let j=0;j<deckRows;j++)for(let i=0;i<deckCols;i++){const a=j*(deckCols+1)+i,b=a+1,c=a+deckCols+1,d=c+1;deckIds.push(a,c,b,b,c,d);}
+    const deckGrid=new THREE.BufferGeometry();deckGrid.setAttribute('position',new THREE.Float32BufferAttribute(deckPos,3));deckGrid.setAttribute('normal',new THREE.Float32BufferAttribute(deckNormal,3));deckGrid.setAttribute('uv',new THREE.Float32BufferAttribute(deckUV,2));deckGrid.setIndex(deckIds);
+    frontSkin[0].geometry.dispose();frontSkin[0].geometry=deckGrid;
     const beltStations=[[-1.583,.801,.994],[-1.51,.799,1.001],[-1.177,.803,.988],[-.33,.807,.975],[1.02,.807,.976]];
     const beltPoint=(side,z,u)=>{
       const half=interpolate(stations,z,1)-.047,low=topPoint(side*half,z),high=[side*interpolate(beltStations,z,1),interpolate(beltStations,z,2),z];
@@ -88,7 +106,7 @@ export function buildCivic(view, geometry) {
           const dy=(sectionX(y+epsilon,z)-sectionX(y-epsilon,z))/(epsilon*2),dz=(sectionX(y,z+epsilon)-sectionX(y,z-epsilon))/(epsilon*2);
           const normal=v3(side,-dy,-dz).normalize();n.setXYZ(i,normal.x,normal.y,normal.z);
         }
-        if(meshIndex===3){
+        if(meshIndex===0||meshIndex===3){
           const dx=(topPoint(x+epsilon,z)[1]-topPoint(x-epsilon,z)[1])/(epsilon*2),dz=(topPoint(x,z+epsilon)[1]-topPoint(x,z-epsilon)[1])/(epsilon*2);
           const normal=v3(-dx,1,-dz).normalize();p.setY(i,topPoint(x,z)[1]);n.setXYZ(i,normal.x,normal.y,normal.z);
         }else if(z>1.075&&Math.abs(x)<interpolate(stations,z,1)-.047&&y>interpolate(stations,z,2)-.003){
@@ -212,7 +230,8 @@ export function buildCivic(view, geometry) {
     const roofStations=[[-.805,.639,1.343],[-.57,.668,1.365],[-.19,.678,1.376],[.14,.671,1.364],[.405,.642,1.337]];
     surface(g,m.paint,32,30,(u,v)=>{const z=THREE.MathUtils.lerp(-.805,.405,v),x=u*2-1;return [x*interpolate(roofStations,z,1),interpolate(roofStations,z,2)+.030*(1-x*x),z];},true);
     const ribbon=(material,outer,inner,bulge=.006)=>{
-      const a=new THREE.CatmullRomCurve3(outer.map(p=>v3(...p))),b=new THREE.CatmullRomCurve3(inner.map(p=>v3(...p)));
+      const path=points=>points.length===2?new THREE.LineCurve3(v3(...points[0]),v3(...points[1])):new THREE.CatmullRomCurve3(points.map(p=>v3(...p)));
+      const a=path(outer),b=path(inner);
       const sample=(u,v)=>{const p=a.getPoint(v).lerp(b.getPoint(v),u);p.y+=Math.sin(u*Math.PI)*bulge;return p.toArray();};
       const skin=surface(g,material,12,64,sample);
       if(material===m.paint){
@@ -225,17 +244,23 @@ export function buildCivic(view, geometry) {
     backlight.position.set(0,-.004,.002);
     for (const side of [-1, 1]) {
       const xb=side*.807,xt=side*.691,mirror=p=>[p[0]*side,p[1],p[2]];
+      const frontSealIndex=g.children.length;
       windowPanel(g,m,[[xb,.976,1.010],[xb,.975,-.269],[xt,1.354,-.255],[side*.681,1.334,.327]],.033,.050);
+      g.children[frontSealIndex].name='civic-front-side-seal-'+(side>0?'left':'right');
       windowPanel(g,m,[[xb,.976,-.330],[side*.806,.987,-1.148],[side*.697,1.321,-.859],[xt,1.355,-.332]],.031,.057);
       windowPanel(g,m,[[side*.803,.988,-1.177],[side*.799,1.001,-1.495],[side*.697,1.309,-.899]],.034,.050);
       surface(g,m.paint,6,94,(u,v)=>beltPoint(side,THREE.MathUtils.lerp(-1.583,1.02,v),u),side<0);
-      ribbon(m.paint,[[.805,.963,1.068],[.749,1.194,.735],[.680,1.345,.357]].map(mirror),[[.754,.961,1.081],[.704,1.190,.771],[.641,1.339,.408]].map(mirror),.008);
+      // The principal A-pillar edges are straight from cowl to roof in side
+      // projection. The old intermediate control points bowed both edges
+      // upward by about two inches, independently of the adjacent glazing.
+      const aPillar=ribbon(m.paint,[[.809,.976,1.014],[.683,1.334,.331]].map(mirror),[[.754,.961,1.081],[.641,1.339,.408]].map(mirror),.003);
+      aPillar.name='civic-straight-a-pillar-'+(side>0?'left':'right');
       ribbon(m.paint,[[.800,.993,-1.570],[.742,1.185,-1.180],[.670,1.349,-.783]].map(mirror),[[.741,.991,-1.573],[.685,1.178,-1.183],[.638,1.342,-.807]].map(mirror),.013);
       // The sedan has a broad stamped C-pillar around the fixed quarter glass.
       // It joins the backlight flange to the side window, rather than leaving
       // the side profile as a thin painted rail around a transparent wedge.
       ribbon(m.paint,[[.800,.993,-1.570],[.742,1.185,-1.180],[.670,1.349,-.783]].map(mirror),[[.799,1.001,-1.495],[.750,1.177,-1.134],[.697,1.309,-.899]].map(mirror),.010);
-      ribbon(m.paint,[[.680,1.345,.357],[.704,1.382,-.165],[.696,1.371,-.543],[.670,1.349,-.783]].map(mirror),[[.641,1.339,.405],[.678,1.377,-.165],[.670,1.365,-.543],[.638,1.342,-.807]].map(mirror),.008);
+      ribbon(m.paint,[[.683,1.334,.331],[.704,1.382,-.165],[.696,1.371,-.543],[.670,1.349,-.783]].map(mirror),[[.641,1.339,.405],[.678,1.377,-.165],[.670,1.365,-.543],[.638,1.342,-.807]].map(mirror),.008);
       ribbon(m.glossBlack||m.black,[[.807,.975,-.271],[.748,1.18,-.271],[.692,1.356,-.261]].map(mirror),[[.807,.975,-.330],[.748,1.18,-.336],[.692,1.356,-.336]].map(mirror),.001);
       curvedLine(g,m.black,[[side*.805,.990,-1.166],[side*.752,1.174,-1.014],[side*.696,1.316,-.880]],.007,true);
       curvedLine(g,m.black,[[xb,.976,1.016],[xb,.975,-.25],[side*.803,.988,-1.178],[side*.799,1.001,-1.495]],.004,true);
@@ -509,6 +534,13 @@ export function buildCivic(view, geometry) {
         const rear=1-THREE.MathUtils.smoothstep(q.z,-2.34,-1.91),low=1-THREE.MathUtils.smoothstep(q.y,.283,.493);
         q.z+=.085*rear*low;q.x*=1-.022*rear*low;
       }
+      if(q.z<-1.91&&q.y>.50&&q.y<1.02){
+        const end=1-THREE.MathUtils.smoothstep(q.z,-2.32,-1.91),centre=1-THREE.MathUtils.smoothstep(Math.abs(q.x),.48,.83);
+        // A stamped recess above the bumper and beneath the lamp/deck
+        // shoulder makes the trunk face a formed sheet, with the plate well
+        // and every attached lamp/badge following the same displacement.
+        q.z+=end*centre*(.048*Math.exp(-(((q.y-.777)/.118)**2))+.016*Math.exp(-(((q.y-.600)/.058)**2)));
+      }
       if(q.z<-2.185&&q.y>.80){
         const t=clamp((-q.z-2.185)/.163,0,1),sideFade=1-THREE.MathUtils.smoothstep(Math.abs(q.x),.680,.868);
         const top=topPoint(q.x,Math.max(tail,q.z))[1],heightFade=THREE.MathUtils.smoothstep(q.y,top-.080,top-.008);
@@ -675,5 +707,5 @@ export function buildCivic(view, geometry) {
     roundedBox(g,m.black,0,1.226,.533,.222,.061,.031,.011);
     roundedBox(g,m.chrome,0,1.226,.515,.198,.043,.006,.005);
     line(g,m.black,[0,1.252,.546],[0,1.312,.494],.009);
-    view.root.userData.coachworkDetail={revision:8,openHexMeshCells:upperMesh.cells+lowerMesh.cells,lowerGrilleProbe:lowerMesh.probe,compoundBumperCheeks:true};
+    view.root.userData.coachworkDetail={revision:11,openHexMeshCells:upperMesh.cells+lowerMesh.cells,lowerGrilleProbe:lowerMesh.probe,compoundBumperCheeks:true,convergingBonnetDrawLines:true,crownedTrunkSheet:true,formedRearRecess:true,straightAPillarEdges:true};
   }

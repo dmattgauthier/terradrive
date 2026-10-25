@@ -23,6 +23,15 @@ export function urusView(spec){
  m.interior.color.set('#141618');m.upholstery.color.set('#17191c');m.headliner.color.set('#16191c');
  const front=2.5685,rear=-2.5685,wy=spec.tireRadius,arch=.448,axles=[-1.503,1.503];
  const gauss=(x,c,w)=>Math.exp(-(((x-c)/w)**2));
+ // The two end closures and their side returns share their longitudinal
+ // contour. This keeps a more deeply formed fascia/hatch closed at oblique
+ // angles, including seals, lamps, plate returns and the bumper corners.
+ const frontSurface=(x,y)=>front-.255*(Math.abs(x)/.99)**2-.078*gauss(y,.66,.16)-.028*smooth(y,.925,1.035)*(1-smooth(Math.abs(x),.34,.84));
+ const rearSurface=(x,y)=>{
+  const a=Math.abs(x),centre=1-smooth(a,.58,.89),foldY=.956-.135*clamp(a/.85,0,1);
+  const crease=.050*gauss(y,foldY-.025,.085),plateDraw=.033*gauss(y,.735,.155)*gauss(x,0,.60);
+  return rear+.245*(a/.99)**2+centre*(crease+plateDraw+.010*gauss(y,.57,.055));
+ };
  // Rounded parameter contours keep the cut sheet, seal and glass on the same
  // boundary. The former four straight window corners made the greenhouse
  // read as a collection of flat plates even with a finely sampled surface.
@@ -64,7 +73,7 @@ export function urusView(spec){
   const x=lerp(lerp(skinX(y,z),nose,f),tail,r);
   // Offset the original longitudinal coordinate toward the end boundary.
   // Blending the coordinate itself into an end point folded the last strips.
-  const noseZ=front-.255*(x/.99)**2-.055*gauss(y,.66,.15),tailZ=rear+.245*(x/.99)**2;
+  const noseZ=frontSurface(x,y),tailZ=rearSurface(x,y);
   return[s*(x+offset),y,z+f*(noseZ-2.48)+r*(tailZ+2.48)];
  };
  const seam=(s,points)=>{const path=new T.CatmullRomCurve3(points.map(([z,y])=>new T.Vector3(z,y,0)));line(g,dark,Array.from({length:181},(_,i)=>{const p=path.getPoint(i/180);return sidePoint(s,p.x,p.y,.002);}),.0016);};
@@ -200,11 +209,15 @@ export function urusView(spec){
  curve(g,black,[canopy(.49,-2.05,.011),canopy(.37,-2.01,.013),canopy(.24,-1.95,.013)],.005);
  // Bonnet: deep outer cooling apertures, raised fender ridges and a pointed
  // central carbon panel; the perimeter is crowned rather than a flat plane.
- const hoodRows=[[.72,1.156,.81],[1.08,1.128,.849],[1.50,1.104,.870],[1.93,1.073,.844],[2.27,1.033,.762],[2.48,.980,.64]];
+ const hoodRows=[[.72,1.156,.81],[1.08,1.125,.849],[1.50,1.091,.870],[1.93,1.055,.844],[2.27,1.017,.762],[2.48,.976,.64]];
  const hood=(x,z,off=0)=>{
   const t=x/station(hoodRows,z,2),fade=smooth(z,.72,.94)*(1-smooth(z,2.25,2.48));
-  const blade=.025*gauss(Math.abs(t),.80,.105)-.012*gauss(Math.abs(t),.57,.115);
-  return[x,station(hoodRows,z,1)+.029*(1-t*t)+fade*blade+off,z];
+  const blade=.045*gauss(Math.abs(t),.81,.095)-.017*gauss(Math.abs(t),.60,.14);
+  const shoulder=.010*gauss(Math.abs(t),.98,.13)*fade;
+  // Sweep the leading corners back around the central nose. Carbon and
+  // painted domains, cooling-duct returns and seams all use this same map.
+  const sweep=.098*smooth(z,1.84,2.48)*Math.abs(t)**1.85;
+  return[x,station(hoodRows,z,1)+.039*(1-t*t)+fade*blade+shoulder+off,z-sweep];
  };
  const ventOutline=[[.613,1.27],[.752,1.34],[.691,1.83],[.575,1.96],[.552,1.87]];
  // The cooling ducts are holes in the bonnet. A black patch above an intact
@@ -240,7 +253,7 @@ export function urusView(spec){
  }
  // Wrapped front fascia. Real apertures, a broad splitter and boxed air
  // curtains replace the old flat hexagons and tubular bumper guard.
- const face=(x,y,d=0)=>[x,y,front-.255*(Math.abs(x)/.99)**2-.055*gauss(y,.66,.15)+d];
+ const face=(x,y,d=0)=>[x,y,frontSurface(x,y)+d];
  const outline=[[-.977,.44],[-.955,.883],[-.843,1.016],[-.46,1.026],[0,.977],[.46,1.026],[.843,1.016],[.955,.883],[.977,.44],[.89,.261],[.53,.258],[.42,.309],[-.42,.309],[-.53,.258],[-.89,.261]];
  const openings=[[[-.443,.850],[-.354,.883],[.354,.883],[.443,.850],[.402,.736],[-.402,.736]],
   [[-.438,.616],[-.337,.694],[.337,.694],[.438,.616],[.614,.347],[-.614,.347]],
@@ -285,7 +298,7 @@ export function urusView(spec){
  box(g,black,face(0,.800,.007),[.073,.027,.012],.003);
  // Full hatch, broad rear shoulders and recessed plate pocket. The rear
  // corners taper in plan view; exhaust outlets sit inside the diffuser.
- const tail=(x,y,d=0)=>[x,y,rear+.245*(Math.abs(x)/.99)**2+.032*gauss(y,.955,.057)*gauss(x,0,.80)+.022*gauss(y,.70,.16)*gauss(x,0,.51)+d];
+ const tail=(x,y,d=0)=>[x,y,rearSurface(x,y)+d];
  const plateOutline=[[-.31,.858],[.31,.858],[.365,.754],[.291,.643],[-.291,.643],[-.365,.754]];
  const tailEdge=y=>station([[.53,.938],[.76,.971],[1.04,.947],[1.155,.881]],y,1);
  const hatchOutline=[...Array.from({length:41},(_,i)=>{const y=lerp(.53,1.155,i/40);return[-tailEdge(y),y];}),...Array.from({length:41},(_,i)=>{const y=lerp(1.155,.53,i/40);return[tailEdge(y),y];})];
@@ -338,5 +351,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:10,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:11,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

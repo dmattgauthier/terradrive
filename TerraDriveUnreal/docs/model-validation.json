@@ -1,5 +1,5 @@
 {
-  "revision": "fidelity-10",
+  "revision": "body-contours-11",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
@@ -43,13 +43,13 @@
     },
     {
       "vehicle": "Honda Civic Sport",
-      "vertices": 308263,
-      "normalizedFraction": 0.9998799726207817,
+      "vertices": 310942,
+      "normalizedFraction": 0.999881006747239,
       "visibility": [
         {
           "pane": "open lower mesh",
           "cells": 263,
-          "backingSetbackM": 0.029316214360059156
+          "backingSetbackM": 0.02802158715947023
         }
       ],
       "tire": {
@@ -115,11 +115,11 @@
         },
         {
           "pane": "bonnet vent",
-          "firstSurfaceYM": 1.0933536656382905
+          "firstSurfaceYM": 1.0881614867300982
         },
         {
           "pane": "hatch plate well",
-          "firstSurfaceZM": -2.476158668539801
+          "firstSurfaceZM": -2.4607656480593745
         },
         {
           "pane": "roof crown",
