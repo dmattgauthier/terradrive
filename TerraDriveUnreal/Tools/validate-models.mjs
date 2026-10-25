@@ -43,7 +43,7 @@ for(const spec of VEHICLES){
    const gap=backing?backing.distance-pane.distance:5;
    assert.ok(gap>.1524,label+' has no opaque sheet behind the pane');visibility.push({pane:label,clearDepthM:gap});
   }
-  assert.equal(view.root.userData.visualModel.version,9);
+  assert.equal(view.root.userData.visualModel.version,10);
   assert.ok(view.root.userData.visualModel.camberedClosedSpoiler&&view.root.userData.visualModel.crownedGreenhouse&&view.root.userData.visualModel.sculptedDoorCups,'Urus compound coachwork revision');
   // Above the vent's center, the first solid surface is below the bonnet
   // skin. This fails for the former opaque hood with a black patch on top.
@@ -125,6 +125,6 @@ for(const spec of VEHICLES){
  assert.equal(view.wheels[0].root.userData.factoryWheelRevision,3);
  results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:3,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},pass:true});view.dispose();
 }
-const report={revision:'terrain-models-9',vehicles:results,pass:true};
+const report={revision:'fidelity-10',vehicles:results,pass:true};
 fs.writeFileSync(new URL('../docs/model-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

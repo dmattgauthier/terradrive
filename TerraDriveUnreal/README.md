@@ -1,5 +1,11 @@
 # Terra Drive native port
 
+The [fidelity pass 10](docs/fidelity-10.md) reshapes the Urus side panels with a
+continuous physical-height grid and shallower handle recesses. Smaller meadow
+tufts, lower scanned plant groups and a less saturated ground palette improve
+the landscape's scale. Native evidence is recorded in
+[validation-native.md](docs/validation-native.md).
+
 The [terrain and vehicle detail pass 9](docs/terrain-models-9.md) adds varied
 grass/root patches, continuously warped texture coordinates and clearer snow
 wind detail. All six bodies gain curved ceramic glazing borders, and the Urus

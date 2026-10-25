@@ -1,10 +1,10 @@
-# Native terrain and vehicle detail validation
+# Native fidelity pass 10 validation
 
-Verified October 24, 2026 at 6:09 PM America/New_York, Unreal Engine 5.8.3, Windows Development, DX12 SM6, RTX 4060 Laptop GPU. Launch `Build/Windows/TerraDrive.exe` with its complete Windows folder.
+Verified October 24, 2026 at 10:39 PM America/New_York with Unreal Engine 5.8.3, Windows Development, DX12 SM6 and the RTX 4060 Laptop GPU. Launch `Build/Windows/TerraDrive.exe` with its complete Windows folder.
 
-The current executable SHA-256 is `0bdbf059543d6b837f99181207b1d0d12482a89627ca376476ac43eb7c65a51b`. This pass imports the revised vehicle meshes and uses a fresh full cook/package, `Saved/terrain-models9-build-4.log`, SHA-256 `27d466e7a71bcdce9bf497f24fd05e01b09f684ce31061f6291dc33c968a10ed`. The compiled and packaged executables match. Native data, package hashes and the source/tool/configuration fingerprints frozen through validation are recorded in [native-validation.json](native-validation.json). Earlier model/rut acceptance remains historical.
+The current executable SHA-256 is `f5b5fee6e4eb8f635f0d945e03d407479bb6a622ba8bb7860a3ac68b145b86cf`. The fresh full asset import/cook/package is `Saved/fidelity10-build-1.log`, SHA-256 `3ebbcea30b64ab542a91da2bbc0680049d01cc78affb42be46f4ed20b0e048aa`. Compiled and packaged game bytes match. Source/tool/configuration fingerprints stayed frozen through acceptance; package/native data and report hashes are recorded in [native-validation.json](native-validation.json).
 
-**676/676 native checks and 382/382 independent core checks pass.** Every listed report is fresh, belongs to this executable and contains only passing cases.
+**676/676 native checks and 382/382 independent core checks pass.** Every report below is fresh, follows the accepted asset cook and belongs to the current executable.
 
 | Native check | Passed | Process exit |
 |---|---:|---:|
@@ -19,26 +19,26 @@ The current executable SHA-256 is `0bdbf059543d6b837f99181207b1d0d12482a89627ca3
 | Balanced | 16/16 | 0 |
 | QualitySmoke | 16/16 | 0 |
 
-The source geometry audit passes all six vehicles. The separate Urus audit retains 1,134 fascia and 90 bonnet probes with zero painted intrusions. Source checks complement the native image review and do not establish visual quality alone.
+The source geometry audit passes all six models. The Urus retains 1,134 fascia probes and 90 bonnet probes with zero painted intrusions. These geometry checks complement actual rendered inspection.
 
-## What changed
+## Changed surfaces and scale
 
-Grass now distinguishes green growth, dry growth and exposed root patches. Small continuously warped texture coordinates break up surviving scan motifs; fine root/soil normal detail fades at distance. Snow has more defined blue-grey hollows and two scales of meandering wind ridges, suppressed on packed floors and wet margins. A matching photographic leafy-grass triplet joins the existing MW dirt/stone layers. Project-owned ground copies explicitly retain their color space and bounded resident resolution (23 maps capped at 1K, 26 capped at 2K; smaller originals retain their native resolution). Bounded residency increases memory use; no extra texture fetches, terrain tessellation or collision ridges were added. Additional shader arithmetic is included in the monitored samples below.
+The Urus revision 10 side skin has fixed physical-height rows, a broader continuous door section, a distinct upper shoulder and shallower handle recesses. Seams and fittings follow the same surface. Its source vertex count rises from 741,537 to 789,687 (about 6.5%); this is a fidelity tradeoff. The other 237 OBJ meshes, including the other five body meshes, are byte-identical. Prior glazing, projector optics, wheels, open intake/bonnet geometry and cabins remain.
 
-All six bodies have narrow ceramic borders following their curved glazing, with open central panes and retained cabin visibility. The Urus adds recessed reflector bowls and convex projector lenses inside the existing angular light housings. Body hardpoints, original bonnet/intake openings, dimensions and vehicle dynamics remain. The glazing and optics are incremental model detail; broad body shapes and interiors retain the limitations of reference-built procedural assets.
+MW meadow instances change from 1447 to 2234, with smaller varied-height tufts. Scanned sorrel groups change from 10064 to 6290, with smaller plants and less overlap. Native detail instances change from 16133 to 12359. A restrained olive-green ground tint reduces the previous saturated green. Non-grass Fab groups, solid native/scanned groups, routes, loop frames and terrain height bytes match the preservation checkpoint. Snow texture/rut shading and the previous material residency caps are retained.
 
-The vehicle and world physics sources and simulation core retain their checkpoint hashes. Terrain heights and transition masks are unchanged. Real motor-drive mud and snow paths, rut depth/banks/continuity/volume, braking/reverse/lockers and the continuous twenty-gate Slate Rim route pass in the new package. The movement suite still measures seven terrain-boundary coasts, all six rounded-rise/braking trials and actual solid-object contact.
+Vehicle/world physics source and simulation-core hashes are unchanged. The Urus lower-body query probes are regenerated from the revised mesh, and the fresh native ground-contact and movement checks cover the resulting support. All six Space stops, held-S reverse, incline holds, actual mud/snow driving, rounded-rise trials and the stock Urus twenty-gate Slate Rim route pass. Real solid-object collisions remain.
 
 ## Actual rendered review
 
-116 distinct current PNGs were actually inspected and recorded by hash. The review covers all six vehicles from six directions, terrain close/wide views, controlled and real driven ruts, hard-ground contact, transitions, movement, Winter Expedition and presets. The root review record retains specific observations and visual limits. There is no separate manual/controller session claim.
+116 distinct fresh game PNGs were actually inspected and recorded by hash, covering 36 settled vehicle Art angles, additional Urus angles, terrain close/wide views, controlled and real driven ruts, rocky support, transition coasts, suspension, winter roads and presets. The coast verification overview now uses an elevated collision-cleared eye; the acquired winter map and player camera controls are unchanged. Specific observations and limits are in the recorded root review. No separate manual/controller session is claimed.
 
-Art, terrain-detail, winter and rut inspections use Quality at a 20 FPS cap and 1600×900 output. Full driving uses 1280×720; transitions and preset samples use 1920×1080. Movement retains its isolated wrapper settings at 1600×900. Prior saved Detail views may use a different internal rendering preset; those comparisons are visual context, not a controlled image-quality benchmark.
+Art, terrain detail, winter and rut checks use Quality at 20 FPS and 1600×900. Full driving uses 1280×720; transitions/presets use 1920×1080. Movement retains its isolated 1600×900 wrapper settings. Prior pass9 Art/Detail views use the same explicit Quality/20 FPS settings, while broader older captures can differ in preset. Comparisons remain visual evidence, not an image-quality score.
 
-## GPU and preservation scope
+## GPU and preservation
 
-The full capped run recorded 367 GPU observations: maximum 59°C, mean 29.0% utilization and 8.1W. Short Cool/Balanced/Quality-smoke samples peaked at 65/71/67°C. Quality smoke remains capped 20 FPS. All wrappers retain a 77°C cutoff. These samples do not prove normal 60 FPS endurance, long-session thermal stability or the cause of earlier PC crashes.
+The full 20 FPS run recorded 367 GPU samples: max 59°C, mean 26.9% utilization and 8.2W. Short Cool/Balanced/Quality-smoke peaks were 64/72/68°C. Quality smoke remains capped 20 FPS; all wrappers retain the 77°C cutoff. These samples do not establish normal 60 FPS endurance, long-session thermal stability or a cause for previous PC reboots.
 
-All 1,214 local browser hashes match, and publication preserves 189 browser files and 86 existing binary assets. Current player vehicle builds and the Quality 60 graphics preference are unchanged. The original `IceRoad`, `IceRoad_Lighting` and source `terrain.bin` match the fresh preservation baseline. Generated builds, acquired raw Epic/Fab assets, caches and player data remain excluded from source publication.
+All 1,214 local browser hashes match; 189 published browser files and 86 existing binary assets are preserved. Current player builds and the Quality at 60 FPS preference match the fresh baseline. Original IceRoad/IceRoad_Lighting and source terrain.bin are unchanged. Generated builds, raw acquired Epic/Fab packs, reference photographs, caches and player data remain local.
 
-Remaining limits include repeated ground motifs at some distances, simplified fine coachwork/interiors/lighting optics and bounded height-field soil. Authored Winter Expedition landscape/road remains static; physical excavation applies to the proving ground including its snow. Feature details are in [terrain-models-9.md](terrain-models-9.md).
+The vehicles remain procedural reference reconstructions with simplified fine surfacing, trim and interiors. Some ground motifs remain, and imported winter scenery retains its authored shapes. Physical soil is a bounded height field in the proving ground; Winter Expedition's authored landscape/road stays static. Feature details are in [fidelity-10.md](fidelity-10.md).

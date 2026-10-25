@@ -76,7 +76,7 @@ float3 ac,bc,cc,an,bn,cn;float ar,br,cr;
 f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,texP/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
 f.layer(Secondary,SecondarySampler,SecondaryNormal,SecondaryNormalSampler,SecondaryRough,SecondaryRoughSampler,texP/Scales.y,n,7,NormalSigns.y,RoughChannels.y,bc,bn,br);
 f.layer(Accent,AccentSampler,AccentNormal,AccentNormalSampler,AccentRough,AccentRoughSampler,texP/Scales.z,n,29,NormalSigns.z,RoughChannels.z,cc,cn,cr);
-if(Biome==0){cc*=float3(.84,.83,.78);bc*=float3(.46,.72,.40);}
+if(Biome==0){cc*=float3(.84,.83,.78);bc*=float3(.51,.63,.41);}
 if(Biome==5)cc*=float3(.62,.57,.47);
 float3 color=lerp(lerp(ac,bc,b),cc,c);
 float3 relief=lerp(lerp(an,bn,b),cn,c);

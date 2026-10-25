@@ -34,17 +34,23 @@ export function urusView(spec){
  // Width, upper edge and shoulder are independent stations. The waist is
  // genuinely recessed; a material highlight cannot substitute for this shape.
  const rows=[[-2.48,.873,1.155],[-2.20,.951,1.239],[-1.80,.993,1.265],[-1.50,.998,1.256],[-1.12,.969,1.229],[-.55,.939,1.186],[.05,.931,1.144],[.72,.951,1.102],[1.22,.982,1.093],[1.54,.994,1.092],[1.92,.975,1.072],[2.26,.934,1.032],[2.48,.868,1.016]];
+ const doorWidths=[[-2.48,.873],[-2.20,.951],[-1.80,.993],[-1.50,.998],[-1.12,.977],[-.55,.958],[.05,.956],[.72,.966],[1.22,.982],[1.54,.994],[1.92,.975],[2.26,.934],[2.48,.868]];
  const width=z=>station(rows,z,1),belt=z=>station(rows,z,2);
  const low=z=>Math.max(.27+.26*(1-smooth(z,-2.48,-2.05)),...axles.map(a=>Math.abs(z-a)<arch?wy+Math.sqrt(arch*arch-(z-a)**2):.27));
  const skinX=(y,z)=>{
   const h=belt(z),shoulder=h-.115,doors=smooth(z,-1.14,-.80)*(1-smooth(z,.70,1.01));
   const section=[[.24,.887],[.34,.932],[.45,.954],[.58,.949],[.73,.970],[shoulder-.055,.995],[shoulder,1],[h,.951]];
   const sorted=section.filter((p,i)=>i<5||p[0]>.74);
+  const formed=[[.24,.887],[.34,.932],[.48,.954],[.65,.965],[.79,.978],[shoulder-.045,.997],[shoulder,1],[h,.955]];
   const character=.548+.065*z;
-  let x=width(z)*station(sorted,y,1)-.018*doors*gauss(y,character+.085,.118)+.004*doors*gauss(y,character-.030,.042)+.012*gauss(z,-1.55,.55)*gauss(y,.91,.20);
+  const original=width(z)*station(sorted,y,1)-.018*doors*gauss(y,character+.085,.118)+.004*doors*gauss(y,character-.030,.042);
+  // A broad drawn sheet carries the upper shoulder into both wheel haunches.
+  // Keep the lower body envelope while removing the old double waist hollow.
+  const drawn=station(doorWidths,z,1)*station(formed,y,1)-.010*doors*gauss(y,character+.055,.15)+.003*doors*gauss(y,character-.030,.055);
+  let x=lerp(original,drawn,smooth(y,.48,.68))+.012*gauss(z,-1.55,.55)*gauss(y,.91,.20);
   // Handle cups are pressed into the continuous door sheet. They cannot be
   // represented by a black rectangle sitting proud of an unchanged panel.
-  for(const centre of [-.37,-1.22]){const dy=y-(belt(centre)-.077),dz=z-centre,q=Math.hypot(dy/.035,dz/.112);x-=.011*(1-smooth(q,.20,1));}
+  for(const centre of [-.37,-1.22]){const dy=y-(belt(centre)-.077),dz=z-centre,q=Math.hypot(dy/.043,dz/.125);x-=.0045*(1-smooth(q,.20,1));}
   return x;
  };
  const sidePoint=(s,z,y,offset=0)=>{
@@ -78,8 +84,31 @@ export function urusView(spec){
   }
   line(g,black,[...lipPoints,lipPoints[0]],lip);
  }
+ // A physical-height grid keeps shoulder and handle detail on coherent rows.
+ // The former wheel-arch-following parameter rows cut those thin features
+ // diagonally, making highlights pinch even with analytic source normals.
+ const samples=(a,b,step,extra=[])=>{
+  const count=Math.ceil((b-a)/step),values=[...Array.from({length:count+1},(_,i)=>lerp(a,b,i/count)),...extra];
+  return values.filter(x=>x>=a&&x<=b).sort((x,y)=>x-y).filter((x,i,all)=>!i||x-all[i-1]>.00001);
+ };
+ const sideZ=samples(-2.48,2.48,.022,[-.37,-1.22].flatMap(z=>samples(z-.145,z+.145,.008)));
+ const sideY=samples(.24,1.28,.018,samples(.84,1.27,.006));
  for(const s of [-1,1]){
-  surface(g,m.paint,260,60,(u,v)=>{const z=lerp(-2.48,2.48,u);return sidePoint(s,z,lerp(low(z),belt(z),v));},s>0);
+  const positions=[],normals=[],uv=[],indices=[],stride=sideZ.length,epsilon=.00002;
+  for(const level of sideY)for(const z of sideZ){
+   const y=clamp(level,low(z),belt(z)),point=sidePoint(s,z,y);
+   const dy=new T.Vector3(...sidePoint(s,z,y+epsilon)).sub(new T.Vector3(...sidePoint(s,z,y-epsilon)));
+   const dz=new T.Vector3(...sidePoint(s,z+epsilon,y)).sub(new T.Vector3(...sidePoint(s,z-epsilon,y)));
+   const normal=dz.cross(dy).normalize().multiplyScalar(s>0?-1:1);
+   positions.push(...point);normals.push(...normal.toArray());uv.push((z+2.48)/4.96,(y-.24)/1.04);
+  }
+  const emit=(a,b,c)=>{
+   const ay=positions[a*3+1],az=positions[a*3+2],by=positions[b*3+1],bz=positions[b*3+2],cy=positions[c*3+1],cz=positions[c*3+2];
+   if(Math.abs((bz-cz)*(ay-cy)+(cy-by)*(az-cz))>1.e-12)indices.push(...(s>0?[a,c,b]:[a,b,c]));
+  };
+  for(let y=0;y<sideY.length-1;y++)for(let z=0;z<stride-1;z++){const a=y*stride+z,b=a+1,c=a+stride,d=c+1;emit(a,b,c);emit(b,d,c);}
+  const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new T.Float32BufferAttribute(normals,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.setIndex(indices);
+  mesh(g,geometry,m.paint).name='urus-continuous-door-sheet-'+(s>0?'left':'right');
   surface(g,carbon,45,16,(u,v)=>{const z=lerp(-2.48,-2.05,u);return sidePoint(s,z,lerp(.27,low(z)+.003,v),.001);},s>0);
   // Faceted, body-following carbon arch flares, including the nearly flat crown.
   for(const axle of axles){
@@ -309,5 +338,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:9,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:10,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

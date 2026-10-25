@@ -37,15 +37,17 @@ export function fabScenery(root,terrain,routes,quarryBase){
   const group={asset:entry.id,kind:entry.kind,solid:entry.solid!==false,instances:[]};groups.push(group);
   const grass=entry.kind==='grass',ice=entry.id.includes('Ice'),snow=entry.kind==='snowbank';
   const centers=grass?[[-40,-15],[-73,35],[-12,38],[95,53],[-50,9],[-92,-32],[-10,-46],[10,18]]:snow?[[244,163],[215,183],[282,189],[286,235],[231,268],[311,228]]:ice?[[203,260],[273,241],[268,181]]:[[59,-91],[12,-121],[-33,-111]];
-  for(const center of centers)for(let i=0;i<(grass?90:snow?10:8);i++){
+  for(const center of centers)for(let i=0;i<(grass?140:snow?10:8);i++){
    const a=random()*Math.PI*2,r=Math.sqrt(random())*(grass?22:snow?9:13),x=center[0]+Math.cos(a)*r,y=center[1]+Math.sin(a)*r;
    let allowed=true;
    for(const z of terrain.zones)if(Math.hypot(x-z.spawn.z,y+z.spawn.x)<19)allowed=false;
    for(const route of routes){const p=[route.spawn,...route.gates].map(v=>v.slice(0,2).map(c=>c/100));for(let j=1;j<p.length;j++)if(dist([x,y],p[j-1],p[j])<10)allowed=false;}
    const sample=terrain.sample(-y,x);
    if(!allowed||grass&&sample.surface!=='dirt'||(ice||snow)&&sample.surface!=='snow'||!grass&&!ice&&!snow&&!['dirt','rock'].includes(sample.surface))continue;
-   const size=grass?.55+random()*.6:snow?.55+random()*.9:ice?.75+random()*.8:.35+random()*.45;
-   group.instances.push({p:[x*100,y*100,ground(x,y)*100],q:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),random()*Math.PI*2).toArray(),s:snow?[size*(1.4+random()),size,size*.55]:[size,size,size]});
+   const size=grass?.42+random()*.30:snow?.55+random()*.9:ice?.75+random()*.8:.35+random()*.45;
+   // Meadow blades are low irregular tufts, with varied height independent
+   // of their footprint. More small instances replace the waist-high clumps.
+   group.instances.push({p:[x*100,y*100,ground(x,y)*100],q:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),random()*Math.PI*2).toArray(),s:snow?[size*(1.4+random()),size,size*.55]:grass?[size,size,size*(.70+random()*.25)]:[size,size,size]});
   }
  }
  const cache=process.env.TERRA_FAB_CACHE||path.join(process.env.ProgramData||'C:/ProgramData','Epic/EpicGamesLauncher/VaultCache/FabLibrary',recipe.cacheFolder);

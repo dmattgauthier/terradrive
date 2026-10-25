@@ -30,10 +30,10 @@ export function scannedEnvironment(root,terrain,routes){
   const forest=hash(Math.floor(x/18)+Math.floor(z/18)*79,11),rock=s.surface==='rock'||hash(i,3)>.86;
   if(!rock&&forest<.45)continue;
   const options=placements.filter(p=>rock?p.asset.startsWith('scan_rock_moss_set_02'):p.asset.startsWith('scan_shrub_sorrel_01')),p=options[Math.floor(hash(i,4)*options.length)];
-  const count=rock?1:8;
+  const count=rock?1:5;
   for(let j=0;j<count;j++){
-   const scale=rock?.45+hash(i,5)*1.8:3+hash(i+j*19,5)*4,a=hash(i+j*7,6)*Math.PI*2;
-   const dx=rock?0:Math.cos(a)*hash(i+j,10)*.35,dz=rock?0:Math.sin(a)*hash(i+j,12)*.35;
+   const scale=rock?.45+hash(i,5)*1.8:2.4+hash(i+j*19,5)*2.2,a=hash(i+j*7,6)*Math.PI*2;
+   const dx=rock?0:Math.cos(a)*hash(i+j,10)*.45,dz=rock?0:Math.sin(a)*hash(i+j,12)*.45;
    p.instances.push({p:[(z+dz)*100,(-x-dx)*100,terrain.heightAt(x+dx,z+dz)*100-1],q:[0,0,Math.sin(a*.5),Math.cos(a*.5)],s:[scale,scale,scale],color:[1,1,1]});
   }
  }

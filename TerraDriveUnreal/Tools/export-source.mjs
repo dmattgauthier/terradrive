@@ -132,7 +132,7 @@ for(const g of [...placements,...environment.placements])if(g.instances.some(i=>
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
 for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);m.instanceTint=tinted.has(m.id);}
 const manifest={version:'1.15.0',nativeRevision:'body-circle-fab-2',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base,fabScenery:fabScenery(root,terrain,routes,quarry.base),loopFrames:Array.from({length:25},(_,i)=>{const f=challengeLoopFrame(i*Math.PI*2/24),p=f.point,n=f.normal,t=f.tangent;return {p:[p.z*100,-p.x*100,p.y*100],n:[n.z,-n.x,n.y],t:[t.z,-t.x,t.y]};})};
-manifest.nativeRevision='terrain-models-9';
+manifest.nativeRevision='fidelity-10';
 manifest.terrainGrade=terrain.gradeVersion;
 manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,assetCounts:trail.assetCounts,routeIndex:8};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));

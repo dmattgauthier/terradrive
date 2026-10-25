@@ -1,5 +1,5 @@
 {
-  "revision": "terrain-models-9",
+  "revision": "fidelity-10",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
@@ -102,8 +102,8 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 741537,
-      "normalizedFraction": 0.9996062232902742,
+      "vertices": 789687,
+      "normalizedFraction": 0.9996302332443108,
       "visibility": [
         {
           "pane": "windshield",
@@ -132,7 +132,7 @@
         },
         {
           "pane": "sculpted door",
-          "shoulderOutsetM": 0.05385014624785911
+          "shoulderOutsetM": 0.04160081517511083
         },
         {
           "pane": "partitioned bonnet and open intakes",

@@ -139,7 +139,12 @@ bool TerraWinterValidation::Tick(ATerraVehicle *V,float Dt,
     Overview=World->SpawnActor<ACameraActor>();
     if(Overview.IsValid()) {
       const FVector Focus=V->Terrain->Spawns[1]+FVector(0,0,100);
-      const FVector Eye=Focus+FVector(-2000,1300,1400);
+      // The old low oblique eye could sit inside the authored coast snowbank.
+      // Use a high near-overhead view and lift above actual scene collision.
+      FVector Eye=Focus+FVector(-900,500,4500);
+      FHitResult EyeGround;FCollisionQueryParams EyeQuery(SCENE_QUERY_STAT(TerraWinterOverview),true,V);
+      if(World->LineTraceSingleByChannel(EyeGround,Eye+FVector(0,0,50000),Eye-FVector(0,0,50000),ECC_Visibility,EyeQuery))
+        Eye.Z=FMath::Max(Eye.Z,EyeGround.ImpactPoint.Z+700.f);
       Overview->SetActorLocationAndRotation(Eye,(Focus-Eye).Rotation());
       Overview->GetCameraComponent()->SetFieldOfView(62);
       if(auto *PC=Cast<APlayerController>(V->GetController()))PC->SetViewTarget(Overview.Get());

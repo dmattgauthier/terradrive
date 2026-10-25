@@ -19,3 +19,6 @@ The source geometry audit checks all six bodies, normalized finite surfaces, ope
 ## Native acceptance
 
 The final package passes 676 native and 382 core checks, with 116 actually inspected current captures. Full-cook executable SHA-256: `0bdbf059543d6b837f99181207b1d0d12482a89627ca376476ac43eb7c65a51b`. See [validation-native.md](validation-native.md) for test counts, actual review, preservation, monitored rendering scope and remaining limits.
+## Current native acceptance
+
+The current fidelity-10 package passes 676 native checks and 382 core checks, with 116 current captures inspected. It retains the earlier coachwork, glazing, optics and physical-rut work while revising the Urus side skin and meadow scale. Executable SHA-256: `f5b5fee6e4eb8f635f0d945e03d407479bb6a622ba8bb7860a3ac68b145b86cf`. See [validation-native.md](validation-native.md) for current evidence and limits.

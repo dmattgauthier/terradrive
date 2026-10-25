@@ -37,5 +37,5 @@ for(const [z,half]of [[.80,.52],[1.0,.52],[1.2,.52],[1.4,.50],[1.6,.48],[1.8,.47
  const paintHits=new T.Raycaster(origin,direction,0,2).intersectObjects(paintMeshes,true).filter(h=>view.body.worldToLocal(h.point.clone()).y>.94);
  assert.equal(paintHits.length,0,`hidden painted bonnet overlaps carbon at ${x},${z}`);bonnetGridProbes++;
 }
-const report={kind:'source-geometry',nativeAcceptance:false,revision:9,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perOpening:counts,bonnetGridProbes,paintedIntrusions:0,pass:true};
+const report={kind:'source-geometry',nativeAcceptance:false,revision:10,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perOpening:counts,bonnetGridProbes,paintedIntrusions:0,pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();
