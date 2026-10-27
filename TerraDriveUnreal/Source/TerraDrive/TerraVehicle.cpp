@@ -1,4 +1,5 @@
 #include "TerraVehicle.h"
+#include "ProceduralMeshComponent.h"
 #include "TerraSimCore.h"
 #include "TerraContact.h"
 #include "TerraDriving.h"
@@ -59,6 +60,15 @@ ATerraVehicle::ATerraVehicle() {
   RearCollision->SetNotifyRigidBodyCollision(true);
   RearCollision->BodyInstance.bAutoWeld=true;
   RearCollision->BodyInstance.SetMassOverride(.001f,true);
+  CoachworkCollision=CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("CoachworkCollision"));
+  CoachworkCollision->SetupAttachment(Chassis);
+  CoachworkCollision->SetCollisionProfileName(TEXT("PhysicsActor"));
+  CoachworkCollision->SetNotifyRigidBodyCollision(true);
+  CoachworkCollision->bUseComplexAsSimpleCollision=false;
+  CoachworkCollision->bUseAsyncCooking=false;
+  CoachworkCollision->BodyInstance.bAutoWeld=true;
+  CoachworkCollision->BodyInstance.SetMassOverride(.001f,true);
+  CoachworkCollision->SetHiddenInGame(true);
   Body = CreateDefaultSubobject<UStaticMeshComponent>(
       TEXT("OriginalVehicleModel"));
   Body->SetupAttachment(Chassis);
@@ -107,6 +117,7 @@ void ATerraVehicle::BeginPlay() {
   Chassis->OnComponentHit.AddDynamic(this, &ATerraVehicle::BodyHit);
   FrontCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
   RearCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
+  CoachworkCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
   AutoTest = FParse::Param(FCommandLine::Get(), TEXT("TerraValidate"));
   // Tires supply terrain grip. A grounded metal/plastic undertray should
   // slide over a crest rather than behaving like a second high-friction tire.
@@ -119,6 +130,8 @@ void ATerraVehicle::BeginPlay() {
   Chassis->SetPhysMaterialOverride(UndertrayMaterial);
   FrontCollision->SetPhysMaterialOverride(UndertrayMaterial);
   RearCollision->SetPhysMaterialOverride(UndertrayMaterial);
+  RoofCollision->SetPhysMaterialOverride(UndertrayMaterial);
+  CoachworkCollision->SetPhysMaterialOverride(UndertrayMaterial);
   CreateVisualDetails();
   SelectVehicle(0);
   TeleportZone(0);
@@ -191,6 +204,8 @@ void ATerraVehicle::SelectVehicle(int Index) {
   RoofCollision->SetBoxExtent(FVector(Number(TEXT("length"),4.8)*.30f,
       Number(TEXT("width"),1.8)*.33f,Number(TEXT("height"),1.8)*.28f)*100);
   RoofCollision->SetRelativeLocation(FVector(0,0,(Number(TEXT("height"),1.8)*.62f-CG)*100));
+  ConfigureCoachworkCollision();
+  Chassis->SetMassOverrideInKg(NAME_None,Mass);
   Chassis->SetCenterOfMass(FVector::ZeroVector);
   Damage = 0;
   Gear = 0;

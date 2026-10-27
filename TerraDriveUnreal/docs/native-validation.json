@@ -1,12 +1,22 @@
 {
   "sourceDeltaAudit": {
     "pass": true,
-    "nativeRevision": "body-contours-11",
-    "changedMeshes": [
+    "nativeRevision": "rollover-coachwork-12",
+    "changedBodyGeometry": [
+      "wrangler_rubicon_body.obj",
+      "bronco_badlands_body.obj",
       "civic_sport_body.obj",
+      "sprinter_2500_body.obj",
+      "hummer_ev_suv_3x_body.obj",
       "urus_performante_body.obj"
     ],
-    "otherMeshFilesUnchanged": 236,
+    "otherMeshGeometryUnchanged": 232,
+    "materialIdShift": {
+      "insertionIndex": 20,
+      "newMaterial": "M_020",
+      "reason": "Jeep fog optical reflector",
+      "remappedOtherOBJHashes": true
+    },
     "allScenePlacementsAndRoutesUnchanged": true,
     "protectedNativeDataUnchanged": [
       "terrain-blend.bin",
@@ -16,14 +26,14 @@
       "winter-level.json"
     ],
     "mechanicalSpecificationsUnchanged": true,
-    "physicsSourceUnchanged": true,
+    "brakeReverseMaterialBindingsPreserved": true,
     "terrainShaderUnchanged": true,
     "vehicleVertices": [
       {
         "vehicle": "Jeep Wrangler Rubicon",
         "previous": 488094,
-        "current": 488094,
-        "delta": 0
+        "current": 490542,
+        "delta": 2448
       },
       {
         "vehicle": "Ford Bronco Badlands",
@@ -33,15 +43,15 @@
       },
       {
         "vehicle": "Honda Civic Sport",
-        "previous": 308263,
+        "previous": 310942,
         "current": 310942,
-        "delta": 2679
+        "delta": 0
       },
       {
         "vehicle": "Mercedes-Benz Sprinter 2500",
         "previous": 593878,
-        "current": 593878,
-        "delta": 0
+        "current": 594015,
+        "delta": 137
       },
       {
         "vehicle": "GMC HUMMER EV SUV",
@@ -56,36 +66,40 @@
         "delta": 0
       }
     ],
-    "file": "Saved/contours11-source-audit.json",
-    "SHA256": "f8069e32027088a343b4bc6d3c3e85f10353db1ddfacb52bde90c808c64f5ff4"
+    "file": "Saved/rollover12-source-audit.json",
+    "SHA256": "5cbbad0867b2380dd8ac4951851fb89bca4b450c8977c35ca570ae83e63a9441"
   },
-  "update": "body-contours-11",
-  "nativeRevision": "body-contours-11",
-  "verifiedAt": "2026-10-25T23:31:22.363Z",
+  "update": "rollover-coachwork-12",
+  "nativeRevision": "rollover-coachwork-12",
+  "verifiedAt": "2026-10-27T03:11:05.401Z",
   "engine": "5.8.3",
   "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-  "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+  "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
   "assetCook": {
     "buildSuccessful": true,
     "processExit": 0,
-    "completed": "2026-10-25T23:06:05.6844640Z",
-    "log": "Saved/contours11-build-2.log",
-    "SHA256": "d628553c0f679db5a3f23b541b7a1098ab8f23a6939770ee7869760efb4c6755",
+    "completed": "2026-10-27T01:32:16.2395267Z",
+    "log": "Saved/rollover12-build-1.log",
+    "importMarker": "Saved/import-complete.json",
+    "importStarted": "2026-10-27T01:12:20.0226142Z",
+    "importLog": "Saved/rollover12-import-1.log",
     "executable": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-    "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+    "executableSHA256": "546310a78fab4e0c84bc6470daf399e189d38dd1fa22d342bbc881c7fc0f5e81",
     "sourceSHA256": {
       "Source/TerraDrive/TerraContact.h": "eebefcf6e4b07f8602d7dd6d881bb14e50794befb1047befa369a54e17ec00d1",
       "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
       "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
       "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
-      "Source/TerraDrive/TerraGameMode.cpp": "121bd5c540c7be7122af2ce76d5320fbef9724d25b62f5bd058c0dc094795014",
+      "Source/TerraDrive/TerraGameMode.cpp": "ca890f0b88069280449c76c8734bdaab84e283664158a36134101828d70d6700",
       "Source/TerraDrive/TerraGameMode.h": "59e2812b6a861aea85fa8d65e72cd2e31e55b3bbeaa30e32d6b4ac7516d65c5c",
       "Source/TerraDrive/TerraGarage.cpp": "bad1f48e9ebacd871d1c1bc9c59fee7e7463e32473075b20b7961ccce4d55660",
       "Source/TerraDrive/TerraGarage.h": "cb9489528e07d71aa58bb0dc0726274b4345ef40c7f18ecedece991a37213d17",
       "Source/TerraDrive/TerraGraphics.cpp": "13814fd17d7ceb7cc0a6b156daad6e99d9e05b584c0b9ee02f0c6aa96c85e671",
       "Source/TerraDrive/TerraGraphics.h": "3671653f6296e715dcfb1094315c857e2eac7cc4048440f89d9aaeeb6f459ad3",
-      "Source/TerraDrive/TerraMomentumValidation.cpp": "5d4949a43141477dcc93c6c6371b045bffe3b8171053b861fcc0a7bc9da90feb",
+      "Source/TerraDrive/TerraMomentumValidation.cpp": "144ac9e1d942cc9c6a29136b48b0edf1d96f299c9d92365ccc23ecfa773a3c17",
       "Source/TerraDrive/TerraMomentumValidation.h": "bf63d252755911878a2ebae377b4b4b3f43a34fd3fc78128e879d683c10b7339",
+      "Source/TerraDrive/TerraRolloverValidation.cpp": "a4462d6c94191736e1955a54257195ba4c26d278e80fabb5de809ce87542985d",
+      "Source/TerraDrive/TerraRolloverValidation.h": "9cc9c383d1e68165aaf28fdcb14dbbc6aac8977f4d94f84dd9c0ae984e4aa83e",
       "Source/TerraDrive/TerraRutDriveValidation.cpp": "ef4949bdd5e7913ef3f1e2c982977ea7551c4fa0bc6c890a139d202985ff6595",
       "Source/TerraDrive/TerraRutDriveValidation.h": "3884ad8265c50205556671c700ea3141b787af2b5900038c21ff4844e065f0d9",
       "Source/TerraDrive/TerraRutValidation.cpp": "6dbc97bd5f21f2ab8dfc3ad406bd9f7d8b9891b79900faa17627bf1a9d4c7eb2",
@@ -94,8 +108,9 @@
       "Source/TerraDrive/TerraTireMarks.cpp": "63eb1f83324ac2e2b91a8c4ff7fa0f8712be47a29919e9501bf7be6f14c1a280",
       "Source/TerraDrive/TerraUnits.h": "253f36297c9a94020eb6c5556042b05b2433e8e7d8ba2a3b2f72828dc1488914",
       "Source/TerraDrive/TerraUpgrades.h": "3c398825c6f568cb83ddb0e0bb20be0d2bbf618d80611b278c21e307142ec320",
-      "Source/TerraDrive/TerraVehicle.cpp": "195fdff52119407fc47006df126178e808a0798d6c748c0ee47491b0501c646c",
-      "Source/TerraDrive/TerraVehicle.h": "da4bd75dae57b795a3b649d995239f3cd7d7be047eaeeb6364c4f5071c2fe6c8",
+      "Source/TerraDrive/TerraVehicle.cpp": "8e8e359ecc1379cb608a662edd6a5b136824eb30192df26ec9d02242d09959be",
+      "Source/TerraDrive/TerraVehicle.h": "2875e7a66953f1b6271b476f008e70e68d2eb3e0e7f0feff2a80a5985b57a3c5",
+      "Source/TerraDrive/TerraVehicleCollision.cpp": "85f883884b159550b46b7008fc088f52f872a243ce1b9114b5e6bb08ccc96c00",
       "Source/TerraDrive/TerraVehicleGarage.cpp": "f899b3c0ce40b86a2ed1669ecd623d91495bfd6d321cd39bd2dc5e38f777d5f9",
       "Source/TerraDrive/TerraVehicleLamps.cpp": "ee679571f1f2b9cb4094c894c4286ea32db118d0e19a97272a5c7a2027493969",
       "Source/TerraDrive/TerraVehicleVisuals.cpp": "3abfd71e2a695e5fb9981bb520eaabc2af572ba41f372e281c97ae29677f5bd7",
@@ -108,18 +123,19 @@
       "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
       "Source/TerraDriveEditor.Target.cs": "57232ee6bc870cca86e6f7bdd83daa4674607633d9d8791c7671481d29edf534",
       "Tools/automotive-materials.py": "73f6190b35678560ce02180622b7ecefa00f181f85d7aee9b0baa19ef11326ab",
+      "Tools/bake-coachwork-collision.mjs": "17a71f36a5e2d3636c34557e95e34686104d9fe7c8f7e05ff82daaf780669f9f",
       "Tools/bake-terrain-transitions.mjs": "c4d45c3eb02a45b9f89d25fea89bd28890838857cf2bc07a9bc653b22e017445",
       "Tools/bake-vehicle-ground-probes.mjs": "e12283c10a6dbbe68ae8c7495ffcfcc93b232d79e8b30753c98bb5bacd74e01d",
-      "Tools/body-refinement.mjs": "e82ffbdca9f798df11dfd8400606406e8beb45a1f332cdd16e2079eaeb9dada9",
+      "Tools/body-refinement.mjs": "d5395ce187992ab6d73cd2ada0caf322206b0ea95cbc96c52ab46b29d1cc9b91",
       "Tools/body-surface.mjs": "6a6bee7dfad9845c5bbe8c2bf98755658e2b815a29b12e87169de164367e43e2",
-      "Tools/build-native.ps1": "f46f9ac9839ac5131f2b153ae22efead58c0834142f4ac3aaff3c63b9e0af0b5",
+      "Tools/build-native.ps1": "36fd1bcdc64606ef2eaaf4f42b73d9a368531e900941c0243cbc69e72eab3278",
       "Tools/civic-body.mjs": "9ceb1a267575d1053d12ae8d9dfc5cd04d0eb0ddfd54c6d3666c61fa8d19cba0",
       "Tools/close-rocks.py": "37c1286880bfba0f91cb424069531e50cdfb17b19d7b0bc44792fee3fcc1f249",
-      "Tools/export-source.mjs": "13e6fcb2a6cf14eef320b77b4cf7624313889cd766c211eec74dc8311afdafac",
+      "Tools/export-source.mjs": "fde1fa851ef943a02d74239351314c0394ec359aa5b229c03aac27680cbd1b1a",
       "Tools/fab-scenery.json": "92930d630dd0fe842c41da5038e33f3e31389827d7717b805d6bc5b725c5326f",
       "Tools/fab-scenery.mjs": "9fa9626b8fe7098c94656edbd3f6c600bd68b5f2424db1dccd9210388982cf7a",
       "Tools/fetch-environment-assets.py": "8c61d123225e804e949b4df78c81923351324d3b9de86d14a6330e9b5a5eef83",
-      "Tools/hummer-body.mjs": "8c7bf6d6ab44d7d7d11e6c8ac091ddd3b6194eb0bfc038daedafdcee2f9711af",
+      "Tools/hummer-body.mjs": "bf8171f26e9e5a2073cba3fed9b91852f91c0bab34014150d8c8e3c2ebdbe17c",
       "Tools/import-assets.py": "e9392bee9fd0f37ec8e0bca0016dee8486d30dd2c2f261d04425a3178efff2fd",
       "Tools/import-fab.py": "dd20fc4bc1bbe15a0721eee01bf0a81a2ca157a78630dd9f5e3702c5dd98e072",
       "Tools/import-scan-grass-opacity.py": "b53d173e7d9c239d450e824c9cd98d724feff9d2dfacd8770715ec7b66bbf711",
@@ -134,33 +150,34 @@
       "Tools/rebuild-ground.py": "ac9696a3d164e03a47e82b4bd25fdb897b82d439c269cf90fd410b0285fbdd3a",
       "Tools/scanned-environment.mjs": "79b0b9b5138c1c60594fa0c80932f365d43f53cce165fae593fadd4bcafdd1bd",
       "Tools/sky-material.py": "f2e9c58393ae51fc31e07512fd64b8b286a007758a0ff6651ad8654192554925",
-      "Tools/sprinter-body.mjs": "1226ad5f52f42559d4b6f7b4f268a0ec15de3ce4d7cfebd80d566ea00b6f41df",
+      "Tools/sprinter-body.mjs": "01b4d11a1daa0ce330139898a23266a18c0bca182156c02acaf8c7957cbc5592",
       "Tools/stage-native-code.ps1": "3d277969a20cedec3dcf85de485962c6adbe4c4dfbeadbcbe73002a337aeebb2",
-      "Tools/suv-body.mjs": "ecdbba85ad88c273879131a4c1946b7973f34c456dd26104190ebb0b2f000102",
+      "Tools/suv-body.mjs": "8d0e3f98b696aff2389123e28858816379bb2e19f06c5fab2f0f8a835cb0c4ab",
       "Tools/terrain-ground-blend.py": "66e3fa0acf502ef75044681d902a38c4b5c139ccf22d2fa07e1f2adf86197e66",
       "Tools/terrain-materials.py": "172f4f9203fe3b136ae7f21712179e02cb245bccf1225d014579ecd1bff87a1a",
       "Tools/terrain-surface.hlsl": "e16842054d7d0046b90cb55f4776d2ba8e2ff185f76c85efc7323b6f8c5f6ceb",
       "Tools/test-core.cmd": "06f3e8dbde5ccdfa032422eff1fbccc0b777e0ec9a67f61c411333c11e0b72ad",
       "Tools/test-core.cpp": "82a3b8f5ef3412dc1bc406070032600b4079a9b7c184f7f0b22cc3dfb15daf02",
       "Tools/tire-mark-materials.py": "9d28390c9c4aea23effbdddfea18411a5a39756ae362be1c643fe27270188617",
-      "Tools/urus-body.mjs": "ab3debb5f4a7338c74c4760ec0be29aa5a2a5a9a96a56e13c283c5c033ece4f0",
+      "Tools/urus-body.mjs": "6e8256eb873ede82a516f8db65e9f3be294f34493035f2543ad48fd65cdcb936",
       "Tools/urus-cabin.mjs": "3e9b071df2aec7da1744b6bf8dabd606ff16059863f3cbdaf55da3bdbdb4d66e",
       "Tools/urus-model.mjs": "dc7e9c69574d582c9e8beabcf108d367578b921a9899d32378aa05934986215b",
       "Tools/validate-body-contours.mjs": "56d9350fd68ae0156d7b71b64fea468a66d8a1a178021d7591e71a0c4834a1a7",
       "Tools/validate-export.mjs": "9f8554469f92973e5b548d782d7f2f155b2f32f61f2cec746177eb4f6e892e8f",
-      "Tools/validate-models.mjs": "bef80b8b962a55426938315a97a3499797720241dc15498995db4f1c2376dafa",
+      "Tools/validate-models.mjs": "820f25ea262fe65d3881196f37bf15fc5969e68cdc79797ec455c34f8d197ce4",
       "Tools/validate-terrain-transitions.mjs": "3d8b86160a0562c86df754b49daa47e60245ca955b2a8eb6bb2f82e443fdd072",
-      "Tools/validate-urus-panels.mjs": "c0df39e3e0820b6e79881cf41933b552a2b1a2d8611267ec3bfd130cbb0baeaa",
+      "Tools/validate-urus-panels.mjs": "e4932a9d466dddc4ec0965137dd1017d235c49f704a0e88d8d135f53a88ba30c",
       "Tools/vehicle-cabin.mjs": "4b3184004628eeee829b6ec06ed208b7de16b1b7c3343d1d0dd881b6084e1b7f",
       "Tools/vehicle-fenders.mjs": "29ec5521a4993436be54207e8bc25f249b8fb098eb1123a8e66a0ded86abe871",
       "Tools/vehicle-fidelity.mjs": "69d6ee54bce127031c24e6e561fb175e5b32f01071e14d5417489ab4f171927a",
       "Tools/vehicle-geometry.mjs": "0c3ad21f89d0ee073869f82088ecfe4768cd27145d30183b255ba7d13b6cddd1",
-      "Tools/vehicle-realism.mjs": "8d4f316b83f0e9368b4ea47260baceb21a6c26579ac130bc5bd4d5a7d2c30d23",
+      "Tools/vehicle-realism.mjs": "6b13763d0732d0ce1e58dcd2483a7ea11352dc8072fe7cd37887e20de21c7e28",
       "Tools/verify-model-art.ps1": "4a3641908dabbe367fef7966371a0dd84b5b6698d8a9df239bea99271a8fba78",
       "Tools/verify-native.ps1": "9210f79f2fe8a0892398ba96890ec5350ad7bea4959d207ee82572e381473616",
       "Tools/verify-render.ps1": "be85ae6a04a10645edbd5665a3f5991048cba136f073e25bc657259bd3dbc7fb",
+      "Tools/verify-rollover.ps1": "ff62634137ed020f28372444ed2c8ad5f002abaa9bbd0cbc930d39d6c8a2c12b",
       "Tools/verify-ruts.ps1": "b8a1a006762a020cc94e44a7df200d0785a31537ec98e320575064966220307e",
-      "Tools/verify-winter.ps1": "4d8cc04a6b5bec46e5578e4410a2c1edfc6b5a98882930057625f6e7314eef11",
+      "Tools/verify-winter.ps1": "7724bbff24aa64c3f985c9b6b5515f1320ff1b9042b7871e9027826f8a000895",
       "Tools/winter-level.py": "9def6b47a53e313e2ab8c31b889038600a1d5c0e20e415c811858d936ebfdb01",
       "Tools/winter-survey.py": "c478a5d611cf917c12fa5b8b18bc656654a54a5c2796badfe738564ec8f18db8",
       "Config/DefaultEngine.ini": "1cbd2785d9d1cc0d5e7d71efda8c4ad97e1445958d507cf0f1f8ef47d7516d08",
@@ -168,25 +185,28 @@
       "Config/DefaultInput.ini": "531d3688d1aa3adc796a546daac9cdb39b05dce63ea7568afde7589e1efb1f4f"
     },
     "packagedContentSHA256": {
-      "global.ucas": "8eaadfd5df540a4a0ec05bfe3389b89e5ff24d76c5926d8eebf3718024253c46",
-      "global.utoc": "3ce5eaa366357af7abea5fc8c4a5e90e5fd7fc2b431416b1e6a2fd25d3992729",
-      "TerraDrive-Windows.pak": "0d47f28624c1b0b2c2e4577a4bb4e6f5083b960377e129d49164ead33a88eb55",
-      "TerraDrive-Windows.ucas": "af513a6b37bb324e747005026496dd4b6d377e95c2a19f1262ffd19b0aa79a59",
-      "TerraDrive-Windows.utoc": "0df925d896c0c3689fb18bd2f5d8d1808c9f720303575b4d3783e71641052fb1"
+      "global.ucas": "89fab2a3cdcb63f1049c41c9048a427a55b052ac20b8988f34e6e183ea16e654",
+      "global.utoc": "a961d235a33ca61551ae5fbb2bec89ca9bea41c6569ed46578880a274573b8bd",
+      "TerraDrive-Windows.pak": "f358cbe00573764b1e09adf23be4171c9fceda319388badf8da1260f39a079d1",
+      "TerraDrive-Windows.ucas": "15724e74cc390fd41b8be88998aa6e273ead78245c036a54cf1230f919504c6d",
+      "TerraDrive-Windows.utoc": "0364da9c5d9e81bc51f4bae145f9eabb00d47da9bad47bc5224e5520f6f2ae49"
     },
     "nativeDataSHA256": {
       "terrain-blend.bin": "d4d185b487183a15debd116b02cb0bfa9cc4641cb8464994c3249101d3be205b",
       "terrain-transitions.json": "01236808144b554fa23328b689d3472c75166df9592266c6dd7c5cfeefca8dd0",
       "terrain.bin": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
       "texture-credits.json": "b9502ba635959c1b4cc8ff7476fb07ace515c0f7229f600ee43bdb93f3193867",
-      "vehicle-ground-probes.json": "b184b951bf3f31839e994be4904a340e7c414c4ba4749d13a03cc0e096f90383",
+      "vehicle-collision.json": "bb05be4d10678bc5d27997a5ba190f624e59b9f31291a757f43ee61403915262",
+      "vehicle-ground-probes.json": "4c7717850db4c404b56810385cf5b6d2c3537e6180004341d77e2a0e66a7d8d6",
       "winter-level.json": "5a46a0504f75d9c6861249731b55092a3ec26376c7ffdb2d745eea5559a0aa4d",
-      "world.json": "fd36888193ed6eaad717dda101156937ed9741dbb5906db3ce50501e340d99a5"
+      "world.json": "e1cd8838c7aecb72ebf4923ee3f74513c58565ef28b3fcdff46e0b4b60611bb3"
     },
-    "packagedNativeDataDirectory": "Saved/Contours11PakVerified-2/TerraDrive/Content/NativeData",
-    "pakListingSHA256": "3e69891c7603a07306e371493d7002efb7ea499dc73ba4f8c3f6a8ec0a025423",
-    "materialOnlyRevision": false,
+    "packagedNativeDataDirectory": "Saved/Rollover12PakVerified-1/TerraDrive/Content/NativeData",
+    "SHA256": "e58443806937b670bf6e87cccfa974564d86951d5f2e56d29c92bdb60c8c2117",
+    "pakListingSHA256": "62396a7eef91b9268c93845eef86b079227191b0f70d83fed4df8ee876cdb063",
     "terrainBindingsSHA256": "be28a61db518721115da920233b9be9fe7a79ef43d013bafdd0868bdd258f60f",
+    "boundedResidentGroundTextures": 49,
+    "groundTextureReferences": 63,
     "groundResidencyReadback": [
       {
         "material": "/Game/Materials/Terrain_dirt",
@@ -708,19 +728,76 @@
       }
     ]
   },
+  "runtimeStage": {
+    "completed": "2026-10-27T02:36:51.0549323Z",
+    "executable": "C:\\Users\\dmatt\\Documents\\ChatGPT\\terra drive\\TerraDriveUnreal\\Build\\Windows\\TerraDrive\\Binaries\\Win64\\TerraDrive.exe",
+    "SHA256": "449198103240594D632968C382393523A8C3AE9454FD283E3762FBDFACC43A9C",
+    "assetCookReused": true,
+    "pakFilesPreserved": [
+      {
+        "path": "C:\\Users\\dmatt\\Documents\\ChatGPT\\terra drive\\TerraDriveUnreal\\Build\\Windows\\TerraDrive\\Content\\Paks\\global.ucas",
+        "size": 3199744,
+        "modified": 639286612250805100
+      },
+      {
+        "path": "C:\\Users\\dmatt\\Documents\\ChatGPT\\terra drive\\TerraDriveUnreal\\Build\\Windows\\TerraDrive\\Content\\Paks\\global.utoc",
+        "size": 782,
+        "modified": 639286613304636700
+      },
+      {
+        "path": "C:\\Users\\dmatt\\Documents\\ChatGPT\\terra drive\\TerraDriveUnreal\\Build\\Windows\\TerraDrive\\Content\\Paks\\TerraDrive-Windows.pak",
+        "size": 54700818,
+        "modified": 639286612222186200
+      },
+      {
+        "path": "C:\\Users\\dmatt\\Documents\\ChatGPT\\terra drive\\TerraDriveUnreal\\Build\\Windows\\TerraDrive\\Content\\Paks\\TerraDrive-Windows.ucas",
+        "size": 1841922336,
+        "modified": 639286613304616800
+      },
+      {
+        "path": "C:\\Users\\dmatt\\Documents\\ChatGPT\\terra drive\\TerraDriveUnreal\\Build\\Windows\\TerraDrive\\Content\\Paks\\TerraDrive-Windows.utoc",
+        "size": 1001169,
+        "modified": 639286613304686800
+      }
+    ],
+    "sourceBinary": "C:\\Users\\dmatt\\Documents\\ChatGPT\\terra drive\\TerraDriveUnreal\\Binaries\\Win64\\TerraDrive.exe",
+    "log": "Saved/rollover12-garage-code.log",
+    "logSHA256": "d8322b667e2b0fb4a30c2b6b0961d8712df017f963c8e81877851e4a900ce9ba",
+    "rawReceipt": "Saved/code-stage-receipt.json",
+    "rawReceiptSHA256": "10a3675a767d079cbe34d6ebbdf088b58b9b8fc73d996a0201433d238de25cfb",
+    "validationOnly": false,
+    "normalizedSourceDelta": [
+      "Source/TerraDrive/TerraGameMode.cpp",
+      "Source/TerraDrive/TerraRolloverValidation.cpp",
+      "Source/TerraDrive/TerraVehicleCollision.cpp",
+      "Source/TerraDrive/TerraVehicleGarage.cpp"
+    ],
+    "previousRuntimeReceipt": "Saved/Rollover12GarageDiagnostic/rollover12-accepted-runtime.json",
+    "previousRuntimeReceiptSHA256": "2d6ab41f74162ac2ab831815049966b82a0c463a9a1cc11d13e7df228aead0df",
+    "previousExecutableSHA256": "34336ffeac75554b63ccd7caa634162e3bf343ed3838299a394eb146a8751c6b",
+    "sourceDeltaFromPrevious": [
+      "Source/TerraDrive/TerraRolloverValidation.cpp",
+      "Source/TerraDrive/TerraVehicleCollision.cpp",
+      "Source/TerraDrive/TerraVehicleGarage.cpp"
+    ],
+    "change": "Urus revision assertion plus garage prepared/active coachwork collision lifecycle, explicit mass/COM restoration and garage-selection rollover fixtures; cooked models/materials/data unchanged"
+  },
+  "originalAssetCookReceiptSHA256": "ba1d9cf876f6828d87760a629b3f826bf035b01e1cd6a4d2e580d664acf1e583",
   "sourceSHA256": {
     "Source/TerraDrive/TerraContact.h": "eebefcf6e4b07f8602d7dd6d881bb14e50794befb1047befa369a54e17ec00d1",
     "Source/TerraDrive/TerraDrive.Build.cs": "12024fdd194e424d49345558c590b312bf3584358a61623b2ce4ef49e33cea7f",
     "Source/TerraDrive/TerraDrive.cpp": "4ce7a2dc1942ad5ca880087977922f7d88645e511c1f57574c72644f460a9be4",
     "Source/TerraDrive/TerraDriving.h": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5",
-    "Source/TerraDrive/TerraGameMode.cpp": "121bd5c540c7be7122af2ce76d5320fbef9724d25b62f5bd058c0dc094795014",
+    "Source/TerraDrive/TerraGameMode.cpp": "c03cbbb5fee6803f1d0609518530720db2b2ff8a46b6d21aa45b3111ef3fc6ba",
     "Source/TerraDrive/TerraGameMode.h": "59e2812b6a861aea85fa8d65e72cd2e31e55b3bbeaa30e32d6b4ac7516d65c5c",
     "Source/TerraDrive/TerraGarage.cpp": "bad1f48e9ebacd871d1c1bc9c59fee7e7463e32473075b20b7961ccce4d55660",
     "Source/TerraDrive/TerraGarage.h": "cb9489528e07d71aa58bb0dc0726274b4345ef40c7f18ecedece991a37213d17",
     "Source/TerraDrive/TerraGraphics.cpp": "13814fd17d7ceb7cc0a6b156daad6e99d9e05b584c0b9ee02f0c6aa96c85e671",
     "Source/TerraDrive/TerraGraphics.h": "3671653f6296e715dcfb1094315c857e2eac7cc4048440f89d9aaeeb6f459ad3",
-    "Source/TerraDrive/TerraMomentumValidation.cpp": "5d4949a43141477dcc93c6c6371b045bffe3b8171053b861fcc0a7bc9da90feb",
+    "Source/TerraDrive/TerraMomentumValidation.cpp": "144ac9e1d942cc9c6a29136b48b0edf1d96f299c9d92365ccc23ecfa773a3c17",
     "Source/TerraDrive/TerraMomentumValidation.h": "bf63d252755911878a2ebae377b4b4b3f43a34fd3fc78128e879d683c10b7339",
+    "Source/TerraDrive/TerraRolloverValidation.cpp": "3d4d136a3bda31928605fd1e9702aa0f9b7e9f6b0de52c93ee994ae0cdf572eb",
+    "Source/TerraDrive/TerraRolloverValidation.h": "9cc9c383d1e68165aaf28fdcb14dbbc6aac8977f4d94f84dd9c0ae984e4aa83e",
     "Source/TerraDrive/TerraRutDriveValidation.cpp": "ef4949bdd5e7913ef3f1e2c982977ea7551c4fa0bc6c890a139d202985ff6595",
     "Source/TerraDrive/TerraRutDriveValidation.h": "3884ad8265c50205556671c700ea3141b787af2b5900038c21ff4844e065f0d9",
     "Source/TerraDrive/TerraRutValidation.cpp": "6dbc97bd5f21f2ab8dfc3ad406bd9f7d8b9891b79900faa17627bf1a9d4c7eb2",
@@ -729,9 +806,10 @@
     "Source/TerraDrive/TerraTireMarks.cpp": "63eb1f83324ac2e2b91a8c4ff7fa0f8712be47a29919e9501bf7be6f14c1a280",
     "Source/TerraDrive/TerraUnits.h": "253f36297c9a94020eb6c5556042b05b2433e8e7d8ba2a3b2f72828dc1488914",
     "Source/TerraDrive/TerraUpgrades.h": "3c398825c6f568cb83ddb0e0bb20be0d2bbf618d80611b278c21e307142ec320",
-    "Source/TerraDrive/TerraVehicle.cpp": "195fdff52119407fc47006df126178e808a0798d6c748c0ee47491b0501c646c",
-    "Source/TerraDrive/TerraVehicle.h": "da4bd75dae57b795a3b649d995239f3cd7d7be047eaeeb6364c4f5071c2fe6c8",
-    "Source/TerraDrive/TerraVehicleGarage.cpp": "f899b3c0ce40b86a2ed1669ecd623d91495bfd6d321cd39bd2dc5e38f777d5f9",
+    "Source/TerraDrive/TerraVehicle.cpp": "8e8e359ecc1379cb608a662edd6a5b136824eb30192df26ec9d02242d09959be",
+    "Source/TerraDrive/TerraVehicle.h": "2875e7a66953f1b6271b476f008e70e68d2eb3e0e7f0feff2a80a5985b57a3c5",
+    "Source/TerraDrive/TerraVehicleCollision.cpp": "5dc3ef090188ca70a7e68075bd6b1889c2fa6171b86e332cd0d220a04ea8e86f",
+    "Source/TerraDrive/TerraVehicleGarage.cpp": "20372f7e2804bbf119e24cdb99ec0959c82e8ce037ba093630ea0b41699cc879",
     "Source/TerraDrive/TerraVehicleLamps.cpp": "ee679571f1f2b9cb4094c894c4286ea32db118d0e19a97272a5c7a2027493969",
     "Source/TerraDrive/TerraVehicleVisuals.cpp": "3abfd71e2a695e5fb9981bb520eaabc2af572ba41f372e281c97ae29677f5bd7",
     "Source/TerraDrive/TerraWinter.cpp": "6f2b9abae62790a28e000d9020de675540ad0764b1f2bed9cfb35a13b862af85",
@@ -743,18 +821,19 @@
     "Source/TerraDrive.Target.cs": "15a2ea551251d50c84911142d004537e395afbdec5196d47f61181482a8d5ac4",
     "Source/TerraDriveEditor.Target.cs": "57232ee6bc870cca86e6f7bdd83daa4674607633d9d8791c7671481d29edf534",
     "Tools/automotive-materials.py": "73f6190b35678560ce02180622b7ecefa00f181f85d7aee9b0baa19ef11326ab",
+    "Tools/bake-coachwork-collision.mjs": "17a71f36a5e2d3636c34557e95e34686104d9fe7c8f7e05ff82daaf780669f9f",
     "Tools/bake-terrain-transitions.mjs": "c4d45c3eb02a45b9f89d25fea89bd28890838857cf2bc07a9bc653b22e017445",
     "Tools/bake-vehicle-ground-probes.mjs": "e12283c10a6dbbe68ae8c7495ffcfcc93b232d79e8b30753c98bb5bacd74e01d",
-    "Tools/body-refinement.mjs": "e82ffbdca9f798df11dfd8400606406e8beb45a1f332cdd16e2079eaeb9dada9",
+    "Tools/body-refinement.mjs": "d5395ce187992ab6d73cd2ada0caf322206b0ea95cbc96c52ab46b29d1cc9b91",
     "Tools/body-surface.mjs": "6a6bee7dfad9845c5bbe8c2bf98755658e2b815a29b12e87169de164367e43e2",
-    "Tools/build-native.ps1": "f46f9ac9839ac5131f2b153ae22efead58c0834142f4ac3aaff3c63b9e0af0b5",
+    "Tools/build-native.ps1": "36fd1bcdc64606ef2eaaf4f42b73d9a368531e900941c0243cbc69e72eab3278",
     "Tools/civic-body.mjs": "9ceb1a267575d1053d12ae8d9dfc5cd04d0eb0ddfd54c6d3666c61fa8d19cba0",
     "Tools/close-rocks.py": "37c1286880bfba0f91cb424069531e50cdfb17b19d7b0bc44792fee3fcc1f249",
-    "Tools/export-source.mjs": "13e6fcb2a6cf14eef320b77b4cf7624313889cd766c211eec74dc8311afdafac",
+    "Tools/export-source.mjs": "fde1fa851ef943a02d74239351314c0394ec359aa5b229c03aac27680cbd1b1a",
     "Tools/fab-scenery.json": "92930d630dd0fe842c41da5038e33f3e31389827d7717b805d6bc5b725c5326f",
     "Tools/fab-scenery.mjs": "9fa9626b8fe7098c94656edbd3f6c600bd68b5f2424db1dccd9210388982cf7a",
     "Tools/fetch-environment-assets.py": "8c61d123225e804e949b4df78c81923351324d3b9de86d14a6330e9b5a5eef83",
-    "Tools/hummer-body.mjs": "8c7bf6d6ab44d7d7d11e6c8ac091ddd3b6194eb0bfc038daedafdcee2f9711af",
+    "Tools/hummer-body.mjs": "bf8171f26e9e5a2073cba3fed9b91852f91c0bab34014150d8c8e3c2ebdbe17c",
     "Tools/import-assets.py": "e9392bee9fd0f37ec8e0bca0016dee8486d30dd2c2f261d04425a3178efff2fd",
     "Tools/import-fab.py": "dd20fc4bc1bbe15a0721eee01bf0a81a2ca157a78630dd9f5e3702c5dd98e072",
     "Tools/import-scan-grass-opacity.py": "b53d173e7d9c239d450e824c9cd98d724feff9d2dfacd8770715ec7b66bbf711",
@@ -769,33 +848,34 @@
     "Tools/rebuild-ground.py": "ac9696a3d164e03a47e82b4bd25fdb897b82d439c269cf90fd410b0285fbdd3a",
     "Tools/scanned-environment.mjs": "79b0b9b5138c1c60594fa0c80932f365d43f53cce165fae593fadd4bcafdd1bd",
     "Tools/sky-material.py": "f2e9c58393ae51fc31e07512fd64b8b286a007758a0ff6651ad8654192554925",
-    "Tools/sprinter-body.mjs": "1226ad5f52f42559d4b6f7b4f268a0ec15de3ce4d7cfebd80d566ea00b6f41df",
+    "Tools/sprinter-body.mjs": "01b4d11a1daa0ce330139898a23266a18c0bca182156c02acaf8c7957cbc5592",
     "Tools/stage-native-code.ps1": "3d277969a20cedec3dcf85de485962c6adbe4c4dfbeadbcbe73002a337aeebb2",
-    "Tools/suv-body.mjs": "ecdbba85ad88c273879131a4c1946b7973f34c456dd26104190ebb0b2f000102",
+    "Tools/suv-body.mjs": "8d0e3f98b696aff2389123e28858816379bb2e19f06c5fab2f0f8a835cb0c4ab",
     "Tools/terrain-ground-blend.py": "66e3fa0acf502ef75044681d902a38c4b5c139ccf22d2fa07e1f2adf86197e66",
     "Tools/terrain-materials.py": "172f4f9203fe3b136ae7f21712179e02cb245bccf1225d014579ecd1bff87a1a",
     "Tools/terrain-surface.hlsl": "e16842054d7d0046b90cb55f4776d2ba8e2ff185f76c85efc7323b6f8c5f6ceb",
     "Tools/test-core.cmd": "06f3e8dbde5ccdfa032422eff1fbccc0b777e0ec9a67f61c411333c11e0b72ad",
     "Tools/test-core.cpp": "82a3b8f5ef3412dc1bc406070032600b4079a9b7c184f7f0b22cc3dfb15daf02",
     "Tools/tire-mark-materials.py": "9d28390c9c4aea23effbdddfea18411a5a39756ae362be1c643fe27270188617",
-    "Tools/urus-body.mjs": "ab3debb5f4a7338c74c4760ec0be29aa5a2a5a9a96a56e13c283c5c033ece4f0",
+    "Tools/urus-body.mjs": "6e8256eb873ede82a516f8db65e9f3be294f34493035f2543ad48fd65cdcb936",
     "Tools/urus-cabin.mjs": "3e9b071df2aec7da1744b6bf8dabd606ff16059863f3cbdaf55da3bdbdb4d66e",
     "Tools/urus-model.mjs": "dc7e9c69574d582c9e8beabcf108d367578b921a9899d32378aa05934986215b",
     "Tools/validate-body-contours.mjs": "56d9350fd68ae0156d7b71b64fea468a66d8a1a178021d7591e71a0c4834a1a7",
     "Tools/validate-export.mjs": "9f8554469f92973e5b548d782d7f2f155b2f32f61f2cec746177eb4f6e892e8f",
-    "Tools/validate-models.mjs": "bef80b8b962a55426938315a97a3499797720241dc15498995db4f1c2376dafa",
+    "Tools/validate-models.mjs": "820f25ea262fe65d3881196f37bf15fc5969e68cdc79797ec455c34f8d197ce4",
     "Tools/validate-terrain-transitions.mjs": "3d8b86160a0562c86df754b49daa47e60245ca955b2a8eb6bb2f82e443fdd072",
-    "Tools/validate-urus-panels.mjs": "c0df39e3e0820b6e79881cf41933b552a2b1a2d8611267ec3bfd130cbb0baeaa",
+    "Tools/validate-urus-panels.mjs": "e4932a9d466dddc4ec0965137dd1017d235c49f704a0e88d8d135f53a88ba30c",
     "Tools/vehicle-cabin.mjs": "4b3184004628eeee829b6ec06ed208b7de16b1b7c3343d1d0dd881b6084e1b7f",
     "Tools/vehicle-fenders.mjs": "29ec5521a4993436be54207e8bc25f249b8fb098eb1123a8e66a0ded86abe871",
     "Tools/vehicle-fidelity.mjs": "69d6ee54bce127031c24e6e561fb175e5b32f01071e14d5417489ab4f171927a",
     "Tools/vehicle-geometry.mjs": "0c3ad21f89d0ee073869f82088ecfe4768cd27145d30183b255ba7d13b6cddd1",
-    "Tools/vehicle-realism.mjs": "8d4f316b83f0e9368b4ea47260baceb21a6c26579ac130bc5bd4d5a7d2c30d23",
+    "Tools/vehicle-realism.mjs": "6b13763d0732d0ce1e58dcd2483a7ea11352dc8072fe7cd37887e20de21c7e28",
     "Tools/verify-model-art.ps1": "4a3641908dabbe367fef7966371a0dd84b5b6698d8a9df239bea99271a8fba78",
     "Tools/verify-native.ps1": "9210f79f2fe8a0892398ba96890ec5350ad7bea4959d207ee82572e381473616",
     "Tools/verify-render.ps1": "be85ae6a04a10645edbd5665a3f5991048cba136f073e25bc657259bd3dbc7fb",
+    "Tools/verify-rollover.ps1": "ff62634137ed020f28372444ed2c8ad5f002abaa9bbd0cbc930d39d6c8a2c12b",
     "Tools/verify-ruts.ps1": "b8a1a006762a020cc94e44a7df200d0785a31537ec98e320575064966220307e",
-    "Tools/verify-winter.ps1": "4d8cc04a6b5bec46e5578e4410a2c1edfc6b5a98882930057625f6e7314eef11",
+    "Tools/verify-winter.ps1": "7724bbff24aa64c3f985c9b6b5515f1320ff1b9042b7871e9027826f8a000895",
     "Tools/winter-level.py": "9def6b47a53e313e2ab8c31b889038600a1d5c0e20e415c811858d936ebfdb01",
     "Tools/winter-survey.py": "c478a5d611cf917c12fa5b8b18bc656654a54a5c2796badfe738564ec8f18db8",
     "Config/DefaultEngine.ini": "1cbd2785d9d1cc0d5e7d71efda8c4ad97e1445958d507cf0f1f8ef47d7516d08",
@@ -805,12 +885,12 @@
   "checks": {
     "Full": {
       "name": "Full",
-      "started": "2026-10-25T23:12:26.8711905Z",
-      "ended": "2026-10-25T23:22:59.7391653Z",
+      "started": "2026-10-27T02:50:48.1317311Z",
+      "ended": "2026-10-27T03:00:43.7603070Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/native-validation.json",
-      "reportSHA256": "79814311a4fea6843bd3e911c62199d2b91854677bd24683d1038c092d00246f",
+      "reportSHA256": "08b407ca4676ff6a4d5f808432686e08a1ac47a2962c3d540d48bfb01c66c386",
       "fresh": true,
       "checks": 287,
       "tests": [
@@ -1025,8 +1105,8 @@
         },
         {
           "case": "native acceleration",
-          "distanceM": 77.677,
-          "speedMS": 22.368,
+          "distanceM": 82.79,
+          "speedMS": 22.827,
           "pass": true
         },
         {
@@ -1047,8 +1127,8 @@
         },
         {
           "case": "EV steered launch",
-          "speedMS": 7.467,
-          "yawDegrees": 122.051,
+          "speedMS": 7.329,
+          "yawDegrees": 101.468,
           "pass": true
         },
         {
@@ -1059,7 +1139,7 @@
         },
         {
           "case": "region 0 camera",
-          "clearanceCM": 511.023,
+          "clearanceCM": 511.017,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1071,7 +1151,7 @@
         },
         {
           "case": "region 1 camera",
-          "clearanceCM": 507.426,
+          "clearanceCM": 507.385,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1083,7 +1163,7 @@
         },
         {
           "case": "region 2 camera",
-          "clearanceCM": 638.735,
+          "clearanceCM": 638.168,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1095,7 +1175,7 @@
         },
         {
           "case": "region 3 camera",
-          "clearanceCM": 616.522,
+          "clearanceCM": 616.349,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1107,7 +1187,7 @@
         },
         {
           "case": "region 4 camera",
-          "clearanceCM": 535.887,
+          "clearanceCM": 535.024,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1119,7 +1199,7 @@
         },
         {
           "case": "region 5 camera",
-          "clearanceCM": 682.422,
+          "clearanceCM": 684.887,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1131,7 +1211,7 @@
         },
         {
           "case": "region 6 camera",
-          "clearanceCM": 516.003,
+          "clearanceCM": 516.005,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1143,7 +1223,7 @@
         },
         {
           "case": "region 7 camera",
-          "clearanceCM": 53.236,
+          "clearanceCM": 64.881,
           "rollDegrees": 0,
           "pass": true
         },
@@ -1154,12 +1234,12 @@
         },
         {
           "case": "rolled chassis rests on roof",
-          "value": 2.0303,
+          "value": 0.9614,
           "pass": true
         },
         {
           "case": "rolled vehicle camera stays above terrain",
-          "value": 521.9022,
+          "value": 541.6997,
           "pass": true
         },
         {
@@ -1169,12 +1249,12 @@
         },
         {
           "case": "tire debris moves and renders in world space",
-          "value": 46298.5859,
+          "value": 48546.7188,
           "pass": true
         },
         {
           "case": "airborne debris expires after impact",
-          "value": 453,
+          "value": 477,
           "pass": true
         },
         {
@@ -1189,7 +1269,7 @@
         },
         {
           "case": "locked axles climb farther than open axles",
-          "value": 2.5974,
+          "value": 1.7587,
           "pass": true
         },
         {
@@ -1199,12 +1279,12 @@
         },
         {
           "case": "both locker trials keep tires on course and body clear of real gate posts",
-          "value": 0.2104,
+          "value": 0.5544,
           "pass": true
         },
         {
           "case": "descent assist controls rocky downhill speed",
-          "value": 2.5809,
+          "value": 2.5539,
           "pass": true
         },
         {
@@ -1249,12 +1329,12 @@
         },
         {
           "case": "inverted loop camera can see the vehicle",
-          "value": 529.8652,
+          "value": 529.7133,
           "pass": true
         },
         {
           "case": "inverted loop retains physical wheel support",
-          "value": 4,
+          "value": 2,
           "pass": true
         },
         {
@@ -1334,7 +1414,7 @@
         },
         {
           "case": "engine upgrade changes packaged driving performance",
-          "value": 22.6174,
+          "value": 22.6045,
           "pass": true
         },
         {
@@ -1349,7 +1429,7 @@
         },
         {
           "case": "lower pressure enlarges the live soil footprint",
-          "value": 1.6087,
+          "value": 1.6062,
           "pass": true
         },
         {
@@ -1384,7 +1464,7 @@
         },
         {
           "case": "vehicle 0 launches through shared W input",
-          "value": 17.0646,
+          "value": 16.8928,
           "pass": true
         },
         {
@@ -1394,7 +1474,7 @@
         },
         {
           "case": "vehicle 1 launches through shared W input",
-          "value": 19.6533,
+          "value": 19.6458,
           "pass": true
         },
         {
@@ -1404,7 +1484,7 @@
         },
         {
           "case": "vehicle 2 launches through shared W input",
-          "value": 9.3401,
+          "value": 9.3386,
           "pass": true
         },
         {
@@ -1414,7 +1494,7 @@
         },
         {
           "case": "vehicle 3 launches through shared W input",
-          "value": 13.6912,
+          "value": 13.6767,
           "pass": true
         },
         {
@@ -1424,7 +1504,7 @@
         },
         {
           "case": "vehicle 4 launches through shared W input",
-          "value": 22.4529,
+          "value": 22.4705,
           "pass": true
         },
         {
@@ -1434,7 +1514,7 @@
         },
         {
           "case": "vehicle 5 launches through shared W input",
-          "value": 24.8722,
+          "value": 25.0467,
           "pass": true
         },
         {
@@ -1444,12 +1524,12 @@
         },
         {
           "case": "W launch before S brake check",
-          "value": 17.0089,
+          "value": 17.0675,
           "pass": true
         },
         {
           "case": "held S brakes then selects physical reverse without a release",
-          "value": -11.3745,
+          "value": -11.8025,
           "pass": true
         },
         {
@@ -1474,17 +1554,17 @@
         },
         {
           "case": "Hummer stock suspension settles at its intended ride height",
-          "value": 0.7784,
+          "value": 0.7786,
           "pass": true
         },
         {
           "case": "Hummer stage III suspension physically raises the body",
-          "value": 0.1098,
+          "value": 0.1095,
           "pass": true
         },
         {
           "case": "Hummer lifted driving height matches garage target",
-          "value": 0.0032,
+          "value": 0.0031,
           "pass": true
         },
         {
@@ -1544,7 +1624,7 @@
         },
         {
           "case": "vehicle 2 cooked body uses acquired automotive paint and trim",
-          "value": 14,
+          "value": 13,
           "pass": true
         },
         {
@@ -1879,12 +1959,12 @@
         },
         {
           "case": "hard dirt actual driven pass leaves loaded terrain deformation",
-          "value": 0.0079,
+          "value": 0.008,
           "pass": true
         },
         {
           "case": "hard dirt actual driven pass compacts contact footprints",
-          "value": 0.9967,
+          "value": 0.9979,
           "pass": true
         },
         {
@@ -1894,7 +1974,7 @@
         },
         {
           "case": "hard dirt driven path advances beyond stationary footprint",
-          "value": 1498.5079,
+          "value": 1502.5396,
           "pass": true
         },
         {
@@ -1904,17 +1984,17 @@
         },
         {
           "case": "mud actual driven pass leaves loaded terrain deformation",
-          "value": 0.0633,
+          "value": 0.0635,
           "pass": true
         },
         {
           "case": "mud actual driven pass compacts contact footprints",
-          "value": 1,
+          "value": 0.9999,
           "pass": true
         },
         {
           "case": "mud actual driven pass pushes up side berms",
-          "value": 0.041,
+          "value": 0.0417,
           "pass": true
         },
         {
@@ -1924,27 +2004,27 @@
         },
         {
           "case": "mud driven path advances beyond stationary footprint",
-          "value": 1513.5544,
+          "value": 1513.9542,
           "pass": true
         },
         {
           "case": "mud displaced and compacted volumes conserve excavated soil",
-          "value": 0.1848,
+          "value": 0.1847,
           "pass": true
         },
         {
           "case": "snow actual driven pass leaves loaded terrain deformation",
-          "value": 0.0651,
+          "value": 0.0986,
           "pass": true
         },
         {
           "case": "snow actual driven pass compacts contact footprints",
-          "value": 0.997,
+          "value": 0.9978,
           "pass": true
         },
         {
           "case": "snow actual driven pass pushes up side berms",
-          "value": 0.0192,
+          "value": 0.0309,
           "pass": true
         },
         {
@@ -1954,27 +2034,27 @@
         },
         {
           "case": "snow driven path advances beyond stationary footprint",
-          "value": 1549.2797,
+          "value": 1546.6846,
           "pass": true
         },
         {
           "case": "snow displaced and compacted volumes conserve excavated soil",
-          "value": 0.0864,
+          "value": 0.0915,
           "pass": true
         },
         {
           "case": "wetland actual driven pass leaves loaded terrain deformation",
-          "value": 0.0525,
+          "value": 0.053,
           "pass": true
         },
         {
           "case": "wetland actual driven pass compacts contact footprints",
-          "value": 0.9974,
+          "value": 0.9981,
           "pass": true
         },
         {
           "case": "wetland actual driven pass pushes up side berms",
-          "value": 0.0339,
+          "value": 0.034,
           "pass": true
         },
         {
@@ -1984,27 +2064,27 @@
         },
         {
           "case": "wetland driven path advances beyond stationary footprint",
-          "value": 1551.7587,
+          "value": 1550.6237,
           "pass": true
         },
         {
           "case": "wetland displaced and compacted volumes conserve excavated soil",
-          "value": 0.2252,
+          "value": 0.2234,
           "pass": true
         },
         {
           "case": "sand actual driven pass leaves loaded terrain deformation",
-          "value": 0.0514,
+          "value": 0.0516,
           "pass": true
         },
         {
           "case": "sand actual driven pass compacts contact footprints",
-          "value": 0.9785,
+          "value": 0.9797,
           "pass": true
         },
         {
           "case": "sand actual driven pass pushes up side berms",
-          "value": 0.0293,
+          "value": 0.0303,
           "pass": true
         },
         {
@@ -2014,12 +2094,12 @@
         },
         {
           "case": "sand driven path advances beyond stationary footprint",
-          "value": 1793.0604,
+          "value": 1791.3778,
           "pass": true
         },
         {
           "case": "sand displaced and compacted volumes conserve excavated soil",
-          "value": 0.5528,
+          "value": 0.551,
           "pass": true
         },
         {
@@ -2044,7 +2124,7 @@
         },
         {
           "case": "soft dirt driven path advances beyond stationary footprint",
-          "value": 1509.7883,
+          "value": 1503.0352,
           "pass": true
         },
         {
@@ -2124,7 +2204,7 @@
         },
         {
           "case": "Urus quarry drive stays upright with a controlled trail line",
-          "value": 139.3512,
+          "value": 135.6964,
           "pass": true
         },
         {
@@ -2184,7 +2264,7 @@
         },
         {
           "case": "vehicle 0 can reverse out of the quarry compression",
-          "value": 12.7633,
+          "value": 14.4366,
           "pass": true
         },
         {
@@ -2199,7 +2279,7 @@
         },
         {
           "case": "vehicle 1 can reverse out of the quarry compression",
-          "value": 28.7995,
+          "value": 32.3746,
           "pass": true
         },
         {
@@ -2209,12 +2289,12 @@
         },
         {
           "case": "vehicle 2 tires stay above the hard quarry floor",
-          "value": 0.0002,
+          "value": 0.0001,
           "pass": true
         },
         {
           "case": "vehicle 2 can reverse out of the quarry compression",
-          "value": 11.1289,
+          "value": 11.3593,
           "pass": true
         },
         {
@@ -2224,12 +2304,12 @@
         },
         {
           "case": "vehicle 3 tires stay above the hard quarry floor",
-          "value": 0.0001,
+          "value": 0.0002,
           "pass": true
         },
         {
           "case": "vehicle 3 can reverse out of the quarry compression",
-          "value": 18.0372,
+          "value": 17.2481,
           "pass": true
         },
         {
@@ -2239,12 +2319,12 @@
         },
         {
           "case": "vehicle 4 tires stay above the hard quarry floor",
-          "value": 0,
+          "value": 0.0002,
           "pass": true
         },
         {
           "case": "vehicle 4 can reverse out of the quarry compression",
-          "value": 28.742,
+          "value": 28.715,
           "pass": true
         },
         {
@@ -2254,24 +2334,27 @@
         },
         {
           "case": "vehicle 5 tires stay above the hard quarry floor",
-          "value": 0,
+          "value": 0.0002,
           "pass": true
         },
         {
           "case": "vehicle 5 can reverse out of the quarry compression",
-          "value": 27.6857,
+          "value": 28.2285,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/packaged-game.log",
+      "gameLogSHA256": "69d8493e700c6c18d0416e8250bc3e1a3e75c169a037b6f3c41fdb92dbb03d64",
+      "noMissingCoachwork": true
     },
     "Ruts": {
       "name": "Ruts",
-      "started": "2026-10-25T23:09:38.2568613Z",
-      "ended": "2026-10-25T23:11:17.1789694Z",
+      "started": "2026-10-27T03:02:43.5741763Z",
+      "ended": "2026-10-27T03:04:23.2624978Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/ruts.json",
-      "reportSHA256": "293d742f424f45987c1dbf47d78b4c6d62d11ffeb942ca943bdefb89dea25645",
+      "reportSHA256": "50cfad39d1c987f9252593114cfad19024b83285acf2a7d43c50b54c7ed2c2dd",
       "fresh": true,
       "checks": 101,
       "tests": [
@@ -2707,7 +2790,7 @@
         },
         {
           "case": "actual mud motor drive advances at least six forward metres without intervention",
-          "value": 10.0029,
+          "value": 10.1662,
           "pass": true
         },
         {
@@ -2717,7 +2800,7 @@
         },
         {
           "case": "actual mud physical rut depth stays within the configured surface sink limit",
-          "value": 0.0459,
+          "value": 0.046,
           "pass": true
         },
         {
@@ -2747,7 +2830,7 @@
         },
         {
           "case": "actual snow motor drive advances at least six forward metres without intervention",
-          "value": 10.008,
+          "value": 10.0054,
           "pass": true
         },
         {
@@ -2780,18 +2863,21 @@
           "value": 0,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/ruts.log",
+      "gameLogSHA256": "199b555d871303dfb246d281d79f4bedd8cf9509de25a32c4c7128ecaa569fee",
+      "noMissingCoachwork": true
     },
     "Art": {
       "name": "Art",
-      "started": "2026-10-25T23:07:05.0105775Z",
-      "ended": "2026-10-25T23:09:37.4610035Z",
+      "started": "2026-10-27T02:39:43.4421184Z",
+      "ended": "2026-10-27T02:42:55.4373409Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/winter-Art.json",
-      "reportSHA256": "0f5b48d2e647cc024db4048a48dd2aabf2af7ac5754589d75108599e3df3d3e8",
+      "reportSHA256": "d534698668b0e53edd308b832e9bd52db1a83922757b62455a25cc2f442c0255",
       "fresh": true,
-      "checks": 50,
+      "checks": 66,
       "tests": [
         {
           "case": "Vehicle 0 cooked body uses Epic automotive paint and trim",
@@ -2825,6 +2911,26 @@
         },
         {
           "case": "Vehicle 0 body renders in close photo view 5",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 0 body renders in close photo view 6",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 0 body renders in close photo view 7",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 0 body renders in close photo view 8",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 0 body renders in close photo view 9",
           "value": 0,
           "pass": true
         },
@@ -2864,8 +2970,28 @@
           "pass": true
         },
         {
+          "case": "Vehicle 1 body renders in close photo view 6",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 1 body renders in close photo view 7",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 1 body renders in close photo view 8",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 1 body renders in close photo view 9",
+          "value": 0,
+          "pass": true
+        },
+        {
           "case": "Vehicle 2 cooked body uses Epic automotive paint and trim",
-          "value": 14,
+          "value": 13,
           "pass": true
         },
         {
@@ -2954,6 +3080,26 @@
           "pass": true
         },
         {
+          "case": "Vehicle 3 body renders in close photo view 6",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 3 body renders in close photo view 7",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 3 body renders in close photo view 8",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 3 body renders in close photo view 9",
+          "value": 0,
+          "pass": true
+        },
+        {
           "case": "Vehicle 4 cooked body uses Epic automotive paint and trim",
           "value": 17,
           "pass": true
@@ -2985,6 +3131,26 @@
         },
         {
           "case": "Vehicle 4 body renders in close photo view 5",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 4 body renders in close photo view 6",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 4 body renders in close photo view 7",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 4 body renders in close photo view 8",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "Vehicle 4 body renders in close photo view 9",
           "value": 0,
           "pass": true
         },
@@ -3043,16 +3209,1640 @@
           "value": 0,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/winter-Art.log",
+      "gameLogSHA256": "6fc5b34b9fc802f4c2390c9c5d2da825307c1546fb476396c40920c4c6b5167a",
+      "noMissingCoachwork": true
+    },
+    "Rollover": {
+      "name": "Rollover",
+      "started": "2026-10-27T02:42:59.6975267Z",
+      "ended": "2026-10-27T02:50:44.7718843Z",
+      "processExit": 0,
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
+      "report": "Saved/Validation/rollover.json",
+      "reportSHA256": "8b39edb97d85b1769eeb524c967e6dad0f7f0b7c249c4a2ca776b090d06b3f08",
+      "fresh": true,
+      "checks": 321,
+      "tests": [
+        {
+          "case": "rollover probe data covers all six actual body meshes",
+          "value": 6,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0005,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees retains its source surface probes",
+          "value": 336,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0005,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees retains its source surface probes",
+          "value": 336,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0004,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees retains its source surface probes",
+          "value": 336,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 tarmac 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0001,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees retains its source surface probes",
+          "value": 340,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0001,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees retains its source surface probes",
+          "value": 340,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0006,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees retains its source surface probes",
+          "value": 340,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 tarmac 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0264,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees retains its source surface probes",
+          "value": 313,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0529,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees retains its source surface probes",
+          "value": 313,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees retains its source surface probes",
+          "value": 313,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 tarmac 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0007,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0103,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": 0.1228,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 tarmac 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0177,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees retains its source surface probes",
+          "value": 319,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0973,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees retains its source surface probes",
+          "value": 319,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees retains its source surface probes",
+          "value": 319,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 tarmac 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0001,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees retains its source surface probes",
+          "value": 307,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees retains its source surface probes",
+          "value": 307,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": 0.0258,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees retains its source surface probes",
+          "value": 307,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 tarmac 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0001,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees retains its source surface probes",
+          "value": 336,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0095,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees retains its source surface probes",
+          "value": 336,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.1968,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees retains its source surface probes",
+          "value": 336,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 0 Pine Ridge 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.1124,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees retains its source surface probes",
+          "value": 340,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0002,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees retains its source surface probes",
+          "value": 340,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.3836,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees retains its source surface probes",
+          "value": 340,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 1 Pine Ridge 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0742,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees retains its source surface probes",
+          "value": 313,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0013,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees retains its source surface probes",
+          "value": 313,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0002,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees retains its source surface probes",
+          "value": 313,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 2 Pine Ridge 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.2301,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.3516,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.003,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.1291,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees retains its source surface probes",
+          "value": 319,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0001,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees retains its source surface probes",
+          "value": 319,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.4629,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees retains its source surface probes",
+          "value": 319,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 4 Pine Ridge 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.2738,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees retains its source surface probes",
+          "value": 307,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge -90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0001,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees retains its source surface probes",
+          "value": 307,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 90 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.0137,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees retains its source surface probes",
+          "value": 307,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 5 Pine Ridge 180 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": 6.8646,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees cannot apply tire drive while overturned",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -55 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": 5.7116,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees cannot apply tire drive while overturned",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 55 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.1794,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge -110 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees uses twelve mesh-matched physical body sections",
+          "value": 12,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees keeps the configured chassis mass and centre of mass",
+          "value": 0,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees remains finite and enters its requested drop pose under real Chaos gravity",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees sampled visible body stays within 1.6 inches of ground",
+          "value": -0.4313,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees retains its source surface probes",
+          "value": 333,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees cannot apply tire drive while overturned",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees recovery returns upright",
+          "value": 1,
+          "pass": true
+        },
+        {
+          "case": "rollover vehicle 3 Pine Ridge 110 degrees recovery regains at least three supporting tires",
+          "value": 4,
+          "pass": true
+        }
+      ],
+      "gameLog": "Saved/Validation/rollover.log",
+      "gameLogSHA256": "c529d647d58beceff4f3239f16c586155f4a154802d3c5f1caacf8d53b96c0df",
+      "noMissingCoachwork": true
     },
     "Movement": {
       "name": "Movement",
-      "started": "2026-10-25T23:23:00.8034431Z",
-      "ended": "2026-10-25T23:25:35.8644868Z",
+      "started": "2026-10-27T03:00:45.4465939Z",
+      "ended": "2026-10-27T03:02:16.5471262Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/winter-Movement.json",
-      "reportSHA256": "1976f270409f54ae37dbf33df175639ea7fba645c9a2e0a64833d36c19cf8254",
+      "reportSHA256": "2e7c486485076818035ec76f954fcd47fd8321e19123e0f7a9019eebf32f8ad6",
       "fresh": true,
       "checks": 84,
       "tests": [
@@ -3063,17 +4853,17 @@
         },
         {
           "case": "coast dirt-asphalt crosses both sides without throttle or brake",
-          "value": 9.0285,
+          "value": 9.0281,
           "pass": true
         },
         {
           "case": "coast dirt-asphalt retains rolling momentum",
-          "value": 12.1702,
+          "value": 12.1699,
           "pass": true
         },
         {
           "case": "coast dirt-asphalt has no abrupt frame speed collapse",
-          "value": 0.0102,
+          "value": 0.01,
           "pass": true
         },
         {
@@ -3083,17 +4873,17 @@
         },
         {
           "case": "coast dirt-mud crosses both sides without throttle or brake",
-          "value": 13.0632,
+          "value": 13.0472,
           "pass": true
         },
         {
           "case": "coast dirt-mud retains rolling momentum",
-          "value": 10.6945,
+          "value": 10.6968,
           "pass": true
         },
         {
           "case": "coast dirt-mud has no abrupt frame speed collapse",
-          "value": 0.0102,
+          "value": 0.0103,
           "pass": true
         },
         {
@@ -3103,12 +4893,12 @@
         },
         {
           "case": "coast dirt-rock crosses both sides without throttle or brake",
-          "value": 14.308,
+          "value": 14.2996,
           "pass": true
         },
         {
           "case": "coast dirt-rock retains rolling momentum",
-          "value": 9.4897,
+          "value": 9.4922,
           "pass": true
         },
         {
@@ -3123,17 +4913,17 @@
         },
         {
           "case": "coast dirt-sand crosses both sides without throttle or brake",
-          "value": 18.3912,
+          "value": 18.3296,
           "pass": true
         },
         {
           "case": "coast dirt-sand retains rolling momentum",
-          "value": 9.1705,
+          "value": 9.1828,
           "pass": true
         },
         {
           "case": "coast dirt-sand has no abrupt frame speed collapse",
-          "value": 0.0123,
+          "value": 0.0122,
           "pass": true
         },
         {
@@ -3143,17 +4933,17 @@
         },
         {
           "case": "coast dirt-snow crosses both sides without throttle or brake",
-          "value": 20.3473,
+          "value": 20.0455,
           "pass": true
         },
         {
           "case": "coast dirt-snow retains rolling momentum",
-          "value": 11.2532,
+          "value": 11.2595,
           "pass": true
         },
         {
           "case": "coast dirt-snow has no abrupt frame speed collapse",
-          "value": 0.0106,
+          "value": 0.0077,
           "pass": true
         },
         {
@@ -3163,17 +4953,17 @@
         },
         {
           "case": "coast dirt-wetland crosses both sides without throttle or brake",
-          "value": 16.3495,
+          "value": 16.4892,
           "pass": true
         },
         {
           "case": "coast dirt-wetland retains rolling momentum",
-          "value": 11.0817,
+          "value": 11.0693,
           "pass": true
         },
         {
           "case": "coast dirt-wetland has no abrupt frame speed collapse",
-          "value": 0.0091,
+          "value": 0.007,
           "pass": true
         },
         {
@@ -3183,17 +4973,17 @@
         },
         {
           "case": "coast mud-rock crosses both sides without throttle or brake",
-          "value": 9.255,
+          "value": 9.1237,
           "pass": true
         },
         {
           "case": "coast mud-rock retains rolling momentum",
-          "value": 10.7948,
+          "value": 10.8161,
           "pass": true
         },
         {
           "case": "coast mud-rock has no abrupt frame speed collapse",
-          "value": 0.01,
+          "value": 0.0096,
           "pass": true
         },
         {
@@ -3203,22 +4993,22 @@
         },
         {
           "case": "vehicle 0 rolls over a rounded rise without sticking",
-          "value": 7.3071,
+          "value": 7.3073,
           "pass": true
         },
         {
           "case": "vehicle 0 bump travel remains bounded",
-          "value": 0.7943,
+          "value": 0.8005,
           "pass": true
         },
         {
           "case": "vehicle 0 lower body stays above the ground",
-          "value": 41.5103,
+          "value": 41.4949,
           "pass": true
         },
         {
           "case": "vehicle 0 visible coachwork clears the rounded rise",
-          "value": 21.095,
+          "value": 21.0795,
           "pass": true
         },
         {
@@ -3228,7 +5018,7 @@
         },
         {
           "case": "vehicle 0 front suspension resists brake dive",
-          "value": 1.1368,
+          "value": 1.1414,
           "pass": true
         },
         {
@@ -3238,7 +5028,7 @@
         },
         {
           "case": "vehicle 0 visible coachwork stays clear while braking",
-          "value": 14.779,
+          "value": 14.7791,
           "pass": true
         },
         {
@@ -3248,22 +5038,22 @@
         },
         {
           "case": "vehicle 1 rolls over a rounded rise without sticking",
-          "value": 7.3029,
+          "value": 7.3095,
           "pass": true
         },
         {
           "case": "vehicle 1 bump travel remains bounded",
-          "value": 0.9051,
+          "value": 0.9087,
           "pass": true
         },
         {
           "case": "vehicle 1 lower body stays above the ground",
-          "value": 42.4918,
+          "value": 42.6911,
           "pass": true
         },
         {
           "case": "vehicle 1 visible coachwork clears the rounded rise",
-          "value": 20.2518,
+          "value": 20.7757,
           "pass": true
         },
         {
@@ -3273,17 +5063,17 @@
         },
         {
           "case": "vehicle 1 front suspension resists brake dive",
-          "value": 1.1609,
+          "value": 1.168,
           "pass": true
         },
         {
           "case": "vehicle 1 braking does not bury the nose",
-          "value": 37.8355,
+          "value": 37.865,
           "pass": true
         },
         {
           "case": "vehicle 1 visible coachwork stays clear while braking",
-          "value": 15.8055,
+          "value": 15.8301,
           "pass": true
         },
         {
@@ -3293,22 +5083,22 @@
         },
         {
           "case": "vehicle 2 rolls over a rounded rise without sticking",
-          "value": 7.2546,
+          "value": 7.2428,
           "pass": true
         },
         {
           "case": "vehicle 2 bump travel remains bounded",
-          "value": 1.0238,
+          "value": 0.9453,
           "pass": true
         },
         {
           "case": "vehicle 2 lower body stays above the ground",
-          "value": 17.9484,
+          "value": 18.4784,
           "pass": true
         },
         {
           "case": "vehicle 2 visible coachwork clears the rounded rise",
-          "value": 9.9025,
+          "value": 9.2735,
           "pass": true
         },
         {
@@ -3318,17 +5108,17 @@
         },
         {
           "case": "vehicle 2 front suspension resists brake dive",
-          "value": 1.0565,
+          "value": 1.0491,
           "pass": true
         },
         {
           "case": "vehicle 2 braking does not bury the nose",
-          "value": 17.0988,
+          "value": 17.2088,
           "pass": true
         },
         {
           "case": "vehicle 2 visible coachwork stays clear while braking",
-          "value": 8.8846,
+          "value": 8.9714,
           "pass": true
         },
         {
@@ -3338,22 +5128,22 @@
         },
         {
           "case": "vehicle 3 rolls over a rounded rise without sticking",
-          "value": 7.2385,
+          "value": 7.2472,
           "pass": true
         },
         {
           "case": "vehicle 3 bump travel remains bounded",
-          "value": 0.9199,
+          "value": 0.9256,
           "pass": true
         },
         {
           "case": "vehicle 3 lower body stays above the ground",
-          "value": 69.466,
+          "value": 69.3853,
           "pass": true
         },
         {
           "case": "vehicle 3 visible coachwork clears the rounded rise",
-          "value": 14.4392,
+          "value": 14.5455,
           "pass": true
         },
         {
@@ -3363,17 +5153,17 @@
         },
         {
           "case": "vehicle 3 front suspension resists brake dive",
-          "value": 1.1599,
+          "value": 1.1135,
           "pass": true
         },
         {
           "case": "vehicle 3 braking does not bury the nose",
-          "value": 66.6973,
+          "value": 67.1342,
           "pass": true
         },
         {
           "case": "vehicle 3 visible coachwork stays clear while braking",
-          "value": 11.9233,
+          "value": 12.3661,
           "pass": true
         },
         {
@@ -3383,22 +5173,22 @@
         },
         {
           "case": "vehicle 4 rolls over a rounded rise without sticking",
-          "value": 7.3066,
+          "value": 7.3041,
           "pass": true
         },
         {
           "case": "vehicle 4 bump travel remains bounded",
-          "value": 0.4954,
+          "value": 0.5155,
           "pass": true
         },
         {
           "case": "vehicle 4 lower body stays above the ground",
-          "value": 45.1665,
+          "value": 45.2299,
           "pass": true
         },
         {
           "case": "vehicle 4 visible coachwork clears the rounded rise",
-          "value": 14.1885,
+          "value": 13.8602,
           "pass": true
         },
         {
@@ -3408,17 +5198,17 @@
         },
         {
           "case": "vehicle 4 front suspension resists brake dive",
-          "value": 1.0817,
+          "value": 1.0343,
           "pass": true
         },
         {
           "case": "vehicle 4 braking does not bury the nose",
-          "value": 33.9577,
+          "value": 34.8305,
           "pass": true
         },
         {
           "case": "vehicle 4 visible coachwork stays clear while braking",
-          "value": 8.5416,
+          "value": 9.1963,
           "pass": true
         },
         {
@@ -3428,22 +5218,22 @@
         },
         {
           "case": "vehicle 5 rolls over a rounded rise without sticking",
-          "value": 7.2332,
+          "value": 7.2858,
           "pass": true
         },
         {
           "case": "vehicle 5 bump travel remains bounded",
-          "value": 1.0091,
+          "value": 0.8962,
           "pass": true
         },
         {
           "case": "vehicle 5 lower body stays above the ground",
-          "value": 2.2724,
+          "value": 3.3757,
           "pass": true
         },
         {
           "case": "vehicle 5 visible coachwork clears the rounded rise",
-          "value": 10.7545,
+          "value": 10.6102,
           "pass": true
         },
         {
@@ -3453,37 +5243,40 @@
         },
         {
           "case": "vehicle 5 front suspension resists brake dive",
-          "value": 1.1968,
+          "value": 1.074,
           "pass": true
         },
         {
           "case": "vehicle 5 braking does not bury the nose",
-          "value": 0.0443,
+          "value": 0.7003,
           "pass": true
         },
         {
           "case": "vehicle 5 visible coachwork stays clear while braking",
-          "value": 0.9845,
+          "value": 2.5344,
           "pass": true
         },
         {
           "case": "solid barrier still receives a real chassis collision",
-          "value": 11.21,
+          "value": 11.0563,
           "pass": true
         },
         {
           "case": "solid barrier stops unbraked coasting vehicle",
-          "value": 0.7982,
+          "value": 0.6502,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/winter-Movement.log",
+      "gameLogSHA256": "b3623a7f9806efe7841ebd44ed9110b9f9f76d232fe79346b61e0ff3bb8a1b69",
+      "noMissingCoachwork": true
     },
     "Detail": {
       "name": "Detail",
-      "started": "2026-10-25T23:06:35.8964622Z",
-      "ended": "2026-10-25T23:07:04.2636053Z",
+      "started": "2026-10-27T03:02:18.4324242Z",
+      "ended": "2026-10-27T03:02:42.3543044Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/winter-Detail.json",
       "reportSHA256": "97ce405056c9ca37b4df02f98f74537f6b6af43d666f211a3c7dbf3aa8ba4a6d",
       "fresh": true,
@@ -3564,16 +5357,19 @@
           "value": 0,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/winter-Detail.log",
+      "gameLogSHA256": "9eafc1ecb2d1ca4c1e676bc194ca381fadc1d9081fc286151671fab0b052f81c",
+      "noMissingCoachwork": true
     },
     "Winter": {
       "name": "Winter",
-      "started": "2026-10-25T23:26:02.0831328Z",
-      "ended": "2026-10-25T23:27:29.5073804Z",
+      "started": "2026-10-27T03:05:09.4315840Z",
+      "ended": "2026-10-27T03:06:16.6371657Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/winter-Winter.json",
-      "reportSHA256": "e5f3c1ef3eb5bfddded64e3a6d38259d231a6c5f1e8d108ef411ec06618467db",
+      "reportSHA256": "06dcef54403a3ad670c63cd91c217a2c14d63ece3ee5a837afd2c9de8c727739",
       "fresh": true,
       "checks": 46,
       "tests": [
@@ -3659,17 +5455,17 @@
         },
         {
           "case": "winter start 0 settled finite wheel travel",
-          "value": 0.1064,
+          "value": 0.1072,
           "pass": true
         },
         {
           "case": "winter start 0 drives on original snow road",
-          "value": 14.2889,
+          "value": 16.0829,
           "pass": true
         },
         {
           "case": "winter start 0 native speed remains finite",
-          "value": 7.543,
+          "value": 8.0605,
           "pass": true
         },
         {
@@ -3694,22 +5490,22 @@
         },
         {
           "case": "winter start 1 settled finite wheel travel",
-          "value": 1.2587,
+          "value": 1.2532,
           "pass": true
         },
         {
           "case": "winter start 1 drives on original snow road",
-          "value": 21.9464,
+          "value": 23.5167,
           "pass": true
         },
         {
           "case": "winter start 1 native speed remains finite",
-          "value": 11.4847,
+          "value": 11.8231,
           "pass": true
         },
         {
           "case": "winter start 1 Space brake stops vehicle on snow",
-          "value": 0,
+          "value": 0.0035,
           "pass": true
         },
         {
@@ -3729,17 +5525,17 @@
         },
         {
           "case": "winter start 2 settled finite wheel travel",
-          "value": 0.408,
+          "value": 0.4056,
           "pass": true
         },
         {
           "case": "winter start 2 drives on original snow road",
-          "value": 21.4016,
+          "value": 23.4761,
           "pass": true
         },
         {
           "case": "winter start 2 native speed remains finite",
-          "value": 11.1511,
+          "value": 11.4834,
           "pass": true
         },
         {
@@ -3764,17 +5560,17 @@
         },
         {
           "case": "winter start 3 settled finite wheel travel",
-          "value": 0.174,
+          "value": 0.1762,
           "pass": true
         },
         {
           "case": "winter start 3 drives on original snow road",
-          "value": 5.3916,
+          "value": 5.8925,
           "pass": true
         },
         {
           "case": "winter start 3 native speed remains finite",
-          "value": 2.5638,
+          "value": 2.6597,
           "pass": true
         },
         {
@@ -3807,14 +5603,17 @@
           "value": 0,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/winter-Winter.log",
+      "gameLogSHA256": "88de5523c904ad9d80edb77bfb41e0a345c733aa1c3d3601900a5fd81d2aeeab",
+      "noMissingCoachwork": true
     },
     "Transitions": {
       "name": "Transitions",
-      "started": "2026-10-25T23:11:18.3302305Z",
-      "ended": "2026-10-25T23:12:14.7902700Z",
+      "started": "2026-10-27T03:04:25.0351142Z",
+      "ended": "2026-10-27T03:05:07.2853241Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/render-Transitions.json",
       "reportSHA256": "d844ace356ea9b2888cc5d9f9c94b3a0587b5b9697bdfeefd3e95a3bc2ddd6cf",
       "fresh": true,
@@ -4085,16 +5884,19 @@
           "value": 0,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/render-Transitions.log",
+      "gameLogSHA256": "45e1474183eaf267d71b40a58318168eee0e4217923c60cdfc678ec624071c5b",
+      "noMissingCoachwork": true
     },
     "Cool": {
       "name": "Cool",
-      "started": "2026-10-25T23:27:31.4805691Z",
-      "ended": "2026-10-25T23:28:27.4347277Z",
+      "started": "2026-10-27T03:06:17.8401481Z",
+      "ended": "2026-10-27T03:07:06.8821616Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/render-Cool.json",
-      "reportSHA256": "9188216dc374a8035347949b468f08228f0793a947c88a15163df1e816583aef",
+      "reportSHA256": "3976b82a2d6003ce3ac2c13995b7f61f5f856b8ab230ec2cfa8cb1b531896b09",
       "fresh": true,
       "checks": 16,
       "tests": [
@@ -4175,19 +5977,22 @@
         },
         {
           "case": "measured native frame rate respects preset cap",
-          "value": 25.7263,
+          "value": 29.9912,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/render-Cool.log",
+      "gameLogSHA256": "1518996b4810550386c4d468d5673b9d8e21d21ace7ca31fe11348c06323c45c",
+      "noMissingCoachwork": true
     },
     "Balanced": {
       "name": "Balanced",
-      "started": "2026-10-25T23:28:29.1406621Z",
-      "ended": "2026-10-25T23:29:26.3132454Z",
+      "started": "2026-10-27T03:07:07.4664758Z",
+      "ended": "2026-10-27T03:07:56.6596845Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/render-Balanced.json",
-      "reportSHA256": "04b656d0f3b5af5892359c140b4d7d481c9f8a98a68a3c7d38fdcafa10fa0016",
+      "reportSHA256": "b27b60fde59be1dfb7f2008ce6195bc36fe0953bc856b9cfcedb833ed8b4d7f5",
       "fresh": true,
       "checks": 16,
       "tests": [
@@ -4268,19 +6073,22 @@
         },
         {
           "case": "measured native frame rate respects preset cap",
-          "value": 37.3044,
+          "value": 44.9621,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/render-Balanced.log",
+      "gameLogSHA256": "b58f6509f0ce6e62cbfb5920f4b71d27d1e19bd1a0e6630b2bc638dbb7acad0c",
+      "noMissingCoachwork": true
     },
     "QualitySmoke": {
       "name": "QualitySmoke",
-      "started": "2026-10-25T23:29:28.1545568Z",
-      "ended": "2026-10-25T23:30:24.9266057Z",
+      "started": "2026-10-27T03:07:57.3854127Z",
+      "ended": "2026-10-27T03:08:46.1996454Z",
       "processExit": 0,
-      "executableSHA256": "a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077",
+      "executableSHA256": "449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c",
       "report": "Saved/Validation/render-QualitySmoke.json",
-      "reportSHA256": "96d09cd52215575b71ea26cb860e5ba256592b9803bb77b2147a27341b378d33",
+      "reportSHA256": "f1dc94df38d811eab13d5574ac758b01edf4806fe33c4c2fed9d86808b1fd5fb",
       "fresh": true,
       "checks": 16,
       "tests": [
@@ -4361,19 +6169,22 @@
         },
         {
           "case": "measured native frame rate respects preset cap",
-          "value": 19.18,
+          "value": 19.999,
           "pass": true
         }
-      ]
+      ],
+      "gameLog": "Saved/Validation/render-QualitySmoke.log",
+      "gameLogSHA256": "82f0ee16cbbe306412fdf7a7946005b476538303d663a496d8e3c91483616d01",
+      "noMissingCoachwork": true
     }
   },
   "core": {
     "pass": true,
     "checks": 382,
-    "log": "Saved/contours11-core.log",
-    "SHA256": "16d803a3989d0912ff7f726083b284c00aa305a47ed9fbe4f3c26905dac802e2",
+    "log": "Saved/rollover12-core.log",
+    "SHA256": "3565606202d96547adda7491102bb22d542642884418c9805e97417b5c3230b6",
     "executable": "Saved/test-core.exe",
-    "executableSHA256": "2f30b4780bda233aef396dc48fb95e097b1ff0a2cb316ab6cc74c28c1a9f2106",
+    "executableSHA256": "6ad3c9ca32b211685ed892e4157391e51d6f3fc90a712a070f684845b3610477",
     "sourceSHA256": {
       "Tools/test-core.cpp": "82a3b8f5ef3412dc1bc406070032600b4079a9b7c184f7f0b22cc3dfb15daf02",
       "Tools/test-core.cmd": "06f3e8dbde5ccdfa032422eff1fbccc0b777e0ec9a67f61c411333c11e0b72ad",
@@ -4381,16 +6192,17 @@
     }
   },
   "models": {
-    "revision": "body-contours-11",
+    "revision": "rollover-coachwork-12",
     "vehicles": [
       {
         "vehicle": "Jeep Wrangler Rubicon",
-        "vertices": 488094,
-        "normalizedFraction": 0.9999856585002069,
+        "vertices": 490542,
+        "normalizedFraction": 0.9999816529471482,
         "visibility": [
           {
             "pane": "recessed cowl",
-            "floorHeightM": 1.2700761883922378
+            "floorHeightM": 1.275242293713935,
+            "rimClearanceM": 0.003327891808841521
           }
         ],
         "tire": {
@@ -4408,11 +6220,12 @@
         "visibility": [
           {
             "pane": "recessed cowl",
-            "floorHeightM": 1.2904390451230412
+            "floorHeightM": 1.2908785212467246,
+            "rimClearanceM": 0.010921074017101295
           },
           {
             "pane": "bonnet plateau",
-            "reliefM": 0.020034465205901242
+            "reliefM": 0.021194175579891894
           }
         ],
         "tire": {
@@ -4444,12 +6257,12 @@
       },
       {
         "vehicle": "Mercedes-Benz Sprinter 2500",
-        "vertices": 593878,
-        "normalizedFraction": 0.9999882130673303,
+        "vertices": 594015,
+        "normalizedFraction": 0.9999882157857967,
         "visibility": [
           {
             "pane": "waist swage",
-            "reliefM": 0.015250005420466506
+            "reliefM": 0.01295796791037418
           }
         ],
         "tire": {
@@ -4467,11 +6280,11 @@
         "visibility": [
           {
             "pane": "recessed bonnet vent",
-            "floorHeightM": 1.4510544215348409
+            "floorHeightM": 1.453743036670232
           },
           {
             "pane": "bonnet crest",
-            "reliefM": 0.051366326556056
+            "reliefM": 0.047567431789676595
           }
         ],
         "tire": {
@@ -4501,7 +6314,7 @@
           },
           {
             "pane": "hatch plate well",
-            "firstSurfaceZM": -2.4607656480593745
+            "firstSurfaceZM": -2.4600286049432545
           },
           {
             "pane": "roof crown",
@@ -4514,7 +6327,7 @@
           },
           {
             "pane": "sculpted door",
-            "shoulderOutsetM": 0.04160081517511083
+            "shoulderOutsetM": 0.04530107452589349
           },
           {
             "pane": "partitioned bonnet and open intakes",
@@ -4564,12 +6377,12 @@
       {
         "name": "Honda Civic Sport nose wraps back around the corners",
         "pass": true,
-        "valueIn": 8.3560416541036
+        "valueIn": 8.45877793918529
       },
       {
         "name": "Honda Civic Sport rear corners taper around the central closure",
         "pass": true,
-        "valueIn": 6.464184988967266
+        "valueIn": 6.654473523532779
       },
       {
         "name": "Civic bonnet stamping has physical ridge-to-trough relief",
@@ -4579,17 +6392,17 @@
       {
         "name": "Civic trunk deck has a transverse crown",
         "pass": true,
-        "valueIn": 0.7944540561473423
+        "valueIn": 0.7944850302498377
       },
       {
         "name": "Lamborghini Urus Performante nose wraps back around the corners",
         "pass": true,
-        "valueIn": 6.076078679604253
+        "valueIn": 6.437399174493664
       },
       {
         "name": "Lamborghini Urus Performante rear corners taper around the central closure",
         "pass": true,
-        "valueIn": 4.624978887296035
+        "valueIn": 5.095981783854757
       },
       {
         "name": "Urus bonnet ridge rises above its adjacent drawn channel",
@@ -4599,19 +6412,19 @@
       {
         "name": "Urus hatch has a formed recess below the lamp shoulder",
         "pass": true,
-        "valueIn": 2.087793265196588
+        "valueIn": 2.3512898041797605
       }
     ],
     "measured": [
       {
         "vehicle": "Honda Civic Sport",
-        "noseCornerSweepIn": 8.3560416541036,
-        "rearCornerSweepIn": 6.464184988967266
+        "noseCornerSweepIn": 8.45877793918529,
+        "rearCornerSweepIn": 6.654473523532779
       },
       {
         "vehicle": "Lamborghini Urus Performante",
-        "noseCornerSweepIn": 6.076078679604253,
-        "rearCornerSweepIn": 4.624978887296035
+        "noseCornerSweepIn": 6.437399174493664,
+        "rearCornerSweepIn": 5.095981783854757
       }
     ],
     "pass": true
@@ -4636,7 +6449,7 @@
     "browserUnchanged": true,
     "playerUnchanged": true,
     "playerSHA256": {
-      "garage-builds.json": "5ca4010458c1c76b2780467f5cbf0abaf5b18368d5107b5ce18328629f3180ac",
+      "garage-builds.json": "123bf9ca865fb83d6f26f1fe7c77ffa8eaef77b8cfec92bffc56c75495f4c444",
       "graphics-settings.json": "7fc551251542fe476e18f213de4614fe4669231df4fb29ab6a87a938c0fd19e0"
     },
     "originals": {
@@ -4644,272 +6457,355 @@
       "Content/AutomotiveWinterScene/Maps/IceRoad.umap": "1226320575e84984a487e3cb34c30b672ff750c8d5a8fe9e27cfe9f4d5915f8c",
       "Content/AutomotiveWinterScene/Maps/IceRoad_Lighting.umap": "d228d64225ff8b2fc9dab79bb79cef5ed0b4231d82dd519ff1db5fc5a6a2bd93"
     },
-    "physicsUnchanged": true
+    "physicsUnchanged": false
   },
   "renderedInspection": {
-    "native-vehicle-0-hero-0.png": "651445d9f88698947888d409cb8fddb6e76035fb02819fa1ef6fbabf67cbbadb",
-    "native-vehicle-0-hero-1.png": "61fc5e9496143ba1a7b620edcff05825432c4bc1260cfa5082991b9ad719adb8",
-    "native-vehicle-0-hero-2.png": "d09158493f4150ac55d950b59d820d956fd1f0a8ee7825041c947c42da368d00",
-    "native-vehicle-0-hero-3.png": "4750f170c25ba8c18992332aaf31176e76ce4d11356ee163a3e8e648479706db",
-    "native-vehicle-0-hero-4.png": "5df48d7aff4691b1bc88f3581358927583730cbe8ce65a2150d530e8ec9c4298",
-    "native-vehicle-0-hero-5.png": "d24d5cd92cc91628f621ea3bef619379aaac3d87f73db8a6213fd29db96e588a",
-    "native-vehicle-1-hero-0.png": "ac820e1714a6b587ae2c9923793666bb94649b12250e956043c99bf22c32afb1",
-    "native-vehicle-1-hero-1.png": "60ac95446a22641ccf2f755a22d2578ef807420129af471204af8a7c63ebd743",
-    "native-vehicle-1-hero-2.png": "1757be2614961db2234aafed3823d1eece5d54700481eb6854969c0cf2b50182",
-    "native-vehicle-1-hero-3.png": "ed85f9c74566a0bfbca909cf0ce8957ea06ba0116231737c072cb5a0faa46a68",
-    "native-vehicle-1-hero-4.png": "62d3f8dca6fb2649b96453cff036309ec5236286efd3dc6abf27433053bcf6e1",
-    "native-vehicle-1-hero-5.png": "58a5e640ef97abad5acbb7c22733f1b0ea7ec5615400d99ff8e3093ddc635ba1",
-    "native-vehicle-2-hero-0.png": "692642b00309f09ac0d83e3c032498a35285b10c5f7407e8caa3f1baf69852e7",
-    "native-vehicle-2-hero-1.png": "18ded69183fc2aa398177e5d4daa76fed56e3f4a0e8cc506ed62c1aa4455f5f0",
-    "native-vehicle-2-hero-2.png": "c80ed3deed57028e3e7299234d0f85c7e9ad78fb7b7a6cecf23cbee46d150cb2",
-    "native-vehicle-2-hero-3.png": "45c0f96e18846a97a3ed64abaec65ee36565eacfd8daa4e3909f0dadf0c97838",
-    "native-vehicle-2-hero-4.png": "6410baecd754a6609475682c33188aa8456a70abdc30373306fb216e83f462d3",
-    "native-vehicle-2-hero-5.png": "f72746e149a066f942b55040ba12a0c7cb792aed1ecee9c87cbac92a966bc7d2",
-    "native-vehicle-2-hero-6.png": "89944d0d4f3e082ba3dc879d2499fc04c3b5a365953daab8ef383247a099828a",
-    "native-vehicle-2-hero-7.png": "f4c9929b2cd8a892827ee8e029e112c6cae6d63f1e7622ede474394415684a97",
-    "native-vehicle-2-hero-8.png": "5e370f896cd64ce5364b2c6c6fce75fe824ea2e9efe584147b9a55b6ba810e8a",
-    "native-vehicle-2-hero-9.png": "cb5dc1df164e130c20964ce21010e6577b769b1590e09e8c5234af0c20eab2ad",
-    "native-vehicle-3-hero-0.png": "ea0cf34550d761ed3f1a65d5986ec0d9082954925de803c5f680ef5b8b761a6f",
-    "native-vehicle-3-hero-1.png": "f585d96db0c39e2d65670b89c595c53558782b34b3aa48d1441b6bea1df4c713",
-    "native-vehicle-3-hero-2.png": "6de669f02a2eb11bb9c13f21a94ec665cb0d9ef8f6f53486063a10c0fe7083ec",
-    "native-vehicle-3-hero-3.png": "d2b06ec483c392ce7752833bfe5a5548f5ccf9547ad73b64604f26891e2e9c86",
-    "native-vehicle-3-hero-4.png": "3ea90853e13e920116aa9c20464a053c45d67eb482e57d419efffe53f743a93a",
-    "native-vehicle-3-hero-5.png": "42a7895683303159b9848375d8bac684318c9b760425de878a9f15eb851356fd",
-    "native-vehicle-4-hero-0.png": "3ecc53b791823c683d664c3b070edfe89e1d2ee1b7a3888ea6551bd594b5050a",
-    "native-vehicle-4-hero-1.png": "c739140a389a8c02d42f499b1511a30860d1345eb3124d811db9e9e75622682e",
-    "native-vehicle-4-hero-2.png": "7e12aa13a7f6a7a2d240077a43d88c3e77da939335ee376f296a39a8df04fe88",
-    "native-vehicle-4-hero-3.png": "f125f6eaab2bf6e6fa74bc892eb7fa2a17eec18d665d8714ac81c007033ef65d",
-    "native-vehicle-4-hero-4.png": "fbc14146a0a6a86ce344b9ab87e5fa94f4e3256296c2740a752fd594027c3983",
-    "native-vehicle-4-hero-5.png": "e466bb6500fdb97dbdb23fd6260a6da179ebe4b12d6aa85beb51180475f6ed1f",
-    "native-vehicle-5-hero-0.png": "8949ca3e1a64386ba0c1dc3704963e65d096b761304a917c9550a6f18f8572f4",
-    "native-vehicle-5-hero-1.png": "475399501208ac724bf840db78386b6dc63b9f4c0d1583e93baef34065fdfa2d",
-    "native-vehicle-5-hero-2.png": "f8a060aeb098c4473cff910647d49e0548bbdd8b65a90ccf32076b36438eec4f",
-    "native-vehicle-5-hero-3.png": "8753c8acc42ddc25e6a7a02d6be57b5e22143940ee1d4d8413e568c8c29bb5c7",
-    "native-vehicle-5-hero-4.png": "3b19a45832011c79e58084eaad51be76ec833f6e11b699c983ace0b3686eba51",
-    "native-vehicle-5-hero-5.png": "596d2cb32db39690b67f59d7718db3221bc9120dec51c22955e526968a002146",
-    "native-vehicle-5-hero-6.png": "a4012a71904ba9e02bb30e0c59237506f14845a8bcde0dbcfcadd44e21465148",
-    "native-vehicle-5-hero-7.png": "c75140c7f57dd801f65577db40f2332cee40973288c650c38acfeee546fd6f07",
-    "native-vehicle-5-hero-8.png": "b093ec6aecdc648b647acab1f89e5797f1b9e8583e0a20d866975d3c78e9bd80",
-    "native-vehicle-5-hero-9.png": "4c021a4306c41aa301e078680f07039c8e510feac1557e214bc151bc137bd730",
-    "native-detail-meadow-close.png": "48a7e4acd9816c86a397cd7c9604bcf40a4db8e78fdacd979175941f7ace2166",
-    "native-detail-meadow-wide.png": "a1d521ff9e96cd0d95254c143d25e5aff10f1d38fa69d102e7f937619c0e51a7",
-    "native-detail-snow-drifts-wide.png": "8f81b3a8f6506e2bf966712fa2fa3a2a7ebbad0670dec7340f08aced8d97fb31",
-    "native-detail-snow-scan-close.png": "8078e89a7de6da4aca0ef8edbda4b4a4c7c00a9bf07e6f7bb0fc882801459fdb",
-    "native-detail-snow-slush-edge.png": "31b49b0b924a82f2103055677f714e855403eb4003d4a5ebdf5fd47c706a330a",
-    "native-detail-snowbanks.png": "8255d86239041091c9944b9f8c473af93d0db663ac6a298e817808eafccb4aa9",
-    "native-rut-firm-dirt-oblique.png": "f9b9b72db6dc1433fc76c09e45b8b8b17fa6851063265d273d1283e89c1e89dd",
-    "native-rut-firm-dirt-profile.png": "830ac546f231162307875280a0147bb0fb08a4f9a56b925fe848b903f97c85d4",
-    "native-rut-mud-oblique.png": "7f95d6bacdced92501bb8d59afe9cd71883e22a8e002a622487a366769eff536",
-    "native-rut-mud-profile.png": "0035268f46dc486acf7a1681a0deaffe071461b6256cf53e5f25e5b017d2b597",
-    "native-rut-snow-oblique.png": "9613168adb42dbf2b59532f2af69c06e31587ad8b907b27669da12d4d178d6a1",
-    "native-rut-snow-profile.png": "824ebdd685d0cfe7332b21cef9e9dd15726d0128c14aa2ddd11fdeb35cc3e1e4",
-    "native-rut-wet-grass-oblique.png": "f757b4857b70e26275c078097c3d0e26e137c6738c61eb4cc65c26916e00be38",
-    "native-rut-wet-grass-profile.png": "0e20fbd8a1236fe1bd82f3c082295d1bf5f6d453848113056b9922fdb2977071",
-    "native-rut-sand-oblique.png": "0f568d8df006a3e3808db80c19a5107d28de606a636caaee2100ed8067bf9275",
-    "native-rut-sand-profile.png": "444ddb13c303b210ceeed7e0dbde3fc173a5746492739b091e68abaf40b9b4d9",
-    "native-rut-loose-dirt-oblique.png": "84c398fdee432c3b18f3557cf7297ff275defba2548d8b3451dd8846bc10bf29",
-    "native-rut-loose-dirt-profile.png": "55c951d1c0088a01be73c0d60837b4c40a25c5376fd865914414d171701282dd",
-    "native-rut-driven-mud-oblique.png": "f14543b854d59c6f87a9e9aa9a38952e4a452a1c6169876c28713af64f8f0265",
-    "native-rut-driven-mud-profile.png": "da17a4cd63f9744eb061d0e6459cd965986fe46b093d97e7e3cf41776d56f3e5",
-    "native-rut-driven-snow-oblique.png": "b16a57bb48d324cd210a3b1e11867966a48459856bec0c232a769f4e0510b8b3",
-    "native-rut-driven-snow-profile.png": "0a3563b2266b64357cb0661de29c2d1eacf7dcec80c236c8e2e7bcefc2f1863f",
-    "native-transition-dirt-asphalt-view-0.png": "3ad507441ac04256a9b40be90fe1f7b168d06752566402cac930948f9d799832",
-    "native-transition-dirt-asphalt-view-1.png": "a255a41efd78f207238e2126c9ca5cdc2b82185a90324c8f076bf74c4a576e0a",
-    "native-transition-dirt-mud-view-0.png": "b4baa6d05686bbc221dec91e5e35229ef185522dcd65c0c217f39bbfbd1605fb",
-    "native-transition-dirt-mud-view-1.png": "d2829153069e812bd6ca52042ce93de27c4e7bb0355a4e549910236fe6c72284",
-    "native-transition-dirt-rock-view-0.png": "b621b483efd649a1be5beb2ded1c5d8376a920231e4c411b992dba7befac63e4",
-    "native-transition-dirt-rock-view-1.png": "1a9703f942acd90ff1a40ae3b041d04c21d79cb452b428fe742e8fedb7ed172d",
-    "native-transition-dirt-sand-view-0.png": "70e00df89aaaf04c6daa3009680968f772c9073c3fcb3f38b4f7f7ef742cb8c7",
-    "native-transition-dirt-sand-view-1.png": "8a6cff2bc48769ca7c33df7e3b3f0bd05ea15976b4e4919036ff1f3c1600c6b5",
-    "native-transition-dirt-snow-view-0.png": "19d3b1c7d87ca8bae609bbc8267d430e8572708f1e838fe2ab64e9f44969cc2f",
-    "native-transition-dirt-snow-view-1.png": "baa2f95c4cf4eb7ba85b68a3bca0df41dbb872ef5bcd351ef4aca470b9227859",
-    "native-transition-dirt-wetland-view-0.png": "9441a87fe703386112f9333c9873bbfcdfc356b18c690c5227493e78cc5eb8e8",
-    "native-transition-dirt-wetland-view-1.png": "68e2477b5522ef3dbc2c78854ffa280957e592357e8bc87e833ce40b6dac8e0f",
-    "native-transition-mud-rock-view-0.png": "6489158bb494b11d7e1cf8dd1a45133ffbba3567dd871e7ebe99b618eb56eb27",
-    "native-transition-mud-rock-view-1.png": "246829744790b91ea9588c01de9b8e8ccdcdcdc30cca1d83c990ad3ed1be36fa",
-    "native-ground-contact-0.png": "487136f54e5cf205af7477ce64b314498c147e64e967b5f1dde9eca9ea5ae9ca",
-    "native-ground-contact-1.png": "623e67da1d34548c99a826d3d083b1dad96559b99c211c4c2a8c05a2a2ab780e",
-    "native-ground-contact-2.png": "d4be362f5bc0ae2f1f29952032b9a8df2a4f4e3abbe38dd212debde71b47779e",
-    "native-ground-contact-3.png": "76d076a14273a202a3dd8c93c4ad2c141ff79c3c97883cdcc64ab9f6c8430e04",
-    "native-ground-contact-4.png": "f9337779adec29d498c38e1bb5cd6b05a6a9029829656d9f92ac6f176a9d94d9",
-    "native-ground-contact-5.png": "d03bce7cfdecd421348a073004420951544a96c9999256b66119a2340a5d2ae9",
-    "native-driven-dirt.png": "904158825e7da4567c35ba75481cac7077d02e8b3e75885f38c9850b0843238d",
-    "native-driven-mud.png": "0c39f5e33f61e12ce555d18098acb75476ac448e61a7a4645e101d4fd8b82b62",
-    "native-driven-snow.png": "92fe2c0f89bd9c078f0c8caee71d223557a95a2277a2966757ee07a02dc95bfe",
-    "native-driven-wetland.png": "644d17ecb06c777f71224a02d91c72d0166d5c92340fc36368dc8830b9fc4105",
-    "native-driven-sand.png": "f72d0a7afb12bad9a3c418fb0c3fd9998e55e1a5842c8028b1169dabbcc32dfb",
-    "native-driven-soft-dirt.png": "28435bb371e9a5ce3b2cee2ca1890b24ae3dee2d197fb899043a80dac1354caa",
-    "native-crushed-grass.png": "17c54c164fd07b6011524727c529588707f19cd7f816bb0dd58d8c9b80142f58",
-    "native-urus-hero-0.png": "6f980061dac663f0d6440c639e788099cd3029def299fdb2960ab15d8ddf574c",
-    "native-urus-hero-1.png": "430239355168bd30b5922cb35c77a23218053ba81ba67d50b0c8a49c7d09ce49",
-    "native-urus-hero-2.png": "45659acc6d46c98849e20faac81fafd52fab7c0f3e34db08a736ccb308852635",
-    "native-urus-hero-3.png": "77ab33accb609e62a3ba1ccd72f54b66745cf3437476f1ec41037c9d3235d7f6",
-    "native-urus-hero-4.png": "795fa92c2be91fe20a64df1b9b93d6b30d757aa76889e25458bb378aa9f7ea6d",
-    "native-urus-hero-5.png": "14051f3fb90a23277c8a00e07c1edef9984241c8a7a11376238272876040353a",
-    "native-acceleration.png": "45834c0d5e68252215ac5cefcc7dcf62e445ba24890395e0e4b73fb14c3b8eb0",
-    "native-open-climb.png": "71e3360d70cc6c3fab68ba22db251ef3b34123e773ba3eb412a3026200e3c675",
-    "native-locked-climb.png": "49537c7c738eae58a501ad7d2c1c25e4c5ee47535b0551d1cf484fff7c3120cb",
-    "native-momentum-dirt-asphalt.png": "15b13467ff54b7c20b7e30fec84c249e41a52de8bb35519a5e52f13f53af4177",
-    "native-momentum-dirt-mud.png": "17b2a195927a009a9bb581dd013bc9dc1cf4d6d15e98a1c5fb8597c7bb89a0e9",
-    "native-momentum-dirt-rock.png": "9dcf829f173598b77539edadc1b804280fc02231a1748a36795c46022cb70cff",
-    "native-momentum-dirt-sand.png": "bd222bd58f1fc18a40894383b4b0ea6d1c76622ed8974f12085468b6c42f687f",
-    "native-momentum-dirt-snow.png": "840e0024b1b72382d1b664778fc7cfb997c0d501c723e90353a8b43dc30740a6",
-    "native-momentum-dirt-wetland.png": "642b6bdc3f8c1ff9bb419e39380115019367c5837cdb9c0342dccf9145769f90",
-    "native-momentum-mud-rock.png": "d512f9aeb2f6f1164fe36ee8d3390dd742bd11b5b42960420ab410e86db4debc",
-    "native-suspension-rise-0.png": "5edca250863bcb10cd40e2cfc7afe2d828c8c56b324313f3844a44587158ee3c",
-    "native-suspension-rise-1.png": "d0c9dff6a5c70786021819f811cfeed3748f793a7f56c3d3289bdbb3ee306461",
-    "native-suspension-rise-2.png": "8be31d99568a4eb2e86e99db7412574b2a1bd46c14691c56773fc1dcf13ac4d2",
-    "native-suspension-rise-3.png": "227a1aa776a2181e7a33ce6505d1f14d0e6e87aaee25778a506e6880281b427a",
-    "native-suspension-rise-4.png": "fbb0579452795cb028296c173625fa28799541c7e202a223da9b4ced26bc3aeb",
-    "native-suspension-rise-5.png": "041b6cbe9841fcf98f6a07894fbc966ee8b059a26e976ff7c9d54a0b1ab06b31",
-    "native-winter-south.png": "03f2e63ec24d8e00e11778f675e61f04c6b025f7a90d51fb45048dffa26de17a",
-    "native-winter-coast.png": "bf4671667a4f404e6a6ff7f620c71152ff09fd3a0d1204da8e0e410c0470c75f",
-    "native-winter-north.png": "2196b3bc79c646a5a48495aed2c74145753f31d6ebf3ded51bf1625fc1c6f8f9",
-    "native-winter-quarry.png": "ea430c8cf65cb2731be8a53ed015b70a0b3d65ef35bab79177b17ed6f4688863",
-    "native-winter-complete-coast-overview.png": "2b15f385ecde71387f98c1eca9b19b5998e2a45fad60324eadf606de9081e286",
-    "native-winter-complete-quarry-overview.png": "d93f29d699888d037ffccf51a86e3c745d8722d1e4ce1c8e12bbd24faf1c662c",
-    "native-gpu-preset-0.png": "4b2197026660fd0a3eb5916b91e6edc9b91276b0ea45597cdb0d7e505411d45f",
-    "native-gpu-preset-1.png": "de31f2ef4c9a837b486272f12b37dfa0d759f4fddd3822d9cae7a90d99948a21",
-    "native-gpu-preset-2.png": "008fe2fb9963ed371373c9f6fd010b500e6d6bb96a4e99b307dd2c6cd33166c4"
+    "native-vehicle-0-hero-0.png": "5c707d258a6a2922f04b13d2f60ed6e3b58d1f03a288279a875d58e52fb9abed",
+    "native-vehicle-0-hero-1.png": "bfdadf5c9a933c2ee56d42caa6bcc5864686214dcfe25cf56e678c86df04f930",
+    "native-vehicle-0-hero-2.png": "dc6a01239dfeafab6d304d7bdcff22f4a5b3f5f336f2a2c0b5e7ec195278c02c",
+    "native-vehicle-0-hero-3.png": "630f7750e30af461f19c27e94ba9e1b1c68f9ea94c5309fcf7db8b9099932e4b",
+    "native-vehicle-0-hero-4.png": "5fb8aad2af5ad8ec94f63be7b0e3fb341ec374349006adb632403a89ae0d1fdd",
+    "native-vehicle-0-hero-5.png": "bf83ad1e62725d4672d42ccf087e79acda0e409675a7d742d099e5991c11a972",
+    "native-vehicle-0-hero-6.png": "9395323df8bdc164d622f7a2cfc9e86075c37ec3f83f3b5cc59242247fa182a4",
+    "native-vehicle-0-hero-7.png": "22f05362d55c999a65289649f0990390c129e516daf0a569a2cfc70c546e6745",
+    "native-vehicle-0-hero-8.png": "2bfa185dde7a4218f2c078651b74958ed7708a1a70e18e23f923cab446575bf2",
+    "native-vehicle-0-hero-9.png": "21a4ad4fd9982f96906573c843b1e51f501a5aaffe9d28661b2ebf0453988777",
+    "native-vehicle-1-hero-0.png": "c7a634bb7dc6c6aabe3f9e85bc867e943310a484607fd7dda94b9ddf856dbd79",
+    "native-vehicle-1-hero-1.png": "0180011bfe847d403c3946017a47d3f173a4a1869e725e50c5ea812169a32304",
+    "native-vehicle-1-hero-2.png": "c0e49c0338b251a4b8efc246db114559019ea392b08f6775495c1f419f600c8b",
+    "native-vehicle-1-hero-3.png": "dcb5f5d85a30f8b64c869b1adfff4b0189a81c141f59bb2efcb0126ee1921a7a",
+    "native-vehicle-1-hero-4.png": "838d02557cff013b957ab811f5b7a6998e8c790e6f75e53e699d6bca21feaa27",
+    "native-vehicle-1-hero-5.png": "39ed19b27f28d03ae7f6950674e8c073fe5b7ddf9b956199cb4f6df6454597d3",
+    "native-vehicle-1-hero-6.png": "b2a1a68fb8e65797916fdf6cc3758fcf6f6f44ecb0ac04227339f9d655c1e583",
+    "native-vehicle-1-hero-7.png": "55b640e871d8aa057c5a34f9889b48a7483ab00430efc4f9bd5bce9bf829bf5b",
+    "native-vehicle-1-hero-8.png": "3875ff692accdff306e804cf1cafe667b5fdc24f721c1798a4d63f25fc6d30b1",
+    "native-vehicle-1-hero-9.png": "ba794db17798b3678a6d09c0bccfb72cf0aafae23892cddc36d0dcac9b447711",
+    "native-vehicle-2-hero-0.png": "78339c4498e5b18c3589127afd53deddcb5d4a0f71a644644e6d655ca95ee843",
+    "native-vehicle-2-hero-1.png": "76ce0b41ded279d64bbb36e231ee37352892cb4455094917d1facb339d984ddf",
+    "native-vehicle-2-hero-2.png": "4ddcceb4d49a157fb12d1e5c961fdf402c6f8d0e28ade11cfbfc882c47b921e8",
+    "native-vehicle-2-hero-3.png": "dfbb1504da1977fc12fc65238e6e95d5a1a0c6ec46d64cceb1b4f95497a1b5d1",
+    "native-vehicle-2-hero-4.png": "28cec2ccc41a2986f9c66b1aa2e7062caaabc8e7df8b58170e3d96c8ba536f29",
+    "native-vehicle-2-hero-5.png": "80887cbd8a234c8c93cbce231c92cce44a63bc4f1c8a7f65ea612f8aabcd200b",
+    "native-vehicle-2-hero-6.png": "1c6178cbce6464494c043136732e0769a731e7edbca1362054b1e0deb2993ff4",
+    "native-vehicle-2-hero-7.png": "505aac99088f2c46e347b3915633f4c064de584a15e346360b4e7443ca4bd5fb",
+    "native-vehicle-2-hero-8.png": "3e4e65ec19567a20cf0bbbed1dd798628a5feef2fcb0002e31b57b1c3c27de9d",
+    "native-vehicle-2-hero-9.png": "994a0af4ca11b92b6ff323731fac7fa765ac2d5ed9b0588faf06726d9609e81d",
+    "native-vehicle-3-hero-0.png": "c79ae6febbbfa8da53fbe95e779cf7a1bd820c9b6fc0cd45231e3f39f805cb18",
+    "native-vehicle-3-hero-1.png": "4ac3c38db2e650111a2af710b5f43a8e88e05473c3badae37d0aa47dc2dce32a",
+    "native-vehicle-3-hero-2.png": "5f86430b6e8a26f7e3da6184f04f9aac6f42d9c67b8b75fa57cfc8df07ac88d3",
+    "native-vehicle-3-hero-3.png": "36fb27bd9038820504d0b3224f7f6c8887decc40280b5c517237afc4e254c756",
+    "native-vehicle-3-hero-4.png": "771b709789cc2cde185ed1599ea69c17b118628081a26791b51f7d7d88bcbccb",
+    "native-vehicle-3-hero-5.png": "5e152cf2b230bc2bd6a918873f937d2f59129688f96f84869020d7dcf0f061f6",
+    "native-vehicle-3-hero-6.png": "3626fd1e605e69e750158d4786fd4c43c90220f60e7fe13ddc56cda47442e55e",
+    "native-vehicle-3-hero-7.png": "26a05b3bb80516a3777da541fa52f25e8807bd13080d6faf845ee0056be17ee0",
+    "native-vehicle-3-hero-8.png": "8c38d669ec3fd47497cc2230a55f8d1e9593d74acf69938c75dbe174b9bceb36",
+    "native-vehicle-3-hero-9.png": "5306acc03d51874173408d257bab1ad0b1fe68246a7c48f11fb7456b9c0e1c0d",
+    "native-vehicle-4-hero-0.png": "7118810e22c1cf3b8f9d46a8b32184ec7c4a63475808fbc473fe917980d825dd",
+    "native-vehicle-4-hero-1.png": "eac1eb3965e9997eddf07c29f36231544c206dc00a475bdb1de79e966dc4a46f",
+    "native-vehicle-4-hero-2.png": "ff7642951380b2f3d6fba87589ba0161fa2f21187c7bdf59fac4655fa5faaa00",
+    "native-vehicle-4-hero-3.png": "c4fc1d91bffcba79843181ab294c624bddfce357b27ecfa2a1c98fddba581f19",
+    "native-vehicle-4-hero-4.png": "72d6c6b02190ffaea2b0bf1a8f84cd8a7813bb7fb2adce86e22936bbc7422e04",
+    "native-vehicle-4-hero-5.png": "ba7c5c80c355a62e406e838fb0758ad3371b62ef58e55ec7f40bb560c28b20d7",
+    "native-vehicle-4-hero-6.png": "5c47a993f06770bf5336c70c327ea99b632341fc9573e06b3bd3dec16e5131c5",
+    "native-vehicle-4-hero-7.png": "1a0e127b9fbf7926c65e6331d614f957cee3b7b5aa5d00080d4018740d220dd4",
+    "native-vehicle-4-hero-8.png": "17469133949b14fb1bbfbf1afd8c7d75ef3824ed17871379ea4585e36ccdb8ea",
+    "native-vehicle-4-hero-9.png": "1e7cf97fc21c811f4de55343d6e9cf9d4d054bdc95bc149a56db9e587fdeff7c",
+    "native-vehicle-5-hero-0.png": "1983739088ea45f398acaf573e43b90fc3d9a41b43e5ea26f1a0bebbed8df9bd",
+    "native-vehicle-5-hero-1.png": "891a9db01d966d79b256945acc55fe5d525297afbcbcd37e2a0d568ae3253fe3",
+    "native-vehicle-5-hero-2.png": "655951a8342adae177bf4d95408cd135df1e8d7d11718d1fe5d50363b5776edd",
+    "native-vehicle-5-hero-3.png": "1fb60ca221ea216e751035cb7cfd77f81e526a15c500a4cadc97b26e8712db45",
+    "native-vehicle-5-hero-4.png": "fa3ef43ddbfe9b0b2d5f1fb12b33b172a84a215e7797007538f4f6431c8ea1c6",
+    "native-vehicle-5-hero-5.png": "9ffc04050a385218c9a7389f5e3da51035ff6b1db67ba1ee4ee9e791f7d485e9",
+    "native-vehicle-5-hero-6.png": "a6287e2a9b5b0fe9a8df0814b0bfe6ecb8a5d5ea6033f527b13dbc4d8a8f733a",
+    "native-vehicle-5-hero-7.png": "79a91d0adda8b6e6e99dd5b2dd89bb38ee9f84ae734adfd81983ad015c319356",
+    "native-vehicle-5-hero-8.png": "4c8ec341fc750b7fac761e140cb3df8c6c5b2ffcd561ce5af8c48192a3408330",
+    "native-vehicle-5-hero-9.png": "d307ca2f59fb4199d9a37c682301a04e8c9ea80c16ca641d12f4d4509cb2b7d7",
+    "native-detail-meadow-close.png": "6446d7b4f76d9c7078c899f35b40c0ab1352003c68cf5740f7793929eefe5bf0",
+    "native-detail-meadow-wide.png": "385dec817788b8828b1cec06a0611c370779f836230c1ca5e953da92c3547918",
+    "native-detail-snow-drifts-wide.png": "1784cf7fe180c1420286d952d25b3c91905af919860a540c62387e73b6181d1e",
+    "native-detail-snow-scan-close.png": "c35633f1a2b70f492962df6867ab023a63c6c0accf84a4e5561d4614ff894fb3",
+    "native-detail-snow-slush-edge.png": "93acfd3fcfec2749d4e463c8d6dc8e802d9c573f78e2f86a5d3b5bce5fb1447e",
+    "native-detail-snowbanks.png": "6e77acf1247e5b278c71e35f2d15157cc9911d234f2a08cf0d170f5d0360cde4",
+    "native-rut-firm-dirt-oblique.png": "b6b94ed81b3588ef83edef7bdd2a66c36c3eaa7b5642901bcd31334d697792f1",
+    "native-rut-firm-dirt-profile.png": "abe4608b42b45188b8cc148c033fe77cf9f7c901818951dc477132affc52270b",
+    "native-rut-mud-oblique.png": "5d39b3891979fd1ba3682d4096176ccb908efe9f6f5c273654111f37d9b1485b",
+    "native-rut-mud-profile.png": "9770e3188bd35cf8535841c9fbe7df2a7308e309dbd8f7c084e2d065926624fa",
+    "native-rut-snow-oblique.png": "efbb1e4a0cafacd6e8dc3e9b9e416f367ad19e6e86ccd08f4adf5a928637f620",
+    "native-rut-snow-profile.png": "72a7d8f3312899c10101210ae8c31e87155c59e4c0e62520ec8caf0971c1595f",
+    "native-rut-wet-grass-oblique.png": "9ca0a95e641e5db57279fd40748d621b93d636b9972f1927217dd8e4c1d7b84b",
+    "native-rut-wet-grass-profile.png": "47121c44bfe444b9a7886fa3fd1da521518c4b411c20676d21cae59f68437e3a",
+    "native-rut-sand-oblique.png": "e45d53d67b9407271c7ba4648f229b7f296739841ef2d65d05b751c1f6f767c2",
+    "native-rut-sand-profile.png": "03c4ca0d23ac45820cea9143f2b591e74630758dcca9fcec02965b92e7b77579",
+    "native-rut-loose-dirt-oblique.png": "5256a541000e96f95df24498b0c4b3b4f491cd265b32d0f008ee1f1463936926",
+    "native-rut-loose-dirt-profile.png": "8cf536d8fe1806f67e27003a5b4d7a53deda4528b6375b286b42f033bfc70866",
+    "native-rut-driven-mud-oblique.png": "2e907887102f3422f532dcfc87ab0d7617da8674ff32fc42d9deef489d9bb7f9",
+    "native-rut-driven-mud-profile.png": "ab4aae893155f8e6431b2fd00b385b01138d0fbcb58da58e8e68df6ae8b38033",
+    "native-rut-driven-snow-oblique.png": "62efa34504c2962de42f2ff5396863d0eaeff4180633c2b74a8196be0029c4e0",
+    "native-rut-driven-snow-profile.png": "0207ac48377c605dc8980920acd3daa0dd2d8bb12ae3ca868a324d65368fa7c8",
+    "native-transition-dirt-asphalt-view-0.png": "28db7af6e60c105d4d88f8766bbc8f64f346b152fa0917b7fe8c76e34250fc53",
+    "native-transition-dirt-asphalt-view-1.png": "2590b67b44351b01afc66203159f4a93cea70131133f46c9ca1ad78d2adf21a4",
+    "native-transition-dirt-mud-view-0.png": "9f2686c2ed1f3eec930011bf03895dd7d1c0b9288ee696e67f6cd9d278b49dc5",
+    "native-transition-dirt-mud-view-1.png": "b01f882773c9e024855d0192a873d77e64a86787ada4061cdbc96e5dc4918656",
+    "native-transition-dirt-rock-view-0.png": "0bcf459b97fefe2708d38d0f40b9bdf2356a5725e3c7e0dade01905869a7d728",
+    "native-transition-dirt-rock-view-1.png": "a7659eb527e51ca655b369b363c5992a8e4ef9dff6a90bf3e614159262a6d2c0",
+    "native-transition-dirt-sand-view-0.png": "097bb14134cffa180d755e46ab1f352210201accb291250e3ca0f66f71578900",
+    "native-transition-dirt-sand-view-1.png": "3f4a9a7da4d283dd51913c055a9f556c4c64836c204789c4e412aff55834518f",
+    "native-transition-dirt-snow-view-0.png": "640dbd81cd7ff2721eaf9567560b10e2a4d064e18789eb106a91168bc11c6ddc",
+    "native-transition-dirt-snow-view-1.png": "b89c044e8e9c48a14b8cb6aae02daece51010bcac4c0ea6139eadc517254a978",
+    "native-transition-dirt-wetland-view-0.png": "bce4b3efd0b9ba295b7cbdeddc2433fb7945f8748e84970622cec95fc5c7f293",
+    "native-transition-dirt-wetland-view-1.png": "b6484213bcffa1f6a5ba248e8293d509a9cf3a5af6652cccc73afbcf0abc1ba0",
+    "native-transition-mud-rock-view-0.png": "0ea53033c2cdebfbdf0838d59fa8d05bfe8845ffb6800d6b50c290bde6d495fa",
+    "native-transition-mud-rock-view-1.png": "7eaa704d542b29bcf4e4297f229132ffb556f667b179b9be234c1f2ee0b6e8d0",
+    "native-ground-contact-0.png": "83b66d883dd0160dd9b3ece25bddf2062e85ab2fbb21bedf66bf71b9baeec0bb",
+    "native-ground-contact-1.png": "91f0c8952a62f5a8ba40b8d35dcf86f0334ce5828aef62c9e5247356616d70dd",
+    "native-ground-contact-2.png": "55a627d474d7e1c9322ac2b2babe6c2972d43e6dcab5fc78cae120d4943d3b2e",
+    "native-ground-contact-3.png": "d78cc0ac198eabac5d744c4dff6fd2bce3deafba20cb959782c68fc3cc4eb11a",
+    "native-ground-contact-4.png": "a9293aba5f497ec5765542f8a29169ba97368aea749d3f173cffe5d71f8944d7",
+    "native-ground-contact-5.png": "1a6ecd3bc576e30a3c1ccfd22c2bcb6939a5d029cbb7f27d707b0c310cc67fb8",
+    "native-driven-dirt.png": "b604c8ae656f32f83a01a743e78208cf7b342016093f2ad74ea257d0e22bb1a6",
+    "native-driven-mud.png": "523ff98743f6059ace3976b5a4c70de787e7314bf10128383720733e014d0dc3",
+    "native-driven-snow.png": "446dc9a4911318f7254d94b04933000df973cbb89f9a9cad1f30e0a798b12041",
+    "native-driven-wetland.png": "a38872e5ddc766ccd507190add381187381b3ed0e2c1bb9a05c23deec066576a",
+    "native-driven-sand.png": "2bb736f463a950a5ab6bc963fe76b1c0ec36fb7ea443462049b459e478c70b95",
+    "native-driven-soft-dirt.png": "2212321d0f25365908cb38b52d0e8e1113980818bee9b8f39d3efe663eb5f1fd",
+    "native-crushed-grass.png": "508f891e26fedf7137fb23a2088567d2f7c39b9e102db8af643a3ccd9c49b542",
+    "native-urus-hero-0.png": "57035eb9e0afc59dc7a83e6419ac498290245f41b69906d4d7878d37b6052699",
+    "native-urus-hero-1.png": "9614fcba6e1276fdaf0c5efe46a1fdff87b9be5a609e019cb889c6e54043f442",
+    "native-urus-hero-2.png": "7951454acbb5cc5373d48ab5a71cf8af19a33c4e8172266e348e9ec8d98810c6",
+    "native-urus-hero-3.png": "00b4d31e44c471349d4cdbdd2b8499f6a88eced29742f66cd8c6800aa2ebd36f",
+    "native-urus-hero-4.png": "c69ff47666562ed12fafe6bce55c63c71de7809194a80c74ce4e9543c345c669",
+    "native-urus-hero-5.png": "68f17bfe5972407483c1f5b9007cda6c032f6fd3a3862eec7884ba7c639b202d",
+    "native-acceleration.png": "1c899ca81cc5afff772689192e3ee5c94b1966b7c5e090a2f432af87637e03a3",
+    "native-open-climb.png": "671ca03d55f2f2b015018e3519f4fd0c9a120e40b1b78ab3758dcaec47810269",
+    "native-locked-climb.png": "cedd6350a7a2941896fa0cc5e23aa3f69302ebeb80e6660f92f57c6820dce8f9",
+    "native-momentum-dirt-asphalt.png": "93a60211ad34799c40a1f0c5e43ad07cbab0e1b25762fc92db6156f73e448349",
+    "native-momentum-dirt-mud.png": "5aa3cbc04dc943f35db363803fdf22171b6be79f792a091f7fd4a72c0031ada3",
+    "native-momentum-dirt-rock.png": "f12da6f7e9cacf86733e3931c29b76bae873f20c11da35ad981600f01aad2b20",
+    "native-momentum-dirt-sand.png": "ed663b9933eba5cd1584b02ac99baa3df3825abcfc29e36eb7278bea2b75e864",
+    "native-momentum-dirt-snow.png": "14f246adbdd1866b7b11274680afff7b70d8d306376115f7ff3f989592babfac",
+    "native-momentum-dirt-wetland.png": "6f7a1dae24eed8bd69051bd42b4c312dc394a5334a5a8e3e870d69ab3265c9c7",
+    "native-momentum-mud-rock.png": "047ac1f1e1ef69703f199825e2f8c108ecc03bcdb5ee797922fade8b22b5ab29",
+    "native-suspension-rise-0.png": "f71e2a1e52821b0bcfb6137311ed2737eae5fe1b50dbd2615e83801e0a69de0a",
+    "native-suspension-rise-1.png": "cf726db7ace90e56c0cb5d8f1cd9f5d46ccd4996bd9fa3e4a27836f94307ba63",
+    "native-suspension-rise-2.png": "e2b38416ea061b7fc6d6e0bd452ec53c8801b2db870a876f6e8ae4b608fa89b8",
+    "native-suspension-rise-3.png": "1b07adfba8b06bdaa64a3050eec17d3729a28312c435da05ea834b0ba7dee4fa",
+    "native-suspension-rise-4.png": "e4c799c49a2232194a2b4bf526c6342a7e361bf3536d752a4b72872d1412688a",
+    "native-suspension-rise-5.png": "818f13bace3fd473b069d34b79ce91b2314e030e49f29bb951973ba4e01449b3",
+    "native-winter-south.png": "63a9fc2732ced5872ff3754821104289fc928201d334c5244477b9400b5f1d62",
+    "native-winter-coast.png": "4f16cc5592a7e281e214af82d46c0a68cb2073b585b4e911db551dfe0251c87a",
+    "native-winter-north.png": "b7a497c143aada3dd0638c31299802c4be97b0352c181603e39044884099929a",
+    "native-winter-quarry.png": "78c15651cb041c82147c8443dadeb63f63b9c0ad36f46a0c83f2261c07539984",
+    "native-winter-complete-coast-overview.png": "f0336e27498bf4d67fcebdec342ef070f7c6e9cca58055f11170bb449908fe7a",
+    "native-winter-complete-quarry-overview.png": "83d25c74c0f4fd274f6595c968d9331d763ae01b2f9b3b03c3d670a0c0e4d1c0",
+    "native-gpu-preset-0.png": "74842e7afb2247a492f4554f9804af5dcf9cdbb38ac5271512c4a1415228c289",
+    "native-gpu-preset-1.png": "4fd950bb8a653091757bb2726d5c68bdc5b7fdb0825b5fee24f58f2e57277922",
+    "native-gpu-preset-2.png": "2af5f8b237bbb96029b574842225538064c7bcf4d09a9ea61bb54e023351dc3e",
+    "native-rollover-v0-z1-m90.png": "fde61e91c7e8fea06238c77b3c0c1d711a624cbe302711fcd43ffadfd4b4e85a",
+    "native-rollover-v0-z1-p90.png": "c57067dc31c889547b30e0a9496174485f3de77601af5dae2084734fa224b8be",
+    "native-rollover-v0-z1-p180.png": "b042736a5001fb0c7c9566bb2055f39b1d613edf9bcc7ff5e0eba088d93eec38",
+    "native-rollover-v0-z0-m90.png": "d2edb5e3cf20e55f8099f42e6c8d2a96225bb451b2b70ca6d00eed4de62fc4da",
+    "native-rollover-v0-z0-p90.png": "bb1ba43b3fd390de831856f1f53809c77d65d530fbbd671f383063173fa7bd70",
+    "native-rollover-v0-z0-p180.png": "14bf7ed104566ab3b5ba083b0664146dafcb475fc70ab753d12bae5c0cfc7f79",
+    "native-rollover-v1-z1-m90.png": "d84b34c72021d59bab936f1ed059072240c7cacbe0a2e69a293238d361e599ec",
+    "native-rollover-v1-z1-p90.png": "6fc8da4da422fe5afcbdf79d928df7c13af42ef626b6d0b8372acc5d4b142965",
+    "native-rollover-v1-z1-p180.png": "7c3304e2bba2514a958fd1eb24afc0e3c7400a5035e41ebe8576250fb370a774",
+    "native-rollover-v1-z0-m90.png": "0a381c834d1b8a82bb33e708963b911bc97e5844b5bacda690d71b8f4912c566",
+    "native-rollover-v1-z0-p90.png": "c8720ea824fda6bbf73069effcb8abcbd9ad2eb01b69f306b55dfef6df853025",
+    "native-rollover-v1-z0-p180.png": "869e624fad0304261fe7327de9e88dd5e0c5add52302c845dc5edb74ddc3e0fe",
+    "native-rollover-v2-z1-m90.png": "dd0314b636b5be2b6acab4c340fc692d604d3aa84c65d66f9ecd669c6b194372",
+    "native-rollover-v2-z1-p90.png": "82023c71ee8640cb96fd26e01aff45351000fdf9e1f5aa914bd4d639c7a27f8c",
+    "native-rollover-v2-z1-p180.png": "734dddd3cb95808bcc8f0d3ead30bdfaa875f7f31309463e5e0a8720c5c8576e",
+    "native-rollover-v2-z0-m90.png": "c27ffcfff2afbb3494c7df61a2d3e1f072ae3701dc27f3bf9b159be7e9dd19e9",
+    "native-rollover-v2-z0-p90.png": "57e1a3d35f836e4169aaab744f68a4c7948b818e4e43c84a9baaf4b0a5c72b13",
+    "native-rollover-v2-z0-p180.png": "1b5c8ed322c8fae37ebca2f768437b10142a922f805f85c6511f9f4804ea5d6e",
+    "native-rollover-v3-z1-m90.png": "4f5a4e792de4200598f0986242dc1bd71764d9300f5f37f9a765e7fe44ffc64d",
+    "native-rollover-v3-z1-p90.png": "729891c7dd29b8cdbd316002e15c31c86eb8b347a903cc42f0d517d359e03a06",
+    "native-rollover-v3-z1-p180.png": "9100a0ab9e732077dced69009e82c561388db9686ae4935e0a49ffc37958ad63",
+    "native-rollover-v3-z0-m90.png": "7fb465ad2907b01f05e401e262c0e6ad781c916c6d9597ef91ec1ccacfa62934",
+    "native-rollover-v3-z0-p90.png": "cc175ecd14f979055a013ce7a9a8e8cd7fe1370f045659ead7c020a882f1ad00",
+    "native-rollover-v3-z0-p180.png": "4dcc7f67c2345429b64ee0e12f416aea20d3896c2df6a1c781d8fd9edf982325",
+    "native-rollover-v4-z1-m90.png": "1898f47ebd78c1fdc36205235f633cc67571f4a04ad09f12ca6d4cce97cfc773",
+    "native-rollover-v4-z1-p90.png": "b301079463a1426dfeadbce7bbcb746190d9b5b06f3dffe67b3e704668339d04",
+    "native-rollover-v4-z1-p180.png": "2feb8ae82d609e9edd6c0d15d435f2f6eebde6016a5b22adfde1f7bb263b3687",
+    "native-rollover-v4-z0-m90.png": "0acc1980790f2798e13f7e3ca99602423f44dbc5fbcdbe29949fa8ec3ec9058f",
+    "native-rollover-v4-z0-p90.png": "d4a84a7a1bc83d711d00a8853b6127556b449e93d229318054d62b619264e5a2",
+    "native-rollover-v4-z0-p180.png": "4165a22f2de5356493ba9bf54945aecedf28f32a73c892625cc361870fb58aee",
+    "native-rollover-v5-z1-m90.png": "a25a9d1290e34e70f086cb521489f4b84b12db9f0b94312c114f4217e2931568",
+    "native-rollover-v5-z1-p90.png": "b6bd538c0d11c492be4f86a2a652a1f609a4e93e78b5fc807e6fc1f638beed5b",
+    "native-rollover-v5-z1-p180.png": "d3dfcc928e2c51dd4e2e43d0200aa8ffb86797d13d63fbcc673418ca1e17d8ed",
+    "native-rollover-v5-z0-m90.png": "559d1de27a532a92b47de4d3b747db28d9fde3768350f5f03919d5d330b964f3",
+    "native-rollover-v5-z0-p90.png": "057bdf1ba832bc8a875e682d3810cbbb52d994de4306ffca64fa4397b330f6cd",
+    "native-rollover-v5-z0-p180.png": "76d0c754c9f5031ba367288abf8f7fa8a59b9405b62c19b89016a3084d20fdc2",
+    "native-rollover-v3-z0-m55.png": "ad4ed7458e66f3548c2298945f3080b5ec7e137162b428512e418a04f3cdd2b2",
+    "native-rollover-v3-z0-p55.png": "0df9d5d47d67bb1552f003f3e08d3750769304630e2ca018918a8a1611ec27fc",
+    "native-rollover-v3-z0-m110.png": "d4167995a13ea5b485081aba62f24c2cb10c468575280b94d6a0548e09e361fa",
+    "native-rollover-v3-z0-p110.png": "a5fedb9b0a71f4b92bd19f54c4efd4698b33c629df8f5c1ea7ca4838774022f4"
   },
   "renderedReview": {
     "complete": true,
-    "captures": 124,
-    "review": "Saved/contours11-review.json",
-    "reviewSHA256": "0e0e5c59fc5bdb9f710da5990f03bf4af1ab9f254ee693c321da7072c4340c8d",
+    "captures": 180,
+    "review": "Saved/rollover12-review.json",
+    "reviewSHA256": "9b907070e9ca988e52c35f414f150cb69d3b824ec27194a90ec39323344f4c07",
     "observations": [
-      "Art: Inspected all 44 final Art captures on eight labelled sheets, plus original-resolution Civic views 3, 4, 8 and 9 and Urus views 3, 4 and 7. The Civic principal A-pillar is straight and now meets the side-window frame cleanly. Its bonnet has restrained converging creases, a crown and wrapped leading corners; the rear deck is crowned with a formed plate recess and curved end plan.",
-      "Art: The Urus bonnet shows stronger ridges and swept leading corners, with carbon and open vents retained. The hatch has a clearer diagonal fold and plate pocket without the broad inflated-looking recess of the rejected first candidate. Both additional rear views now frame the actual closure, and both whole-car overhead views fit the complete car.",
-      "Art: The other four bodies retain their prior geometry and remain intact across all six original directions; transparent cabin centres, lights and tires remain visible. The models still simplify fine fascia curvature, interior and trim. Some fine surface waviness and triangular highlights remain under close reflected light. This is a contour improvement, not OEM CAD or production racing-game fidelity.",
-      "Art: Inspected the derived Civic and Urus before/after sheets using unchanged front/rear quarter camera directions. The Civic has clearer bonnet draw lines, a straighter pillar silhouette and a formed rear pocket; the Urus bonnet relief and hatch fold are stronger than the previous accepted body. The comparison sheets do not add native capture counts.",
-      "Detail: Inspected all six current Detail PNGs on the labelled sheet. The retained meadow shows mixed small scanned clumps, taller procedural blades and photographic ground detail. Snow close views retain fine grain and shallow wind relief; the soil/snow fringe stays broken and readable.",
-      "Detail: The snow-drifts wide fixture is partly obscured by a large foreground plant, while the close snow scan and fringe views provide complementary coverage. Broad ground motifs, sparse oversized procedural blades and blocky imported snow-cliff silhouettes remain. Terrain materials and placements are retained this round.",
-      "Ruts: Inspected all 16 current rut captures on three labelled sheets. Firm dirt and loose dirt retain light trails; mud and wet grass show recessed channels and raised rounded banks. Snow has pale blue compacted floors with light shoulders rather than black rubber strips. Sand displacement remains subtle.",
-      "Ruts: The separate actual motor-driven mud and snow captures show continuous tire-width channels behind the Jeep, with rounded side banks and tread shading visible in profile. This is retained soil behavior, not a new rut implementation in this round. Sparse grass fixtures do not prove dense meadow crushing.",
-      "Transitions: Inspected all 14 current transition PNGs on three labelled sheets: asphalt, mud, rock, sand, snow, wetland and mud/rock. Boundaries remain distinguishable with broken or blended edges, and snow feathering is visible. No new gap or vertical seam appears in these retained transitions.",
-      "Transitions: Some broad mottled ground motifs and simplified snow-cliff silhouettes remain. These views verify the retained materials and placements; the driving regressions separately check vehicle response.",
-      "Full: Inspected all 22 current Full captures on four labelled sheets. The six rocky support fixtures show the cars above the solid ledge rather than buried in it. Actual driven dirt, mud, snow, wetland, sand and soft-dirt tracks retain their different colors and depths. The crushed-grass close fixture shows a single bent plant; it is not evidence of full dense-meadow crushing.",
-      "Full: The six additional Urus hero directions retain the bonnet ridges, open apertures and formed hatch. These Full hero fixtures use elevated staging poses and visible wheel-to-ground gaps, so settled Art views and numerical support checks supply the ride-height evidence. Acceleration and open/locked climbing captures remain readable. The cars, obstacle scenery and ground still have simplified fine detail.",
-      "Movement: Inspected all 13 current Movement captures on three labelled sheets. Seven boundary crossings show continued forward travel with readable changes in soil, snow and rocky ground; mud and snow tracks are continuous behind the Jeep. These static images complement the numerical momentum checks rather than proving a time sequence alone.",
-      "Movement: All six rounded-rise fixtures show the vehicles clear of the visible surface in their final braked poses, with brake lamps and pavement marks visible. The revised Civic trunk and Urus hatch remain intact during these trials. Numerical clearance and collision counters provide the front-support evidence beyond the rear camera views.",
-      "Winter: Inspected all six current Winter captures on the labelled sheet. Civic south, Urus coast, Jeep north and HUMMER quarry views show the retained icy road, snowbanks, scanned rocks and winter vegetation. The two overhead views clearly include the authored road, coast water/blue ice and quarry stone wall.",
-      "Winter: The winter scene is retained this round and remains an authored static landscape/road; these pictures do not establish physical snow excavation in Winter Expedition. Some snow areas are broadly white at this viewing distance, while the proving-ground Detail captures provide complementary close texture coverage.",
-      "Presets: Inspected all three current preset captures on the labelled sheet. The quarry trail, Urus, scanned boulders, grass and native cliffs render in Cool, Balanced and Quality. No missing or transparent rock surface appears in these viewpoints. Detail and shadow density vary with the preset; broad ground motifs remain.",
-      "Presets: These are short automated preset checks. The Quality smoke uses a 20 FPS test cap and does not establish normal 60 FPS endurance or long-session thermal stability."
+      "Art: Root inspected all60 fresh native Art PNGs through ten six-image sheets, including front/side/rear, both front quarters, rear quarter, bonnet, rear closure, pillar and overhead views. Compared against the six-model baseline sheets and the actually inspected reference photos/catalogue views.",
+      "Art: Wrangler: upper door pressing and rear returns carry a more varied highlight without separating shut lines or glazing. Open hood/cowl vents remain visible. Fog pods now show recessed dark optical bowls and small emitters rather than flat luminous coins. The factory silhouette remains simplified and the brake guides render warm under the current exposure.",
+      "Art: Bronco: broad bonnet plateau is retained with flatter outboard sections; the rear haunch and lower door draw remain continuous at oblique views. Hardtop/glass/door joints are closed in the inspected views. Factory wheel and grille fine detail remains approximate.",
+      "Art: Civic: straight principal A-pillar/seal fit is preserved in the close side view; bonnet ridges, crowned deck, wrapped end corners and formed rear recess remain coherent in front/rear/overhead views. The new rear quarter/lower door contour is subtle. Lamp construction and cabin retain simplified details.",
+      "Art: Sprinter: front cabin bow, short bonnet stamping and rounded rear roof/cabin returns are visible, with open cabin glass and continuous crew/cargo pressings. Rear door and lower body remain closed; roof ribs and fittings preserve their shape. Side windows, optics and interior are procedural approximations.",
+      "Art: HUMMER SUV: hood crest/well and vents remain readable from above; rear haunch and closure turns retain continuous side highlights. Fender/door/glass boundaries remain closed in these captures and tires sit below the open wheel arches. Tail fittings and interior remain simplified.",
+      "Art: Urus: bonnet carbon/paint domains stay separate and cooling ducts remain recessed; front wraps and hatch fold read in oblique/rear views. Fuller rear shoulder and tucked rear greenhouse keep the sloping roof silhouette. Cabin glazing stays open. Front fascia, side glass and rear fine surfacing remain below OEM/production racing-game precision.",
+      "Art: No missing body/material, new culling hole or gross intersection requiring another mesh correction was observed in this pass. This is a review of the listed views, not proof of exact photographic likeness from every camera.",
+      "Detail: Root inspected all six final Detail PNGs: meadow close/wide, winter drift wide, scanned snow close, slushy edge and snowbank scenery.",
+      "Detail: Meadow shows varied small textured tufts and low broadleaf groups over mottled ground. Large procedural blades and repeating ground patches remain visible; this pass preserves those assets and shading.",
+      "Detail: The snow close-up shows wind/granular normal detail and broad physical relief. Edges break into damp brown/white coverage, with snowbank/cliff scans and trees behind. The wide drift camera is partly occluded by a foreground pine branch; separate close and edge images still expose the snow surface. Blocky cliff silhouettes remain a known fidelity limit.",
+      "Ruts: Root inspected all 16 final rut PNGs through three sheets: oblique/profile pairs for six controlled surfaces and actual driven mud/snow.",
+      "Ruts: Firm dirt has a light shallow band. Mud and wet grass show recessed channels with broad rounded shoulders and exposed darker soil. Snow has blue compacted channels, fine tread relief and rounded displaced edges. Sand and loose dirt remain lighter and shallower. These surfaces do not show the uniform black rubber strips used on pavement.",
+      "Ruts: The actual driven Jeep mud/snow images retain grooves behind the tires, with disturbed soil or packed snow appropriate to each surface. The profile views expose rounded banks rather than tall pointed piles. These bounded profiles and 101 numerical checks do not establish unlimited excavation or deformation of the authored Winter Expedition landscape.",
+      "Transitions: Root inspected all 14 final transition PNGs in three sheets: two angles each for dirt/asphalt, mud, rock, sand, snow, wetland and mud/rock.",
+      "Transitions: Pavement retains a narrow shoulder while mud, sand and wetland break into irregular mottled ground. Snow shows a broken damp fringe with scattered bare ground, and exposed rock blends through soil patches. The surface types remain readable from the wider views.",
+      "Transitions: Some borders still read as broad color bands and ground texture patterns repeat. This pass retains those terrain materials and scene placements. Static views complement the 53 coverage/grip/rigidity checks and the separately passed 84 driving/momentum checks.",
+      "Full: Root inspected all 22 final Full PNGs through four sheets: all-six quarry tire support, six driven soil spans, crushed grass, six Urus hero directions, acceleration and open/locked climbs.",
+      "Full: The six quarry contact images show the wheels and bodies separated from the rock surface without the former gross body burial. Small gaps at individual tires reflect uneven support; numerical support/body-clearance checks provide the motion evidence.",
+      "Full: Driven firm dirt remains a faint light trail, mud/wetland show darker disturbed soil with grooves, snow shows blue compacted channels and tread detail, sand is pale, and loose dirt has shallow exposed-soil bands. The crushed-grass patch is subtle. Ground repetition and simplified vegetation remain visible.",
+      "Full: The additional six Urus hero captures are elevated staging poses, as in this fixture design; the separate settled Art images establish ordinary ride presentation. Bonnet/door/hatch material boundaries and open glazing remain coherent in the inspected views.",
+      "Full: Acceleration and open/locked rock-climb captures show the actual native HUD and obstacle contact. Static views complement the 287 passed driving/control/equipment/quarry checks; they do not alone establish an entire manual drive.",
+      "Movement: Root inspected all 13 final Movement PNGs: seven coasting terrain boundaries and all six vehicles after rounded-rise/brake trials.",
+      "Movement: The transition captures show the Jeep on the far side of each boundary at roughly 21–27 mph, with visible body clearance. Snow and uneven rock produce body roll while the chassis remains above the ground. Separate numerical checks establish momentum retention and lack of abrupt terrain impacts.",
+      "Movement: All-six rise/brake views show an upright body and ground-level tires, with pavement skid strips under the braking trials. No new gross nose burial is visible. These are end-state images; the 84 native checks provide the intervening motion and suspension evidence.",
+      "Winter: Root inspected all six final Winter PNGs: four road locations with different vehicles and elevated coast/quarry overviews.",
+      "Winter: The complete acquired scene retains icy dark road strips, ploughed snowbanks, bare shrubs, rock cliffs, blue icicles, coast water and the quarry stone wall/buildings. Vehicles appear upright on the road without visible gross body penetration in these capture poses.",
+      "Winter: The two overhead cameras expose the road and surrounding coast/quarry scenery. Static captures accompany 46 native checks, including short road-driving trials and road joins; they do not demonstrate a continuous trip over the whole road. The authored landscape and road remain static.",
+      "Presets: Root inspected all three final graphics-preset PNGs in the matched Slate Rim view: Cool, Balanced and capped Quality smoke.",
+      "Presets: Quarry rocks, trees, terrain and the Urus render in all three without an observed new missing mesh or see-through boulder. Shadow/detail differences remain consistent with the presets. The car is partly outside the lower frame in this preset camera; separate Art captures provide the body review.",
+      "Presets: The three sets of 16 numerical checks passed. Bounded telemetry peaks were 65 C Cool, 72 C Balanced and 68 C Quality smoke, below the 77 C cutoff. This does not establish normal 60 FPS endurance or long-session thermal stability.",
+      "Rollover: Root inspected all 40 final rollover PNGs across seven sheets: both flanks and roof on pavement/Pine Ridge for all six, plus four Sprinter partial rolls, after actual garage selection and activation.",
+      "Rollover: All six visibly rest on their outer side or roof structure in the inspected rolled cases; the van rear-corner/side burial from the old baseline is absent. The underside views show the opposite tires clear of the ground, and the roof-down views retain body/ground contact at their roof contour.",
+      "Rollover: The two55-degree Sprinter setups self-right under normal gravity and end upright; their positive body clearance is expected. The110-degree setups settle onto the van side. There is no imposed upright correction during the trial.",
+      "Rollover: Measured worst body-probe penetration across all 40 final cases is 0.4629 inch. Both 55-degree Sprinter setups first enter the requested physical roll and then self-right naturally. All 40 requested-pose observations and the 321 mass/contact/recovery/input checks passed. These bounded cases and images do not establish every possible terrain pose."
     ]
   },
   "packagedContentSHA256": {
-    "global.ucas": "8eaadfd5df540a4a0ec05bfe3389b89e5ff24d76c5926d8eebf3718024253c46",
-    "global.utoc": "3ce5eaa366357af7abea5fc8c4a5e90e5fd7fc2b431416b1e6a2fd25d3992729",
-    "TerraDrive-Windows.pak": "0d47f28624c1b0b2c2e4577a4bb4e6f5083b960377e129d49164ead33a88eb55",
-    "TerraDrive-Windows.ucas": "af513a6b37bb324e747005026496dd4b6d377e95c2a19f1262ffd19b0aa79a59",
-    "TerraDrive-Windows.utoc": "0df925d896c0c3689fb18bd2f5d8d1808c9f720303575b4d3783e71641052fb1"
+    "global.ucas": "89fab2a3cdcb63f1049c41c9048a427a55b052ac20b8988f34e6e183ea16e654",
+    "global.utoc": "a961d235a33ca61551ae5fbb2bec89ca9bea41c6569ed46578880a274573b8bd",
+    "TerraDrive-Windows.pak": "f358cbe00573764b1e09adf23be4171c9fceda319388badf8da1260f39a079d1",
+    "TerraDrive-Windows.ucas": "15724e74cc390fd41b8be88998aa6e273ead78245c036a54cf1230f919504c6d",
+    "TerraDrive-Windows.utoc": "0364da9c5d9e81bc51f4bae145f9eabb00d47da9bad47bc5224e5520f6f2ae49"
   },
   "nativeDataSHA256": {
     "terrain-blend.bin": "d4d185b487183a15debd116b02cb0bfa9cc4641cb8464994c3249101d3be205b",
     "terrain-transitions.json": "01236808144b554fa23328b689d3472c75166df9592266c6dd7c5cfeefca8dd0",
     "terrain.bin": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
     "texture-credits.json": "b9502ba635959c1b4cc8ff7476fb07ace515c0f7229f600ee43bdb93f3193867",
-    "vehicle-ground-probes.json": "b184b951bf3f31839e994be4904a340e7c414c4ba4749d13a03cc0e096f90383",
+    "vehicle-collision.json": "bb05be4d10678bc5d27997a5ba190f624e59b9f31291a757f43ee61403915262",
+    "vehicle-ground-probes.json": "4c7717850db4c404b56810385cf5b6d2c3537e6180004341d77e2a0e66a7d8d6",
     "winter-level.json": "5a46a0504f75d9c6861249731b55092a3ec26376c7ffdb2d745eea5559a0aa4d",
-    "world.json": "fd36888193ed6eaad717dda101156937ed9741dbb5906db3ce50501e340d99a5"
+    "world.json": "e1cd8838c7aecb72ebf4923ee3f74513c58565ef28b3fcdff46e0b4b60611bb3"
   },
   "gpu": {
     "Full": {
       "file": "Saved/Validation/native-gpu-telemetry.json",
-      "SHA256": "3d2672c2facd5fe5389ae2238430c8c58d894a32fd4e86bca104c094ff21b957",
-      "samples": 391,
-      "maxTemperatureC": 58,
-      "meanUtilizationPercent": 23.785166240409207,
-      "meanPowerW": 8.809283887468029,
+      "SHA256": "c4f1519a6179ffefc8cef5c0fc7de4a72b5a44f8e072fbe8f2028c45c67f50c3",
+      "samples": 371,
+      "maxTemperatureC": 59,
+      "meanUtilizationPercent": 28.870619946091644,
+      "meanPowerW": 9.466522911051214,
       "stopTemperatureC": 77
     },
     "Ruts": {
       "file": "Saved/Validation/ruts-gpu.json",
-      "SHA256": "cd9489f883d60342824d2678cec35a81921209ecb785441167c7b9eb571d5259",
-      "samples": 60,
-      "maxTemperatureC": 59,
-      "meanUtilizationPercent": 23.016666666666666,
-      "meanPowerW": 7.846166666666665,
+      "SHA256": "ebb51488330ad6cb47ef479b170e454414e57e79da30ef7eb5c36b5b66cae060",
+      "samples": 61,
+      "maxTemperatureC": 63,
+      "meanUtilizationPercent": 18.80327868852459,
+      "meanPowerW": 7.616557377049182,
       "stopTemperatureC": 77
     },
     "Art": {
       "file": "Saved/Validation/winter-gpu-Art.json",
-      "SHA256": "13d42c7c536d84a02f0a52e5e2c6f464afcb21d0cc101b9ecd208fb35192c2ca",
-      "samples": 94,
-      "maxTemperatureC": 55,
-      "meanUtilizationPercent": 30.53191489361702,
-      "meanPowerW": 12.42553191489362,
+      "SHA256": "dde253a722b9063c7bc1088a29d50cc4df6205ddcb004cf06fa4f76d53ffd90e",
+      "samples": 118,
+      "maxTemperatureC": 58,
+      "meanUtilizationPercent": 30.97457627118644,
+      "meanPowerW": 12.263559322033895,
+      "stopTemperatureC": 77
+    },
+    "Rollover": {
+      "file": "Saved/Validation/rollover-gpu.json",
+      "SHA256": "db16e6c79f0cc2e0e6e4fdf77cc7d941553655ef8b7b8df2393840a458c6fc3f",
+      "samples": 289,
+      "maxTemperatureC": 61,
+      "meanUtilizationPercent": 24.089965397923876,
+      "meanPowerW": 11.234567474048434,
       "stopTemperatureC": 77
     },
     "Movement": {
       "file": "Saved/Validation/winter-gpu-Movement.json",
-      "SHA256": "83ea5bd47e1f481e296c9519f7c5dfec89f9282efb49b9a7c9441ba32f79437f",
-      "samples": 94,
-      "maxTemperatureC": 58,
-      "meanUtilizationPercent": 20.80851063829787,
-      "meanPowerW": 7.8872340425531915,
+      "SHA256": "22f45af6831c234d36fd8e6a0b878ea11506cba8a397f8a41ec4dd41b8dc5297",
+      "samples": 56,
+      "maxTemperatureC": 68,
+      "meanUtilizationPercent": 24.142857142857142,
+      "meanPowerW": 11.592499999999998,
       "stopTemperatureC": 77
     },
     "Detail": {
       "file": "Saved/Validation/winter-gpu-Detail.json",
-      "SHA256": "5df00e615cdfc11b62219ecec6f3cbcfede9804c12c07ae81fd85743cb129027",
-      "samples": 15,
-      "maxTemperatureC": 50,
-      "meanUtilizationPercent": 27.866666666666667,
-      "meanPowerW": 10.229333333333333,
+      "SHA256": "60770bec2f4b0dfcd0f3d95797569148160fd1ab67f9f26e743b4d573a11d87e",
+      "samples": 14,
+      "maxTemperatureC": 63,
+      "meanUtilizationPercent": 24.142857142857142,
+      "meanPowerW": 11.09,
       "stopTemperatureC": 77
     },
     "Winter": {
       "file": "Saved/Validation/winter-gpu-Winter.json",
-      "SHA256": "4d6e770fa8b202a8a5f7a90ff662e33b4397d42456b4ac91519779c200588fd2",
-      "samples": 53,
-      "maxTemperatureC": 53,
-      "meanUtilizationPercent": 18.09433962264151,
-      "meanPowerW": 8.964339622641512,
+      "SHA256": "45877e342e9174db5aba2f0e834b2701c81ccc8fb160ed4b388309edab62172c",
+      "samples": 41,
+      "maxTemperatureC": 59,
+      "meanUtilizationPercent": 28.365853658536587,
+      "meanPowerW": 11.13439024390244,
       "stopTemperatureC": 77
     },
     "Transitions": {
       "file": "Saved/Validation/gpu-Transitions.json",
-      "SHA256": "e04d1f712b1141f554c63a03fa7a9c605b0881d4e6bd25f3f38361defce869f2",
-      "samples": 49,
-      "maxTemperatureC": 55,
-      "meanUtilizationPercent": 19.918367346938776,
-      "meanPowerW": 8.16142857142857,
+      "SHA256": "4e97bd0ca1e1eb1dcf6e46d2b3be935d9c07c8742fa0cc007eb0c508e3e315eb",
+      "samples": 37,
+      "maxTemperatureC": 60,
+      "meanUtilizationPercent": 27.054054054054053,
+      "meanPowerW": 9.839189189189193,
       "stopTemperatureC": 77
     },
     "Cool": {
       "file": "Saved/Validation/gpu-Cool.json",
-      "SHA256": "8de5a8cda0a5c4db4960dd617095b79dbbdbb32caa3203de51d65d449070fa56",
-      "samples": 48,
-      "maxTemperatureC": 59,
-      "meanUtilizationPercent": 27.166666666666668,
-      "meanPowerW": 18.56895833333333,
+      "SHA256": "fccdb6ddfb3e15b22d1a3e9807cbfa2fca13c10240d853ad229f9aa1c3bc0b3a",
+      "samples": 43,
+      "maxTemperatureC": 65,
+      "meanUtilizationPercent": 37.651162790697676,
+      "meanPowerW": 23.195813953488372,
       "stopTemperatureC": 77
     },
     "Balanced": {
       "file": "Saved/Validation/gpu-Balanced.json",
-      "SHA256": "2d70dbcf23c3ddd7075fe4f7e32411d07df247464f2b3f41759e222838e7754d",
-      "samples": 49,
-      "maxTemperatureC": 63,
-      "meanUtilizationPercent": 40.61224489795919,
-      "meanPowerW": 24.118367346938776,
+      "SHA256": "fc4afe4eedf1c55d890bd780dd5145100e895b1e09b3ebe63fea9b31718086d5",
+      "samples": 44,
+      "maxTemperatureC": 72,
+      "meanUtilizationPercent": 56.13636363636363,
+      "meanPowerW": 32.295681818181826,
       "stopTemperatureC": 77
     },
     "QualitySmoke": {
       "file": "Saved/Validation/gpu-QualitySmoke.json",
-      "SHA256": "b68a08252c9a94eab319c4ca720c8e1bbc7b5d43fc67baf06be7b8311e5f5b6b",
-      "samples": 49,
-      "maxTemperatureC": 61,
-      "meanUtilizationPercent": 25.163265306122447,
-      "meanPowerW": 19.29612244897959,
+      "SHA256": "c2a8ed3add33d159e94ec29a9e66f2adad5f9d4c03f0cad7d1d1102d53b9f9dd",
+      "samples": 43,
+      "maxTemperatureC": 68,
+      "meanUtilizationPercent": 32.16279069767442,
+      "meanPowerW": 23.343720930232557,
       "stopTemperatureC": 77
     }
   },
   "limits": [
     "Procedural reference-built vehicle models retain simplified interiors, optics and fine surfacing.",
-    "This round changes the Civic and Urus bodies. Other vehicle bodies, terrain shading and scene placements are retained; some ground repetition remains.",
+    "All six bodies are refined. Terrain shading and scene placements are retained; some ground repetition remains.",
     "Physical ruts apply to the proving ground. Authored Winter Expedition landscape and road remain static.",
-    "Capped automated samples and image review do not establish every obstacle, a manual/controller play session, normal60FPS endurance or long-session thermal stability."
+    "Forty rollover cases and capped automated driving/image review do not establish every pose/obstacle, a manual/controller session, normal60FPS endurance or long-session thermal stability."
   ]
 }

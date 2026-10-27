@@ -147,7 +147,9 @@ void ATerraVehicle::SetGarage(bool Open){
     if(GarageWidget.IsValid())GEngine->GameViewport->RemoveViewportWidgetContent(GarageWidget.ToSharedRef());
     GarageWidget.Reset();
     Chassis->SetSimulatePhysics(true);
+    ConfigureCoachworkCollision();
     Chassis->SetMassOverrideInKg(NAME_None,Mass+(Tracks?380:0));
+    Chassis->SetCenterOfMass(FVector::ZeroVector);
     SpawnCooldown=.7f;
     PC->bShowMouseCursor=false;PC->SetInputMode(FInputModeGameOnly());
     FSlateApplication::Get().SetAllUserFocusToGameViewport();

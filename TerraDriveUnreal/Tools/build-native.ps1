@@ -17,6 +17,8 @@ if ($ImportAssets) {
     }
     & node (Join-Path $PSScriptRoot 'bake-vehicle-ground-probes.mjs')
     if($LASTEXITCODE){throw 'Vehicle lower-body probe generation failed'}
+    & node (Join-Path $PSScriptRoot 'bake-coachwork-collision.mjs')
+    if($LASTEXITCODE){throw 'Vehicle coachwork collision generation failed'}
     $importMarker=Join-Path $projectRoot 'Saved\import-complete.json'
     & node (Join-Path $PSScriptRoot 'bake-terrain-transitions.mjs')
     if($LASTEXITCODE){throw 'Terrain transition mask generation failed'}
@@ -34,7 +36,7 @@ if ($ImportAssets) {
     if ($editorProcess.ExitCode -or !(Test-Path -LiteralPath $importMarker) -or (Get-Item -LiteralPath $importMarker).LastWriteTime -lt $started -or !(Test-Path -LiteralPath (Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'))) { throw "Asset import did not produce a fresh completion marker and map. Inspect $importLog. If Unreal creates no log, run the editor outside the restricted process sandbox." }
 }
 if ($Package) {
-    foreach ($required in @('Content\Maps\ProvingGround.umap','Content\NativeData\world.json','Content\NativeData\terrain.bin')) {
+    foreach ($required in @('Content\Maps\ProvingGround.umap','Content\NativeData\world.json','Content\NativeData\terrain.bin','Content\NativeData\vehicle-ground-probes.json','Content\NativeData\vehicle-collision.json')) {
         if (!(Test-Path -LiteralPath (Join-Path $projectRoot $required))) {
             throw "Missing $required. Run with -ImportAssets before packaging."
         }

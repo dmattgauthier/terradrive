@@ -13,6 +13,7 @@ class STerraGarage;
 class URectLightComponent;
 class UMaterialInstanceDynamic;
 class UPhysicalMaterial;
+class UProceduralMeshComponent;
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35;
@@ -54,6 +55,10 @@ public:
   UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> RoofCollision;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> FrontCollision;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> RearCollision;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UProceduralMeshComponent> CoachworkCollision;
+  int CoachworkHullCount=0;
+  bool CoachworkCollisionReady=false;
+  FString CoachworkCollisionSource;
   UPROPERTY() TObjectPtr<UPhysicalMaterial> UndertrayMaterial;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Body;
   UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
@@ -126,6 +131,7 @@ public:
   TerraSim::UpgradeTuning Tuning;
 
 private:
+  void ConfigureCoachworkCollision();
   float NextBodyDiagnosticTime=0;
   TSharedPtr<FJsonObject> Spec;
   TArray<FTerraParcel> Parcels;

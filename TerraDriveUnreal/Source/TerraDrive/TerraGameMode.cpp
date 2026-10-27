@@ -20,6 +20,7 @@
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
+#include "TerraRolloverValidation.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "ProceduralMeshComponent.h"
 #include "TerraWorld.h"
@@ -114,6 +115,10 @@ void ATerraGameMode::Tick(float Dt) {
     if (FParse::Param(FCommandLine::Get(),TEXT("TerraCapture")))
       FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverOnly"))){
+    if(TerraRolloverValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRutOnly"))){
     if(TerraRutValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
@@ -988,7 +993,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==11);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==12);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
@@ -1087,7 +1092,7 @@ void ATerraGameMode::Tick(float Dt) {
       Capture(*Name);Captured=true;
     }
     if(StageTime>2.5f){
-      const int PhotoViews=AllModels&&(ModelVehicle==2||ModelVehicle==5)?10:6;
+      const int PhotoViews=AllModels?10:6;
       if(++ModelView==PhotoViews){
         if(AllModels){if(++ModelVehicle==6)FinishValidation();else Next(64);}
         else if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);

@@ -4,7 +4,7 @@
  * side elevation and published photographs. This is not imported OEM CAD.
  * Coordinates: ground datum Y=0, axle midpoint Z=0, nose +Z, driver side +X.
  */
-export const HUMMER_MODEL_VERSION = '1.16.0';
+export const HUMMER_MODEL_VERSION = '1.17.0';
 
 export function buildNativeHummer(view, geometry) {
   const { THREE, clamp, v3, finish, box, roundedBox, cylinder, panel, polygon, surface,
@@ -96,7 +96,8 @@ export function buildNativeHummer(view, geometry) {
     const shoulder = .046 * Math.exp(-(((Math.abs(x) - ridgeX) / .086) ** 2)) * fade;
     // The twin crests taper forward around a broad shallow central well.
     // Their rolled, pressed transitions now remain visible in reflections.
-    const centerDish = -.020 * Math.exp(-((x / .56) ** 6)) * Math.sin(v * Math.PI) ** 2;
+    const centerDish = -.020 * Math.exp(-((x / .56) ** 6)) * Math.sin(v * Math.PI) ** 2
+      +.002*Math.exp(-((x/.32)**4))*fade;
     const y = THREE.MathUtils.lerp(1.462, 1.318, v) + .023 * (1 - (x / .97) ** 2) + shoulder + centerDish;
     return [x, y, z];
   };

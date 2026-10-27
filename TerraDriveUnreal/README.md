@@ -1,5 +1,10 @@
 # Terra Drive native port
 
+The [rollover and coachwork pass 12](docs/rollover-coachwork-12.md) derives solid
+body collision from each exported vehicle, addressing the Sprinter's side-roll
+burial. It refines all six bodies and adds ten native review views per model.
+Use `Tools/verify-rollover.ps1` for the dedicated native rollover fixtures.
+
 The [Civic and Urus contour revision 11](docs/body-contours-11.md) develops the
 bonnet, nose and rear closure shapes on both cars and straightens the Civic's
 A-pillar edges. Native Art mode adds close bonnet, rear, pillar and overhead

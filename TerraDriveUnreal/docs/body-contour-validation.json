@@ -27,12 +27,12 @@
     {
       "name": "Honda Civic Sport nose wraps back around the corners",
       "pass": true,
-      "valueIn": 8.3560416541036
+      "valueIn": 8.45877793918529
     },
     {
       "name": "Honda Civic Sport rear corners taper around the central closure",
       "pass": true,
-      "valueIn": 6.464184988967266
+      "valueIn": 6.654473523532779
     },
     {
       "name": "Civic bonnet stamping has physical ridge-to-trough relief",
@@ -42,17 +42,17 @@
     {
       "name": "Civic trunk deck has a transverse crown",
       "pass": true,
-      "valueIn": 0.7944540561473423
+      "valueIn": 0.7944850302498377
     },
     {
       "name": "Lamborghini Urus Performante nose wraps back around the corners",
       "pass": true,
-      "valueIn": 6.076078679604253
+      "valueIn": 6.437399174493664
     },
     {
       "name": "Lamborghini Urus Performante rear corners taper around the central closure",
       "pass": true,
-      "valueIn": 4.624978887296035
+      "valueIn": 5.095981783854757
     },
     {
       "name": "Urus bonnet ridge rises above its adjacent drawn channel",
@@ -62,19 +62,19 @@
     {
       "name": "Urus hatch has a formed recess below the lamp shoulder",
       "pass": true,
-      "valueIn": 2.087793265196588
+      "valueIn": 2.3512898041797605
     }
   ],
   "measured": [
     {
       "vehicle": "Honda Civic Sport",
-      "noseCornerSweepIn": 8.3560416541036,
-      "rearCornerSweepIn": 6.464184988967266
+      "noseCornerSweepIn": 8.45877793918529,
+      "rearCornerSweepIn": 6.654473523532779
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "noseCornerSweepIn": 6.076078679604253,
-      "rearCornerSweepIn": 4.624978887296035
+      "noseCornerSweepIn": 6.437399174493664,
+      "rearCornerSweepIn": 5.095981783854757
     }
   ],
   "pass": true

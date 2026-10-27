@@ -1,14 +1,15 @@
 {
-  "revision": "body-contours-11",
+  "revision": "rollover-coachwork-12",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 488094,
-      "normalizedFraction": 0.9999856585002069,
+      "vertices": 490542,
+      "normalizedFraction": 0.9999816529471482,
       "visibility": [
         {
           "pane": "recessed cowl",
-          "floorHeightM": 1.2700761883922378
+          "floorHeightM": 1.275242293713935,
+          "rimClearanceM": 0.003327891808841521
         }
       ],
       "tire": {
@@ -26,11 +27,12 @@
       "visibility": [
         {
           "pane": "recessed cowl",
-          "floorHeightM": 1.2904390451230412
+          "floorHeightM": 1.2908785212467246,
+          "rimClearanceM": 0.010921074017101295
         },
         {
           "pane": "bonnet plateau",
-          "reliefM": 0.020034465205901242
+          "reliefM": 0.021194175579891894
         }
       ],
       "tire": {
@@ -62,12 +64,12 @@
     },
     {
       "vehicle": "Mercedes-Benz Sprinter 2500",
-      "vertices": 593878,
-      "normalizedFraction": 0.9999882130673303,
+      "vertices": 594015,
+      "normalizedFraction": 0.9999882157857967,
       "visibility": [
         {
           "pane": "waist swage",
-          "reliefM": 0.015250005420466506
+          "reliefM": 0.01295796791037418
         }
       ],
       "tire": {
@@ -85,11 +87,11 @@
       "visibility": [
         {
           "pane": "recessed bonnet vent",
-          "floorHeightM": 1.4510544215348409
+          "floorHeightM": 1.453743036670232
         },
         {
           "pane": "bonnet crest",
-          "reliefM": 0.051366326556056
+          "reliefM": 0.047567431789676595
         }
       ],
       "tire": {
@@ -119,7 +121,7 @@
         },
         {
           "pane": "hatch plate well",
-          "firstSurfaceZM": -2.4607656480593745
+          "firstSurfaceZM": -2.4600286049432545
         },
         {
           "pane": "roof crown",
@@ -132,7 +134,7 @@
         },
         {
           "pane": "sculpted door",
-          "shoulderOutsetM": 0.04160081517511083
+          "shoulderOutsetM": 0.04530107452589349
         },
         {
           "pane": "partitioned bonnet and open intakes",

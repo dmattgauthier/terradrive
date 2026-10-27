@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import {T} from './body-surface.mjs';
 import {urusView} from './urus-body.mjs';
 import {URUS} from './native-vehicles.mjs';
+import {bodyRefinement} from './body-refinement.mjs';
 const openings=[
  [[-.443,.850],[-.354,.883],[.354,.883],[.443,.850],[.402,.736],[-.402,.736]],
  [[-.438,.616],[-.337,.694],[.337,.694],[.438,.616],[.614,.347],[-.614,.347]],
@@ -20,7 +21,7 @@ const edgeDistance=(polygon,x,y)=>Math.min(...polygon.map((a,i)=>{
  const b=polygon[(i+1)%polygon.length],dx=b[0]-a[0],dy=b[1]-a[1],u=T.MathUtils.clamp(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1);
  return Math.hypot(x-a[0]-dx*u,y-a[1]-dy*u);
 }));
-const view=urusView(URUS);view.root.updateMatrixWorld(true);let fascia;
+const view=urusView(URUS);bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);let fascia;
 view.body.traverse(object=>{if(object.name==='urus-perforated-front-fascia')fascia=object;});assert.ok(fascia);
 const counts=[0,0,0,0];
 for(let row=0;row<=24;row++)for(let col=0;col<=76;col++){

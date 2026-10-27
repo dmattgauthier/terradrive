@@ -12,7 +12,10 @@ $arguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=160
     ('-TerraGraphics="'+(Join-Path $output 'winter-test-graphics.json')+'"'),('-abslog="'+$log+'"'))
 if($Mode -eq 'Detail'){$arguments+='-TerraTerrainDetailOnly'}
 if($Mode -in @('Detail','Winter')){$arguments+='-TerraGraphicsMode=2'}
-if($Mode -eq 'Movement'){$arguments+='-TerraMomentumOnly'}
+# Keep the short coasting fixtures' observation density independent of render
+# stalls. The 20 FPS cap still limits GPU load; only the test simulation clock
+# is fixed. Player driving does not use this switch.
+if($Mode -eq 'Movement'){$arguments+='-TerraMomentumOnly';$arguments+='-UseFixedTimeStep';$arguments+='-FPS=20'}
 if($Mode -eq 'Winter'){$arguments+='-TerraWinterOnly';$TimeoutSeconds=420}
 if($Mode -eq 'Art'){$arguments+='-TerraModelHeroOnly';$arguments+='-TerraGraphicsMode=2'}
 if($FullTextureDiagnostic){$arguments+='-ExecCmds="r.Streaming.FullyLoadUsedTextures 1"'}
@@ -45,7 +48,7 @@ if($null -eq $gameExit){throw 'Native process exit code unavailable'}
 if(!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWriteTime -lt $started){throw ('No fresh native report: '+$log)}
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $failed=@($result.tests | Where-Object {!$_.pass})
-$minimum=if($Mode -eq 'Detail'){15}elseif($Mode -eq 'Art'){50}elseif($Mode -eq 'Movement'){84}else{46}
+$minimum=if($Mode -eq 'Detail'){15}elseif($Mode -eq 'Art'){66}elseif($Mode -eq 'Movement'){84}else{46}
 $errors=@(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error')
 if($gameExit -ne 0 -or $failed.Count -or $errors.Count -or @($result.tests).Count -lt $minimum){$failed | Format-Table | Out-String | Write-Output;throw ('Native '+$Mode+' verification failed, exit '+$gameExit+': '+$report)}
 Write-Output ('PASS '+$Mode+' '+@($result.tests).Count+' native checks; fresh report and exit 0')

@@ -194,8 +194,8 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
             (State.EncounteredMask&State.PairMask)==State.PairMask&&V->ObjectBodyHits==0,State.Travel);
         Check(TEXT("coast ")+State.Name+TEXT(" retains rolling momentum"),State.LastSpeed>2,State.LastSpeed);
         Check(TEXT("coast ")+State.Name+TEXT(" has no abrupt frame speed collapse"),State.Frames>12&&State.PeakLoss<.38f&&State.PeakDeceleration<15,State.PeakLoss);
-        UE_LOG(LogTemp,Display,TEXT("TERRA_MOMENTUM_BOUNDARY name=%s travel=%.3f speed=%.3f min=%.3f frameLoss=%.4f deceleration=%.3f coverageMask=%d pairMask=%d terrainHits=%d terrainImpact=%.3f objectHits=%d"),
-            *State.Name,State.Travel,State.LastSpeed,State.MinimumSpeed,State.PeakLoss,State.PeakDeceleration,State.EncounteredMask,State.PairMask,V->TerrainBodyHits,V->TerrainImpactMPS,V->ObjectBodyHits);
+        UE_LOG(LogTemp,Display,TEXT("TERRA_MOMENTUM_BOUNDARY name=%s travel=%.3f speed=%.3f min=%.3f frameLoss=%.4f deceleration=%.3f coverageMask=%d pairMask=%d terrainHits=%d terrainImpact=%.3f objectHits=%d frames=%d"),
+            *State.Name,State.Travel,State.LastSpeed,State.MinimumSpeed,State.PeakLoss,State.PeakDeceleration,State.EncounteredMask,State.PairMask,V->TerrainBodyHits,V->TerrainImpactMPS,V->ObjectBodyHits,State.Frames);
         Capture(TEXT("native-momentum-")+State.Name+TEXT(".png"));EndTrial();
       }
     }

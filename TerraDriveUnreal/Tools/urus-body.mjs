@@ -26,10 +26,10 @@ export function urusView(spec){
  // The two end closures and their side returns share their longitudinal
  // contour. This keeps a more deeply formed fascia/hatch closed at oblique
  // angles, including seals, lamps, plate returns and the bumper corners.
- const frontSurface=(x,y)=>front-.255*(Math.abs(x)/.99)**2-.078*gauss(y,.66,.16)-.028*smooth(y,.925,1.035)*(1-smooth(Math.abs(x),.34,.84));
+ const frontSurface=(x,y)=>front-.271*(Math.abs(x)/.99)**2-.087*gauss(y,.66,.16)-.028*smooth(y,.925,1.035)*(1-smooth(Math.abs(x),.34,.84));
  const rearSurface=(x,y)=>{
   const a=Math.abs(x),centre=1-smooth(a,.58,.89),foldY=.956-.135*clamp(a/.85,0,1);
-  const crease=.050*gauss(y,foldY-.025,.085),plateDraw=.033*gauss(y,.735,.155)*gauss(x,0,.60);
+  const crease=.058*gauss(y,foldY-.025,.085),plateDraw=.033*gauss(y,.735,.155)*gauss(x,0,.60);
   return rear+.245*(a/.99)**2+centre*(crease+plateDraw+.010*gauss(y,.57,.055));
  };
  // Rounded parameter contours keep the cut sheet, seal and glass on the same
@@ -351,5 +351,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:11,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:12,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

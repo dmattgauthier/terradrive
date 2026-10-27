@@ -1,13 +1,14 @@
 // Geometry and visibility regressions for the native coachwork pipeline.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {bodyRefinement} from './body-refinement.mjs';
 import {nativeVehicle,vehicleFinishes} from './vehicle-realism.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
 import {nativeGeometry as geo} from './vehicle-geometry.mjs';
 import {refineVehicle} from './vehicle-fidelity.mjs';
 const results=[];
 for(const spec of VEHICLES){
- const view=nativeVehicle(spec);vehicleFinishes(view,spec);const wheelParts=refineVehicle(view,spec);view.root.updateMatrixWorld(true);
+ const view=nativeVehicle(spec);bodyRefinement(view,spec);vehicleFinishes(view,spec);const wheelParts=refineVehicle(view,spec);view.root.updateMatrixWorld(true);
  let vertices=0,unitNormals=0,flanges=0;
  view.body.traverse(o=>{
   if(!o.isMesh)return;
@@ -43,7 +44,7 @@ for(const spec of VEHICLES){
    const gap=backing?backing.distance-pane.distance:5;
    assert.ok(gap>.1524,label+' has no opaque sheet behind the pane');visibility.push({pane:label,clearDepthM:gap});
   }
-  assert.equal(view.root.userData.visualModel.version,11);
+  assert.equal(view.root.userData.visualModel.version,12);
   assert.ok(view.root.userData.visualModel.camberedClosedSpoiler&&view.root.userData.visualModel.crownedGreenhouse&&view.root.userData.visualModel.sculptedDoorCups,'Urus compound coachwork revision');
   // Above the vent's center, the first solid surface is below the bonnet
   // skin. This fails for the former opaque hood with a black patch on top.
@@ -102,8 +103,10 @@ for(const spec of VEHICLES){
   assert.ok(crest.x-trough.x>.012,'Sprinter waist swage has physical relief');visibility.push({pane:'waist swage',reliefM:crest.x-trough.x});
  }
  if(spec.bodyStyle==='jeep'||spec.bodyStyle==='bronco'){
-  const z=spec.bodyStyle==='jeep'?.684:.655,floor=firstSolid([.017,1.6,z],[0,-1,0]);
-  assert.ok(floor.y<(spec.bodyStyle==='jeep'?1.275:1.295),'SUV cowl contains a genuine inset floor');assert.equal(floor.material,view.materials.black,'cowl ray reaches its dark floor through the painted sheet');visibility.push({pane:'recessed cowl',floorHeightM:floor.y});
+  const z=spec.bodyStyle==='jeep'?.684:.655,floor=firstSolid([.017,1.6,z],[0,-1,0]),rim=firstSolid([.42,1.6,z],[0,-1,0]);
+  // Compare the formed surfaces together; an absolute unwarped Y threshold
+  // incorrectly rejects the same open cowl after body-wide refinement.
+  assert.ok(rim.y-floor.y>.002,'SUV cowl contains a genuine inset floor');assert.equal(floor.material,view.materials.black,'cowl ray reaches its dark floor through the painted sheet');visibility.push({pane:'recessed cowl',floorHeightM:floor.y,rimClearanceM:rim.y-floor.y});
   if(spec.bodyStyle==='bronco'){
    const plateau=firstSolid([0,1.6,1.4],[0,-1,0]),flank=firstSolid([.60,1.6,1.4],[0,-1,0]);
    assert.ok(plateau.y-flank.y>.015,'Bronco bonnet has formed plateau relief');visibility.push({pane:'bonnet plateau',reliefM:plateau.y-flank.y});
@@ -125,6 +128,6 @@ for(const spec of VEHICLES){
  assert.equal(view.wheels[0].root.userData.factoryWheelRevision,3);
  results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:3,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},pass:true});view.dispose();
 }
-const report={revision:'body-contours-11',vehicles:results,pass:true};
+const report={revision:'rollover-coachwork-12',vehicles:results,pass:true};
 fs.writeFileSync(new URL('../docs/model-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

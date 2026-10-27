@@ -114,8 +114,8 @@ export function buildSUV(view, geometry, bronco) {
       // shoulders are stamped into the skin, with continuous rolled returns.
       const plateau=bronco?.020*(1-THREE.MathUtils.smoothstep(Math.abs(x),.57,.73))*fade:
         -.010*Math.exp(-((x/.46)**6))*fade;
-      const y = THREE.MathUtils.lerp(hood + .032, 1.218, v) + (bronco ? .017 : .037) * (1 - x * x)
-        + (bronco ? .014 : .025) * shoulder * Math.sin(v * Math.PI)+plateau;
+      const y = THREE.MathUtils.lerp(hood + .032, 1.218, v) + (bronco ? .013 : .037) * (1 - x * x)
+        + (bronco ? .018 : .025) * shoulder * Math.sin(v * Math.PI)+plateau;
       return [x * hoodHalf(v), y, z];
     };
     const hoodPoint=(x,z)=>{
@@ -467,9 +467,19 @@ export function buildSUV(view, geometry, bronco) {
       // Subtle mold divisions distinguish the center from removable end caps.
       for(const side of [-1,1]){
         const points=Array.from({length:21},(_,i)=>{const p=point(side*.551,.499+i*.0105);p[2]+=.0012;return p;});curvedLine(g,m.dark,points,.0016);
-        cylinder(g,m.chrome,side*.714,.616,nose+.221,.061,.010,'z',32);
-        cylinder(g,m.white,side*.714,.616,nose+.231,.041,.008,'z',28);
-        cylinder(g,m.lens,side*.714,.616,nose+.238,.057,.003,'z',32);
+        // A dished reflector, small LED emitter and domed cover make the fog
+        // pod read as an optical assembly instead of a flat white coin.
+        const cx=side*.714,cy=.616;
+        cylinder(g,m.dark,cx,cy,nose+.218,.063,.012,'z',40);
+        surface(g,m.headlampReflector,48,12,(u,v)=>{
+          const a=u*Math.PI*2,r=.15+.85*v;
+          return [cx+Math.cos(a)*.056*r,cy+Math.sin(a)*.056*r,nose+.204+.026*r*r];
+        },true);
+        cylinder(g,m.white,cx,cy,nose+.221,.018,.005,'z',28);
+        surface(g,m.lens,48,14,(u,v)=>{
+          const a=u*Math.PI*2,r=v;
+          return [cx+Math.cos(a)*.056*r,cy+Math.sin(a)*.056*r,nose+.239+.008*(1-r*r)];
+        },true);
       }
     }
     // The rear bumper has a sloping step, tucked-in ends and a deeper center
