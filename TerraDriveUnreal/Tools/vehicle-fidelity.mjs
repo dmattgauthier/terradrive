@@ -64,16 +64,14 @@ function factoryRim(spec){
   const rimMaterial=style==='urus'?new THREE.MeshPhysicalMaterial({color:'#9ba2a5',metalness:.86,roughness:.29,clearcoat:.35,clearcoatRoughness:.18}):style==='sedan'?new THREE.MeshPhysicalMaterial({color:'#171c21',metalness:.58,roughness:.20,clearcoat:1,clearcoatRoughness:.10}):style==='van'?alloy.clone():graphite.clone();
   rimMaterial.userData.automotive=['urus','sedan'].includes(style)?'wheel':'metal';rimMaterial.userData.automotiveOwner=style;
   if(style==='urus'){rimMaterial.color.set('#20252a');rimMaterial.userData.automotive='wheel';}
-  const brakeMaterial=rotorMetal.clone();brakeMaterial.userData.automotive=style==='urus'?'rotor':'brakeSteel';brakeMaterial.userData.automotiveOwner=style;
-  const barrel=mesh(g,new THREE.LatheGeometry([[r*.85,-w*.43],[r*.97,-w*.44],[r,-w*.38],[r*.93,-w*.32],[r*.93,w*.32],[r,w*.38],[r*.97,w*.44],[r*.85,w*.43]].map(p=>new THREE.Vector2(...p)),96),rimMaterial);barrel.rotation.z=Math.PI/2;
+  // Closed, thin cast barrel: two bead seats, safety humps and a dropped
+  // central well. The former solid swept disc hid the brake and wheel depth.
+  const barrelProfile=[[.960,-.455],[.997,-.445],[1.004,-.417],[.976,-.389],[.955,-.381],[.949,-.344],[.929,-.326],[.925,-.142],[.861,-.098],[.857,.098],[.925,.142],[.929,.326],[.949,.344],[.955,.381],[.976,.389],[1.004,.417],[.997,.445],[.960,.455],[.944,.429],[.938,.376],[.913,.331],[.909,.151],[.841,.109],[.841,-.109],[.909,-.151],[.913,-.331],[.938,-.376],[.944,-.429],[.960,-.455]];
+  const barrel=mesh(g,new THREE.LatheGeometry(barrelProfile.map(([rad,depth])=>new THREE.Vector2(rad*r,depth*w)),96),rimMaterial);barrel.geometry.computeVertexNormals();barrel.rotation.z=Math.PI/2;barrel.name='mechanical13-closed-drop-centre-barrel';
   for(const side of [-1,1]){
     const face=side*w*.43;
-    disc(g,brakeMaterial,face*.62,r*(style==='urus'?.78:.735),.020);disc(g,castMetal,face*.76,r*.31,.035);
-    // Drilled carbon-ceramic rotors belong to the Performante. The other
-    // factory configurations use plain swept friction rings, not drilled discs.
-    for(let i=0;i<(style==='urus'?40:0);i++){
-      const a=i*Math.PI/20;rod(g,black,[face*.62-side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],[face*.62+side*.011,Math.cos(a)*r*.60,Math.sin(a)*r*.60],.003);
-    }
+    // The spinning rotor is a separate hub assembly at runtime. Keeping it
+    // out of the rim prevents doubled brake discs and rotating calipers.
     if(style==='urus'){
       // Optional 22-inch Helianthus Shiny Black: five rounded hexagonal
       // openings, five outer triangular reliefs and a dished web (brochure p. 8).
@@ -99,12 +97,18 @@ function factoryRim(spec){
         if(style==='jeep'||style==='hummer'||style==='bronco')spoke(g,alloy,side,face,r,i*Math.PI*2/count,branch,style,true);
       }
     }
-    ring(g,rimMaterial,face,r*.976,.007);ring(g,black,face-side*.01,r*.84,.003);
+    ring(g,rimMaterial,face,r*.976,.004);ring(g,black,face-side*.01,r*.84,.002);
+    ring(g,alloy,side*w*.451,r*.973,.0014);
     disc(g,rimMaterial,face+side*.025,r*(style==='hummer'?.42:.30),.025);
     const lugCount=style==='hummer'?8:style==='van'||style==='bronco'?6:5;
     for(let i=0;i<lugCount;i++){
       const a=i*Math.PI*2/lugCount,y=Math.cos(a)*r*(style==='hummer'?.33:.228),z=Math.sin(a)*r*(style==='hummer'?.33:.228);
-      const bolt=mesh(g,new THREE.CylinderGeometry(.008,.009,.017,6),alloy,[face+side*.045,y,z]);bolt.rotation.z=Math.PI/2;
+      const seat=mesh(g,new THREE.CylinderGeometry(.0125,.0115,.006,24),black,[face+side*.039,y,z]);seat.rotation.z=Math.PI/2;
+      const washer=mesh(g,new THREE.CylinderGeometry(.0105,.0115,.004,24),alloy,[face+side*.042,y,z]);washer.rotation.z=Math.PI/2;
+      const bolt=mesh(g,new THREE.CylinderGeometry(.008,.0088,.016,6),alloy,[face+side*.049,y,z]);bolt.rotation.z=Math.PI/2;
+      // A dark inset in each hex head makes the fastener legible at oblique
+      // garage angles rather than looking like a six-sided silver cylinder.
+      const socket=mesh(g,new THREE.CylinderGeometry(.0038,.0038,.0008,6),black,[face+side*.0575,y,z]);socket.rotation.z=Math.PI/2;
     }
     disc(g,black,face+side*.044,r*.15,.010);
     if(style==='van'){
@@ -114,8 +118,9 @@ function factoryRim(spec){
       const cap=text(g,style==='hummer'?'GMC':style==='sedan'?'H':'JEEP',r*.25,r*.095,alloy);
       cap.position.set(face+side*.052,-r*.047,0);cap.rotation.y=side*Math.PI/2;
     }
-    const valve=mesh(g,new THREE.CylinderGeometry(.004,.004,.024,10),black,[face+side*.016,r*.80,r*.23]);valve.rotation.z=Math.PI/2;
-  }return g;
+    const valve=mesh(g,new THREE.CylinderGeometry(.0037,.0046,.025,10),black,[face+side*.016,r*.80,r*.23]);valve.rotation.z=Math.PI/2;
+    const valveCap=mesh(g,new THREE.CylinderGeometry(.0046,.0046,.007,8),graphite,[face+side*.031,r*.80,r*.23]);valveCap.rotation.z=Math.PI/2;
+  }g.userData.runningGearRevision=13;return g;
 }
 
 /** Native carcass and beveled tread. All dimensions use the mechanical tire. */
@@ -224,11 +229,65 @@ export function refineVehicle(view,spec){
 export {text as geometryText};
 export function brakeCaliperModel(){
   const g=new THREE.Group();
-  // Local hub coordinates: +X is forward and Y points outward after import.
-  nativeGeometry.roundedBox(g,castMetal,0,0,0,.060,.110,.140,.013);
+  // Source X is the hub axis (Unreal -Y after import); source Y is up.
+  // A cast bridge straddles the thin rotor, with two separate pads/fingers
+  // rather than a solid block occupying the rotor's swept friction ring.
+  const pad=new THREE.MeshStandardMaterial({color:'#202324',roughness:.91});
   for(const side of [-1,1]){
-    const cap=mesh(g,new THREE.CylinderGeometry(.029,.029,.008,24),alloy,[side*.033,0,.025]);cap.rotation.z=Math.PI/2;
-    for(const y of [-.036,.036])rod(g,alloy,[-.04,y,-.036],[.04,y,-.036],.006);
+    nativeGeometry.roundedBox(g,castMetal,side*.030,0,0,.028,.116,.073,.009);
+    nativeGeometry.roundedBox(g,pad,side*.014,0,.010,.009,.089,.055,.003);
+    for(const y of [-.032,.032]){
+      const cap=mesh(g,new THREE.CylinderGeometry(.021,.023,.010,24),castMetal,[side*.046,y,0]);cap.rotation.z=Math.PI/2;
+      const bolt=mesh(g,new THREE.CylinderGeometry(.005,.0055,.005,6),alloy,[side*.053,y,0]);bolt.rotation.z=Math.PI/2;
+    }
   }
+  for(const y of [-.047,.047])nativeGeometry.roundedBox(g,castMetal,0,y,-.023,.086,.026,.038,.007);
+  // Crossover pipe, pad retaining pins and an inboard hose boss.
+  for(const y of [-.028,.028])rod(g,alloy,[-.040,y,.033],[.040,y,.033],.0034);
+  rod(g,castMetal,[-.046,-.040,-.025],[-.046,.040,-.025],.004);
+  rod(g,castMetal,[-.046,.040,-.025],[-.040,.049,.008],.004);
+  const boss=mesh(g,new THREE.CylinderGeometry(.008,.009,.012,12),alloy,[-.049,.040,.008]);boss.rotation.z=Math.PI/2;
+  g.userData.runningGearRevision=13;
+  return g;
+}
+
+/** Unit-radius hub-local brake: real vent gap, hat and through-drilled holes.
+ * Runtime scales the complete assembly to the factory brake envelope. */
+export function brakeRotorModel(ceramic=false,solid=false){
+  const g=new THREE.Group(),surface=rotorMetal.clone();
+  surface.color.set(ceramic?'#565b5e':'#8c9498');surface.roughness=ceramic?.59:.43;
+  surface.userData.automotive=ceramic?'rotor':'brakeSteel';surface.userData.automotiveOwner=ceramic?'urus':'';
+  const hat=castMetal.clone(),vent=castMetal.clone();
+  function annulus(outer,inner,depth,x,holes=false){
+    const shape=new THREE.Shape();shape.absarc(0,0,outer,0,Math.PI*2,false);
+    const bore=new THREE.Path();bore.absarc(0,0,inner,0,Math.PI*2,true);shape.holes.push(bore);
+    if(holes)for(let row=0;row<3;row++)for(let i=0;i<24;i++){
+      const a=(i+(row%2)*.35)*Math.PI/12,rr=.65+row*.13,h=new THREE.Path();
+      // Ten straight segments per small bore keep the true holes inexpensive;
+      // they must not inherit the 96-segment outer friction-ring arc.
+      for(let k=0;k<10;k++){const t=-k*Math.PI/5,yy=Math.cos(a)*rr+Math.cos(t)*.0175,zz=Math.sin(a)*rr+Math.sin(t)*.0175;h[k?'lineTo':'moveTo'](yy,zz);}h.closePath();shape.holes.push(h);
+    }
+    let geo=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:false,curveSegments:96});
+    const p=geo.attributes.position;for(let i=0;i<p.count;i++){const y=p.getX(i),z=p.getY(i);p.setXYZ(i,x+p.getZ(i)-depth*.5,y,z);}geo.computeVertexNormals();
+    // Earcut can emit zero-area triangles where a polygon bore closes. Strip
+    // those before import so the tangent builder never receives a zero normal.
+    const keep=[],a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+    for(let i=0;i<p.count;i+=3){a.fromBufferAttribute(p,i);b.fromBufferAttribute(p,i+1).sub(a);c.fromBufferAttribute(p,i+2).sub(a);if(b.cross(c).lengthSq()>1e-18)keep.push(i,i+1,i+2);}
+    geo.setIndex(keep);const clean=geo.toNonIndexed();geo.dispose();geo=clean;geo.computeVertexNormals();
+    const m=mesh(g,geo,surface);m.name=holes?'mechanical13-through-drilled-friction-ring':'mechanical13-vented-friction-ring';
+  }
+  if(solid)annulus(1,.53,.035,0);
+  else for(const side of [-1,1])annulus(1,.53,.025,side*.0355,ceramic);
+  // Forty-eight individual vanes leave a visible cooling gap between faces.
+  for(let i=0;i<(solid?0:48);i++){
+    const a=i*Math.PI/24,b=a+.055;
+    rod(g,vent,[0,Math.cos(a)*.555,Math.sin(a)*.555],[0,Math.cos(b)*.966,Math.sin(b)*.966],.010);
+  }
+  const profile=[[.14,-.030],[.32,-.030],[.36,-.024],[.41,.005],[.535,.012],[.555,.024],[.535,.036],[.40,.029],[.33,-.007],[.14,-.007],[.14,-.030]];
+  const hub=mesh(g,new THREE.LatheGeometry(profile.map(p=>new THREE.Vector2(...p)),96),hat);hub.geometry.computeVertexNormals();hub.rotation.z=Math.PI/2;hub.name='mechanical13-hollow-hat';
+  for(let i=0;i<5;i++){
+    const a=i*Math.PI*2/5;const fastener=mesh(g,new THREE.CylinderGeometry(.022,.024,.011,6),alloy,[.029,Math.cos(a)*.46,Math.sin(a)*.46]);fastener.rotation.z=Math.PI/2;
+  }
+  g.userData={runningGearRevision:13,nominalRadius:1,frictionInnerRadius:.53,ventGap:solid?0:.046,throughDrilled:ceramic,solid};
   return g;
 }

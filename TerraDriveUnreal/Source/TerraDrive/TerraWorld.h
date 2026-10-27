@@ -109,6 +109,8 @@ public:
   int ActiveTileLimit=768;
   FVector FindAnchor(FVector P, float MaxDistance = 4500) const;
   FVector NearestCrushable(FVector P) const;
+  float VegetationCoverage(FVector P) const;
+  bool IsLooseGround(FVector P) const;
 
 private:
   TArray<float> Heights, Water;

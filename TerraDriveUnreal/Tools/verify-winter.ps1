@@ -49,6 +49,6 @@ if(!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWri
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $failed=@($result.tests | Where-Object {!$_.pass})
 $minimum=if($Mode -eq 'Detail'){15}elseif($Mode -eq 'Art'){66}elseif($Mode -eq 'Movement'){84}else{46}
-$errors=@(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error')
+$errors=@(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
 if($gameExit -ne 0 -or $failed.Count -or $errors.Count -or @($result.tests).Count -lt $minimum){$failed | Format-Table | Out-String | Write-Output;throw ('Native '+$Mode+' verification failed, exit '+$gameExit+': '+$report)}
 Write-Output ('PASS '+$Mode+' '+@($result.tests).Count+' native checks; fresh report and exit 0')

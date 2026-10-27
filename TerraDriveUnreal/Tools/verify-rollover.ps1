@@ -19,6 +19,6 @@ try{while(!$taskGame.WaitForExit(1500)){
 $taskExit=$taskGame.ExitCode
 if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh rollover report'}
 $taskResult=Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json;$taskExpected=if($Quick){if($AllowLegacyProxy){61}else{81}}else{if($AllowLegacyProxy){241}else{321}}
-$taskFailures=@($taskResult.tests | Where-Object {!$_.pass});$taskErrors=@(Select-String -LiteralPath $taskLog -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error')
+$taskFailures=@($taskResult.tests | Where-Object {!$_.pass});$taskErrors=@(Select-String -LiteralPath $taskLog -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
 if($taskExit -ne 0 -or $taskFailures.Count -or $taskErrors.Count -or $taskResult.tests.Count -ne $taskExpected){$taskFailures | Select-Object case,value,pass | Format-Table -AutoSize | Out-String | Write-Output;throw ('Rollover check failed: '+$taskReport)}
 Write-Output ('PASS '+$taskResult.tests.Count+' native rollover checks; exit 0')

@@ -137,12 +137,14 @@ void ATerraVehicle::BeginPlay() {
   TeleportZone(0);
   auto *Sphere = LoadObject<UStaticMesh>(
       nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
-  FString Names[] = {TEXT("mud"), TEXT("water"), TEXT("snow"), TEXT("sand")};
+  auto *Cube=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube"));
+  auto *Clod=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/Meshes/detail_soil_clod"));
+  FString Names[] = {TEXT("mud"), TEXT("water"), TEXT("snow"), TEXT("sand"),TEXT("stone"),TEXT("grass")};
   for (const FString &N : Names) {
     auto *M = NewObject<UInstancedStaticMeshComponent>(this);
     M->SetupAttachment(RootComponent);
     M->SetAbsolute(true, true, true);
-    M->SetStaticMesh(Sphere);
+    M->SetStaticMesh(N==TEXT("grass")?Cube:(N==TEXT("mud")||N==TEXT("stone"))&&Clod?Clod:Sphere);
     M->SetMaterial(0, LoadObject<UMaterialInterface>(
                           nullptr, *(TEXT("/Game/Materials/Spray_") + N)));
     M->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -226,6 +228,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   for (auto &W : WheelState)
     W = FTerraWheel();
   ApplyUpgrades();
+  FourDrive=HasFourDrive();
   Notice = VehicleName;
   if(PreviousRoute>=0)TeleportRoute(PreviousRoute);else TeleportZone(Zone);
   if(Garage)ApplyUpgrades();
@@ -242,7 +245,7 @@ void ATerraVehicle::SetTracks(bool Enabled) {
     return;
   }
   Tracks = Enabled;
-  if (Tracks)
+  if (Tracks&&HasFourDrive())
     FourDrive = true;
   FString Asset = Spec->GetStringField(TEXT("asset"));
   for (auto W : Wheels)
@@ -298,13 +301,14 @@ void ATerraVehicle::ToggleLocker(bool Front) {
     Notice = Front ? TEXT("Front differential open") : TEXT("Rear differential open");
     return;
   }
-  const auto Features = Spec->GetObjectField(TEXT("features"));
-  if (!Features->GetBoolField(Front ? TEXT("frontLocker") : TEXT("rearLocker"))) {
-    Notice = TEXT("This vehicle has no axle locker"); return;
+  if (!HasLocker(Front)) {
+    Notice = TEXT("Fit a locking differential in the garage for this axle"); return;
   }
-  if (FMath::Abs(Speed) > .5f || !FourDrive ||
-      (VehicleIndex != 4 && (Front || VehicleIndex == 0) && !LowRange)) {
-    Notice = TEXT("Stop, select 4WD and low range before locking this axle"); return;
+  if (FMath::Abs(Speed) > .5f || !DrivenWheel(Front?0:2)) {
+    Notice = TEXT("Stop and engage drive to this axle before locking it"); return;
+  }
+  if(HasLowRange()&&(Front||VehicleIndex==0)&&!LowRange){
+    Notice=TEXT("Select low range before locking this axle");return;
   }
   if (Front && VehicleIndex == 0 && !RearLocked) {
     Notice = TEXT("Lock the rear axle first"); return;
@@ -369,16 +373,22 @@ void ATerraVehicle::Input(float Dt) {
       { if (I==6) TeleportRoute(0); else if (I==8) TeleportRoute(4); else TeleportZone(I); }
   if (Press(EKeys::T))
     SetTracks(!Tracks);
-  if (Press(EKeys::F) && VehicleIndex < 2) {
-    FourDrive = !FourDrive;
-    if (!FourDrive) FrontLocked = RearLocked = LowRange = false;
-    Notice = FourDrive ? TEXT("Four-wheel drive") : TEXT("Rear-wheel drive");
+  if (Press(EKeys::F)) {
+    if(!HasFourDrive())Notice=TEXT("Fit the drivetrain upgrade for four-wheel drive");
+    else if(DriveCapabilities().Permanent)Notice=TEXT("Permanent all-wheel drive remains engaged");
+    else if(FMath::Abs(Speed)>.5f)Notice=TEXT("Stop before changing driven axles");
+    else{
+      FourDrive = !FourDrive;
+      if (!FourDrive) FrontLocked = RearLocked = LowRange = false;
+      Notice = DriveDescription();
+    }
   }
-  if (Press(EKeys::L) && VehicleIndex < 2) {
-    if (FMath::Abs(Speed) < .5f)
-      { LowRange = !LowRange; if (LowRange) FourDrive = true; else FrontLocked = RearLocked = false; }
-    else
-      Notice = TEXT("Stop to shift low range");
+  if (Press(EKeys::L)) {
+    if(!HasLowRange())Notice=TEXT("Fit the drivetrain low-range upgrade in the garage");
+    else if (FMath::Abs(Speed) < .5f){
+      LowRange = !LowRange;if (LowRange) FourDrive = true;else FrontLocked = RearLocked = false;
+      Notice=DriveDescription();
+    }else Notice = TEXT("Stop to shift low range");
   }
   if (Press(EKeys::Equals) || Press(EKeys::Add)) {
     Pressure = FMath::Min(65.f, Pressure + 2);
@@ -446,8 +456,8 @@ void ATerraVehicle::Simulate(float Dt) {
   const auto &Ratios = Spec->GetArrayField(TEXT("gears"));
   float Ratio = Direction < 0 ? Number(TEXT("reverseRatio"), 3)
                               : Ratios[Gear]->AsNumber();
-  float Final = Number(TEXT("finalDrive"), 4),
-        Low = LowRange ? Number(TEXT("lowRatio"), 3) : 1;
+  float Final = Number(TEXT("finalDrive"), 4)*PortalReduction(),
+        Low = EffectiveLowRatio();
   float MeanOmega = 0;
   for (auto &W : WheelState)
     MeanOmega += FMath::Abs(W.Omega) * .25f;
@@ -456,7 +466,7 @@ void ATerraVehicle::Simulate(float Dt) {
   if (!Electric && !LowRange && Direction > 0) {
     float Red = Spec->GetObjectField(TEXT("engine"))
                     ->GetNumberField(TEXT("redlineRPM"));
-    const float RoadRPM=FMath::Abs(Speed)/FMath::Max(.1f,Radius)*Ratio*Final*60/(2*PI);
+    const float RoadRPM=FMath::Abs(Speed)/FMath::Max(.1f,Radius)*Ratio*Final*Low*60/(2*PI);
     Gear=TerraSim::AutomaticGear(Gear,Ratios.Num()-1,RPM,RoadRPM,Red);
     Ratio=Ratios[Gear]->AsNumber();
     RPM=FMath::Max(700.f,MeanOmega*Ratio*Final*Low*60/(2*PI));
@@ -484,14 +494,14 @@ void ATerraVehicle::Simulate(float Dt) {
   }
   float TotalTorque =
       Electric
-          ? FMath::Min(Number(TEXT("wheelTorqueNm"), 15000),
+          ? FMath::Min(Number(TEXT("wheelTorqueNm"), 15000)*PortalReduction()*Low,
                        Power / FMath::Max(MeanOmega, 1.f))
           : Torque * Ratio * Final * Low * .84f * (Speed < 2 ? 1.35f : 1.f);
   // The implicit wheel/axle limiter below supplies only the requested engine
   // torque needed to balance tire reaction at redline. A second cut based on
   // last frame's RPM made loaded locked axles alternate drive and zero torque.
   TotalTorque *=
-      Throttle * Tuning.Power * Tuning.ElectricalPower * (1 - Damage * .35f) * Direction;
+      Throttle * Tuning.Power * Tuning.ElectricalPower * Tuning.DriveEfficiency * (1 - Damage * .35f) * Direction;
   const float WaterDepth=Terrain->Sample(GetActorLocation()).Water/100;
   TotalTorque*=1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f);
   if (Tracks && FMath::Abs(Speed) > 12)
@@ -553,22 +563,30 @@ void ATerraVehicle::Simulate(float Dt) {
         (Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
     Capacities[I] = W.Load*W.Grip*Radius;
   }
-  Overturned = Up.Z < .15f && ContactCount == 0;
+  bool InvertedTrackSupport=false;
+  for(const auto& W:WheelState)InvertedTrackSupport|=W.Constructed&&W.Load>50&&FVector::DotProduct(W.Ground.Normal,Up)>.35f;
+  Overturned = Up.Z < .15f && !InvertedTrackSupport;
   if (Overturned) { TotalTorque = 0; Throttle = 0; Steer = 0; }
   if (FMath::Abs(Speed)>11.1f) FrontLocked=RearLocked=false;
   for (int Axle=0;Axle<2;++Axle) {
-    const bool Driven = FourDrive || (VehicleIndex==2 ? Axle==0 : Axle==1);
+    const bool Driven = DrivenWheel(Axle*2);
     if (!Driven) continue;
     const int A=Axle*2;
-    const auto Split=TerraSim::SplitAxleTorque(TotalTorque*(FourDrive?(VehicleIndex==5?(Axle==0?.40f:.60f):.5f):1.f),
-        Capacities[A],Capacities[A+1],Axle==0?FrontLocked:RearLocked);
+    const bool BothDriven=DrivenWheel(0)&&DrivenWheel(2);
+    const float Demand=TotalTorque*(BothDriven?(VehicleIndex==5?(Axle==0?.40f:.60f):.5f):1.f);
+    const bool Locked=Axle==0?FrontLocked:RearLocked;
+    auto Split=TerraSim::SplitAxleTorque(Demand,Capacities[A],Capacities[A+1],Locked);
+    if(!Locked&&UpgradeStage(TerraSim::Differentials)>=3){
+      const auto Bias=TerraSim::LimitedSlipTorque(Demand,Capacities[A],Capacities[A+1]);
+      Split.left=Bias.Left;Split.right=Bias.Right;
+    }
     Drives[A]=Split.left; Drives[A+1]=Split.right;
   }
   const float AssistBrake = DescentAssist && Throttle<.05f
       ? FMath::Clamp((FMath::Abs(Speed)-2.f)*.45f,0.f,.8f) : 0.f;
   const float EffectiveBrake = FMath::Max(Brake,AssistBrake);
   if(AssistBrake>Brake){BrakeLampLevel=5;for(auto Lamp:BrakeLamps)Lamp->SetScalarParameterValue(TEXT("TerraLamp"),5);}
-  const float Inertia=Tracks?24.f:3.f*Tuning.WheelInertia, R=Radius;
+  const float Inertia=Tracks?24.f+Tuning.RotatingMass:WheelInertia(), R=Radius;
   const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
   const FQuat BodyRotation=Chassis->GetComponentQuat();
   const float WheelRevLimit=Electric?0:float(Spec->GetObjectField(TEXT("engine"))->GetNumberField(TEXT("redlineRPM")))*2*PI/
@@ -578,7 +596,7 @@ void ATerraVehicle::Simulate(float Dt) {
     const auto &W=WheelState[I];
     const float Share=Mass*(I<2?FrontWeight:1-FrontWeight)*.5f;
     Stiffness[I]=TerraSim::ContactStiffness(W.Load*(W.Ground.Surface==1?10.f:5.f)/FMath::Max(2.f,FMath::Abs(W.LongSpeed)),Share,Dt);
-    const bool Driven=FourDrive||(VehicleIndex==2?I<2:I>=2);
+    const bool Driven=DrivenWheel(I);
     const float EngineBrake=Driven&&Throttle<.05f&&LowRange?Mass*9.81f*R*.035f:0.f;
     const float Rut=TerraSim::RutResistance(W.RutDepth,R,W.Ground.Softness,W.Ground.Packing,Tracks);
     const float LowPressureRoad=W.Ground.MaxSink==0?FMath::Max(0.f,1-Pressure/Number(TEXT("stockPSI"),35))*.018f:0;
@@ -714,82 +732,6 @@ void ATerraVehicle::Simulate(float Dt) {
     WinchTension = 0;
   if (TerraWinter::OutsideBounds(GetWorld(),GetActorLocation()))
     TeleportZone(Zone);
-}
-void ATerraVehicle::UpdateSpray(float Dt) {
-  for (int I = 0; I < 4; I++) {
-    auto &W = WheelState[I];
-    if (!W.ContactValid || W.Load < 100 || Overturned)
-      continue;
-    float V = FMath::Abs(Speed), Energy = V * .5f + FMath::Abs(W.Slip) * 3;
-    uint8 S = W.Ground.Surface;
-    if (S == 1 || S == 4 || Energy < .65f)
-      continue;
-    SprayBudget[I] += Dt * FMath::Min(90.f, Energy * 10);
-    int Num = FMath::FloorToInt(SprayBudget[I]);
-    SprayBudget[I] -= Num;
-    for (int J = 0; J < Num && Parcels.Num() < 1000; J++) {
-      FTerraParcel P;
-      P.Kind = W.Ground.Water > 2 ? 1 : S == 6 ? 2 : S == 5 ? 3 : 0;
-      P.Radius = P.Kind == 1 ? 1.5f : P.Kind == 2 ? 2.5f : 2.f;
-      P.P = W.Contact + W.Ground.Normal * (P.Radius + 5);
-      P.Life = P.Kind == 1 ? 1.1f : 2.3f;
-      FVector Back = -GetActorForwardVector() * (Speed < -.1f ? -1 : 1);
-      FVector Side = GetActorRightVector() * FMath::FRandRange(-1.f, 1.f);
-      P.V = (Back * FMath::FRandRange(1.5f, 3.7f) + Side * .8f +
-             FVector::UpVector * FMath::FRandRange(1.f, 3.5f)) *
-            100 * FMath::Clamp(Energy * .4f, .6f, 2.f);
-      P.V += Chassis->GetPhysicsLinearVelocity() * .2f;
-      Parcels.Add(P);
-      ++SprayEmitted;
-    }
-  }
-  TArray<FTransform> Instances[4];
-  for (int I = Parcels.Num() - 1; I >= 0; I--) {
-    auto &P = Parcels[I];
-    const FVector FrameStart=P.P;
-    P.Age += Dt;
-    float Rem = FMath::Min(Dt, .1f);
-    bool Dead = P.Age > P.Life;
-    while (Rem > 0 && !Dead) {
-      float H = FMath::Min(Rem, 1.f / 120);
-      Rem -= H;
-      FVector Old = P.P;
-      P.V.Z -= 980 * H;
-      P.V *= FMath::Exp(-H * (P.Kind == 2 ? 1.9f : .45f));
-      P.P += P.V * H;
-      SprayTravelCM += FVector::Dist(Old, P.P);
-      // Airborne debris moves in world space. Impacts end the parcel; do not
-      // replace it with permanent spheres welded behind the tires.
-      if (P.P.Z <= Terrain->Height(P.P.X, P.P.Y) + P.Radius)
-        Dead = true;
-    }
-    if(!Dead){
-      // At a maximum 0.1-second step the ballistic arc differs from this
-      // chord by at most 1.23 cm, within the visual debris size. Broad-phase
-      // the detailed body and trace once per parcel, not every 1/120 step.
-      FHitResult Hit;FCollisionQueryParams Query;Query.bTraceComplex=true;
-      const FBox Bounds=Body->Bounds.GetBox().ExpandBy(P.Radius);
-      if(P.Age>.12f&&FMath::LineBoxIntersection(Bounds,FrameStart,P.P,P.P-FrameStart)&&Body->LineTraceComponent(Hit,FrameStart,P.P,Query))Dead=true;
-      Query.AddIgnoredActor(this);
-      if(!Dead&&GetWorld()->LineTraceSingleByChannel(Hit,FrameStart,P.P,ECC_Visibility,Query))Dead=true;
-    }
-    if (Dead) {
-      Parcels.RemoveAtSwap(I);
-      ++SprayExpired;
-      continue;
-    }
-    float Scale = P.Radius / 50 * FMath::Clamp((P.Life-P.Age)*4,0.f,1.f);
-    Instances[P.Kind].Add(FTransform(FQuat::Identity,P.P,FVector(Scale,Scale,Scale*.65f)));
-  }
-  for (int Kind=0;Kind<4;++Kind) {
-    auto *M=SprayMeshes[Kind].Get(); const auto &Transforms=Instances[Kind];
-    while (M->GetInstanceCount()>Transforms.Num()) M->RemoveInstance(M->GetInstanceCount()-1);
-    for (int I=0;I<Transforms.Num();++I) {
-      if (I<M->GetInstanceCount()) M->UpdateInstanceTransform(I,Transforms[I],true,false,true);
-      else M->AddInstance(Transforms[I],true);
-    }
-    M->MarkRenderStateDirty();
-  }
 }
 void ATerraVehicle::Tick(float Dt) {
   Super::Tick(Dt);

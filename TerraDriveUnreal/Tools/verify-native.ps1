@@ -51,7 +51,7 @@ if (!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWr
     throw "Game did not write a fresh validation report (exit $gameExit). Inspect $log"
 }
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-$renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
+$renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|missing usage flag|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
 if($renderErrors.Count){throw "Native mesh/render diagnostics failed. Inspect $log"}
 $failed=@($result.tests | Where-Object { !$_.pass })
 $minimumChecks=if($GroundOnly){19}elseif($LockersOnly){4}elseif($BrakeOnly){18}else{287}

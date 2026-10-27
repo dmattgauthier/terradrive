@@ -41,8 +41,8 @@ if($null -eq $gameExit){throw 'Native process exit code unavailable'}
 if(!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWriteTime -lt $started){throw ('No fresh native report: '+$log)}
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $failed=@($result.tests | Where-Object {!$_.pass})
-$errors=@(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error')
-$expected=if($DrivenOnly){16}else{101}
+$errors=@(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
+$expected=if($DrivenOnly){16}else{117}
 if($gameExit -ne 0 -or $failed.Count -or $errors.Count -or @($result.tests).Count -ne $expected){$failed | Format-Table | Out-String | Write-Output;throw ('Native rut verification failed, exit '+$gameExit+': '+$report)}
 if(!$DrivenOnly){foreach($surface in @('firm-dirt','mud','snow','wet-grass','sand','loose-dirt')){
     foreach($view in @('oblique','profile')){

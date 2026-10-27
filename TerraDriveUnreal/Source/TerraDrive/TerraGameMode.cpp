@@ -21,6 +21,8 @@
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
 #include "TerraRolloverValidation.h"
+#include "TerraMechanicalValidation.h"
+#include "TerraSprayValidation.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "ProceduralMeshComponent.h"
 #include "TerraWorld.h"
@@ -61,13 +63,7 @@ void ATerraHUD::DrawHUD() {
                            V->Direction < 0 ? TEXT("R") : TEXT("D"),
                            V->Gear + 1, V->RPM),
            FLinearColor::White, 34, 82, nullptr, 1.3f);
-  DrawText(FString::Printf(TEXT("%s   %.0f PSI   %s%s"), *V->SurfaceName,
-                           V->Pressure,
-                           V->Tracks      ? TEXT("TRACKS")
-                           : V->FourDrive ? TEXT("4WD")
-                                          : TEXT("2WD"),
-                           V->LowRange ? TEXT("  LOW") : TEXT("")),
-           FLinearColor(.72, .83, .88), 34, 116);
+  DrawText(FString::Printf(TEXT("%s   %.0f PSI   %s"),*V->SurfaceName,V->Pressure,*V->DriveDescription()),FLinearColor(.72,.83,.88),34,116);
   DrawText(FString::Printf(TEXT("AXLES  Front: %s   Rear: %s   %s"),
       V->FrontLocked?TEXT("LOCKED"):TEXT("open"),V->RearLocked?TEXT("LOCKED"):TEXT("open"),
       V->DescentAssist?TEXT("DESCENT ON"):TEXT("")),FLinearColor(.95,.8,.4),34,145);
@@ -117,6 +113,14 @@ void ATerraGameMode::Tick(float Dt) {
   };
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverOnly"))){
     if(TerraRolloverValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraMechanicalOnly"))){
+    if(TerraMechanicalValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraSprayOnly"))){
+    if(TerraSprayValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRutOnly"))){
@@ -203,6 +207,7 @@ void ATerraGameMode::Tick(float Dt) {
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTransitionsOnly")))Next(80);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTerrainDetailOnly")))Next(84);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraLockersOnly")))Next(16);
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraDescentOnly")))Next(119);
   if(Stage==0&&(FParse::Param(FCommandLine::Get(),TEXT("TerraRenderOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraPerfOnly"))))Next(69);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraBrakeOnly"))){
     BrakeVehicle=0;V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
@@ -561,15 +566,51 @@ void ATerraGameMode::Tick(float Dt) {
               OpenProgress,MaxProgress,StripHalfWidth,LockerOpenPeakLateral,LockerPeakLateral,LockerOpenClearance,LockerClearance);
           V->TestSteer=0; // Subsequent straight-line trials own fresh input.
           if(FParse::Param(FCommandLine::Get(),TEXT("TerraLockersOnly"))){FinishValidation();return;}
-          V->SelectVehicle(0);V->LowRange=true;V->DescentAssist=true;V->TeleportRoute(7);V->Chassis->SetPhysicsLinearVelocity(FVector(500,0,0));Start=V->GetActorLocation();V->TestThrottle=0;Next(19);
+          Next(119);
         }
       }
     }
+  } else if(Stage==119){
+    // Prepare the welded stock vehicle before measuring the actual descent.
+    // The route spawn is on its flat summit, four metres before the slope;
+    // low-range engine braking can legitimately stop a coasting vehicle there.
+    if(!Captured){
+      V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(7);
+      V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
+      V->FourDrive=V->LowRange=true;V->DescentAssist=false;Captured=true;
+    }
+    if(StageTime>1){
+      const auto &Route=V->Terrain->Routes[7];
+      const FVector Forward=FRotator(0,Route.Yaw,0).Vector();
+      const FVector Probe=Route.Spawn+Forward*700;
+      FHitResult Hit;FCollisionQueryParams Query;Query.AddIgnoredActor(V);
+      const bool Found=GetWorld()->LineTraceSingleByChannel(Hit,Probe+FVector(0,0,1500),Probe-FVector(0,0,2500),ECC_Visibility,Query);
+      if(!Found||Hit.ImpactNormal.X<.1f||Hit.ImpactNormal.Z<.6f){
+        Check(TEXT("descent assist controls rocky downhill speed"),false);FinishValidation();return;
+      }
+      const FVector Normal=Hit.ImpactNormal.GetSafeNormal();
+      const FVector Tangent=FVector::VectorPlaneProject(Forward,Normal).GetSafeNormal();
+      V->SetActorLocationAndRotation(Hit.ImpactPoint+Normal*V->ExpectedRideHeight()*100,
+          FRotationMatrix::MakeFromXZ(Tangent,Normal).Rotator(),false,nullptr,ETeleportType::TeleportPhysics);
+      V->Chassis->SetPhysicsLinearVelocity(Tangent*500);
+      V->Chassis->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+      for(auto &Wheel:V->WheelState)Wheel.Omega=5.f/(V->TireDiameter()*.0127f);
+      V->TestBrake=V->TestThrottle=V->TestSteer=0;V->DescentAssist=true;
+      Start=V->GetActorLocation();
+      UE_LOG(LogTemp,Display,TEXT("TERRA_DESCENT_SETUP positionCM=%s normal=%s tangent=%s"),*Start.ToString(),*Normal.ToString(),*Tangent.ToString());
+      Next(19);
+    }
   } else if(Stage==19){
+    MaxProgress=FMath::Max(MaxProgress,FMath::Abs(V->Speed));
     if(StageTime>11&&!Captured){Capture(TEXT("native-controlled-descent.png"));Captured=true;}
     if(StageTime>12){
-    Check(TEXT("descent assist controls rocky downhill speed"),FMath::Abs(V->Speed)<5&&V->GetActorLocation().X>Start.X+500&&V->GetActorUpVector().Z>.4f,V->Speed);
-    V->TestBrake=1;V->SelectVehicle(0);V->TeleportRoute(0);Next(20);
+      const FVector End=V->GetActorLocation();
+      UE_LOG(LogTemp,Display,TEXT("TERRA_DESCENT_END positionCM=%s speedMPS=%.4f peakMPS=%.4f forwardCM=%.1f dropCM=%.1f contacts=%d"),
+          *End.ToString(),V->Speed,MaxProgress,End.X-Start.X,Start.Z-End.Z,V->ContactCount);
+      Check(TEXT("descent assist controls rocky downhill speed"),FMath::Abs(V->Speed)<5&&MaxProgress<5.5f&&
+          End.X>Start.X+500&&End.Z<Start.Z-200&&V->ContactCount>=2&&V->GetActorUpVector().Z>.4f,MaxProgress);
+      if(FParse::Param(FCommandLine::Get(),TEXT("TerraDescentOnly"))){FinishValidation();return;}
+      V->TestBrake=1;V->SelectVehicle(0);V->TeleportRoute(0);Next(20);
     }
   } else if(Stage>=20&&Stage<28){
     if(StageTime>2&&!Captured){
@@ -621,13 +662,14 @@ void ATerraGameMode::Tick(float Dt) {
     Check(TEXT("engine stage three increases usable power"),V->PowerHP()>StockPower*1.6f,V->PowerHP());
     V->SetUpgrade(TerraSim::Electrical,3,false);
     Check(TEXT("auxiliary electrical upgrades improve recovery and sealing"),V->Tuning.Winch>1.8f&&V->Tuning.WaterDepth>.8f,V->Tuning.Winch);
+    V->SetUpgrade(TerraSim::Drivetrain,3,false);V->SetUpgrade(TerraSim::Differentials,3,false);V->SetUpgrade(TerraSim::Portals,3,false);
     const FString SetupPath=FPaths::ProjectSavedDir()/TEXT("Validation/garage-roundtrip.json");
     Check(TEXT("garage setup saved atomically"),V->SaveGarage(SetupPath));
     V->ResetUpgrades(false);V->SelectVehicle(1);
     Check(TEXT("vehicle builds remain independent"),V->UpgradeStage(TerraSim::Engine)==0);
     V->SelectVehicle(0);V->ResetUpgrades(false);
     const bool Loaded=V->LoadGarage(SetupPath);V->ApplyUpgrades();
-    Check(TEXT("all seven upgrade categories survive save reload"),Loaded&&V->UpgradeStage(TerraSim::Engine)==3&&V->UpgradeStage(TerraSim::Electrical)==3&&V->UpgradeStage(TerraSim::Body)==3);
+    Check(TEXT("all ten upgrade categories survive save reload"),Loaded&&V->UpgradeStage(TerraSim::Engine)==3&&V->UpgradeStage(TerraSim::Electrical)==3&&V->UpgradeStage(TerraSim::Body)==3&&V->UpgradeStage(TerraSim::Drivetrain)==3&&V->UpgradeStage(TerraSim::Differentials)==3&&V->UpgradeStage(TerraSim::Portals)==3);
     const FString BadPath=FPaths::ProjectSavedDir()/TEXT("Validation/garage-invalid.json");
     FFileHelper::SaveStringToFile(TEXT("{\"version\":1,\"builds\":[]}"),*BadPath);
     Check(TEXT("invalid save cannot erase an existing build"),!V->LoadGarage(BadPath)&&V->UpgradeStage(TerraSim::Engine)==3);

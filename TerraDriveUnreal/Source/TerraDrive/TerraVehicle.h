@@ -30,6 +30,9 @@ struct FTerraWheel {
 struct FTerraParcel {
   FVector P, V;
   float Age = 0, Life = 2, Radius = 2;
+  FVector Aspect=FVector(1,1,.65f),Spin=FVector::ZeroVector;
+  float Drag=.45f;
+  uint8 Bounces=0;
   uint8 Kind = 0;
 };
 UCLASS()
@@ -70,6 +73,8 @@ public:
   UPROPERTY() TArray<TObjectPtr<URectLightComponent>> GarageLights;
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> SprayMeshes;
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> SuspensionParts;
+  // Bounded instancing groups for articulated links, CV joints and portal hardware.
+  UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> RunningGearMeshes;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> Protection;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> TrailEquipment;
   FTerraWheel WheelState[4];
@@ -86,6 +91,9 @@ public:
   float RouteTime = 0, LastTireForceN = 0;
   FString RouteStatus;
   int SprayEmitted = 0, SprayExpired = 0;
+  int SprayKindEmitted[6]={};
+  uint32 SpraySequence=0;
+  void AdvanceSprayForValidation(float Dt){if(AutoTest)UpdateSpray(Dt);}
   float SprayTravelCM = 0;
   int SprayCount() const { return Parcels.Num(); }
   int VehicleIndex = 0, Zone = 0, Gear = 0, Direction = 1, EngineUpgrade = 0,
@@ -105,13 +113,23 @@ public:
   FString UpgradeEffect(int Part) const;
   FString UpgradeName(int Part) const;
   FString UpgradeDescription(int Part) const;
+  FString UpgradeStageName(int Part,int Stage) const;
+  TerraSim::DriveCapabilities DriveCapabilities() const;
+  bool HasFourDrive() const {return DriveCapabilities().FourDrive;}
+  bool HasLowRange() const {return DriveCapabilities().LowRatio>1.05f;}
+  bool HasLocker(bool Front) const {const auto C=DriveCapabilities();return Front?C.FrontLocker:C.RearLocker;}
+  float EffectiveLowRatio() const {return LowRange?DriveCapabilities().LowRatio:1.f;}
+  float PortalLift() const {return Tuning.PortalLift;}
+  float PortalReduction() const {return Tuning.PortalReduction;}
+  bool DrivenWheel(int Index) const {return TerraSim::DrivenAxle(DriveCapabilities(),FourDrive,Index<2);}
+  FString DriveDescription() const;
   int UpgradeStage(int Part) const { return Builds[VehicleIndex].Stage[Part]; }
   bool HasElectrical() const { return VehicleIndex != 2; }
   float PowerHP() const { return Power/745.7f*Tuning.Power*Tuning.ElectricalPower; }
   float SuspensionTravel() const { return .46f+Tuning.Travel; }
   float TireDiameter() const { return Radius*200/2.54f; }
   float GripMultiplier() const { return Tuning.Grip; }
-  float WheelInertia() const { return 3*Tuning.WheelInertia; }
+  float WheelInertia() const { return 3*Tuning.WheelInertia+Tuning.RotatingMass; }
   float ImpactDamage(float Impulse) const;
   void OrbitGarageCamera(float YawDelta,float PitchDelta);
   void ZoomGarageCamera(float Steps);

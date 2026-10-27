@@ -212,15 +212,14 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
 }
 TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
   auto Stages=SNew(SHorizontalBox);
-  const TCHAR* Names[]={TEXT("STOCK"),TEXT("I"),TEXT("II"),TEXT("III")};
   for(int S=0;S<4;++S){
     Stages->AddSlot().AutoWidth().Padding(3,0)
-    [SNew(SBox).WidthOverride(S==0?64:46).HeightOverride(34)
+    [SNew(SBox).WidthOverride(S==0?64:Part>=TerraSim::Drivetrain?59:46).HeightOverride(34)
       [SNew(SButton).ButtonStyle(&ButtonStyle()).HAlign(HAlign_Center).VAlign(VAlign_Center)
         .IsEnabled_Lambda([this,Part]{return Vehicle.IsValid()&&(Part!=TerraSim::Electrical||Vehicle->HasElectrical());})
         .ButtonColorAndOpacity_Lambda([this,Part,S]{return Vehicle.IsValid()&&Vehicle->UpgradeStage(Part)==S?FLinearColor(.28,.49,.34):FLinearColor(.07,.10,.11);})
         .OnClicked_Lambda([this,Part,S]{if(Vehicle.IsValid())Vehicle->SetUpgrade(Part,S);return FReply::Handled();})
-        [Label(Names[S],11,White,true)]]];
+        [SNew(STextBlock).Text_Lambda([this,Part,S]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeStageName(Part,S):TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(White)]]];
   }
   return SNew(SBorder).BorderImage(&Card).BorderBackgroundColor(FLinearColor(.055,.08,.083,.98)).Padding(14,4)
     [SNew(SHorizontalBox)
@@ -247,6 +246,7 @@ TSharedRef<SWidget> STerraGarage::UpgradePage() {
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("POWER"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f hp"),Vehicle.IsValid()?Vehicle->PowerHP():0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("TIRE GRIP"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("+%.0f%%"),Vehicle.IsValid()?(Vehicle->GripMultiplier()-1)*100:0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("RUNNING WEIGHT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f lb"),Vehicle.IsValid()?TerraUnits::Pounds(Vehicle->Mass):0));}))]
+          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("DRIVE SELECTED"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->DriveDescription():TEXT(""));}))]
           +SVerticalBox::Slot().FillHeight(1)[SNew(SSpacer)]
           +SVerticalBox::Slot().AutoHeight()[Label(TEXT("I    TRAIL\nII   EXPEDITION\nIII  COMPETITION"),12,Mint,true)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,14,0,0)

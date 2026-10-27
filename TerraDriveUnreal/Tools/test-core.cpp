@@ -141,6 +141,55 @@ int main(){
     build.Stage[TerraSim::Engine]=999;build.Stage[TerraSim::Tires]=-8;
     auto sanitized=TerraSim::Tune(build,false,true);
     check(sanitized.Power==engine.Power&&sanitized.Grip==1,"out of range saved stages are clamped safely");
+    check(TerraSim::Electrical==6&&TerraSim::Drivetrain==7&&TerraSim::Differentials==8&&TerraSim::Portals==9&&TerraSim::PartCount==10,"persistent original upgrade indices remain unchanged");
+    const TerraSim::FactoryDrivetrain factories[]={
+        {true,false,false,true,true,4}, {true,false,false,true,true,3.06f},
+        {false,false,true,false,false,1}, {false,false,false,false,false,1},
+        {true,true,false,true,true,1}, {true,true,false,false,false,1}};
+    for(const auto factory:factories){
+        TerraSim::UpgradeSetup setup;
+        const auto base=TerraSim::ResolveDriveCapabilities(setup,factory);
+        check(base.FourDrive==factory.FourDrive&&base.LowRatio==factory.LowRatio&&base.FrontLocker==factory.FrontLocker&&base.RearLocker==factory.RearLocker,"factory driveline and lockers survive stock upgrade stage");
+        check(TerraSim::DrivenAxle(base,false,factory.FrontPrimary),"stock primary axle remains driven");
+        check(TerraSim::DrivenAxle(base,false,!factory.FrontPrimary)==factory.Permanent,"permanent AWD cannot be disabled and two-wheel mode retains its proper axle");
+        setup.Stage[TerraSim::Drivetrain]=1;
+        auto converted=TerraSim::ResolveDriveCapabilities(setup,factory);
+        check(converted.FourDrive&&converted.LowRatio==factory.LowRatio,"drivetrain stage one adds missing high drive without inventing low range");
+        check(TerraSim::DrivenAxle(converted,true,true)&&TerraSim::DrivenAxle(converted,true,false),"converted high drive supplies both actual axles");
+        setup.Stage[TerraSim::Drivetrain]=2;converted=TerraSim::ResolveDriveCapabilities(setup,factory);
+        check(converted.LowRatio>=2.5f&&converted.LowRatio>=factory.LowRatio,"stage two adds selectable low range without weakening factory gearing");
+        setup.Stage[TerraSim::Drivetrain]=3;converted=TerraSim::ResolveDriveCapabilities(setup,factory);
+        check(converted.LowRatio>=3.5f&&converted.LowRatio>=factory.LowRatio,"crawler stage retains stronger factory low gearing");
+        setup.Stage[TerraSim::Differentials]=1;converted=TerraSim::ResolveDriveCapabilities(setup,factory);
+        check(factory.FrontPrimary?converted.FrontLocker:converted.RearLocker,"first locker upgrade powers the primary driven axle");
+        setup.Stage[TerraSim::Differentials]=2;converted=TerraSim::ResolveDriveCapabilities(setup,factory);
+        check(converted.FrontLocker&&converted.RearLocker,"second locker stage equips both axles");
+        check(converted.HardwareMass>=25,"added hardware contributes chassis mass");
+    }
+    TerraSim::UpgradeSetup portals;
+    auto previous=TerraSim::Tune(portals,false,true);
+    for(int stage=1;stage<=3;stage++){
+        portals.Stage[TerraSim::Portals]=stage;auto t=TerraSim::Tune(portals,false,true);
+        check(t.PortalLift>previous.PortalLift&&t.Lift==t.PortalLift&&t.PortalReduction>previous.PortalReduction,"portal stages increase real body clearance and wheel-end reduction");
+        check(t.HardwareMass>previous.HardwareMass&&t.RotatingMass>previous.RotatingMass&&t.DriveEfficiency<previous.DriveEfficiency,"larger portal hardware has weight inertia and efficiency tradeoffs");
+        check(1/t.PortalReduction<1/previous.PortalReduction,"portal reduction trades maximum geared speed for wheel torque");
+        check(t.Power==1&&t.Travel==0&&t.TireRadius==1,"portal conversion does not secretly change engine suspension travel or tires");
+        previous=t;
+    }
+    const auto lsd=TerraSim::LimitedSlipTorque(2000,1800,600),reverseLsd=TerraSim::LimitedSlipTorque(-2000,1800,600),liftedLsd=TerraSim::LimitedSlipTorque(2000,1800,0);
+    check(lsd.Left>lsd.Right&&lsd.Left<=3*lsd.Right+.001f&&std::abs(lsd.Left+lsd.Right-2000)<.001f,"unlocked competition differentials bias torque within their three-to-one ratio");
+    check(reverseLsd.Left==-lsd.Left&&reverseLsd.Right==-lsd.Right,"limited-slip bias remains symmetric in reverse");
+    check(liftedLsd.Left+liftedLsd.Right<=120.001f,"unlocked limited slip does not behave as a hard locker with an airborne tire");
+    double legacy[]={3,2,1,0,2,1,3};TerraSim::UpgradeSetup migrated;
+    check(TerraSim::DecodeUpgradeStages(legacy,7,1,true,migrated)&&migrated.Stage[TerraSim::Engine]==2&&migrated.Stage[TerraSim::Portals]==0,"v1 seven-category saves migrate with new hardware stock");
+    check(TerraSim::DecodeUpgradeStages(legacy,7,2,false,migrated)&&migrated.Stage[TerraSim::Electrical]==0&&migrated.Stage[TerraSim::Drivetrain]==0,"v2 saves retain supported categories and zero missing hardware");
+    double modern[]={0,1,2,3,0,1,2,1,2,3};
+    check(TerraSim::DecodeUpgradeStages(modern,10,3,true,migrated)&&migrated.Stage[TerraSim::Portals]==3,"v3 save round trip carries all ten upgrade categories");
+    for(double bad:{-1.,4.,.5,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}){
+        modern[7]=bad;const auto before=migrated;
+        check(!TerraSim::DecodeUpgradeStages(modern,10,3,true,migrated)&&migrated.Stage[TerraSim::Portals]==before.Stage[TerraSim::Portals]&&migrated.Stage[TerraSim::Drivetrain]==before.Stage[TerraSim::Drivetrain],"malformed stage data is rejected without partial save mutation");
+    }
+    check(!TerraSim::DecodeUpgradeStages(legacy,7,3,true,migrated)&&!TerraSim::DecodeUpgradeStages(legacy,7,9,true,migrated),"wrong stage count and unknown save versions are rejected");
     check(TerraSim::ValidSupport(.25f,-.3f,.57f,1),"upright support within suspension travel");
     check(!TerraSim::ValidSupport(-1,-.3f,.57f,1),"ground behind the suspension cannot support a rolled car");
     check(!TerraSim::ValidSupport(5,-.3f,.57f,1),"airborne wheel cannot reach distant ground");

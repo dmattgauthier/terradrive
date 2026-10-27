@@ -12,6 +12,18 @@ with open(os.path.join(source, 'import.json'), encoding='utf8') as stream:
 tools = unreal.AssetToolsHelpers.get_asset_tools()
 edit = unreal.MaterialEditingLibrary
 lib = unreal.EditorAssetLibrary
+material_usage_readback = {}
+
+def verify_scan_usage(m, role):
+    if role != 'scan':
+        return
+    edit.set_base_material_usage(m, unreal.MaterialUsage.MATUSAGE_NANITE, True)
+    flags = {'nanite': edit.has_material_usage(m, unreal.MaterialUsage.MATUSAGE_NANITE),
+             'instancedStaticMeshes': edit.has_material_usage(m, unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES)}
+    if not all(flags.values()):
+        raise RuntimeError('Missing native scan material usage: ' + m.get_path_name())
+    lib.save_loaded_asset(m)
+    material_usage_readback[m.get_path_name()] = flags
 
 def load_texture(filename, mask=False):
     if not filename:
@@ -42,11 +54,12 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         5 if instance_tint else 4, color, roughness, metallic, opacity, sky,
         texture.get_path_name() if texture else None,
         alpha.get_path_name() if alpha else None, clip,
-        clearcoat, coat_roughness, emissive, role, 10, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
+        clearcoat, coat_roughness, emissive, role, 11 if role == 'scan' else 10, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
     ]).encode()).hexdigest()
     if lib.does_asset_exist(dest):
         m = lib.load_asset(dest)
         if lib.get_metadata_tag(m, 'TerraMaterialSignature') == signature:
+            verify_scan_usage(m, role)
             return m
         edit.delete_all_material_expressions(m)
     else:
@@ -184,6 +197,7 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         else:
             edit.connect_material_property(node, '', unreal.MaterialProperty.MP_OPACITY)
     edit.set_base_material_usage(m, unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES, True)
+    verify_scan_usage(m, role)
     lib.set_metadata_tag(m, 'TerraMaterialSignature', signature)
     edit.recompile_material(m)
     lib.save_loaded_asset(m)
@@ -203,12 +217,13 @@ texture_names = {'dirt':'forest_ground_04_diff_2k.jpg', 'asphalt':'asphalt_02_di
 terrain_script = os.path.join(root, 'Tools', 'terrain-materials.py')
 with open(terrain_script, encoding='utf8') as terrain_stream:
     exec(compile(terrain_stream.read(), terrain_script, 'exec'), globals())
-for name, color in [('mud',[.19,.12,.07]), ('water',[.40,.60,.68]), ('snow',[.90,.95,1]), ('sand',[.69,.50,.26])]:
+for name, color in [('mud',[.19,.12,.07]), ('water',[.40,.60,.68]), ('snow',[.90,.95,1]), ('sand',[.69,.50,.26]), ('stone',[.28,.26,.21]), ('grass',[.19,.25,.065])]:
     material('Spray_'+name, color, .3 if name == 'water' else .94)
 material('M_Sky', [.38,.58,.78], sky=True)
 exec(compile(open(os.path.join(root,'Tools','sky-material.py'),encoding='utf8').read(),'sky-material.py','exec'),globals())
 exec(compile(open(os.path.join(root,'Tools','tire-mark-materials.py'),encoding='utf8').read(),'tire-mark-materials.py','exec'),globals())
 material('Native_SuspensionSteel',[.035,.05,.055],.48,.72)
+material('Native_RunningGearRubber',[.012,.016,.018],.86,.02)
 material('Native_Chrome',[.45,.53,.57],.25,.88)
 exec(compile(open(os.path.join(root,'Tools','automotive-materials.py'),encoding='utf8').read(),'automotive-materials.py','exec'),globals())
 
@@ -282,6 +297,8 @@ else:
 if not ok or not level.save_current_level():
     raise RuntimeError('Could not create/load/save ProvingGround')
 lib.save_directory('/Game', only_if_is_dirty=True, recursive=True)
+with open(os.path.join(root, 'Saved', 'material-usage-readback.json'), 'w', encoding='utf8') as stream:
+    json.dump({'scanMaterials': material_usage_readback, 'complete': True}, stream, indent=2)
 unreal.log('TERRA_IMPORT_COMPLETE')
 os.makedirs(os.path.join(root, 'Saved'), exist_ok=True)
 with open(os.path.join(root, 'Saved', 'import-complete.json'), 'w', encoding='utf8') as stream:

@@ -1,5 +1,11 @@
 # Terra Drive native port
 
+The [drivetrain, running gear and soil pass 13](docs/mechanical-soil-13.md) adds
+staged four-wheel drive, low range, axle lockers and portal conversions in the
+garage, more detailed moving wheel-area hardware, surface-specific tire spray
+and varied physical rut shoulders. Final package verification is recorded in
+[validation-native.md](docs/validation-native.md).
+
 The [rollover and coachwork pass 12](docs/rollover-coachwork-12.md) derives solid
 body collision from each exported vehicle, addressing the Sprinter's side-roll
 burial. It refines all six bodies and adds ten native review views per model.
@@ -110,6 +116,8 @@ After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows
 
 The verifier requires a fresh JSON report, a successful game exit, and all expanded checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, nine challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
 
+Use `Tools/verify-mechanical.ps1` for all-six hardware, save migration, portal ride-height and moving wheel-area checks, and `Tools/verify-spray.ps1` for the six material-specific ejection fixtures. `Tools/verify-ruts.ps1` includes physical bank variation, asymmetric displacement, deterministic replay and actual driven mud/snow tracks.
+
 Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison. Each attempt starts with repaired terrain and the same stock setup, so earlier tire ruts and compaction cannot bias the second attempt.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
@@ -130,7 +138,7 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 | J | Cycle nine challenge routes |
 | V | Open vehicle selection while stopped |
 | T | Equip/remove flotation tracks while stopped; Civic excluded |
-| F / L | 2WD/4WD / low range on supported vehicles |
+| F / L | Available four-wheel high drive / low range; change near a stop |
 | Z / U | Rear / front differential lock; stop and select required driveline first |
 | Shift + W | Crawl throttle |
 | K | Descent assist on supported vehicles |
@@ -152,7 +160,7 @@ This is a migration preview. Browser regression results are reference evidence, 
 
 See [offroad-challenges.md](docs/offroad-challenges.md) for route descriptions, driving techniques and the native axle/contact model.
 
-The game opens in the vehicle garage. Stock plus three upgrade stages are available immediately and saved independently for each vehicle. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [garage-and-terrain.md](docs/garage-and-terrain.md) for stages, persistence and material reproduction.
+The game opens in the vehicle garage. Stock plus three upgrade stages across ten categories are available immediately and saved independently for each vehicle. Drivetrain, differential and portal stages add missing hardware while retaining factory capabilities. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [garage-and-terrain.md](docs/garage-and-terrain.md) for stages, persistence and material reproduction.
 
 Player-facing measurements use mph, feet/inches, pounds, PSI, horsepower and pounds-force. The new tire-contact and model pass is described in [terrain-interaction-and-models.md](docs/terrain-interaction-and-models.md). Run `Tools/test-core.cmd` for the standalone simulation checks.
 

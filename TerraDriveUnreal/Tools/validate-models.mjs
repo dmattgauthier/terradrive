@@ -128,6 +128,6 @@ for(const spec of VEHICLES){
  assert.equal(view.wheels[0].root.userData.factoryWheelRevision,3);
  results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:3,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},pass:true});view.dispose();
 }
-const report={revision:'rollover-coachwork-12',vehicles:results,pass:true};
+const report={revision:'mechanical-soil-13',vehicles:results,pass:true};
 fs.writeFileSync(new URL('../docs/model-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

@@ -1,5 +1,6 @@
 #include "TerraWorld.h"
 #include "TerraSimCore.h"
+#include "TerraSoilVariation.h"
 #include "TerraContact.h"
 #include "TerraWinter.h"
 #include "Components/BoxComponent.h"
@@ -13,6 +14,7 @@
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
 #include "Engine/StaticMeshActor.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Engine/TextureCube.h"
 #include "Materials/MaterialInterface.h"
@@ -599,21 +601,19 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   const float CellReach=CellCM*.5f*(FMath::Abs(F.X)+FMath::Abs(F.Y));
   const float HalfL = FMath::Max(.025f, Length * .5f) * 100,
               HalfW = FMath::Max(.09f, Width * .5f) * 100;
-  // Bounded continuous soil-strength variation makes banks organic without
-  // introducing per-stamp random teeth. The shortest wavelength is ~4 ft;
-  // all extra relief still comes from the measured excavation budget.
-  const float Natural=1+.035f*FMath::Sin(P.X*.017f+P.Y*.011f)+.020f*FMath::Sin(P.X*.043f-P.Y*.037f);
+  // The floor and collapse material use immutable world-space fields. A new
+  // passing stamp must not move a random floor under a supported tire.
+  const auto CenterForm=TerraSoil::Variation(P.X,P.Y,S.Surface,1,Slip,S.Churn);
   const float Ordinary=TerraSim::SoilTarget(1,Load,Width,Length,Slip,0),
               Churned=TerraSim::SoilTarget(1,Load,Width,Length,Slip,1);
-  const float Target=FMath::Min(S.MaxSink,S.MaxSink*FMath::Lerp(Ordinary,Churned,S.Churn)*Natural);
+  const float Target=FMath::Min(S.MaxSink,S.MaxSink*FMath::Lerp(Ordinary,Churned,S.Churn)*CenterForm.Strength);
   const float GrooveOuter=TerraSim::GrooveOuterHalfWidth(HalfW*.01f,Target)*100;
   auto Bank=TerraSim::SoilBankShape(S.Surface,Width,Target,LooseDirt(P.X,P.Y),Slip);
-  Bank.width*=1+.06f*FMath::Sin(P.X*.025f+P.Y*.031f);
-  const float BankWidth=Bank.width*100;
   FVector2D Heading(F.X,F.Y);
   // A tire's imprint has the same tangent when the vehicle reverses. Select
   // one hemisphere before averaging, avoiding an artificial zero direction.
   if(Heading.X<-.001f||(FMath::Abs(Heading.X)<=.001f&&Heading.Y<0))Heading=-Heading;
+  const FVector CanonicalSide(-Heading.Y,Heading.X,0);
   struct FCell {
     FTerraTile *T;
     int I;
@@ -624,7 +624,8 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   float MaximumDose=0;
   // A rectangle's rotated corners extend beyond max(halfLength,halfWidth).
   // The former bound clipped long track footprints and bank envelopes.
-  const float Radius=FMath::Sqrt(FMath::Square(HalfL+20)+FMath::Square(GrooveOuter+BankWidth))+CellCM;
+  const float SideReach=GrooveOuter*1.06f+Bank.width*126.f+18.f;
+  const float Radius=FMath::Sqrt(FMath::Square(HalfL+20)+FMath::Square(SideReach))+CellCM;
   // Allocate the bounded stencil before taking pointers (TMap growth moves
   // values).
   for (int X = FMath::FloorToInt((P.X - Radius) / TileCM);
@@ -651,12 +652,15 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
           FVector D = T->Vertices[A] - P;
           D.Z = 0;
           float U = FVector::DotProduct(D, F), V = FVector::DotProduct(D, Side);
-          if (FMath::Abs(U) > HalfL + 20 || FMath::Abs(V) > GrooveOuter+BankWidth)
+          if (FMath::Abs(U) > HalfL + 20 || FMath::Abs(V) > SideReach)
             continue;
           if (SurfaceAt(T->Vertices[A].X, T->Vertices[A].Y) != S.Surface)
             continue;
           const float Along=TerraSim::FootprintCoverage(U,HalfL,CellReach);
-          const float Across=TerraSim::GrooveCrossSection(V*.01f,HalfW*.01f,Target);
+          const float CanonicalV=FVector::DotProduct(D,CanonicalSide);
+          const auto Form=TerraSoil::Variation(T->Vertices[A].X,T->Vertices[A].Y,S.Surface,CanonicalV,Slip,S.Churn);
+          const float Core=HalfW*.64f,Outer=GrooveOuter*Form.Wall;
+          const float Across=1-TerraSim::SmoothSoilEdge((FMath::Abs(V)-Core)/FMath::Max(1.f,Outer-Core));
           if (Along>0&&Across>0) {
             // Area-weighted cells keep short contact patches effective even
             // when their center lies between grid nodes.
@@ -670,7 +674,7 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
             T->Churn[A]=TerraSim::SoilChurnDose(T->Churn[A],Slip,Speed,Dt,Along*Across);
             MaximumDose=FMath::Max(MaximumDose,T->Churn[A]);
             const float NodeLimit=T->SinkLimit[A];
-            const float NodeTarget=FMath::Min(NodeLimit,NodeLimit*FMath::Lerp(Ordinary,Churned,T->Churn[A])*Natural);
+            const float NodeTarget=FMath::Min(NodeLimit,NodeLimit*FMath::Lerp(Ordinary,Churned,T->Churn[A])*Form.Strength);
             const float Delta=TerraSim::SoilCutDepth(T->Delta[A]*.01f,NodeTarget,Edge,Response)*100;
             T->Delta[A] -= Delta;
             Removed += Delta * .01 * CellArea;
@@ -680,7 +684,12 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
             T->UV[A]=(T->UV[A]*(1-Influence)+Heading*Influence).GetSafeNormal();
             T->Dirty = true;
           } else {
-            const float SideShape=TerraSim::SoilBankProfile(V*.01f,GrooveOuter*.01f,Bank.width);
+            const float NodeWidth=Bank.width*Form.BankWidth;
+            const float SideShape=TerraSim::SoilBankProfile(V*.01f,Outer*.01f,NodeWidth);
+            // Small low deposits merge with the bank's outer flank. Their
+            // lobes vary in XY, material and shear, while the smooth envelope
+            // returns to undisturbed ground well before the 3-foot shoulder.
+            const float Satellite=TerraSim::SoilBankProfile(V*.01f,Outer*.01f+NodeWidth*.58f,.12f+.06f*Form.Scatter)*Form.Lobe*Form.Scatter;
             const float Longitudinal=1-TerraSim::SmoothSoilEdge((FMath::Abs(U)-HalfL-2)/14.f);
             // Ordinary rolling leaves a groove and banks. A front pile at
             // every substep was re-excavated on the next step, amplifying
@@ -688,11 +697,13 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
             // forward toe is permitted only under substantial wheelspin,
             // and is bound by the same low repose envelope as the banks.
             const float Churn=FMath::Clamp((FMath::Abs(Slip)-.75f)/1.25f,0.f,1.f);
-            const float Ahead=U*(Speed<0?-1:1)-HalfL;
+            const float TravelSign=FMath::Abs(Speed)>.2f?(Speed<0?-1.f:1.f):(Slip<0?-1.f:1.f);
+            const float Ahead=U*TravelSign-HalfL;
             const float Toe=(Ahead>0?Churn:0)*.12f*(1-TerraSim::SmoothSoilEdge(FMath::Abs(V)/FMath::Max(1.f,HalfW)))*
               TerraSim::SoilBankProfile(Ahead*.01f,.01f,.16f);
-            const float W=SideShape*Longitudinal+Toe;
-            if(W>.001f)Receivers.Add({T,A,W,Bank.height*100*FMath::Max(SideShape,Toe)});
+            const float W=(SideShape*(.82f+.18f*Form.Lobe)+Satellite*.32f)*Longitudinal*Form.Weight+Toe;
+            const float Envelope=FMath::Max(FMath::Max(SideShape,Satellite*.24f),Toe);
+            if(W>.001f)Receivers.Add({T,A,W,Bank.height*100*Form.Height*Envelope});
           }
         }
     }
@@ -957,6 +968,41 @@ FVector ATerraWorld::NearestCrushable(FVector P) const{
     if(SurfaceAt(Q.X,Q.Y)!=0)continue;
     const double D=FVector::DistSquared2D(P,Q);if(D<Distance){Best=Q;Distance=D;}}
   return Best;
+}
+bool ATerraWorld::IsLooseGround(FVector P) const{
+  return !P.ContainsNaN()&&LooseDirt(P.X,P.Y)>.45f;
+}
+float ATerraWorld::VegetationCoverage(FVector P) const{
+  if(P.ContainsNaN())return 0;
+  // Query the existing four-metre plant grid rather than every scenery
+  // instance. Eight metres covers the source pivots of the installed tufts
+  // and shrubs; their actual transformed footprint determines the result.
+  constexpr float Reach=800.f;
+  float Coverage=0;
+  for(int X=FMath::FloorToInt((P.X-Reach)/400);X<=FMath::FloorToInt((P.X+Reach)/400);++X)
+    for(int Y=FMath::FloorToInt((P.Y-Reach)/400);Y<=FMath::FloorToInt((P.Y+Reach)/400);++Y){
+      const auto* Entries=PlantGrid.Find({X,Y});if(!Entries)continue;
+      for(int Entry:*Entries){
+        if(!Crushable.IsValidIndex(Entry))continue;
+        const auto& Plant=Crushable[Entry];
+        if(!Plant.Mesh||!Plant.Mesh->GetStaticMesh())continue;
+        const FBox Bounds=Plant.Mesh->GetStaticMesh()->GetBoundingBox();
+        const FVector Center=Plant.Original.TransformPosition(FVector(Bounds.GetCenter().X,Bounds.GetCenter().Y,Bounds.Min.Z));
+        const FVector D=P-Center;
+        // Do not emit vegetation through a bridge or another elevated deck.
+        // Original transforms remain the footprint after a plant is crushed.
+        if(FMath::Abs(D.Z)>100.f)continue;
+        const FVector A=Plant.Original.TransformVector(FVector(Bounds.GetExtent().X,0,0));
+        const FVector B=Plant.Original.TransformVector(FVector(0,Bounds.GetExtent().Y,0));
+        const double Det=A.X*B.Y-A.Y*B.X;
+        if(FMath::Abs(Det)<.01)continue;
+        const double U=(D.X*B.Y-D.Y*B.X)/Det,V=(A.X*D.Y-A.Y*D.X)/Det;
+        const float Radial=FMath::Sqrt(float(U*U+V*V));
+        Coverage=FMath::Max(Coverage,1-Smooth(.65f,1.f,Radial));
+        if(Coverage>=.999f)return 1;
+      }
+    }
+  return Coverage;
 }
 void ATerraWorld::CrushPlants(FVector P,FVector F,float HalfW,float HalfL,float Strength){
   const float Radius=FMath::Max(HalfW,HalfL)+35;

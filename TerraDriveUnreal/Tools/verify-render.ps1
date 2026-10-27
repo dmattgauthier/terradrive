@@ -47,7 +47,7 @@ $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $failed=@($result.tests | Where-Object {!$_.pass})
 $minimum=if($Mode -eq 'Rocks'){69}elseif($Mode -eq 'Transitions'){53}else{16}
 if($failed.Count -or @($result.tests).Count -lt $minimum){$failed | ConvertTo-Json;throw 'Native render checks failed'}
-if(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error') {throw 'Native rendering diagnostics failed'}
+if(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag') {throw 'Native rendering diagnostics failed'}
 if($Mode -eq 'Rocks'){
   $images=@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'Build/Windows/TerraDrive/Saved/Screenshots') -Filter 'native-rock-*-view-*.png' | Where-Object {$_.LastWriteTime -ge $started})
   if($images.Count -ne 44){throw ('Expected 44 fresh rock views, got '+$images.Count)}

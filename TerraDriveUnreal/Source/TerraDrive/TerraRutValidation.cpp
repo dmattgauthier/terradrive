@@ -19,6 +19,7 @@ struct FRutState {
   TWeakObjectPtr<ACameraActor> Camera;
   int Scenario=0,Phase=0;
   float Time=0,FirstDepth=0;
+  TArray<float> FirstProfile;
   FVector Center=FVector::ZeroVector;
   bool PatchValid=false;
 };
@@ -53,6 +54,41 @@ void Stamp(ATerraWorld *T,int Passes,float Slip){
   }
 }
 float Depth(ATerraWorld *T,FVector P){return T->Sample(P).RutDepth;}
+TArray<float> Profile(ATerraWorld *T){
+  TArray<float> Result;
+  // Compare the physical floor, both shoulders, packing and shear history.
+  // The second run starts with a cleared cache but identical world positions.
+  for(int Along=-200;Along<=200;Along+=50)for(int Side:{-1,1})for(int Across=-70;Across<=70;Across+=5){
+    const auto S=T->Sample(State.Center+FVector(Along,Side*80+Across,0));
+    Result.Add(S.Displacement);Result.Add(S.Packing);Result.Add(S.Churn);
+  }
+  return Result;
+}
+struct FBankSpread {float AlongVariation=0,Asymmetry=0;};
+FBankSpread BankSpread(ATerraWorld *T){
+  FBankSpread Result;float Difference=0,Total=0;
+  for(int TireSide:{-1,1}){
+    float Minimum[2]={FLT_MAX,FLT_MAX},Maximum[2]={0,0};
+    for(int Along=-175;Along<=175;Along+=25){
+      float Mass[2]={0,0},Moment[2]={0,0};
+      for(int BankSide=0;BankSide<2;++BankSide)for(int I=1;I<=28;++I){
+        const float Offset=I*2.5f;
+        const auto S=T->Sample(State.Center+FVector(Along,TireSide*80+(BankSide?1:-1)*Offset,0));
+        const float Bank=FMath::Max(0.f,S.Displacement);
+        Mass[BankSide]+=Bank;Moment[BankSide]+=Bank*Offset*.01f;
+      }
+      for(int Side=0;Side<2;++Side)if(Mass[Side]>.00001f){
+        const float Radius=Moment[Side]/Mass[Side];
+        Minimum[Side]=FMath::Min(Minimum[Side],Radius);Maximum[Side]=FMath::Max(Maximum[Side],Radius);
+      }
+      Difference+=FMath::Abs(Mass[0]-Mass[1]);Total+=Mass[0]+Mass[1];
+    }
+    for(int Side=0;Side<2;++Side)if(Minimum[Side]<FLT_MAX)
+      Result.AlongVariation=FMath::Max(Result.AlongVariation,Maximum[Side]-Minimum[Side]);
+  }
+  Result.Asymmetry=Total>.00001f?Difference/Total:0;
+  return Result;
+}
 }
 bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,
     TFunctionRef<void(const TCHAR*)> Capture){
@@ -109,10 +145,16 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
     Add(TEXT("far shoulder returns to undisturbed terrain"),FMath::Abs(Rim)<.001f,Rim);
     Add(TEXT("ordinary rolling side banks stay below four inches"),PeakBerm<.1016f,PeakBerm);
     if(!Firm)Add(TEXT("loose material bunches beside the tires"),PeakBerm>.002f,PeakBerm);
+    const auto Spread=BankSpread(T);
+    if(!Firm){
+      Add(TEXT("physical bank dispersion varies coherently along the wheel paths"),Spread.AlongVariation>.008f,Spread.AlongVariation);
+      Add(TEXT("displaced shoulders have asymmetric material distribution"),Spread.Asymmetry>.025f,Spread.Asymmetry);
+    }
+    State.FirstProfile=Profile(T);
     Add(TEXT("physical marks add no black offroad rubber"),T->TireMarkCount()==0,T->TireMarkCount());
     const double Error=FMath::Abs(T->DepressedVolume-T->DisplacedVolume-T->CompactedVolume);
     Add(TEXT("excavation is accounted for as bank volume or compaction"),Error<.00001,float(Error));
-    UE_LOG(LogTemp,Display,TEXT("TERRA_RUT_PROFILE surface=%s point=%s depthM=%.5f minM=%.5f bermM=%.5f stepM=%.5f curvatureM=%.5f wallSlope=%.5f packed=%.5f removedM3=%.7f displacedM3=%.7f compactedM3=%.7f"),Names[State.Scenario],*State.Center.ToString(),Maximum,Minimum,PeakBerm,PeakStep,PeakCurvature,MaxCrossSlope,Packed,T->DepressedVolume,T->DisplacedVolume,T->CompactedVolume);
+    UE_LOG(LogTemp,Display,TEXT("TERRA_RUT_PROFILE surface=%s point=%s depthM=%.5f minM=%.5f bermM=%.5f stepM=%.5f curvatureM=%.5f wallSlope=%.5f packed=%.5f spreadM=%.5f asymmetry=%.5f removedM3=%.7f displacedM3=%.7f compactedM3=%.7f"),Names[State.Scenario],*State.Center.ToString(),Maximum,Minimum,PeakBerm,PeakStep,PeakCurvature,MaxCrossSlope,Packed,Spread.AlongVariation,Spread.Asymmetry,T->DepressedVolume,T->DisplacedVolume,T->CompactedVolume);
     Capture(Oblique[State.Scenario]);State.Time=0;State.Phase=2;return false;
   }
   if(State.Phase==2&&State.Time>.2f){Frame(V,true);State.Time=0;State.Phase=3;return false;}
@@ -124,6 +166,11 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
     T->Deform(State.Center+FVector(0,80,0),FVector::ForwardVector,0,24,.32f,.30f,1,2,.2f);
     Add(TEXT("unloaded wheel cannot excavate terrain"),FMath::Abs(Depth(T,State.Center+FVector(0,80,0))-Before)<.000001f);
     T->ResetSoil();Add(TEXT("repair restores exact ground and clears all soil history"),T->DetailCount()==0&&T->CachedSoilCount()==0&&Depth(T,State.Center+FVector(0,80,0))==0);
+    Stamp(T,1,.08f);const auto Replayed=Profile(T);float ReplayError=0;
+    if(Replayed.Num()==State.FirstProfile.Num())for(int I=0;I<Replayed.Num();++I)
+      ReplayError=FMath::Max(ReplayError,FMath::Abs(Replayed[I]-State.FirstProfile[I]));
+    Add(TEXT("same world-space pass reproduces floor shoulders packing and churn"),Replayed.Num()==State.FirstProfile.Num()&&ReplayError<.000001f,ReplayError);
+    T->ResetSoil();State.FirstProfile.Reset();
     if(++State.Scenario<6){State.Phase=0;State.Time=0;return false;}
     for(int Zone:{1,2}){
       FVector P=T->Spawns[Zone];const float Height=T->Height(P.X,P.Y);

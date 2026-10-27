@@ -86,12 +86,22 @@ for record in data['materials']:
     overrides.set_editor_property('two_sided', True)
     instance.set_editor_property('base_property_overrides', overrides)
     edit.update_material_instance(instance)
+    # UE 5.8 permits usage overrides on our instance. The acquired master
+    # stays untouched while the rotor's instanced renderer gets cooked shaders.
+    if role in ('rotor', 'brakeSteel'):
+        usage = unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES
+        edit.set_material_usage_override(instance, usage, True, True)
+        edit.update_material_instance(instance)
+        if not edit.has_material_usage(instance, usage) or not edit.has_material_usage_override(instance, usage):
+            raise RuntimeError('Automotive rotor instancing usage was not retained: ' + dest)
     lib.save_loaded_asset(instance)
     materials[record['id']] = instance
     switches = {str(n): edit.get_material_instance_static_switch_parameter_value(instance,n)
                 for n in edit.get_static_switch_parameter_names(instance)}
     automotive_bindings.append({'slot': record['id'], 'role': role, 'owner': owner, 'instance': dest, 'parent': parent_path, 'switches': switches,
         'sourceLinearColor':record['color'], 'boundLinearColor':list(color),
+        'instancedStaticMeshes':edit.has_material_usage(instance,unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES),
+        'instancedUsageOverride':edit.has_material_usage_override(instance,unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES),
         'scalarReadback':{parameter:edit.get_material_instance_scalar_parameter_value(instance,parameter)
                           for parameter in values if parameter in scalars}})
 with open(os.path.join(root, 'Saved', 'automotive-bindings.json'), 'w', encoding='utf8') as stream:

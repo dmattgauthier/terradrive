@@ -31,7 +31,7 @@ void ATerraVehicle::SetGarageView(int View){
   if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
 }
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
-  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),2);
+  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),3);
   Root->SetNumberField(TEXT("vehicle"),VehicleIndex);
   TArray<TSharedPtr<FJsonValue>> Cars;
   for(const auto &Build:Builds){
@@ -52,22 +52,40 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())return false;
   double Version=0,Selected=0;
   const TArray<TSharedPtr<FJsonValue>> *Cars=nullptr;
-  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2)||
+  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3)||
       !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=(Version==1?5:VehicleCount))return false;
   TerraSim::UpgradeSetup Loaded[VehicleCount];
   for(int I=0;I<Cars->Num();++I){
     const TArray<TSharedPtr<FJsonValue>> *Stages=nullptr;
-    if(!(*Cars)[I]->TryGetArray(Stages)||Stages->Num()!=TerraSim::PartCount)return false;
-    for(int P=0;P<TerraSim::PartCount;++P){
-      double S=0;if(!(*Stages)[P]->TryGetNumber(S)||!FMath::IsFinite(S))return false;
-      Loaded[I].Stage[P]=int(FMath::Clamp(S,0.,3.));
-    }
-    Loaded[I].Sanitize(I!=2);
+    if(!(*Cars)[I].IsValid()||!(*Cars)[I]->TryGetArray(Stages)||Stages->Num()!=TerraSim::UpgradeStageCountForVersion(int(Version)))return false;
+    double Values[TerraSim::PartCount]={};
+    for(int P=0;P<Stages->Num();++P)if(!(*Stages)[P].IsValid()||!(*Stages)[P]->TryGetNumber(Values[P]))return false;
+    if(!TerraSim::DecodeUpgradeStages(Values,Stages->Num(),int(Version),I!=2,Loaded[I]))return false;
   }
+  if(Root->HasField(TEXT("vehicle"))&&(!Root->TryGetNumberField(TEXT("vehicle"),Selected)||!FMath::IsFinite(Selected)||Selected<0||Selected>=Cars->Num()||std::floor(Selected)!=Selected))return false;
   for(int I=0;I<VehicleCount;++I)Builds[I]=Loaded[I];
-  Root->TryGetNumberField(TEXT("vehicle"),Selected);
-  LastVehicle=FMath::IsFinite(Selected)?int(FMath::Clamp(Selected,0.,double(VehicleCount-1))):0;
+  LastVehicle=int(Selected);
   return true;
+}
+TerraSim::DriveCapabilities ATerraVehicle::DriveCapabilities() const {
+  TerraSim::FactoryDrivetrain Factory;
+  if(Spec.IsValid()){
+    const auto& Modes=Spec->GetArrayField(TEXT("driveModes"));
+    for(const auto& Value:Modes){const FString Mode=Value->AsString();Factory.FourDrive|=Mode.Contains(TEXT("4"))||Mode.Contains(TEXT("AWD"));}
+    Factory.Permanent=Factory.FourDrive&&Modes.Num()==1;
+    Factory.FrontPrimary=Spec->GetStringField(TEXT("defaultMode"))==TEXT("FWD");
+    Factory.LowRatio=Number(TEXT("lowRatio"),1);
+    const auto Features=Spec->GetObjectField(TEXT("features"));
+    Factory.FrontLocker=Features->GetBoolField(TEXT("frontLocker"));Factory.RearLocker=Features->GetBoolField(TEXT("rearLocker"));
+  }
+  return TerraSim::ResolveDriveCapabilities(Builds[VehicleIndex],Factory);
+}
+FString ATerraVehicle::DriveDescription() const {
+  const auto C=DriveCapabilities();
+  if(LowRange&&HasLowRange())return FString::Printf(TEXT("4L %.2f:1"),C.LowRatio);
+  if(C.Permanent)return TEXT("AWD HIGH");
+  if(FourDrive&&C.FourDrive)return TEXT("4H");
+  return C.FrontPrimary?TEXT("FWD"):TEXT("RWD");
 }
 void ATerraVehicle::ApplyUpgrades(){
   if(!Spec.IsValid())return;
@@ -75,7 +93,13 @@ void ATerraVehicle::ApplyUpgrades(){
   Tuning=TerraSim::Tune(Builds[VehicleIndex],VehicleIndex==4,HasElectrical());
   EngineUpgrade=Builds[VehicleIndex].Stage[TerraSim::Engine];
   LiftUpgrade=Builds[VehicleIndex].Stage[TerraSim::Suspension];
-  Mass=Number(TEXT("mass"),2100)*Tuning.Mass;
+  const auto Capabilities=DriveCapabilities();
+  Mass=Number(TEXT("mass"),2100)*Tuning.Mass+Tuning.HardwareMass+Capabilities.HardwareMass;
+  if(!Capabilities.FourDrive)FourDrive=false;
+  if(Capabilities.Permanent)FourDrive=true;
+  if(!HasLowRange())LowRange=false;
+  if(!Capabilities.FrontLocker||!DrivenWheel(0))FrontLocked=false;
+  if(!Capabilities.RearLocker||!DrivenWheel(2))RearLocked=false;
   Radius=Number(TEXT("tireRadius"),.42f)*Tuning.TireRadius;
   Width=Number(TEXT("tireWidth"),.285f)*Tuning.TireWidth;
   Track=Number(TEXT("track"),1.63f)+Tuning.Track;
@@ -115,6 +139,7 @@ void ATerraVehicle::SetUpgrade(int Part,int Stage,bool Persist){
   if(Part<0||Part>=TerraSim::PartCount||(!Garage&&!AutoTest))return;
   if(Part==TerraSim::Electrical&&!HasElectrical())return;
   Builds[VehicleIndex].Stage[Part]=FMath::Clamp(Stage,0,3);
+  if(Part==TerraSim::Drivetrain&&Stage>0)FourDrive=HasFourDrive();
   ApplyUpgrades();
   if(Persist&&!AutoTest&&!SaveGarage(GaragePath()))Notice=TEXT("Could not save garage setup");
 }
@@ -149,7 +174,7 @@ void ATerraVehicle::SetGarage(bool Open){
     Chassis->SetSimulatePhysics(true);
     ConfigureCoachworkCollision();
     Chassis->SetMassOverrideInKg(NAME_None,Mass+(Tracks?380:0));
-    Chassis->SetCenterOfMass(FVector::ZeroVector);
+    Chassis->SetCenterOfMass(FVector(0,0,-2.f*UpgradeStage(TerraSim::Frame)));
     SpawnCooldown=.7f;
     PC->bShowMouseCursor=false;PC->SetInputMode(FInputModeGameOnly());
     FSlateApplication::Get().SetAllUserFocusToGameViewport();
@@ -158,7 +183,7 @@ void ATerraVehicle::SetGarage(bool Open){
   for(auto Light:GarageLights)Light->SetVisibility(Garage);
 }
 FString ATerraVehicle::UpgradeName(int Part) const{
-  const TCHAR *Names[]={TEXT("SUSPENSION"),TEXT("ENGINE POWER"),TEXT("TIRES"),TEXT("WHEELS"),TEXT("FRAME"),TEXT("BODY"),TEXT("ELECTRICAL")};
+  const TCHAR *Names[]={TEXT("SUSPENSION"),TEXT("ENGINE POWER"),TEXT("TIRES"),TEXT("WHEELS"),TEXT("FRAME"),TEXT("BODY"),TEXT("ELECTRICAL"),TEXT("DRIVETRAIN"),TEXT("DIFFERENTIALS"),TEXT("PORTAL AXLES")};
   return Part==TerraSim::Engine&&VehicleIndex==4?TEXT("MOTOR POWER"):Names[Part];
 }
 FString ATerraVehicle::UpgradeDescription(int Part) const{
@@ -168,20 +193,33 @@ FString ATerraVehicle::UpgradeDescription(int Part) const{
     TEXT("Lighter rotating assembly and a wider stance."),
     TEXT("Reinforcement, lower center of mass and impact resistance."),
     TEXT("Lighter panels, skid protection and reduced drag."),
-    TEXT("Sealed auxiliary power, stronger winch and deeper-water operation.")};
+    TEXT("Sealed auxiliary power, stronger winch and deeper-water operation."),
+    TEXT("Add missing four-wheel high drive, then low range and reinforced crawler gearing. Factory equipment is retained."),
+    TEXT("Add a locker on the main drive axle, then both axles; stage III adds limited-slip preload when unlocked. Z rear / U front; stop to engage."),
+    TEXT("Wheel-end reduction raises the axle shafts and body. More clearance and torque trade road speed, weight and rotating response.")};
   if(Part==TerraSim::Electrical)return !HasElectrical()?TEXT("Not fitted to this vehicle."):VehicleIndex==4?TEXT("Battery/inverter output, sealing and auxiliary power."):Descriptions[Part];
   return Descriptions[Part];
+}
+FString ATerraVehicle::UpgradeStageName(int Part,int Stage) const {
+  if(Stage==0)return TEXT("STOCK");
+  if(Part==TerraSim::Drivetrain)return Stage==1?TEXT("4H"):Stage==2?TEXT("4L"):TEXT("CRAWL");
+  if(Part==TerraSim::Differentials)return Stage==1?TEXT("MAIN"):Stage==2?TEXT("BOTH"):TEXT("LSD+");
+  if(Part==TerraSim::Portals)return FString::Printf(TEXT("+%.1f\""),TerraUnits::Inches(Stage==1?.08f:Stage==2?.13f:.18f));
+  return Stage==1?TEXT("I"):Stage==2?TEXT("II"):TEXT("III");
 }
 FString ATerraVehicle::UpgradeEffect(int Part) const{
   const int S=UpgradeStage(Part);
   switch(Part){
-  case TerraSim::Suspension:return FString::Printf(TEXT("+%.1f in travel  /  +%.1f in lift  /  +%.0f%% damping"),TerraUnits::Inches(Tuning.Travel),TerraUnits::Inches(Tuning.Lift),(Tuning.Damping-1)*100);
+  case TerraSim::Suspension:return FString::Printf(TEXT("+%.1f in travel  /  +%.1f in spring lift  /  +%.0f%% damping"),TerraUnits::Inches(Tuning.Travel),TerraUnits::Inches(Tuning.Lift-Tuning.PortalLift),(Tuning.Damping-1)*100);
   case TerraSim::Engine:return FString::Printf(TEXT("+%.0f%% output  /  %.0f hp total"),(Tuning.Power-1)*100,PowerHP());
   case TerraSim::Tires:return FString::Printf(TEXT("%.1f in diameter  /  %.1f in width  /  +%.0f%% grip"),TireDiameter(),TerraUnits::Inches(Width),(Tuning.Grip-1)*100);
   case TerraSim::Wheels:return FString::Printf(TEXT("%.0f%% less rotational inertia  /  +%.1f in track"),(1-Tuning.WheelInertia)*100,TerraUnits::Inches(Tuning.Track));
   case TerraSim::Frame:return FString::Printf(TEXT("+%.0f%% chassis damping  /  %.0f%% less combined impact damage"),(Tuning.Stability-1)*100,(1-Tuning.Damage)*100);
   case TerraSim::Body:return FString::Printf(TEXT("%.0f lb total  /  %.0f%% less drag  /  armor stage %d"),TerraUnits::Pounds(Mass),(1-Tuning.Drag)*100,S);
   case TerraSim::Electrical:return !HasElectrical()?TEXT("NOT AVAILABLE"):FString::Printf(TEXT("+%.0f%% winch  /  %.1f in water margin%s"),(Tuning.Winch-1)*100,TerraUnits::Inches(Tuning.WaterDepth),VehicleIndex==4?*FString::Printf(TEXT("  /  +%.0f%% EV output"),(Tuning.ElectricalPower-1)*100):TEXT(""));
+  case TerraSim::Drivetrain:return FString::Printf(TEXT("%s  /  %s  /  %.0f lb drivetrain + locker hardware"),HasFourDrive()?TEXT("4H equipped"):TEXT("Two-wheel drive"),HasLowRange()?*FString::Printf(TEXT("%.2f:1 selectable low"),DriveCapabilities().LowRatio):TEXT("High range only"),TerraUnits::Pounds(DriveCapabilities().HardwareMass));
+  case TerraSim::Differentials:return FString::Printf(TEXT("Front: %s  /  Rear: %s%s"),HasLocker(true)?TEXT("selectable locker"):TEXT("open"),HasLocker(false)?TEXT("selectable locker"):TEXT("open"),S==3?TEXT("  /  3:1 limited-slip preload"):TEXT(""));
+  case TerraSim::Portals:return FString::Printf(TEXT("+%.1f in clearance  /  %.2f:1 reduction  /  +%.0f lb  /  %.0f%% gearing speed"),TerraUnits::Inches(PortalLift()),PortalReduction(),TerraUnits::Pounds(Tuning.HardwareMass),100/PortalReduction());
   }
   return FString();
 }

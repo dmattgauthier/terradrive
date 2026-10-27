@@ -1,32 +1,18 @@
-# Native validation — rollover and coachwork pass 12
+# Native validation — drivetrain, running gear and soil pass 13
 
-The Windows assets were fully imported, cooked and packaged with Unreal
-Engine 5.8.3. The current executable was subsequently code-staged over those
-identical packages after correcting the Urus revision assertion and refreshing
-coachwork collision readiness when leaving the garage. It passes
-**1,021 native runtime checks**, **382 core checks**,
-the all-six source geometry checks, twelve contour/pillar probes and
-1,134 fascia/90 bonnet coverage probes with zero painted intrusion. Root
-actually inspected **180 fresh native PNGs**, including sixty vehicle views and
-forty rollover cases. Numerical checks and static image review are recorded
-separately.
-
-The original Sprinter reproduction showed about seven inches of side burial,
-ten inches on its roof and up to nineteen inches in a partial-roll case.
-The corrected final package uses twelve exported-body convex sections per
-vehicle, welded to the chassis. The forty final cases cover both sides/roof
-on pavement and Pine Ridge for all six vehicles, plus four Sprinter partial
-rolls. Each trial first selects the vehicle through the garage, returns to
-driving and checks the actual weld. Worst sampled penetration is
-0.4629 inch. The 55-degree Sprinter cases
-self-right through normal gravity; their larger positive clearance is expected.
-No upright pose or velocity correction is imposed during the drop. Mass,
-centre of mass, disabled tipped tire drive and recovery are also checked.
+The Windows game was compiled, imported, fully cooked and packaged with Unreal
+Engine 5.8.3. The current package passes **1,415 native checks**, **467 portable
+simulation checks** and **648 portable spray-response checks**. The native image review covered **198 fresh native captures**, including sixty vehicle views, forty
+rollover poses, twelve stock/portal views (six pairs) and six controlled ejection views.
+All reports and pictures belong to the same current executable. Its compiled
+code stage retains the verified full asset cook without changing its containers.
 
 | Native mode | Passed |
 | --- | ---: |
+| Mechanical | 334/334 |
+| Spray | 44/44 |
 | Full | 287/287 |
-| Ruts | 101/101 |
+| Ruts | 117/117 |
 | Art | 66/66 |
 | Rollover | 321/321 |
 | Movement | 84/84 |
@@ -37,66 +23,89 @@ centre of mass, disabled tipped tire drive and recovery are also checked.
 | Balanced | 16/16 |
 | QualitySmoke | 16/16 |
 
-The Full run includes actual driving, Space-stop checks for all six vehicles,
-held-opposite-input reverse and incline-hold fixtures, wheel support, equipment
-and the stock Urus twenty-gate quarry route. Movement tests coasting terrain
-crossings, rounded rises, visible-body clearance, suspension/braking and a
-solid barrier. Its short trials use a fixed 20 Hz test clock so rendering
-stalls cannot remove the required observation frames. Player driving retains
-its normal clock. Winter checks retain the complete acquired level, internal
-road joins and four short road-driving trials; this is not a continuous drive
-of the entire authored road.
+The new Mechanical mode covers all six factory configurations, added four-wheel
+high drive, low/crawler range and selectable lockers, legacy-save migration and
+version 3 persistence. All 24 stock/portal configurations settle with four loaded
+tires; actual welded mass, incremental clearance, installed housings and loaded
+materials are checked. Six short drives verify that rims and friction rotors
+follow their wheels while calipers follow steering without wheel spin.
 
-The model review covers front, side, rear, three oblique directions, bonnet,
-rear closure, pillar/side detail and overhead for every vehicle, compared with
-baseline captures and actually inspected photographs/catalogue views.
-[The change report](rollover-coachwork-12.md) links the primary references and
-lists the six models' revisions. These remain procedural reconstructions with
-simplified interiors, lamp treatment, fittings and fine surfacing; the checks
-do not establish manufacturer-CAD precision or production racing-game quality.
+Spray mode isolates grass, mud, snow, sand, gravel and water using controlled
+loaded-wheel inputs. It verifies material-specific emissions, varying finite
+transforms, world-space motion, complete expiry and non-emitting pavement,
+airborne/tipped tires and solid constructed rock. Actual motor-driven mud/snow
+rut trials and Full driving checks provide separate terrain-interaction evidence.
 
-Accepted executable SHA-256:
+Ruts retains continuity, depth, slope, packing, unloaded/rigid-ground, repair,
+cache and volume accounting checks. Added checks measure unequal bank
+distribution, changing physical spread along the path and exact deterministic
+replay of floor/shoulder/packing/shear history. Reviewed profiles show broader,
+irregular low banks in mud/wet grass and compacted snow channels. Firm dirt and
+sand relief remain subtle in daylight. The straight controlled fixtures have
+straight overall wheel paths; their local shoulders vary.
 
-`449198103240594d632968c382393523a8c3ae9454fd283e3762fbdfacc43a9c`
+Full includes braking/reverse and Space-stop checks for every vehicle, wheel
+support, equipment, deformable terrain and the stock Urus twenty-gate quarry
+route. Movement covers seven coasting terrain boundaries, six rises, suspension,
+brakes and a solid obstacle. Its short trials retain their fixed 20 Hz test clock;
+player driving retains the normal clock. Rollover covers forty stock garage-to-
+driving side/roof/partial-roll poses and recovery. Every requested tipped pose
+must be observed; gravity, pose and velocity are not corrected during a drop.
+Winter checks retain the full acquired level and four short road-driving trials.
 
-Full import/cook/package log: `Saved/rollover12-build-1.log`; SHA-256:
+Vehicle review covers front, side, rear, oblique, bonnet, closure, pillar and
+overhead views. Revised barrels, fasteners, calipers, rotors and articulated
+running gear are original procedural reconstructions fitted to retained
+hardpoints. They are not measured CAD assemblies or an additional solved
+suspension-linkage simulation. The six body envelopes remain retained except
+for the three factory spare-wheel revisions. No manufacturer-CAD or production
+racing-game fidelity is claimed.
 
-`e58443806937b670bf6e87cccfa974564d86951d5f2e56d29c92bdb60c8c2117`
+Current executable SHA-256:
 
-Code-stage log: `Saved/rollover12-garage-code.log`; SHA-256:
+`0eceea64de4767f4f859c89e6b0c386c45cb8d779434910b7b2c850223bd44bb`
 
-`d8322b667e2b0fb4a30c2b6b0961d8712df017f963c8e81877851e4a900ce9ba`
+Full import/cook/package log: `Saved/mechanical13-build-3.log`; SHA-256:
 
-The original full-cook producer is
-`546310a78fab4e0c84bc6470daf399e189d38dd1fa22d342bbc881c7fc0f5e81`. Its receipt is retained unchanged.
-The code-stage guard verifies four changed source files against the original
-cook: the Urus revision assertion, garage collision preparation/activation,
-mass/centre-of-mass restoration and rollover fixtures that select through the
-garage. The earlier metadata-only runtime is retained as diagnostic history.
-All native modes and image captures were rerun against the executable above.
+`7881128f7a68c321970e3d15773872344b9a4a324c5f1beca131fb482b701922`
 
-The compiled and staged executable bytes match. All five Paks and eight
-extracted NativeData files are hash checked, including the new collision data
-and its matching body/ground-probe hashes. The source freeze covers
-97 Source/Tools/Config files. Terrain residency
-retains 49 unique bounded textures across 63 shared references. JSON evidence:
-[native-validation.json](native-validation.json). Private receipts, captures
-and logs are retained under Saved.
+The package contains 242 source-derived meshes, 72 body convex sections and eight
+verified NativeData files. All five package containers were fingerprinted and
+their extracted NativeData bytes match the current source. The import reads
+back Nanite support on scanned materials and instancing overrides on project-
+owned Epic automotive rotor instances. All native modes reject missing usage
+flags and default-material fallbacks. Original acquired Epic parents are not
+edited by the instance-override recipe.
 
-All six body geometries change. The other 232 meshes are byte-identical after
-remapping the one added Jeep reflector material's slot IDs. Vehicle mechanical
-specifications, brake/reverse bindings, terrain heights/shaders, routes, loop,
-trees and scenery placements are preserved. All 1,214 local browser hashes,
-the fresh player garage/graphics files and original acquired maps match the
-current task baseline. Generated builds, raw acquired packs, reference photos
-and private app/player data are excluded from public source publication.
+The first cooked candidate exposed five rotor-orientation failures caused by
+absolute instances lagging the chassis's final physics update. Chassis-relative
+running gear corrected them. A later numerical candidate was rejected visually
+for a snow test camera below terrain and missing renderer-usage settings. Its
+build, images and reports are retained privately. The current full cook includes
+the material and camera fixes. A later code-only stage corrects the descent
+fixture: it now begins on the actual rocky slope after the stock vehicle has
+activated, and requires downhill travel, loss of elevation and controlled peak
+speed. The cooked content is unchanged. Diagnostic candidates are excluded from
+current acceptance.
 
-The Full capped run records 371 GPU samples, maximum
-59 C, mean 28.87%
-utilization and 9.47 W. Short preset peaks are
-Cool: 65 C; Balanced: 72 C; QualitySmoke: 68 C. Quality smoke remains capped at 20 FPS; the wrappers retain 77 C
-cutoffs and isolated saves. These are bounded automated checks and actual
-image review, not a separate manual/controller session, every possible terrain
-pose, normal 60 FPS endurance, long-session thermal stability or a diagnosis of
-the prior PC reboots. Physical soil remains a bounded proving-ground height
-field; the authored Winter Expedition landscape and road remain static.
+All 1,214 preserved browser files, the player's garage and graphics files, the
+original terrain height data and both protected original Winter Scene maps
+match the fresh pre-pass checkpoint. Publication retains 189 browser entries and
+86 binary entries from the approved source repository. Generated Windows builds,
+UAssets, acquired Epic/Fab assets, reference photos and private app/player files
+remain outside the public source upload.
+
+Driving, art, soil and Quality-smoke verification use a 20 FPS cap. Brief Cool
+and Balanced samples exercise their 30/45 FPS limits. Every native run uses the
+77°C cutoff. The highest sampled GPU
+temperature across these runs was **69°C**. This is capped automated
+verification and static image review, not a separate manual/controller session,
+normal 60 FPS endurance run, long-session thermal guarantee or reboot diagnosis.
+
+Physical ruts use the proving ground's bounded height field. The acquired Winter
+Expedition landscape and road remain authored/static. Airborne debris is a
+short-lived visual effect, not a collection of persistent loose rigid bodies.
+Aftermarket portal/drivetrain conversions are fictional simulator options.
+
+Machine-readable evidence is in [native-validation.json](native-validation.json).
+Implementation and controls are in [mechanical-soil-13.md](mechanical-soil-13.md).
