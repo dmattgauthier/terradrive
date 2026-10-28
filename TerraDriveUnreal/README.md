@@ -1,6 +1,8 @@
 # Terra Drive native port
 
-The [expedition, electric drive and tire-air pass 14](docs/expedition-electric-14.md) expands the native garage to **nine vehicles and twelve upgrade categories**, adding the EarthCruiser EXP, Mercedes-Benz G 580 with EQ Technology and Mercedes-AMG G 63. Original reference-built bodies accompany distinct factory electric layouts, fictional staged conversions, regenerative/service-brake blending and finite-rate tire-air systems. The current Windows package passes **2,087 native checks** and **1,393 portable checks**, with **279 fresh native captures actually reviewed**. Exact executable/cook provenance, measured results and limits are in [validation-native.md](docs/validation-native.md).
+The current native pass refines both Mercedes G-Class bodies and their wheel/body proportions, distinguishes factory-EV power tuning from donor-specific engine conversions, and adds [visible impact damage with Free Run](docs/vehicle-damage.md). Factory EV motor layouts stay fixed; gasoline conversion kits provide 350/500/700 hp base outputs. The package passes **2,288 native checks** and **830 portable checks**, with **327 fresh captures actually reviewed**. Exact package provenance, measurements and limits are in [validation-native.md](docs/validation-native.md). The garage retains nine vehicles and twelve upgrade categories from [pass 14](docs/expedition-electric-14.md).
+
+**Known performance limitation:** real-time quarry play remains poor. A separate current-machine profile after unused applications were closed averages about **3.33 FPS**, dominated by CPU physics work. The cause within physics remains unresolved. The fixed 20 Hz validation clock verifies controlled behavior and does not fix player performance; the passing functional checks do not establish smooth gameplay. See the [measurements and limits](docs/validation-native.md).
 
 The preceding [drivetrain, running gear and soil pass 13](docs/mechanical-soil-13.md) added
 staged four-wheel drive, low range, axle lockers and portal conversions in the
@@ -171,4 +173,3 @@ Earlier controls and researched refinements for the original six vehicles are de
 See [lighting-tracks-urus.md](docs/lighting-tracks-urus.md) for the original V8 Urus Performante, brake/reverse lights, CC0 scan sources and photographic sky. Vendored native sources are under Vendor/Environment. Run Tools/fetch-environment-assets.py only to recover missing source downloads; normal builds use the included offline copies.
 
 The corrective [surface deformation round](docs/surface-deformation.md) replaces dark off-road tread ribbons with physical grooves, raised shoulders, compacted snow, light dusty dirt trails and bent grass instances. Rubber skidmarks are restricted to pavement traction loss. Backspace repairs terrain, plants and marks. The same document records the inspected Fab library, the downloaded quarry pack and additional free asset candidates.
-

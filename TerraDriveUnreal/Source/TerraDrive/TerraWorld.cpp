@@ -1,6 +1,7 @@
 #include "TerraWorld.h"
 #include "TerraSimCore.h"
 #include "TerraSoilVariation.h"
+#include "TerraSoilMeshComponent.h"
 #include "TerraContact.h"
 #include "TerraWinter.h"
 #include "Components/BoxComponent.h"
@@ -50,6 +51,17 @@ FLinearColor Tint(uint8 S) {
       FLinearColor(.65, .66, .62), FLinearColor(.8, .72, .52),
       FLinearColor(.94, .97, 1)};
   return C[FMath::Min<int>(S, 6)];
+}
+bool GroundRendererReady(UProceduralMeshComponent* Mesh,bool AllowPendingRecreation=false){
+  if(!IsValid(Mesh)||!Mesh->IsRegistered()||!Mesh->IsVisible()||Mesh->bHiddenInGame||
+     !Mesh->IsRenderStateCreated()||!Mesh->GetSceneProxy()||(!AllowPendingRecreation&&Mesh->IsRenderStateDirty()))return false;
+  bool Geometry=false;
+  for(int I=0;I<Mesh->GetNumSections();++I){const auto* S=Mesh->GetProcMeshSection(I);
+    if(!S||S->ProcIndexBuffer.IsEmpty())continue;
+    if(!S->bSectionVisible||S->ProcVertexBuffer.Num()<3||!IsValid(Mesh->GetMaterial(I)))return false;
+    Geometry=true;
+  }
+  return Geometry;
 }
 } // namespace
 ATerraWorld::ATerraWorld() {
@@ -468,8 +480,8 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
       float X = X0 + (I + .5f) * 100, Y = Y0 + (J + .5f) * 100;
       if (FMath::Abs(X) > 40000 || FMath::Abs(Y) > 40000)
         continue;
-      if (Detail.Contains(
-              {FMath::FloorToInt(X / TileCM), FMath::FloorToInt(Y / TileCM)}))
+      const auto* Fine=Detail.Find({FMath::FloorToInt(X/TileCM),FMath::FloorToInt(Y/TileCM)});
+      if (Fine&&Fine->CoarseReplaced)
         continue;
       int A = J * (D + 1) + I;
       auto &T = Indices[SurfaceAt(X, Y)];
@@ -485,6 +497,10 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
   if (auto *T = Detail.Find(Key))
     return T;
   if(Detail.Num()>=FMath::Clamp(ActiveTileLimit,8,768)){
+    // Keep the outgoing fine surface until the replacement coarse proxy is
+    // ready. Bound this overlap queue; a full queue leaves new ground coarse
+    // for a frame rather than dropping visible coverage or growing forever.
+    if(RetiredSoilMeshes.Num()>=64)return nullptr;
     FIntPoint Farthest=Key;double Distance=-1;
     for(const auto &Pair:Detail){const double D=FMath::Square(double(Pair.Key.X-Key.X))+FMath::Square(double(Pair.Key.Y-Key.Y));
       if(D>Distance){Distance=D;Farthest=Pair.Key;}}
@@ -492,8 +508,10 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
     FTerraSoilState State;State.Delta=MoveTemp(Old.Delta);State.Packing=MoveTemp(Old.Packing);
     State.Churn=MoveTemp(Old.Churn);State.Heading.SetNumUninitialized(Old.UV.Num());
     for(int I=0;I<Old.UV.Num();++I)State.Heading[I]=StoreSoilHeading(Old.UV[I]);
-    SoilCache.Add(Farthest,MoveTemp(State));Old.Mesh->DestroyComponent();Detail.Remove(Farthest);
-    RebuildGround({FMath::FloorToInt(Farthest.X/8.f),FMath::FloorToInt(Farthest.Y/8.f)});
+    SoilCache.Add(Farthest,MoveTemp(State));
+    const FIntPoint Parent(FMath::FloorToInt(Farthest.X/8.f),FMath::FloorToInt(Farthest.Y/8.f));
+    RetiredSoilMeshes.Add({Old.Mesh,Farthest,Parent,SoilWorldTick+2});Detail.Remove(Farthest);
+    RebuildGround(Parent);
     // Bound offscreen history separately. Exhausting render tiles must never
     // disable new ruts everywhere, as the former fixed pool did.
     if(SoilCache.Num()>8192){
@@ -514,7 +532,7 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
     T.Delta.Init(0,(Div+1)*(Div+1));T.Packing.Init(0,T.Delta.Num());
     T.Churn.Init(0,T.Delta.Num());T.UV.Init(FVector2D(1,0),T.Delta.Num());
   }
-  T.Mesh = NewObject<UProceduralMeshComponent>(this);
+  T.Mesh = NewObject<UTerraSoilMeshComponent>(this);
   T.Mesh->SetupAttachment(RootComponent);
   T.Mesh->RegisterComponent();
   T.Mesh->SetCollisionProfileName(TEXT("BlockAll"));
@@ -534,9 +552,26 @@ FTerraTile *ATerraWorld::EnsureTile(FIntPoint Key) {
     }
   FTerraTile &New = Detail.Add(Key, MoveTemp(T));
   UpdateTile(New);
-  RebuildGround(
-      {FMath::FloorToInt(Key.X / 8.f), FMath::FloorToInt(Key.Y / 8.f)});
+  // Registration/section creation defer the scene proxy. Keep coarse faces
+  // until a later world tick observes this fine renderer ready.
   return &New;
+}
+bool ATerraWorld::HasVisibleSoilCoverage(FVector P,float RadiusCM) const {
+  int ReadyTiles=0,Pending=0,Missing=0;
+  for(int X=FMath::FloorToInt((P.X-RadiusCM)/TileCM);X<=FMath::FloorToInt((P.X+RadiusCM)/TileCM);++X)
+    for(int Y=FMath::FloorToInt((P.Y-RadiusCM)/TileCM);Y<=FMath::FloorToInt((P.Y+RadiusCM)/TileCM);++Y){
+      const FIntPoint Key(X,Y);const auto* Fine=Detail.Find(Key);
+      if(Fine&&Fine->CoarseReplaced){++ReadyTiles;if(!GroundRendererReady(Fine->Mesh))++Missing;}
+      else{
+        if(Fine)++Pending;
+        const auto* Coarse=Ground.Find({FMath::FloorToInt(X/8.f),FMath::FloorToInt(Y/8.f)});
+        // A previously rendered coarse proxy still covers an unpromoted tile
+        // while another part of its chunk awaits a proxy refresh.
+        if(!Coarse||!GroundRendererReady(*Coarse,true))++Missing;
+      }
+    }
+  UE_LOG(LogTemp,Display,TEXT("TERRA_SOIL_HANDOFF_STATUS position=%s ready=%d pending=%d retired=%d missing=%d"),*P.ToString(),ReadyTiles,Pending,RetiredSoilMeshes.Num(),Missing);
+  return Missing==0;
 }
 void ATerraWorld::ActivateSoil(FVector P,float RadiusCM){
   if(TerraWinter::IsActive(GetWorld()))return;
@@ -1042,6 +1077,22 @@ void ATerraWorld::Tick(float Dt) {
   Super::Tick(Dt);
   if (!Ready)
     return;
+  ++SoilWorldTick;
+  TSet<FIntPoint> HandoffChunks;int Promoted=0;
+  for(auto& Pair:Detail)if(!Pair.Value.CoarseReplaced&&GroundRendererReady(Pair.Value.Mesh)){
+    Pair.Value.CoarseReplaced=true;++Promoted;
+    HandoffChunks.Add({FMath::FloorToInt(Pair.Key.X/8.f),FMath::FloorToInt(Pair.Key.Y/8.f)});
+  }
+  for(const auto& Key:HandoffChunks)RebuildGround(Key);
+  for(int I=RetiredSoilMeshes.Num()-1;I>=0;--I){const auto& Old=RetiredSoilMeshes[I];
+    const auto* Coarse=Ground.Find(Old.Coarse);
+    const auto* Replacement=Detail.Find(Old.Key);
+    const bool FineReady=Replacement&&Replacement->CoarseReplaced&&GroundRendererReady(Replacement->Mesh);
+    if(SoilWorldTick>=Old.AfterTick&&(FineReady||(Coarse&&GroundRendererReady(*Coarse)))){
+      if(IsValid(Old.Mesh))Old.Mesh->DestroyComponent();RetiredSoilMeshes.RemoveAtSwap(I);
+    }
+  }
+  if(Promoted)UE_LOG(LogTemp,Verbose,TEXT("TERRA_SOIL_HANDOFF promoted=%d chunks=%d retired=%d"),Promoted,HandoffChunks.Num(),RetiredSoilMeshes.Num());
   VisualTimer += Dt;
   if (VisualTimer > .08f) {
     VisualTimer = 0;
@@ -1103,6 +1154,8 @@ void ATerraWorld::ResetSoil() {
     P.Value.Mesh->DestroyComponent();
   }
   Detail.Empty();
+  for(auto& Old:RetiredSoilMeshes)if(IsValid(Old.Mesh))Old.Mesh->DestroyComponent();
+  RetiredSoilMeshes.Empty();
   SoilCache.Empty();
   TireMarks.Empty();NextMark=0;SkidMarkCount=SoftMarkCount=0;BreakTireMarks();
   if(TireMarkMesh)TireMarkMesh->ClearAllMeshSections();

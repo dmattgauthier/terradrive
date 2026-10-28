@@ -23,6 +23,7 @@
 #include "TerraRolloverValidation.h"
 #include "TerraMechanicalValidation.h"
 #include "TerraElectricPressureValidation.h"
+#include "TerraDamageValidation.h"
 #include "TerraSprayValidation.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "ProceduralMeshComponent.h"
@@ -55,7 +56,7 @@ void ATerraHUD::DrawHUD() {
   if (!V || !Canvas || V->Garage)
     return;
   float W = Canvas->SizeX, H = Canvas->SizeY;
-  DrawRect(FLinearColor(.015, .025, .028, .88), 18, 18, 640, 196);
+  DrawRect(FLinearColor(.015, .025, .028, .88), 18, 18, 740, 222);
   DrawText(TEXT("TERRA DRIVE  /  NATIVE PREVIEW"), FLinearColor(.82, .9, .76),
            34, 28, nullptr, 1.25f);
   DrawText(V->VehicleName, FLinearColor::White, 34, 56, nullptr, 1.1f);
@@ -68,10 +69,11 @@ void ATerraHUD::DrawHUD() {
   DrawText(FString::Printf(TEXT("AXLES  Front: %s   Rear: %s   %s"),
       V->IndependentWheel(0)?TEXT("motor control"):V->FrontLocked?TEXT("LOCKED"):TEXT("open"),V->IndependentWheel(2)?TEXT("motor control"):V->RearLocked?TEXT("LOCKED"):TEXT("open"),
       V->DescentAssist?TEXT("DESCENT ON"):TEXT("")),FLinearColor(.95,.8,.4),34,145);
-  DrawText(V->TireAirDescription()+ (V->IsElectric()?TEXT(" / ")+V->PowertrainDescription():TEXT("")),FLinearColor(.72,.83,.88),34,173);
+  DrawText(V->TireAirDescription()+ ((V->IsElectric()||V->IsICEConversion())?TEXT(" / ")+V->PowertrainDescription():TEXT("")),FLinearColor(.72,.83,.88),34,173);
+  DrawText(V->DamageDescription(),FLinearColor(.82,.84,.78),34,200);
   DrawText(V->Overturned?TEXT("ROLLED OVER - no tire grip. R to recover."):V->Notice,
-      FLinearColor(.93,.82,.54),24,230);
-  if (!V->RouteStatus.IsEmpty()) DrawText(V->RouteStatus,FLinearColor::White,24,258);
+      FLinearColor(.93,.82,.54),24,254);
+  if (!V->RouteStatus.IsEmpty()) DrawText(V->RouteStatus,FLinearColor::White,24,282);
   DrawRect(FLinearColor(.015, .025, .028, .83), 18, H - 112, W - 36, 94);
   DrawText(TEXT("W/S  Drive / brake; hold opposite input through a stop to reverse     A/D  "
                 "Steer     Space  Brake     RMB + mouse  Camera"),
@@ -100,6 +102,10 @@ void ATerraGameMode::Tick(float Dt) {
   auto *V = Cast<ATerraVehicle>(UGameplayStatics::GetPlayerPawn(this, 0));
   if (!V || !V->Terrain || !V->Terrain->Ready || !V->Initialized)
     return;
+  // Regression routes deliberately crash/roll vehicles to test terrain and controls.
+  // Damage behavior has its own enabled-impact acceptance mode.
+  const bool DamageValidation=FParse::Param(FCommandLine::Get(),TEXT("TerraDamageOnly"));
+  if(!DamageValidation&&V->DamageEnabled)V->SetDamageEnabled(false,false);
   StageTime += Dt;
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraSoilOnly"))){Stage=51;StageTime=0;}
   auto Check = [&](const FString &Name, bool Pass, float Value=0.f) {
@@ -113,6 +119,10 @@ void ATerraGameMode::Tick(float Dt) {
     if (FParse::Param(FCommandLine::Get(),TEXT("TerraCapture")))
       FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
   };
+  if(DamageValidation){
+    if(TerraDamageValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverOnly"))){
     if(TerraRolloverValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;

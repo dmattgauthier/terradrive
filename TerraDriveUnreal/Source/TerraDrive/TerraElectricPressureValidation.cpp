@@ -1,5 +1,6 @@
 #include "TerraElectricPressureValidation.h"
 #include "TerraVehicle.h"
+#include "TerraGarage.h"
 #include "TerraElectric.h"
 #include "TerraPressure.h"
 #include "TerraContact.h"
@@ -20,12 +21,15 @@
 #include "Serialization/JsonSerializer.h"
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
+#include "Widgets/Layout/SScrollBox.h"
+#include "Widgets/Text/STextBlock.h"
 
 namespace TerraElectricPressureValidation {
 namespace {
 constexpr int Count=ATerraVehicle::VehicleCount,MatrixTrials=Count*4,AirBegin=MatrixTrials;
-constexpr int DriveBegin=AirBegin+3,BrakeBegin=DriveBegin+6,SteerBegin=BrakeBegin+2,SoilBegin=SteerBegin+2,TrialCount=SoilBegin+2;
+constexpr int DriveBegin=AirBegin+3,BrakeBegin=DriveBegin+12,SteerBegin=BrakeBegin+2,SoilBegin=SteerBegin+2,UIBegin=SoilBegin+2,TrialCount=UIBegin+3;
 constexpr float SoilWindowStartM=4,SoilWindowEndM=8,SoilFinishM=10.5f,SoilEntryMPS=2.5f;
+constexpr float RoadRearCM=650,RoadForwardCM=6500,RoadHalfWidthCM=650;
 struct FSoilPoint {
   FVector Position=FVector::ZeroVector;
   float ForwardM=0,PatchM=0,LoadN=0,SpeedMPS=0;
@@ -38,7 +42,7 @@ struct FState {
   FTerraWheel OriginalWheels[4];
   int OriginalVehicle=0,OriginalZone=0,OriginalRoute=-1,Trial=0,Phase=0,Frames=0,MovingFrames=0,LoadedFrames=0;
   bool OriginalGarage=false,OriginalTracks=false,OriginalFour=false,OriginalLow=false,OriginalFrontLock=false,OriginalRearLock=false,OriginalDescent=false;
-  bool OriginalDriverInput=false,OriginalForward=false,OriginalReverse=false,OriginalStop=false,OriginalHUD=true,OriginalAirRequested=false;
+  bool OriginalDriverInput=false,OriginalForward=false,OriginalReverse=false,OriginalStop=false,OriginalHUD=true,OriginalAirRequested=false,OriginalDamageEnabled=true;
   float OriginalPressure=35,OriginalTarget=35,OriginalSOC=1,OriginalDamage=0;
   float OriginalThrottle=0,OriginalSteer=0,OriginalBrake=0,Time=0,PeakSpeed=0,PeakDrive=0,PeakRegen=0,WheelDifference=0,LoadedFraction=0;
   float InitialPSI=35,PatchSum=0,LoadSum=0,MaxDepth=0,StartYaw=0,BrakeDistance[2]={},BrakeTime[2]={},SteerYaw[2]={},SteerLateral[2]={},SoilPatch[2]={},SoilDepth[2]={};
@@ -51,7 +55,8 @@ struct FState {
   FTransform OriginalTransform;
   FVector OriginalVelocity=FVector::ZeroVector,OriginalAngular=FVector::ZeroVector;
   FVector Start=FVector::ZeroVector,Fixture=FVector::ZeroVector,RoadFixture=FVector::ZeroVector,SoftFixture=FVector::ZeroVector;
-  bool RoadReady=false,SoftReady=false,Finite=true,DrivenCorrectly=true,FixtureValid=false,Stopped=false,Restored=false;
+  bool RoadReady=false,SoftReady=false,Finite=true,DrivenCorrectly=true,FixtureValid=false,Stopped=false,Restored=false,DriveCorridor=true,ParkPending=false;
+  float DriveMaximumSideCM=0,DriveMaximumForwardCM=0,DriveMinimumForwardCM=0;
   int FactoryQuad=4;
 } State;
 
@@ -98,34 +103,49 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
     V->PressureProfiles[I]=30.f+I*2;V->BatteryProfiles[I]=.2f+I*.07f;
   }
   V->PressureTarget=30.f+V->VehicleIndex*2;V->BatterySOC=.2f+V->VehicleIndex*.07f;
-  bool RoundTrip=V->SaveGarage(Path(TEXT("electric-v4-roundtrip.json")));
+  V->DamageEnabled=false;
+  bool RoundTrip=V->SaveGarage(Path(TEXT("electric-v5-roundtrip.json")));
   FString Json;TSharedPtr<FJsonObject> Root;
-  bool Shape=FFileHelper::LoadFileToString(Json,*Path(TEXT("electric-v4-roundtrip.json")))&&
+  bool Shape=FFileHelper::LoadFileToString(Json,*Path(TEXT("electric-v5-roundtrip.json")))&&
     FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
   if(Shape){
     double Version=0;const TArray<TSharedPtr<FJsonValue>>* Cars=nullptr;
-    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==4&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==Count;
+    bool DamageMode=true;
+    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==5&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==Count&&Root->TryGetBoolField(TEXT("damageEnabled"),DamageMode)&&!DamageMode;
     if(Shape)for(const auto& Car:*Cars){const TArray<TSharedPtr<FJsonValue>>* Parts=nullptr;Shape&=Car->TryGetArray(Parts)&&Parts->Num()==12;}
   }
   for(auto& Build:V->Builds)Build={};
-  RoundTrip&=V->LoadGarage(Path(TEXT("electric-v4-roundtrip.json")))&&SameBuilds(V,Loaded);
-  Check(TEXT("v4 garage stores exactly nine vehicles with twelve ordered upgrade slots"),Shape,TerraSim::PartCount);
-  Check(TEXT("v4 round trip retains each vehicle EV swap tire air and previous hardware stages"),RoundTrip,Count);
+  V->DamageEnabled=true;
+  RoundTrip&=V->LoadGarage(Path(TEXT("electric-v5-roundtrip.json")))&&SameBuilds(V,Loaded)&&!V->DamageEnabled;
+  Check(TEXT("v5 garage stores nine vehicles twelve ordered upgrade slots and the free run setting"),Shape,TerraSim::PartCount);
+  Check(TEXT("v5 round trip retains donor appropriate powertrain conversion and all previous hardware stages"),RoundTrip,Count);
   bool Profiles=RoundTrip;
   for(int I=0;I<Count;++I)Profiles&=FMath::Abs(V->PressureProfiles[I]-(30.f+I*2))<.001f&&FMath::Abs(V->BatteryProfiles[I]-(.2f+I*.07f))<.00001f;
-  Check(TEXT("v4 round trip retains nine independent pressure targets and battery charge states"),Profiles,Count);
+  Check(TEXT("v5 round trip retains nine independent pressure targets and battery charge states"),Profiles,Count);
   bool BadProfile=false;
   if(Root.IsValid()){
     auto Bad=Root->GetArrayField(TEXT("pressureTargets"));Bad[0]=MakeShared<FJsonValueNumber>(7);Root->SetArrayField(TEXT("pressureTargets"),Bad);
     FString BadJson;
     BadProfile=FJsonSerializer::Serialize(Root,TJsonWriterFactory<>::Create(&BadJson))&&
-      FFileHelper::SaveStringToFile(BadJson,*Path(TEXT("electric-v4-invalid-pressure.json")))&&
-      !V->LoadGarage(Path(TEXT("electric-v4-invalid-pressure.json")))&&SameBuilds(V,Loaded);
+      FFileHelper::SaveStringToFile(BadJson,*Path(TEXT("electric-v5-invalid-pressure.json")))&&
+      !V->LoadGarage(Path(TEXT("electric-v5-invalid-pressure.json")))&&SameBuilds(V,Loaded)&&!V->DamageEnabled;
     for(int I=0;I<Count;++I)BadProfile&=FMath::Abs(V->PressureProfiles[I]-(30.f+I*2))<.001f&&FMath::Abs(V->BatteryProfiles[I]-(.2f+I*.07f))<.00001f;
   }
-  Check(TEXT("invalid v4 tire pressure rejects atomically without altering builds or charge profiles"),BadProfile,7);
+  Check(TEXT("invalid v5 tire pressure rejects atomically without altering builds charge profiles or free run"),BadProfile,7);
+  TSharedPtr<FJsonObject> Legacy;
+  bool Migration=FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Legacy)&&Legacy.IsValid();
+  if(Migration){
+    Legacy->SetNumberField(TEXT("version"),4);Legacy->RemoveField(TEXT("damageEnabled"));FString LegacyJson;
+    Migration=FJsonSerializer::Serialize(Legacy,TJsonWriterFactory<>::Create(&LegacyJson))&&
+      FFileHelper::SaveStringToFile(LegacyJson,*Path(TEXT("electric-v4-migration.json")))&&V->LoadGarage(Path(TEXT("electric-v4-migration.json")))&&V->DamageEnabled;
+    for(int I=0;I<Count;++I){
+      for(int P=0;P<TerraSim::PartCount;++P)Migration&=V->Builds[I].Stage[P]==((I==4||I==7)&&P==TerraSim::EVSwap?0:Loaded[I].Stage[P]);
+      Migration&=FMath::Abs(V->PressureProfiles[I]-(30.f+I*2))<.001f&&FMath::Abs(V->BatteryProfiles[I]-(.2f+I*.07f))<.00001f;
+    }
+  }
+  Check(TEXT("v4 factory EV replacements migrate to original motor layout without reinterpreting them as gasoline kits or losing other saved fields"),Migration,Count);
   for(int I=0;I<Count;++I){V->Builds[I]=State.Before[I];V->PressureProfiles[I]=State.BeforePressure[I];V->BatteryProfiles[I]=State.BeforeBattery[I];}
-  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->TireAirRequested=State.OriginalAirRequested;
+  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->TireAirRequested=State.OriginalAirRequested;V->DamageEnabled=State.OriginalDamageEnabled;
 }
 void ResetInput(ATerraVehicle* V){
   V->TestDriverInput=false;V->TestForward=V->TestReverse=V->TestStop=false;
@@ -147,7 +167,7 @@ void Restore(ATerraVehicle* V){
   V->SetGarage(true);for(int I=0;I<Count;++I)V->Builds[I]=State.Before[I];
   V->SelectVehicle(State.OriginalVehicle);V->SetTracks(State.OriginalTracks);
   for(int I=0;I<Count;++I){V->PressureProfiles[I]=State.BeforePressure[I];V->BatteryProfiles[I]=State.BeforeBattery[I];}
-  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->Damage=State.OriginalDamage;
+  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->Damage=State.OriginalDamage;V->DamageEnabled=State.OriginalDamageEnabled;
   V->FourDrive=State.OriginalFour;V->LowRange=State.OriginalLow;V->FrontLocked=State.OriginalFrontLock;V->RearLocked=State.OriginalRearLock;V->DescentAssist=State.OriginalDescent;
   V->Zone=State.OriginalZone;V->RouteIndex=State.OriginalRoute;V->SetGarage(State.OriginalGarage);
   V->SetActorTransform(State.OriginalTransform,false,nullptr,ETeleportType::TeleportPhysics);
@@ -162,7 +182,10 @@ bool ClearCorridor(ATerraVehicle* V,FVector P,int Surface,float LengthCM,float H
   auto* T=V->Terrain.Get();const float StartHeight=T->Height(P.X,P.Y);
   const float MinimumNormalZ=Surface==5?.985f:.995f,MaximumReliefCM=Surface==5?150.f:60.f;
   const float Spacing=Surface==5?100:400;
-  for(float Along=-350;Along<=LengthCM;Along+=Spacing)for(int Across=-2;Across<=2;++Across){
+  const float TerrainStart=Surface==5?-350:-RoadRearCM;
+  const int TerrainSteps=Surface==5?FMath::FloorToInt((LengthCM-TerrainStart)/Spacing):FMath::CeilToInt((LengthCM-TerrainStart)/Spacing);
+  for(int Step=0;Step<=TerrainSteps;++Step)for(int Across=-2;Across<=2;++Across){
+    const float Along=FMath::Min(TerrainStart+Step*Spacing,LengthCM);
     if(Surface!=5&&FMath::Abs(Across)==1)continue;
     const float Side=HalfWidthCM*Across*.5f;
     const FVector Q=P+FVector(Along,Side,0);const auto S=T->Sample(Q);const auto B=T->SurfaceBlend(Q.X,Q.Y);
@@ -170,10 +193,15 @@ bool ClearCorridor(ATerraVehicle* V,FVector P,int Surface,float LengthCM,float H
     if(Surface==5&&(S.Softness<.72f||S.MaxSink<.27f||S.Water>.1f||FMath::Abs(S.Normal.Y)>.08f))return false;
   }
   FCollisionQueryParams Params(SCENE_QUERY_STAT(TerraElectricPressureCorridor),false,V);
-  for(float Along=-250;Along<=LengthCM;Along+=350){
-    FVector Q=P+FVector(Along,0,0);Q.Z=T->Height(Q.X,Q.Y)+120;
+  const float QueryStart=Surface==5?-250:-RoadRearCM;
+  const int QuerySteps=Surface==5?FMath::FloorToInt((LengthCM-QueryStart)/350):FMath::CeilToInt((LengthCM-QueryStart)/350);
+  // 380 cm-long boxes spaced at most 350 cm overlap continuously; road
+  // queries include both exact endpoints, including the EXP's rear margin.
+  for(int Step=0;Step<=QuerySteps;++Step){
+    const float Along=FMath::Min(QueryStart+Step*350,LengthCM);
+    FVector Q=P+FVector(Along,0,0);Q.Z=T->Height(Q.X,Q.Y)+(Surface==5?120:260);
     TArray<FOverlapResult> Overlaps;
-    if(V->GetWorld()->OverlapMultiByChannel(Overlaps,Q,FQuat::Identity,ECC_WorldStatic,FCollisionShape::MakeBox(FVector(190,HalfWidthCM,100)),Params)){
+    if(V->GetWorld()->OverlapMultiByChannel(Overlaps,Q,FQuat::Identity,ECC_WorldStatic,FCollisionShape::MakeBox(FVector(190,HalfWidthCM,Surface==5?100:240)),Params)){
       if(Surface!=5)return false;
       // A permitted dune can rise into this above-ground body envelope. Its
       // terrain triangles are the driving surface, not an obstacle. Keep all
@@ -196,7 +224,7 @@ bool FindFixture(ATerraVehicle* V,bool Soft,FVector& Out){
   for(int X=-30;X<=30;++X)for(int Y=-30;Y<=30;++Y){
     const float Cost=X*X+Y*Y;if(Cost>=Best)continue;
     const FVector P=Origin+FVector(X*200,Y*200,0);
-    if(ClearCorridor(V,P,Soft?5:1,Soft?1600:6500,Soft?220:650)){Best=Cost;Candidate=P;Found=true;}
+    if(ClearCorridor(V,P,Soft?5:1,Soft?1600:RoadForwardCM,Soft?220:RoadHalfWidthCM)){Best=Cost;Candidate=P;Found=true;}
   }
   if(Found){Stored=Candidate;Ready=true;}Out=Candidate;return Found;
 }
@@ -204,19 +232,39 @@ void Configure(ATerraVehicle* V,int Index,int Swap,float Psi,int Air=0){
   PlayerView(V);V->SetGarage(true);V->SelectVehicle(Index);V->ResetUpgrades(false);
   V->SetUpgrade(TerraSim::EVSwap,Swap,false);V->SetUpgrade(TerraSim::TireAir,Air,false);
   V->RequestTirePressure(Psi);V->BatterySOC=.65f;V->Damage=0;ResetInput(V);
-  if(Swap==1)V->FourDrive=false;
+  if(Swap==1&&!V->IsFactoryElectric())V->FourDrive=false;
 }
 void Park(ATerraVehicle* V,bool Soft){
   V->SetGarage(false);V->TeleportZone(Soft?5:1);V->RouteIndex=-1;ResetInput(V);
   V->Terrain->ResetSoil();State.FixtureValid=FindFixture(V,Soft,State.Fixture);
   State.Fixture.Z=V->Terrain->Height(State.Fixture.X,State.Fixture.Y);
-  const FVector Normal=V->Terrain->Sample(State.Fixture).Normal;
-  V->SetActorLocationAndRotation(State.Fixture+FVector(0,0,V->ExpectedRideHeight()*100+10),
-    FRotationMatrix::MakeFromXZ(FVector::ForwardVector,Normal).Rotator(),false,nullptr,ETeleportType::TeleportPhysics);
-  V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
-  State.Finite=State.DrivenCorrectly=true;State.Frames=State.LoadedFrames=State.MovingFrames=0;
+  State.Finite=State.DrivenCorrectly=State.DriveCorridor=true;State.DriveMaximumSideCM=State.DriveMaximumForwardCM=State.DriveMinimumForwardCM=0;State.Frames=State.LoadedFrames=State.MovingFrames=0;
   State.PeakSpeed=State.PeakDrive=State.PeakRegen=State.WheelDifference=State.PatchSum=State.LoadSum=State.MaxDepth=0;
-  State.Stopped=false;State.Start=V->GetActorLocation();Phase(1);
+  // Re-enabling the garage's welded physics body can restore its pending pose
+  // after this tick. Place the road fixture only after that restoration settles.
+  State.Stopped=false;State.ParkPending=true;State.Start=V->GetActorLocation();Phase(1);
+}
+void FinishRoadPark(ATerraVehicle* V){
+  if(State.FixtureValid){
+    const FVector Normal=V->Terrain->Sample(State.Fixture).Normal;
+    V->SetActorLocationAndRotation(State.Fixture+FVector(0,0,V->ExpectedRideHeight()*100+10),
+      FRotationMatrix::MakeFromXZ(FVector::ForwardVector,Normal).Rotator(),false,nullptr,ETeleportType::TeleportPhysics);
+    V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+    for(auto& Wheel:V->WheelState)Wheel=FTerraWheel();
+  }
+  ResetInput(V);V->ResetContactTelemetry();State.Start=V->GetActorLocation();State.ParkPending=false;Phase(1);
+  UE_LOG(LogTemp,Display,TEXT("TERRA_PRESSURE_ROAD_PLACE trial=%d found=%d requested=%s actual=%s yaw=%.4f"),
+    State.Trial,State.FixtureValid,*State.Fixture.ToString(),*V->GetActorLocation().ToString(),V->GetActorRotation().Yaw);
+}
+bool RoadEntry(ATerraVehicle* V){
+  const float Offset=FVector::Dist2D(V->GetActorLocation(),State.Fixture);
+  const float Heading=FMath::Abs(FMath::FindDeltaAngleDegrees(0.f,float(V->GetActorRotation().Yaw)));
+  const bool Matches=State.FixtureValid&&!V->Garage&&Offset<=12&&Heading<=1&&
+    V->Terrain->SurfaceBlend(V->GetActorLocation().X,V->GetActorLocation().Y).Weight[1]>.97f;
+  State.FixtureValid=Matches;
+  UE_LOG(LogTemp,Display,TEXT("TERRA_PRESSURE_ROAD_ENTRY trial=%d matched=%d requested=%s actual=%s offsetCM=%.4f headingDegrees=%.4f contacts=%d"),
+    State.Trial,Matches,*State.Fixture.ToString(),*V->GetActorLocation().ToString(),Offset,Heading,V->ContactCount);
+  return Matches;
 }
 void RollingStart(ATerraVehicle* V,float Speed){
   // Initial condition only. Subsequent motion, drive, braking and terrain
@@ -299,6 +347,17 @@ bool SoilProfile(ATerraVehicle* V,int Trial,float& Coverage,int& Samples){
 }
 void Record(ATerraVehicle* V){
   ++State.Frames;State.Finite&=!V->GetActorLocation().ContainsNaN()&&FMath::IsFinite(V->Speed)&&FMath::IsFinite(V->LastRegenPowerW);
+  if(State.Trial>=DriveBegin&&State.Trial<BrakeBegin){
+    // The whole coachwork must remain inside the searched road corridor for
+    // acceleration, coasting AND braking. A chassis centre alone can still
+    // carry a turning nose into scenery just beyond the clear strip.
+    const FBox Box=V->Body->CalcBounds(V->Body->GetComponentTransform()).GetBox();
+    const FVector Low=Box.Min-State.Fixture,High=Box.Max-State.Fixture;
+    const float Side=FMath::Max(FMath::Abs(float(Low.Y)),FMath::Abs(float(High.Y)));
+    State.DriveMaximumSideCM=FMath::Max(State.DriveMaximumSideCM,Side);State.DriveMaximumForwardCM=FMath::Max(State.DriveMaximumForwardCM,float(High.X));
+    State.DriveMinimumForwardCM=FMath::Min(State.DriveMinimumForwardCM,float(Low.X));
+    State.DriveCorridor&=State.FixtureValid&&Low.X>=-RoadRearCM&&High.X<=RoadForwardCM&&Side<=RoadHalfWidthCM;
+  }
   State.PeakSpeed=FMath::Max(State.PeakSpeed,FMath::Abs(V->Speed));
   if(FMath::Abs(V->Speed)>.1f)++State.MovingFrames;if(V->ContactCount>=3)++State.LoadedFrames;
   float Sum=0;
@@ -313,18 +372,19 @@ void Record(ATerraVehicle* V){
   if(V->Overturned||V->GetActorUpVector().Z<.15f){V->TestThrottle=0;V->TestBrake=1;State.Finite=false;}
 }
 void Matrix(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
-  const int Index=State.Trial/4,Stage=State.Trial%4;const FString Label=FString::Printf(TEXT("vehicle %d EV stage %d "),Index,Stage);
+  const int Index=State.Trial/4,Stage=State.Trial%4;const FString Label=FString::Printf(TEXT("vehicle %d conversion stage %d "),Index,Stage);
   if(State.Phase==0){
     Configure(V,Index,Stage,Metadata(V,Index,TEXT("stockPSI"),35));
-    const auto Config=V->ElectricConfig();const auto Expected=TerraSim::ResolveMotorLayout(Stage,int(Metadata(V,Index,TEXT("electricMotors"))));
+    const auto Config=V->ElectricConfig();const auto ICE=V->CombustionConfig();const auto Expected=TerraSim::ResolveMotorLayout(Stage,int(Metadata(V,Index,TEXT("electricMotors"))));
     bool Layout=V->ElectricLayout()==Expected&&V->IsElectric()==(Expected!=TerraSim::MotorLayout::None);
-    if(Stage==1)Layout&=!V->DrivenWheel(0)&&V->DrivenWheel(2);
+    if(Expected==TerraSim::MotorLayout::Single)Layout&=!V->DrivenWheel(0)&&V->DrivenWheel(2);
+    if(V->IsICEConversion())Layout&=Expected==TerraSim::MotorLayout::None&&V->DrivenWheel(0)&&V->DrivenWheel(3)&&V->UpgradeName(TerraSim::EVSwap)==TEXT("ICE CONVERSION")&&Config.RegenPowerW==0&&Config.BatteryKWh==0;
     if(Expected==TerraSim::MotorLayout::Dual||Expected==TerraSim::MotorLayout::Triple||Expected==TerraSim::MotorLayout::Quad)
       for(int I=0;I<4;++I)Layout&=V->DrivenWheel(I);
     for(int I=0;I<4;++I)Layout&=V->IndependentWheel(I)==TerraSim::IndependentElectricWheel(Expected,I);
     Check(Label+TEXT("factory or selected motor topology controls the correct driven wheels"),Layout,TerraSim::ElectricMotorCount(V->ElectricLayout()));
-    const float ExpectedMass=Metadata(V,Index,TEXT("mass"))+Config.NetMassKg;
-    const float ExpectedPower=V->IsElectric()?Config.PowerW:Metadata(V,Index,TEXT("powerHP"))*745.7f;
+    const float ExpectedMass=Metadata(V,Index,TEXT("mass"))+Config.NetMassKg+ICE.NetMassKg;
+    const float ExpectedPower=V->IsElectric()?Config.PowerW:V->IsICEConversion()?ICE.PowerW:Metadata(V,Index,TEXT("powerHP"))*745.7f;
     // Independent reference values catch an incorrect factory capacity even if
     // the roster metadata and ElectricConfig agree with each other.
     const bool FactoryBattery=Stage!=0||((Index!=4||FMath::Abs(Config.BatteryKWh-170.f)<.001f)&&
@@ -337,6 +397,18 @@ void Matrix(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check
       bool Loaded=V->Body&&V->Body->GetStaticMesh()&&V->Wheels.Num()==4;
       for(auto W:V->Wheels)Loaded&=W&&W->GetStaticMesh();
       Check(Label+TEXT("roster body and all four tire assets are loaded"),Loaded,V->Wheels.Num());
+      if(V->IsFactoryElectric())for(int PowerStage=1;PowerStage<=3;++PowerStage){
+        V->SetUpgrade(TerraSim::Engine,PowerStage,false);
+        V->SetUpgrade(TerraSim::Electrical,PowerStage==3?3:0,false);
+        const float Factors[]={1,1.18f,1.40f,1.68f};
+        const float Factor=Factors[PowerStage]*(PowerStage==3?1.28f:1.f);
+        const auto Tuned=V->ElectricConfig();
+        Check(FString::Printf(TEXT("factory EV %d motor power stage %d retains factory motor topology and battery mass"),Index,PowerStage),
+          V->ElectricLayout()==Expected&&V->UpgradeStage(TerraSim::EVSwap)==0&&FMath::Abs(V->PowerHP()-State.StockPower[Index]*Factor)<.1f&&
+          FMath::Abs(Tuned.PeakWheelTorqueNm-Config.PeakWheelTorqueNm*Factor)<1.f&&FMath::Abs(Tuned.RegenPowerW-Config.RegenPowerW*FMath::Sqrt(Factor))<1.f&&
+          FMath::Abs(V->Mass-State.StockMass[Index])<.2f&&Tuned.BatteryKWh==Config.BatteryKWh,V->PowerHP());
+      }
+      V->SetUpgrade(TerraSim::Engine,0,false);V->SetUpgrade(TerraSim::Electrical,0,false);
     }
     V->SetGarage(false);V->TeleportZone(1);ResetInput(V);Phase(1);return;
   }
@@ -345,7 +417,7 @@ void Matrix(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check
     Check(Label+TEXT("real Chaos body mass remains equal to the configured vehicle mass"),FMath::IsFinite(V->Chassis->GetMass())&&FMath::Abs(V->Chassis->GetMass()-V->Mass)<FMath::Max(1.f,V->Mass*.001f),V->Chassis->GetMass()*2.2046226f);
     Check(Label+TEXT("real suspension settles with supported finite tires and an upright body"),!P.ContainsNaN()&&V->ContactCount>=3&&V->GetActorUpVector().Z>.8f&&FMath::Abs(Height-V->ExpectedRideHeight())<.15f,Height/.0254f);
     UE_LOG(LogTemp,Display,TEXT("TERRA_ELECTRIC_CONFIG vehicle=%d stage=%d motors=%d massKg=%.3f netKg=%.3f powerW=%.1f wheelTorqueNm=%.2f batteryKWh=%.3f contacts=%d rideM=%.4f"),Index,Stage,TerraSim::ElectricMotorCount(V->ElectricLayout()),V->Mass,V->ElectricConfig().NetMassKg,V->PowerHP()*745.7f,V->ElectricConfig().PeakWheelTorqueNm,V->ElectricConfig().BatteryKWh,V->ContactCount,Height);
-    if((Index>=6&&Stage==0)||(Index==2&&Stage>0)){V->SetGarage(true);V->SetGarageView(0);Phase(2);}
+    if((Index>=6&&Stage==0)||(Index==2&&Stage>0)||((Index==4||Index==7)&&Stage>0)){V->SetGarage(true);V->SetGarageView(0);Phase(2);}
     else {if(Stage==3){V->SetGarage(true);V->ResetUpgrades(false);Check(Label+TEXT("removing the conversion restores factory motor layout power and mass"),V->ElectricLayout()==TerraSim::ResolveMotorLayout(0,int(Metadata(V,Index,TEXT("electricMotors"))))&&FMath::Abs(V->Mass-State.StockMass[Index])<.2f&&FMath::Abs(V->PowerHP()-State.StockPower[Index])<.1f,V->Mass);}Next();}
   }else if(State.Phase==2&&State.Time>.4f){
     Capture(*FString::Printf(TEXT("native-electric-v%d-stage%d.png"),Index,Stage));Phase(3);
@@ -368,7 +440,8 @@ void Air(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,TF
     V->RequestTirePressure(Stock);Park(V,false);return;
   }
   if(State.Phase==1&&State.Time>1.8f){
-    Check(Label+TEXT("garage air service sets actual pressure and target together"),FMath::Abs(V->Pressure-V->PressureTarget)<.001f,V->Pressure);
+    const bool Entry=RoadEntry(V);
+    Check(Label+TEXT("garage air service sets actual pressure and target together at the verified road pose"),Entry&&FMath::Abs(V->Pressure-V->PressureTarget)<.001f,V->Pressure);
     const float Before=V->Pressure;V->RequestTirePressure(Before+3);
     Check(Label+TEXT("driving request changes target without teleporting actual pressure"),FMath::Abs(V->Pressure-Before)<.001f&&V->PressureTarget>Before,V->PressureTarget);
     const FVector RestingVelocity=V->Chassis->GetPhysicsLinearVelocity();
@@ -385,7 +458,8 @@ void Air(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,TF
     // Reset this diagnostic pressure fixture before the independent real
     // moving trial; no pressure or velocity is edited during that trial.
     V->Chassis->SetPhysicsLinearVelocity(RestingVelocity);V->Pressure=Before;V->PressureTarget=Before;V->RequestTirePressure(Before-3);State.InitialPSI=Before;
-    RollingStart(V,1);V->TestThrottle=V->TestSteer=0;State.Start=V->GetActorLocation();State.Frames=State.MovingFrames=0;Phase(2);return;
+    if(Entry)RollingStart(V,1);else V->TestBrake=1;
+    V->TestThrottle=V->TestSteer=0;State.Start=V->GetActorLocation();State.Frames=State.MovingFrames=0;Phase(2);return;
   }
   if(State.Phase==2){
     Record(V);
@@ -402,26 +476,31 @@ void Air(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,TF
   else if(State.Phase==4&&State.Time>.3f)Next();
 }
 void Drive(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
-  const int Trial=State.Trial-DriveBegin,Index=Trial<3?2:Trial+3,Swap=Trial<3?Trial+1:0;
-  const FString Label=FString::Printf(TEXT("actual vehicle %d EV stage %d "),Index,Swap);
+  const int Trial=State.Trial-DriveBegin,Index=Trial<3?2:Trial<6?Trial+3:Trial<9?4:7,Swap=Trial<3?Trial+1:Trial<6?0:(Trial-6)%3+1;
+  const FString Label=FString::Printf(TEXT("actual vehicle %d conversion stage %d "),Index,Swap);
   if(State.Phase==0){Configure(V,Index,Swap,Metadata(V,Index,TEXT("stockPSI"),35));Park(V,false);return;}
   if(State.Phase==1&&State.Time>1.8f){
-    Check(Label+TEXT("drive comparison starts on clear gentle pavement with supported tires"),State.FixtureValid&&V->ContactCount>=3&&V->GetActorUpVector().Z>.8f,V->ContactCount);
+    const bool Entry=RoadEntry(V);
+    Check(Label+TEXT("drive comparison starts at the verified pavement position and heading with supported tires"),Entry&&V->ContactCount>=3&&V->GetActorUpVector().Z>.8f,V->ContactCount);
     State.Start=V->GetActorLocation();V->ResetContactTelemetry();V->TestBrake=0;
-    V->TestThrottle=V->Overturned||V->GetActorUpVector().Z<.15f?0:.35f;V->TestSteer=.18f;Phase(2);return;
+    V->TestThrottle=!State.FixtureValid||V->ContactCount<3||V->Overturned||V->GetActorUpVector().Z<.15f?0:.35f;
+    // A shared one-second turn exercises independent wheel speeds, then the
+    // driver straightens the wheels before the faster coast/brake phases.
+    V->TestSteer=.10f;Phase(2);return;
   }
+  if(State.Phase==2&&State.Time>=1.f)V->TestSteer=0;
   if(State.Phase>=2&&State.Phase<=4)Record(V);
   if(State.Phase==2&&State.Time>3){
     const float Travel=FVector::Dist2D(State.Start,V->GetActorLocation())/100;
-    Check(Label+TEXT("real motor or engine forces accelerate the car without pose or velocity intervention"),State.Finite&&Travel>2&&State.PeakSpeed>1&&State.PeakDrive>30&&State.DrivenCorrectly&&V->ObjectBodyHits==0&&V->GetActorUpVector().Z>.7f,Travel*3.28084f);
+    Check(Label+TEXT("real motor or engine forces accelerate the car without pose or velocity intervention"),State.Finite&&State.DriveCorridor&&Travel>2&&State.PeakSpeed>1&&State.PeakDrive>30&&State.DrivenCorrectly&&V->ObjectBodyHits==0&&V->GetActorUpVector().Z>.7f,Travel*3.28084f);
     if(V->ElectricLayout()==TerraSim::MotorLayout::Quad)Check(Label+TEXT("independent axle wheels can rotate at different speeds while turning"),State.WheelDifference>.02f,State.WheelDifference);
     V->TestThrottle=V->TestSteer=0;V->TestBrake=0;State.PeakRegen=0;Phase(3);
   }else if(State.Phase==3&&State.Time>1){
-    Check(Label+TEXT("lift off regeneration follows electrical capability without changing drive direction"),V->IsElectric()?State.PeakRegen>0:State.PeakRegen<.01f,State.PeakRegen);
+    Check(Label+TEXT("lift off regeneration follows electrical capability without changing drive direction"),State.DriveCorridor&&V->ObjectBodyHits==0&&(V->IsElectric()?State.PeakRegen>0:State.PeakRegen<.01f),State.PeakRegen);
     V->TestBrake=1;Phase(4);
   }else if(State.Phase==4&&(FMath::Abs(V->Speed)<.12f||State.Time>6)){
-    Check(Label+TEXT("service brake completes a forward stop and does not command reverse propulsion"),State.Finite&&FMath::Abs(V->Speed)<.2f&&V->Direction==1&&V->TestThrottle==0&&V->Speed>-.15f,V->Speed*2.2369363f);
-    UE_LOG(LogTemp,Display,TEXT("TERRA_ELECTRIC_DRIVE vehicle=%d swap=%d peakMPS=%.4f peakTorqueNm=%.3f regenW=%.3f frontOmegaDifference=%.4f endMPS=%.5f objectHits=%d terrainHits=%d"),Index,Swap,State.PeakSpeed,State.PeakDrive,State.PeakRegen,State.WheelDifference,V->Speed,V->ObjectBodyHits,V->TerrainBodyHits);
+    Check(Label+TEXT("service brake completes a forward stop inside the clear corridor without object impacts or reverse propulsion"),State.Finite&&State.DriveCorridor&&V->ObjectBodyHits==0&&FMath::Abs(V->Speed)<.2f&&V->Direction==1&&V->TestThrottle==0&&V->Speed>-.15f,V->Speed*2.2369363f);
+    UE_LOG(LogTemp,Display,TEXT("TERRA_ELECTRIC_DRIVE vehicle=%d swap=%d peakMPS=%.4f peakTorqueNm=%.3f regenW=%.3f frontOmegaDifference=%.4f endMPS=%.5f objectHits=%d terrainHits=%d corridor=%d maxBodySideCM=%.3f maxBodyForwardCM=%.3f minBodyForwardCM=%.3f"),Index,Swap,State.PeakSpeed,State.PeakDrive,State.PeakRegen,State.WheelDifference,V->Speed,V->ObjectBodyHits,V->TerrainBodyHits,State.DriveCorridor,State.DriveMaximumSideCM,State.DriveMaximumForwardCM,State.DriveMinimumForwardCM);
     Photo(V,V->GetActorLocation());Phase(5);
   }else if(State.Phase==5&&State.Time>.3f){Capture(*FString::Printf(TEXT("native-electric-drive-v%d-stage%d.png"),Index,Swap));Phase(6);}
   else if(State.Phase==6&&State.Time>.3f)Next();
@@ -430,12 +509,14 @@ void Braking(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Chec
   const int Trial=State.Trial-BrakeBegin;const FString Label=Trial?TEXT("aired-down road tires "):TEXT("placard road tires ");
   if(State.Phase==0){Configure(V,2,0,Metadata(V,2,TEXT("stockPSI"),33)*(Trial?.5f:1.f));Park(V,false);return;}
   if(State.Phase==1&&State.Time>1.8f){
+    const bool Entry=RoadEntry(V);
     const auto Handling=V->TirePressureHandling();
     Check(Label+TEXT("native pressure handling reaches the road tire stiffness response and grip"),Trial?
       Handling.LongitudinalGrip<.90f&&Handling.LateralGrip<.9f&&Handling.CorneringStiffness<.7f&&Handling.SteeringResponse<.7f&&Handling.RollingCoefficientAdd>.01f:
       FMath::Abs(Handling.LongitudinalGrip-1)<.01f&&FMath::Abs(Handling.SteeringResponse-1)<.01f,Handling.LongitudinalGrip);
-    Check(Label+TEXT("brake fixture is clear gentle pavement with all four tires loaded"),State.FixtureValid&&V->ContactCount==4,V->ContactCount);
-    RollingStart(V,12);V->TestThrottle=V->TestSteer=0;V->TestBrake=1;Phase(2);return;
+    Check(Label+TEXT("brake fixture matches the verified pavement position and heading with all four tires loaded"),Entry&&V->ContactCount==4,V->ContactCount);
+    if(Entry)RollingStart(V,12);
+    V->TestThrottle=V->TestSteer=0;V->TestBrake=1;Phase(2);return;
   }
   if(State.Phase==2){
     Record(V);
@@ -504,8 +585,10 @@ void Steering(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Che
   const int Trial=State.Trial-SteerBegin;const FString Label=Trial?TEXT("aired-down road steering "):TEXT("placard road steering ");
   if(State.Phase==0){Configure(V,2,0,Metadata(V,2,TEXT("stockPSI"),33)*(Trial?.5f:1.f));Park(V,false);return;}
   if(State.Phase==1&&State.Time>1.8f){
-    Check(Label+TEXT("maneuver starts on the same clear gentle road with supported tires"),State.FixtureValid&&V->ContactCount==4,V->ContactCount);
-    RollingStart(V,8);V->TestThrottle=V->TestBrake=0;V->TestSteer=.28f;V->Steer=0;State.StartYaw=V->GetActorRotation().Yaw;Phase(2);return;
+    const bool Entry=RoadEntry(V);
+    Check(Label+TEXT("maneuver starts at the same verified road position and heading with supported tires"),Entry&&V->ContactCount==4,V->ContactCount);
+    if(Entry)RollingStart(V,8);
+    V->TestThrottle=0;V->TestBrake=Entry?0:1;V->TestSteer=.28f;V->Steer=0;State.StartYaw=V->GetActorRotation().Yaw;Phase(2);return;
   }
   if(State.Phase==2){
     Record(V);
@@ -521,6 +604,44 @@ void Steering(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Che
   }else if(State.Phase==3&&State.Time>.3f){Capture(Trial?TEXT("native-pressure-steer-low.png"):TEXT("native-pressure-steer-placard.png"));Phase(4);}
   else if(State.Phase==4&&State.Time>.3f)Next();
 }
+void WidgetTexts(const TSharedRef<SWidget>& Widget,TArray<FString>& Texts){
+  if(Widget->GetType()==FName(TEXT("STextBlock")))Texts.Add(StaticCastSharedRef<STextBlock>(Widget)->GetText().ToString());
+  FChildren* Children=Widget->GetChildren();
+  for(int I=0;Children&&I<Children->Num();++I)WidgetTexts(Children->GetChildAt(I),Texts);
+}
+void UpgradeUI(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
+  const int Trial=State.Trial-UIBegin,Part=Trial==0?TerraSim::Engine:TerraSim::EVSwap;
+  const TCHAR* Titles[]={TEXT("MOTOR POWER"),TEXT("ICE CONVERSION"),TEXT("EV CONVERSION")};
+  const TCHAR* Files[]={TEXT("native-powertrain-ui-g580-motor-power.png"),TEXT("native-powertrain-ui-g580-ice-conversion.png"),TEXT("native-powertrain-ui-civic-ev-conversion.png")};
+  if(State.Phase==0){
+    const int Index=Trial==2?2:7;
+    Configure(V,Index,Trial==0?0:2,Metadata(V,Index,TEXT("stockPSI"),35));
+    if(Trial==0)V->SetUpgrade(TerraSim::Engine,2,false);
+    if(auto Garage=V->GetGarageWidget())Garage->ShowUpgradePart(Part);
+    Phase(1);return;
+  }
+  if(State.Phase==1&&State.Time>.65f){
+    auto Garage=V->GetGarageWidget();TArray<FString> Texts;bool Visible=false;
+    if(Garage.IsValid()){
+      auto Row=Garage->UpgradePartWidget(Part);auto Scroll=Garage->UpgradePartScrollBox();
+      if(Row.IsValid()&&Scroll.IsValid()){
+        WidgetTexts(Row.ToSharedRef(),Texts);
+        const auto& R=Row->GetCachedGeometry();const auto& S=Scroll->GetCachedGeometry();
+        const FVector2D R0=R.LocalToAbsolute(FVector2D::ZeroVector),R1=R.LocalToAbsolute(R.GetLocalSize());
+        const FVector2D S0=S.LocalToAbsolute(FVector2D::ZeroVector),S1=S.LocalToAbsolute(S.GetLocalSize());
+        Visible=R.GetLocalSize().X>100&&R.GetLocalSize().Y>20&&R0.X>=S0.X-2&&R1.X<=S1.X+2&&R0.Y>=S0.Y-2&&R1.Y<=S1.Y+2;
+      }
+    }
+    bool Labels=Texts.Contains(Titles[Trial])&&Texts.Contains(TEXT("STOCK"));
+    if(Trial==0)Labels&=Texts.Contains(TEXT("I"))&&Texts.Contains(TEXT("II"))&&Texts.Contains(TEXT("III"))&&V->IsFactoryElectric()&&TerraSim::ElectricMotorCount(V->ElectricLayout())==4;
+    else if(Trial==1)Labels&=Texts.Contains(TEXT("350HP"))&&Texts.Contains(TEXT("500HP"))&&Texts.Contains(TEXT("700HP"))&&!Texts.Contains(TEXT("SINGLE"))&&!Texts.Contains(TEXT("DUAL"))&&!Texts.Contains(TEXT("QUAD"))&&V->IsICEConversion()&&!V->IsElectric();
+    else Labels&=Texts.Contains(TEXT("SINGLE"))&&Texts.Contains(TEXT("DUAL"))&&Texts.Contains(TEXT("QUAD"))&&!Texts.Contains(TEXT("350HP"))&&!V->IsFactoryElectric()&&V->ElectricLayout()==TerraSim::MotorLayout::Dual;
+    Check(FString::Printf(TEXT("constructed garage %s row displays correct dynamic stage labels completely inside the scrolled viewport"),Titles[Trial]),Visible&&Labels,Texts.Num());
+    UE_LOG(LogTemp,Display,TEXT("TERRA_POWERTRAIN_UI trial=%d vehicle=%d part=%d visible=%d labels=%d text=%s"),Trial,V->VehicleIndex,Part,Visible,Labels,*FString::Join(Texts,TEXT(" | ")));
+    Phase(2);
+  }else if(State.Phase==2&&State.Time>.25f){Capture(Files[Trial]);Phase(3);}
+  else if(State.Phase==3&&State.Time>.3f)Next();
+}
 }
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
   if(!V||!V->Initialized||!V->Terrain||!V->Terrain->Ready)return false;
@@ -529,7 +650,7 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     State.OriginalVehicle=V->VehicleIndex;State.OriginalGarage=V->Garage;State.OriginalZone=V->Zone;State.OriginalRoute=V->RouteIndex;
     State.OriginalTracks=V->Tracks;State.OriginalFour=V->FourDrive;State.OriginalLow=V->LowRange;State.OriginalFrontLock=V->FrontLocked;State.OriginalRearLock=V->RearLocked;State.OriginalDescent=V->DescentAssist;
     State.OriginalPressure=V->Pressure;State.OriginalTarget=V->PressureTarget;State.OriginalSOC=V->BatterySOC;State.OriginalDamage=V->Damage;
-    State.OriginalAirRequested=V->TireAirRequested;
+    State.OriginalAirRequested=V->TireAirRequested;State.OriginalDamageEnabled=V->DamageEnabled;
     State.OriginalDriverInput=V->TestDriverInput;State.OriginalForward=V->TestForward;State.OriginalReverse=V->TestReverse;State.OriginalStop=V->TestStop;
     State.OriginalThrottle=V->TestThrottle;State.OriginalSteer=V->TestSteer;State.OriginalBrake=V->TestBrake;
     State.OriginalTransform=V->GetActorTransform();State.OriginalVelocity=V->Chassis->GetPhysicsLinearVelocity();State.OriginalAngular=V->Chassis->GetPhysicsAngularVelocityInRadians();
@@ -545,13 +666,15 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   if(State.Trial>=TrialCount){Restore(V);return true;}
   // Match the real pawn's bounded simulation step, not render stalls.
   State.Time+=FMath::Clamp(Dt,0.f,.1f);
+  if(State.ParkPending){if(State.Time>1.1f)FinishRoadPark(V);return false;}
   if(V->Overturned||V->GetActorUpVector().Z<.15f)V->TestThrottle=0;
   if(State.Trial<AirBegin)Matrix(V,Check,Capture);
   else if(State.Trial<DriveBegin)Air(V,Check,Capture);
   else if(State.Trial<BrakeBegin)Drive(V,Check,Capture);
   else if(State.Trial<SteerBegin)Braking(V,Check,Capture);
   else if(State.Trial<SoilBegin)Steering(V,Check,Capture);
-  else Soil(V,Check,Capture);
+  else if(State.Trial<UIBegin)Soil(V,Check,Capture);
+  else UpgradeUI(V,Check,Capture);
   return false;
 }
 }

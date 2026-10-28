@@ -69,10 +69,10 @@ export function inspectExpeditionVehicle(view,spec,parts){
     check('rear attachment and exhaust geometry identify the actual variant',ev?named.includes('g580-rear-design-box')&&!named.includes('g63-covered-factory-spare')&&!named.includes('amg-functional-side-exhaust-tip'):named.includes('g63-covered-factory-spare')&&!named.includes('g580-rear-design-box')&&named.filter(n=>n==='amg-functional-side-exhaust-tip').length===4,{variant:spec.bodyStyle});
     check('rear reflectors are static and only lamps receive brake commands',lamps.brake===3&&lamps.reverse===2&&view.materials.gReflector.userData.nativeRole!=='brake',{brakeEmitters:lamps.brake,reverseEmitters:lamps.reverse});
     check('native capability metadata distinguishes virtual and mechanical differentials',ev?spec.electricMotors===4:spec.features.frontLocker&&spec.features.rearLocker&&Math.abs(spec.lowRatio-2.93)<1e-6,{electricMotors:spec.electricMotors??0,lowRatio:spec.lowRatio});
-    let spokes=0;parts.rim.traverse(o=>{if(o.name==='gclass-'+(ev?'ten':'five-twin')+'-spoke')spokes++;});
-    check('selected factory rim has open original spokes on both faces',spokes===20,{spokeBranches:spokes});
-    if(ev){const panel=solid(view,[.44,1.21,3],[0,0,-1]);check('electric grille uses the distinct recessed closed black panel',panel.material===view.materials.gBlackPanel&&panel.point.z<2.14,{panelZM:panel.point.z});}
-    else{const bar=solid(view,[.474,1.23,3],[0,0,-1]),between=solid(view,[.440,1.23,3],[0,0,-1]);check('AMG vertical grille bars stand in front of the dark backing',bar.point.z-between.point.z>.020,{setbackM:bar.point.z-between.point.z});}
+    let spokes=0;parts.rim.traverse(o=>{if(o.name==='gclass-'+(ev?'ten':'ten-twin')+'-spoke')spokes++;});
+    check('selected factory rim has open original spokes on both faces',spokes===(ev?20:40),{spokeBranches:spokes,selectedRimInches:spec.rimDiameterInches});
+    if(ev){const panel=solid(view,[.360,.910,3],[0,0,-1]);check('electric grille uses the distinct recessed closed black panel',panel.material===view.materials.gBlackPanel&&panel.point.z<2.222,{panelZM:panel.point.z});}
+    else{const bar=solid(view,[.408,.910,3],[0,0,-1]),between=solid(view,[.374,.910,3],[0,0,-1]);check('AMG vertical grille bars stand in front of the dark backing',bar.point.z-between.point.z>.020,{setbackM:bar.point.z-between.point.z});}
   }else{
     pane('camper right pane',[2,2.20,-2.50],[-1,0,0]);pane('camper left pane',[-2,2.20,-2.50],[1,0,0]);
     pane('cab windscreen',[0,1.85,2.50],[0,0,-1]);
@@ -93,7 +93,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1]
     const {view,parts}=prepareNativeVehicle(spec);try{rows.push(inspectExpeditionVehicle(view,spec,parts));}finally{view.dispose();}
   }
   assert.equal(rows.length,3,'three new expedition vehicles');const checks=rows.reduce((n,r)=>n+r.checks,0);assert.equal(checks,88);
-  const report={revision:'expedition-electric-14',pass:true,checks,vehicles:rows,acceptance:'Source-only original geometry. Native import, render, suspension and gameplay verification remain separate.'};
+  const report={revision:'expedition-gclass-15',pass:true,checks,vehicles:rows,acceptance:'Source-only original geometry. Native import, render, suspension and gameplay verification remain separate.'};
   fs.writeFileSync(new URL('../docs/expedition-vehicle-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({pass:true,checks,vehicles:rows.map(({id,checks,geometry})=>({id,checks,...geometry}))}));
 }

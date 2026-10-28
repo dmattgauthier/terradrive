@@ -263,6 +263,12 @@ for i, asset in enumerate(data['assets']):
         mid = next((m for m in asset['slots'] if m in slot_name), asset['slots'][min(index,len(asset['slots'])-1)])
         if mesh.get_material(index) != materials[mid]:
             mesh.set_material(index, materials[mid])
+    # Impact dents copy the selected vehicle's render mesh once, on the first
+    # damaging contact. Keep CPU vertex data for bodies only, not scenery.
+    if asset['name'].endswith('_body'):
+        mesh.set_editor_property('allow_cpu_access', True)
+        if not mesh.get_editor_property('allow_cpu_access'):
+            raise RuntimeError('Damage mesh CPU data unavailable: ' + asset['name'])
     body = mesh.get_editor_property('body_setup')
     if asset['name'] in ['scan_mountainside_0','scan_boulder_01_0'] and lib.get_metadata_tag(mesh,'TerraNaniteRevision')!='1':
         # The editor subsystem is not instantiated in Python commandlets.
@@ -303,4 +309,5 @@ unreal.log('TERRA_IMPORT_COMPLETE')
 os.makedirs(os.path.join(root, 'Saved'), exist_ok=True)
 with open(os.path.join(root, 'Saved', 'import-complete.json'), 'w', encoding='utf8') as stream:
     json.dump({'meshes':len(data['assets']), 'meshSchema':data['meshSchema'],
+        'damageCpuBodies':[a['name'] for a in data['assets'] if a['name'].endswith('_body')],
         'map':'/Game/Maps/ProvingGround', 'complete':True}, stream)

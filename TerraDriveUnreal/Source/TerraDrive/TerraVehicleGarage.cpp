@@ -31,7 +31,8 @@ void ATerraVehicle::SetGarageView(int View){
   if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
 }
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
-  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),4);
+  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),5);
+  Root->SetBoolField(TEXT("damageEnabled"),DamageEnabled);
   Root->SetNumberField(TEXT("vehicle"),VehicleIndex);
   TArray<TSharedPtr<FJsonValue>> Cars;
   for(const auto &Build:Builds){
@@ -55,7 +56,7 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())return false;
   double Version=0,Selected=0;
   const TArray<TSharedPtr<FJsonValue>> *Cars=nullptr;
-  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3&&Version!=4)||
+  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3&&Version!=4&&Version!=5)||
       !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=(Version==1?5:Version<4?6:VehicleCount))return false;
   TerraSim::UpgradeSetup Loaded[VehicleCount];
   for(int I=0;I<Cars->Num();++I){
@@ -63,11 +64,13 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
     if(!(*Cars)[I].IsValid()||!(*Cars)[I]->TryGetArray(Stages)||Stages->Num()!=TerraSim::UpgradeStageCountForVersion(int(Version)))return false;
     double Values[TerraSim::PartCount]={};
     for(int P=0;P<Stages->Num();++P)if(!(*Stages)[P].IsValid()||!(*Stages)[P]->TryGetNumber(Values[P]))return false;
-    if(!TerraSim::DecodeUpgradeStages(Values,Stages->Num(),int(Version),I!=2||(Version==4&&Values[TerraSim::EVSwap]>0),Loaded[I]))return false;
+    if(!TerraSim::DecodeUpgradeStages(Values,Stages->Num(),int(Version),I!=2||(Version>=4&&Values[TerraSim::EVSwap]>0),Loaded[I],I==4||I==7))return false;
   }
   if(Root->HasField(TEXT("vehicle"))&&(!Root->TryGetNumberField(TEXT("vehicle"),Selected)||!FMath::IsFinite(Selected)||Selected<0||Selected>=Cars->Num()||std::floor(Selected)!=Selected))return false;
   float Air[VehicleCount]={},Charge[VehicleCount];for(float &C:Charge)C=.75f;
-  if(Version==4){
+  bool LoadedDamageEnabled=true;
+  if(Root->HasField(TEXT("damageEnabled"))&&!Root->TryGetBoolField(TEXT("damageEnabled"),LoadedDamageEnabled))return false;
+  if(Version>=4){
     for(int Field=0;Field<2;++Field){const TCHAR *Key=Field?TEXT("batteryCharge"):TEXT("pressureTargets");
       if(!Root->HasField(Key))continue;
       const TArray<TSharedPtr<FJsonValue>> *Values=nullptr;
@@ -79,7 +82,7 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
     }
   }
   for(int I=0;I<VehicleCount;++I){Builds[I]=Loaded[I];PressureProfiles[I]=Air[I];BatteryProfiles[I]=Charge[I];}
-  LastVehicle=int(Selected);
+  LastVehicle=int(Selected);DamageEnabled=LoadedDamageEnabled;
   return true;
 }
 TerraSim::DriveCapabilities ATerraVehicle::DriveCapabilities() const {
@@ -116,7 +119,7 @@ void ATerraVehicle::ApplyUpgrades(){
   EngineUpgrade=Builds[VehicleIndex].Stage[TerraSim::Engine];
   LiftUpgrade=Builds[VehicleIndex].Stage[TerraSim::Suspension];
   const auto Capabilities=DriveCapabilities();
-  Mass=(Number(TEXT("mass"),2100)+ElectricConfig().NetMassKg)*Tuning.Mass+Tuning.HardwareMass+Capabilities.HardwareMass+TerraSim::ResolveTireAirHardware(UpgradeStage(TerraSim::TireAir)).MassKg;
+  Mass=(Number(TEXT("mass"),2100)+ElectricConfig().NetMassKg+CombustionConfig().NetMassKg)*Tuning.Mass+Tuning.HardwareMass+Capabilities.HardwareMass+TerraSim::ResolveTireAirHardware(UpgradeStage(TerraSim::TireAir)).MassKg;
   if(!Capabilities.FourDrive)FourDrive=false;
   if(Capabilities.Permanent)FourDrive=true;
   if(!HasLowRange())LowRange=false;
@@ -162,7 +165,11 @@ void ATerraVehicle::SetUpgrade(int Part,int Stage,bool Persist){
   if(Part==TerraSim::Electrical&&!HasElectrical())return;
   Builds[VehicleIndex].Stage[Part]=FMath::Clamp(Stage,0,3);
   if(Part==TerraSim::Drivetrain&&Stage>0)FourDrive=HasFourDrive();
-  if(Part==TerraSim::EVSwap){FourDrive=Stage!=1;BatterySOC=.75f;BatteryProfiles[VehicleIndex]=BatterySOC;}
+  if(Part==TerraSim::EVSwap){
+    FourDrive=IsFactoryElectric()||Stage!=1;Gear=0;
+    if(!IsFactoryElectric())BatterySOC=.75f;
+    BatteryProfiles[VehicleIndex]=BatterySOC;
+  }
   ApplyUpgrades();
   if(Persist&&!AutoTest&&!SaveGarage(GaragePath()))Notice=TEXT("Could not save garage setup");
 }
@@ -207,6 +214,7 @@ void ATerraVehicle::SetGarage(bool Open){
 }
 FString ATerraVehicle::UpgradeName(int Part) const{
   const TCHAR *Names[]={TEXT("SUSPENSION"),TEXT("ENGINE POWER"),TEXT("TIRES"),TEXT("WHEELS"),TEXT("FRAME"),TEXT("BODY"),TEXT("ELECTRICAL"),TEXT("DRIVETRAIN"),TEXT("DIFFERENTIALS"),TEXT("PORTAL AXLES"),TEXT("EV CONVERSION"),TEXT("TIRE AIR CONTROL")};
+  if(Part==TerraSim::EVSwap&&IsFactoryElectric())return TEXT("ICE CONVERSION");
   return Part==TerraSim::Engine&&IsElectric()?TEXT("MOTOR POWER"):Names[Part];
 }
 FString ATerraVehicle::UpgradeDescription(int Part) const{
@@ -222,12 +230,14 @@ FString ATerraVehicle::UpgradeDescription(int Part) const{
     TEXT("Wheel-end reduction raises the axle shafts and body. More clearance and torque trade road speed, weight and rotating response."),
     TEXT("Original game conversion kits: single rear motor with optional transfer 4WD, dual axle motors, or four independent wheel motors. Includes battery and donor hardware mass changes."),
     TEXT("Onboard inflation and deflation while moving. Higher stages improve air flow and operating speed. Lower PSI helps soft ground but adds squirm and hurts road braking.")};
-  if(Part==TerraSim::Electrical)return !HasElectrical()?TEXT("Not fitted to this vehicle."):IsElectric()?TEXT("Battery/inverter output, sealing and auxiliary power."):Descriptions[Part];
+  if(Part==TerraSim::Engine&&IsElectric())return IsFactoryElectric()?TEXT("More power from the factory motors. The original motor count and layout are retained."):TEXT("Increase output from the installed electric conversion motors.");
+  if(Part==TerraSim::EVSwap&&IsFactoryElectric())return TEXT("Gasoline V8 with eight-speed and mechanical axle drive. 350/500/700 hp base kits; Engine Power tunes the fitted kit. STOCK restores the factory EV.");
+  if(Part==TerraSim::Electrical)return !HasElectrical()?TEXT("Not fitted to this vehicle."):IsElectric()?TEXT("Battery/inverter output, sealing and auxiliary power; motor layout stays fixed."):Descriptions[Part];
   return Descriptions[Part];
 }
 FString ATerraVehicle::UpgradeStageName(int Part,int Stage) const {
   if(Stage==0)return TEXT("STOCK");
-  if(Part==TerraSim::EVSwap)return Stage==1?TEXT("SINGLE"):Stage==2?TEXT("DUAL"):TEXT("QUAD");
+  if(Part==TerraSim::EVSwap)return IsFactoryElectric()?(Stage==1?TEXT("350HP"):Stage==2?TEXT("500HP"):TEXT("700HP")):(Stage==1?TEXT("SINGLE"):Stage==2?TEXT("DUAL"):TEXT("QUAD"));
   if(Part==TerraSim::TireAir)return Stage==1?TEXT("BASIC"):Stage==2?TEXT("CTIS"):TEXT("FAST");
   if(Part==TerraSim::Drivetrain)return Stage==1?TEXT("4H"):Stage==2?TEXT("4L"):TEXT("CRAWL");
   if(Part==TerraSim::Differentials)return Stage==1?TEXT("MAIN"):Stage==2?TEXT("BOTH"):TEXT("LSD+");
@@ -245,7 +255,9 @@ FString ATerraVehicle::UpgradeEffect(int Part) const{
   case TerraSim::Body:return FString::Printf(TEXT("%.0f lb total  /  %.0f%% less drag  /  armor stage %d"),TerraUnits::Pounds(Mass),(1-Tuning.Drag)*100,S);
   case TerraSim::Electrical:return !HasElectrical()?TEXT("NOT AVAILABLE"):FString::Printf(TEXT("+%.0f%% winch  /  %.1f in water margin%s"),(Tuning.Winch-1)*100,TerraUnits::Inches(Tuning.WaterDepth),IsElectric()?*FString::Printf(TEXT("  /  +%.0f%% EV output"),(Tuning.ElectricalPower-1)*100):TEXT(""));
   case TerraSim::Drivetrain:return FString::Printf(TEXT("%s  /  %s  /  %.0f lb drivetrain + locker hardware"),HasFourDrive()?TEXT("4H equipped"):TEXT("Two-wheel drive"),HasLowRange()?*FString::Printf(TEXT("%.2f:1 selectable low"),DriveCapabilities().LowRatio):TEXT("High range only"),TerraUnits::Pounds(DriveCapabilities().HardwareMass));
-  case TerraSim::EVSwap:{const auto C=ElectricConfig();return C.Layout==TerraSim::MotorLayout::None?TEXT("Factory combustion drivetrain"):FString::Printf(TEXT("%d motors / %.0f hp / %.0f kWh / %+.0f lb conversion mass"),TerraSim::ElectricMotorCount(C.Layout),PowerHP(),C.BatteryKWh,TerraUnits::Pounds(C.NetMassKg));}
+  case TerraSim::EVSwap:{
+    if(IsICEConversion()){const auto C=CombustionConfig();return FString::Printf(TEXT("Gasoline V8 / %.0f hp / 8-speed / %+.0f lb conversion mass"),PowerHP(),TerraUnits::Pounds(C.NetMassKg));}
+    const auto C=ElectricConfig();return C.Layout==TerraSim::MotorLayout::None?TEXT("Factory combustion drivetrain"):FString::Printf(TEXT("%s %d motors / %.0f hp / %.0f kWh / %+.0f lb conversion mass"),IsFactoryElectric()?TEXT("Factory"):TEXT("Converted"),TerraSim::ElectricMotorCount(C.Layout),PowerHP(),C.BatteryKWh,TerraUnits::Pounds(C.NetMassKg));}
   case TerraSim::TireAir:{const auto H=TerraSim::ResolveTireAirHardware(S);return S?FString::Printf(TEXT("%.2f PSI/s inflate / %.2f deflate / up to %.0f mph / +%.0f lb"),H.InflatePSIPerSecond,H.DeflatePSIPerSecond,TerraUnits::MPH(H.MaximumSpeedMPS),TerraUnits::Pounds(H.MassKg)):TEXT("Stopped manual bleed / garage inflation");}
   case TerraSim::Differentials:return FString::Printf(TEXT("Front: %s  /  Rear: %s%s"),IndependentWheel(0)?TEXT("motor torque control"):HasLocker(true)?TEXT("selectable locker"):TEXT("open"),IndependentWheel(2)?TEXT("motor torque control"):HasLocker(false)?TEXT("selectable locker"):TEXT("open"),S==3?TEXT("  /  3:1 limited-slip preload"):TEXT(""));
   case TerraSim::Portals:return FString::Printf(TEXT("+%.1f in clearance  /  %.2f:1 reduction  /  +%.0f lb  /  %.0f%% gearing speed"),TerraUnits::Inches(PortalLift()),PortalReduction(),TerraUnits::Pounds(Tuning.HardwareMass),100/PortalReduction());

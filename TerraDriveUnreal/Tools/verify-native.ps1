@@ -10,7 +10,7 @@ $report=Join-Path $output $(if($GroundOnly){'ground-contact.json'}elseif($Locker
 $log=Join-Path $output $(if($GroundOnly){'ground-contact.log'}elseif($LockersOnly){'lockers.log'}elseif($BrakeOnly){'braking.log'}else{'packaged-game.log'})
 $started=Get-Date
 $arguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1280','-ResY=720',
-    '-NoSound','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraReport="'+$report+'"'),
+    '-NoSound','-TerraValidate','-TerraCapture','-TerraTestFPS=20','-UseFixedTimeStep','-FPS=20',('-TerraReport="'+$report+'"'),
     ('-TerraGarage="'+(Join-Path $output 'validation-garage.json')+'"'),
     ('-TerraGraphics="'+(Join-Path $output 'validation-graphics.json')+'"'),
     ('-abslog="'+$log+'"'))

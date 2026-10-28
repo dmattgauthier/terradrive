@@ -193,6 +193,9 @@ int main(){
     check(TerraSim::UpgradeStageCountForVersion(1)==7&&TerraSim::UpgradeStageCountForVersion(2)==7&&TerraSim::UpgradeStageCountForVersion(3)==10&&TerraSim::UpgradeStageCountForVersion(4)==12,"save version lengths remain explicit rather than inheriting the current part count");
     double electricBuild[]={0,1,2,3,0,1,2,1,2,3,3,2};
     check(TerraSim::DecodeUpgradeStages(electricBuild,12,4,true,migrated)&&migrated.Stage[TerraSim::EVSwap]==3&&migrated.Stage[TerraSim::TireAir]==2&&migrated.Stage[TerraSim::Portals]==3&&migrated.Stage[TerraSim::Engine]==1,"v4 saves retain conversion and tire air alongside every original hardware category");
+    check(TerraSim::DecodeUpgradeStages(electricBuild,12,4,true,migrated,true)&&migrated.Stage[TerraSim::EVSwap]==0&&migrated.Stage[TerraSim::TireAir]==2&&migrated.Stage[TerraSim::Portals]==3&&migrated.Stage[TerraSim::Engine]==1,"legacy factory EV conversions migrate safely to factory motors while retaining all other upgrade slots");
+    check(TerraSim::UpgradeStageCountForVersion(5)==12&&TerraSim::DecodeUpgradeStages(electricBuild,12,5,true,migrated,true)&&migrated.Stage[TerraSim::EVSwap]==3,"v5 records an explicit factory EV to gasoline conversion without losing its stage");
+    check(TerraSim::DecodeUpgradeStages(electricBuild,12,5,true,migrated,false)&&migrated.Stage[TerraSim::EVSwap]==3,"v5 keeps combustion donor quad motor swaps independent from gasoline conversion semantics");
     for(int part:{int(TerraSim::EVSwap),int(TerraSim::TireAir)}){
         const double original=electricBuild[part];
         for(double bad:{-1.,4.,.5,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}){

@@ -5,6 +5,7 @@
 #include "TerraUpgrades.h"
 #include "TerraElectric.h"
 #include "TerraPressure.h"
+#include "TerraDamage.h"
 #include "TerraVehicle.generated.h"
 class UBoxComponent;
 class UStaticMeshComponent;
@@ -16,6 +17,7 @@ class URectLightComponent;
 class UMaterialInstanceDynamic;
 class UPhysicalMaterial;
 class UProceduralMeshComponent;
+struct FTerraDamageVisualCache;
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35;
@@ -66,6 +68,20 @@ public:
   FString CoachworkCollisionSource;
   UPROPERTY() TObjectPtr<UPhysicalMaterial> UndertrayMaterial;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Body;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UProceduralMeshComponent> DamageBody;
+  UPROPERTY(VisibleAnywhere) TObjectPtr<UProceduralMeshComponent> DamageScars;
+  bool DamageEnabled=true;
+  TerraSim::DamageState StructuralDamage;
+  int DamageEventCount=0,DeformedVertexCount=0;
+  float MaximumDentCM=0;
+  void RepairDamage();
+  void SetDamageEnabled(bool Enabled,bool Persist=true);
+  FString DamageDescription() const;
+  float DamageDriveFactor() const;
+  float DamageBrakeFactor() const;
+  float DamageSteeringOffset() const;
+  void RegisterDamageImpact(FVector Impulse,const FHitResult& Hit,bool Ground);
+  void UpdateDamageVisuals();
   UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
   UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
   UPROPERTY() TObjectPtr<ATerraWorld> Terrain;
@@ -125,6 +141,9 @@ public:
   float PortalReduction() const {return Tuning.PortalReduction;}
   bool DrivenWheel(int Index) const;
   int FactoryMotorCount() const;
+  bool IsFactoryElectric() const;
+  bool IsICEConversion() const;
+  TerraSim::CombustionConfiguration CombustionConfig() const;
   TerraSim::MotorLayout ElectricLayout() const;
   TerraSim::ElectricConfiguration ElectricConfig() const;
   bool IsElectric() const;
@@ -155,6 +174,7 @@ public:
   void OrbitGarageCamera(float YawDelta,float PitchDelta);
   void ZoomGarageCamera(float Steps);
   void SetGarageView(int View);
+  TSharedPtr<STerraGarage> GetGarageWidget() const { return GarageWidget; }
   void UpdateWheelVisuals();
   FVector GarageViewState() const { return FVector(GarageYaw,GaragePitch,GarageDistance); }
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
@@ -170,6 +190,8 @@ public:
   TerraSim::UpgradeTuning Tuning;
 
 private:
+  TSharedPtr<FTerraDamageVisualCache> DamageVisualCache;
+  bool PrepareDamageMesh();
   void ConfigureCoachworkCollision();
   float NextBodyDiagnosticTime=0;
   TSharedPtr<FJsonObject> Spec;

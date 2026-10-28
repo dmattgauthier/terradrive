@@ -9,6 +9,9 @@ enum class MotorLayout { None=0, Single=1, Dual=2, Triple=3, Quad=4 };
 
 inline MotorLayout ResolveMotorLayout(int swapStage,int factoryMotorCount) {
     const int stage=std::clamp(swapStage,0,3);
+    // Conversion on an already-electric donor means an ICE swap. Its factory
+    // motor count is never replaced with a single/dual/quad electric topology.
+    if(factoryMotorCount>0&&stage>0)return MotorLayout::None;
     if(stage>0)return stage==1?MotorLayout::Single:stage==2?MotorLayout::Dual:MotorLayout::Quad;
     return factoryMotorCount>=1&&factoryMotorCount<=4?static_cast<MotorLayout>(factoryMotorCount):MotorLayout::None;
 }
@@ -26,6 +29,37 @@ struct ElectricConfiguration {
     float NetMassKg=0,KitMassKg=0,RemovedDrivelineMassKg=0,BatteryMassKg=0,BatteryKWh=0;
     float RegenPowerW=0,FrontShare=.5f;
 };
+
+// Fictional gasoline conversion hardware for a factory EV. Stage zero means
+// retain the factory EV; these figures are not an OEM retrofit specification.
+struct CombustionConfiguration {
+    int Stage=0;
+    float PowerW=0,PeakTorqueNm=0,IdleRPM=750,RedlineRPM=6500,StallRPM=2400;
+    float FinalDrive=4.10f,ReverseRatio=3.30f;
+    float GearRatios[8]={4.71f,3.14f,2.10f,1.67f,1.29f,1.f,.84f,.67f};
+    float KitMassKg=0,RemovedDrivelineMassKg=0,NetMassKg=0;
+};
+inline CombustionConfiguration MakeCombustionSwap(int stage,int factoryMotorCount,float batteryKWh,float removedHardwareKg=0) {
+    CombustionConfiguration config;
+    if(factoryMotorCount<1||factoryMotorCount>4)return config;
+    config.Stage=std::clamp(stage,0,3);if(config.Stage==0)return config;
+    const float hp[]={0,350,500,700},torque[]={0,475,650,900},mass[]={0,490,535,590};
+    config.PowerW=hp[config.Stage]*745.7f;config.PeakTorqueNm=torque[config.Stage];config.KitMassKg=mass[config.Stage];
+    const float pack=std::isfinite(batteryKWh)?std::clamp(batteryKWh,1.f,250.f):100.f;
+    config.RemovedDrivelineMassKg=std::isfinite(removedHardwareKg)&&removedHardwareKg>0?removedHardwareKg:
+        pack/.185f+factoryMotorCount*75.f+70.f;
+    config.NetMassKg=config.KitMassKg-config.RemovedDrivelineMassKg;
+    return config;
+}
+inline float CombustionSwapTorque(const CombustionConfiguration& config,float rpm) {
+    if(config.Stage==0||!std::isfinite(rpm))return 0;
+    const float speed=std::max(0.f,rpm);
+    const float rise=std::clamp((speed-config.IdleRPM)/2000.f,0.f,1.f);
+    const float curve=config.PeakTorqueNm*(.52f+.48f*rise);
+    const float powerCap=config.PowerW/std::max(1.f,speed*6.28318530718f/60.f);
+    const float limit=std::clamp((config.RedlineRPM+150.f-speed)/150.f,0.f,1.f);
+    return std::min(curve,powerCap)*limit;
+}
 
 namespace ElectricDetail {
 inline float Finite(float value,float fallback=0) {return std::isfinite(value)?value:fallback;}
@@ -68,8 +102,8 @@ inline ElectricConfiguration FactoryElectricConfig(int motorCount,float powerW,f
 
 // Fictional conversion kits, not manufacturer retrofit specifications. The
 // mass-aware caps keep a light car's conversion below a heavy SUV's budget.
-// NetMassKg is relative to an ICE donor. A factory EV replacement must use
-// KitMassKg minus the actual removed donor hardware, not add a second pack.
+// NetMassKg is relative to an ICE donor. Factory EVs retain their original
+// motors or use MakeCombustionSwap; this helper does not replace EV topology.
 inline ElectricConfiguration MakeElectricSwap(int stage,float stockPowerW,float stockMassKg) {
     ElectricConfiguration config;
     stage=std::clamp(stage,0,3);

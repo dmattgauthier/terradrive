@@ -143,6 +143,19 @@ void STerraGarage::Construct(const FArguments &Args) {
           +SWidgetSwitcher::Slot()[VehiclePage()]
           +SWidgetSwitcher::Slot()[UpgradePage()]
           +SWidgetSwitcher::Slot()[GraphicsPage()]]
+        +SVerticalBox::Slot().AutoHeight().Padding(28,10,28,0)
+        [SNew(SBorder).BorderImage(&Panel).Padding(12,8)
+          [SNew(SHorizontalBox)
+            +SHorizontalBox::Slot().AutoWidth()
+            [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(14,9))
+              .ButtonColorAndOpacity_Lambda([this]{return Vehicle.IsValid()&&Vehicle->DamageEnabled?FLinearColor(.28,.20,.12):FLinearColor(.15,.30,.22);})
+              .OnClicked_Lambda([this]{if(Vehicle.IsValid())Vehicle->SetDamageEnabled(!Vehicle->DamageEnabled);return FReply::Handled();})
+              [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()&&Vehicle->DamageEnabled?TEXT("DAMAGE ON"):TEXT("FREE RUN / DAMAGE OFF"));}).Font(Font(11,true)).ColorAndOpacity(White)]]
+            +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center).Padding(16,0)
+            [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->DamageDescription():TEXT(""));}).Font(Font(11)).ColorAndOpacity(Muted).AutoWrapText(true)]
+            +SHorizontalBox::Slot().AutoWidth()
+            [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(14,9)).ButtonColorAndOpacity(FLinearColor(.14,.23,.21))
+              .OnClicked_Lambda([this]{if(Vehicle.IsValid())Vehicle->RepairDamage();return FReply::Handled();})[Label(TEXT("REPAIR VEHICLE"),11,Mint,true)]]]]
         +SVerticalBox::Slot().AutoHeight().Padding(28,16,28,22)
         [SNew(SBorder).BorderImage(&Panel).Padding(18,12)
           [SNew(SHorizontalBox)
@@ -280,10 +293,12 @@ TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
 }
 TSharedRef<SWidget> STerraGarage::UpgradePage() {
   auto Rows=SNew(SVerticalBox);
+  UpgradeRows.Reset();
   for(int I=0;I<TerraSim::PartCount;++I){
     if(I==0||I==TerraSim::Drivetrain)Rows->AddSlot().AutoHeight().Padding(3,I?14:0,0,8)
       [Label(I?TEXT("DRIVE, ENERGY & AIR"):TEXT("CHASSIS & GRIP"),10,Mint,true)];
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[UpgradeRow(I)];
+    auto Row=UpgradeRow(I);UpgradeRows.Add(Row);
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[Row];
   }
   auto Sheet=SNew(SVerticalBox)
     +SVerticalBox::Slot().AutoHeight()[Label(TEXT("THE BUILD SHEET"),11,Mint,true)]
@@ -308,5 +323,10 @@ TSharedRef<SWidget> STerraGarage::UpgradePage() {
     +SHorizontalBox::Slot().FillWidth(1)
       [SNew(SVerticalBox)
         +SVerticalBox::Slot().AutoHeight().Padding(3,0,0,8)[Label(FString::Printf(TEXT("%d UPGRADE SYSTEMS   /   STOCK + THREE STAGES"),int(TerraSim::PartCount)),11,Mint,true)]
-        +SVerticalBox::Slot().FillHeight(1)[SNew(SScrollBox)+SScrollBox::Slot()[Rows]]];
+        +SVerticalBox::Slot().FillHeight(1)[SAssignNew(UpgradeScroll,SScrollBox)+SScrollBox::Slot()[Rows]]];
+}
+void STerraGarage::ShowUpgradePart(int Part){
+  if(!Pages.IsValid()||!UpgradeScroll.IsValid()||!UpgradeRows.IsValidIndex(Part))return;
+  Page=1;Pages->SetActiveWidgetIndex(1);
+  UpgradeScroll->ScrollDescendantIntoView(UpgradeRows[Part],false,EDescendantScrollDestination::Center);
 }

@@ -26,4 +26,5 @@ void ATerraVehicle::UpdateLamps(){
   ReverseLampLevel=!Garage&&Direction<0?4.f:0.f;
   for(auto Lamp:BrakeLamps)Lamp->SetScalarParameterValue(TEXT("TerraLamp"),BrakeLampLevel);
   for(auto Lamp:ReverseLamps)Lamp->SetScalarParameterValue(TEXT("TerraLamp"),ReverseLampLevel);
+  UpdateDamageVisuals();
 }

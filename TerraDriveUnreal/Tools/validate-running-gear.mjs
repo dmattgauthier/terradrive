@@ -61,5 +61,5 @@ for(const spec of VEHICLES){
 }
 assert.equal(VEHICLES.length,9,'all nine actual factory rim designs');
 fs.mkdirSync('Saved',{recursive:true});
-fs.writeFileSync('Saved/expedition14-runninggear-geometry.json',JSON.stringify({revision:'expedition-electric-14',passed:true,vehicles:9,checks:['finite unit normals','true rotor holes and hub bore','bounded rotor cost','fixed factory rim radius','closed actual custom barrel inner wall'],rows},null,2));
+fs.writeFileSync('Saved/refinement15-runninggear-geometry.json',JSON.stringify({revision:'gclass-powertrain-damage-15',passed:true,vehicles:9,checks:['finite unit normals','true rotor holes and hub bore','bounded rotor cost','fixed factory rim radius','closed actual custom barrel inner wall'],rows},null,2));
 console.log(JSON.stringify({passed:true,models:rows.map(({name,triangles})=>({name,triangles}))}));

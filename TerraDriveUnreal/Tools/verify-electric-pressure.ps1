@@ -115,10 +115,13 @@ $taskExeUnchanged=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.To
 $taskNames=[Collections.Generic.List[string]]::new()
 foreach($taskIndex in @(6,7,8)){$taskNames.Add(('native-electric-v{0}-stage0.png' -f $taskIndex))}
 foreach($taskStage in @(1,2,3)){$taskNames.Add(('native-electric-v2-stage{0}.png' -f $taskStage))}
+foreach($taskIndex in @(4,7)){foreach($taskStage in @(1,2,3)){$taskNames.Add(('native-electric-v{0}-stage{1}.png' -f $taskIndex,$taskStage))}}
 foreach($taskStage in @(1,2,3)){$taskNames.Add(('native-pressure-ctis-stage{0}.png' -f $taskStage))}
 foreach($taskStage in @(1,2,3)){$taskNames.Add(('native-electric-drive-v2-stage{0}.png' -f $taskStage))}
 foreach($taskIndex in @(6,7,8)){$taskNames.Add(('native-electric-drive-v{0}-stage0.png' -f $taskIndex))}
+foreach($taskIndex in @(4,7)){foreach($taskStage in @(1,2,3)){$taskNames.Add(('native-electric-drive-v{0}-stage{1}.png' -f $taskIndex,$taskStage))}}
 foreach($taskTrial in @('road','steer','sand')){foreach($taskPressure in @('placard','low')){$taskNames.Add(('native-pressure-{0}-{1}.png' -f $taskTrial,$taskPressure))}}
+foreach($taskView in @('g580-motor-power','g580-ice-conversion','civic-ev-conversion')){$taskNames.Add(('native-powertrain-ui-{0}.png' -f $taskView))}
 $taskCaptureSource=Join-Path $taskUser 'Saved/Screenshots'
 $taskCaptureOutput=Join-Path $taskRoot 'Build/Windows/TerraDrive/Saved/Screenshots'
 New-Item -ItemType Directory -Path $taskCaptureOutput -Force | Out-Null
@@ -138,13 +141,13 @@ foreach($taskFilename in $taskNames){
     if($taskHash -ne $taskCopied -or $taskWidth -ne 1600 -or $taskHeight -ne 900){throw ('Capture hash or dimensions differ from the native request: '+$taskFilename)}
     $taskCaptures+=@([pscustomobject]@{filename=$taskFilename;path=$taskDestination;isolatedPath=$taskImage;SHA256=$taskHash;width=$taskWidth;height=$taskHeight})
 }
-$taskPassed=!$taskError -and $taskExit -eq 0 -and $taskFreshReport -and $taskFreshLog -and $taskTests.Count -eq 245 -and $taskUnique -eq 245 -and
-    $taskFailures.Count -eq 0 -and $taskErrors.Count -eq 0 -and $taskMissing.Count -eq 0 -and $taskCaptures.Count -eq 21 -and $taskSettingsUnchanged -and $taskExeUnchanged
+$taskPassed=!$taskError -and $taskExit -eq 0 -and $taskFreshReport -and $taskFreshLog -and $taskTests.Count -eq 279 -and $taskUnique -eq 279 -and
+    $taskFailures.Count -eq 0 -and $taskErrors.Count -eq 0 -and $taskMissing.Count -eq 0 -and $taskCaptures.Count -eq 36 -and $taskSettingsUnchanged -and $taskExeUnchanged
 $taskRecord=[ordered]@{
     version=1;suite='electric-pressure';passed=$taskPassed;startedAt=$taskStartedAt.ToString('o');completedAt=[DateTime]::UtcNow.ToString('o')
     executable=$taskExe;executableSHA256=$taskExeHash;executableUnchanged=$taskExeUnchanged;processExitCode=$taskExit
-    expectedChecks=245;actualChecks=$taskTests.Count;uniqueChecks=$taskUnique;failures=$taskFailures.Count;renderErrors=$taskErrors.Count
-    expectedCaptures=21;captures=$taskCaptures;missingCaptures=$taskMissing
+    expectedChecks=279;actualChecks=$taskTests.Count;uniqueChecks=$taskUnique;failures=$taskFailures.Count;renderErrors=$taskErrors.Count
+    expectedCaptures=36;captures=$taskCaptures;missingCaptures=$taskMissing
     report=$taskReport;freshReport=$taskFreshReport;log=$taskLog;freshLog=$taskFreshLog;startupReady=$taskReady
     timeoutSeconds=$TimeoutSeconds;startupTimeoutSeconds=$StartupTimeoutSeconds;frameLimit=20;temperatureCutoffC=77
     maxTemperatureC=($taskSamples | Measure-Object -Property temperatureC -Maximum).Maximum;gpuTelemetry=$taskTelemetry
@@ -154,6 +157,6 @@ $taskRecord | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $taskReceipt -E
 if(!$taskPassed){
     $taskFailures | Select-Object case,value,pass | Format-Table -AutoSize | Out-String | Write-Output
     if($taskError){Write-Output $taskError}
-    throw ('Electric and pressure validation failed: '+$taskTests.Count+'/245 checks, '+$taskCaptures.Count+'/21 fresh captures; receipt '+$taskReceipt)
+    throw ('Electric and pressure validation failed: '+$taskTests.Count+'/279 checks, '+$taskCaptures.Count+'/36 fresh captures; receipt '+$taskReceipt)
 }
-Write-Output ('PASS 245 native electric and pressure checks; 21 fresh captures; exit 0; user settings unchanged. Receipt: '+$taskReceipt)
+Write-Output ('PASS 279 native electric and pressure checks; 36 fresh captures; exit 0; user settings unchanged. Receipt: '+$taskReceipt)

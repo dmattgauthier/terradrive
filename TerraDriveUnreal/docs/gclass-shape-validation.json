@@ -1,0 +1,1037 @@
+{
+  "revision": 15,
+  "sourceOnly": true,
+  "pass": true,
+  "checks": 67,
+  "minimumVerticalSlope": 0.2255394776701225,
+  "variants": [
+    {
+      "vehicle": "mercedes-g580-ev",
+      "checks": 33,
+      "pass": true,
+      "bonnetPeakYM": 1.3037012815475464,
+      "sideGlassWidthsM": [
+        0.7953252643346786,
+        0.6822550296783447,
+        0.7279444932937622
+      ],
+      "tests": [
+        {
+          "name": "measured side-pane hierarchy -1",
+          "pass": true,
+          "widthsM": [
+            0.7953252643346786,
+            0.6822550296783447,
+            0.7279444932937622
+          ]
+        },
+        {
+          "name": "reference rear-door glass is about 28 inches wide -1",
+          "pass": true,
+          "widthM": 0.6822550296783447,
+          "referenceOpeningM": 0.707
+        },
+        {
+          "name": "B and C pillars occupy the measured side stations -1",
+          "pass": true,
+          "rearDoorGlassBoundsZ": [
+            -1.054627537727356,
+            -0.37237250804901123
+          ]
+        },
+        {
+          "name": "front wing has a flat ledge and a distinct outward hood return -1",
+          "pass": true,
+          "ledgeNormal": [
+            0,
+            0.9952369332313538,
+            0.09748578816652298
+          ],
+          "returnNormal": [
+            -0.875390350818634,
+            0.4808199405670166,
+            0.05003909021615982
+          ],
+          "edgeNormal": [
+            -0.6141047477722168,
+            0.7857692241668701,
+            0.07377040386199951
+          ]
+        },
+        {
+          "name": "final-space hood joint descends without an S-shaped wave -1",
+          "pass": true,
+          "maximumChordErrorM": 0.000743168131386529,
+          "descentM": 0.1536998301744461,
+          "spanM": 1.4728370755910873
+        },
+        {
+          "name": "window corner radii belong to actual holes rather than painted overlays -1",
+          "pass": true,
+          "rays": [
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            }
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire -1 -1.445",
+          "pass": true,
+          "faceNormal": [
+            -0.9985446929931641,
+            0.00037285833968780935,
+            0.05392930656671524
+          ],
+          "innerNormal": [
+            0.033300530165433884,
+            -0.9994451999664307,
+            0.0005568986525759101
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire -1 1.445",
+          "pass": true,
+          "faceNormal": [
+            -0.9988844394683838,
+            0.0003742282569874078,
+            0.04722028970718384
+          ],
+          "innerNormal": [
+            0.03330051898956299,
+            -0.9994451999664307,
+            0.0005568960914388299
+          ]
+        },
+        {
+          "name": "formed bumper side has outward normals -1",
+          "pass": true,
+          "middleNormal": [
+            -0.9953573346138,
+            0,
+            0.09624867886304855
+          ]
+        },
+        {
+          "name": "EV pillar fairing faces the exterior -1",
+          "pass": true,
+          "middleNormal": [
+            -0.013198940083384514,
+            0.4824020266532898,
+            0.8758504986763
+          ]
+        },
+        {
+          "name": "measured side-pane hierarchy 1",
+          "pass": true,
+          "widthsM": [
+            0.7953252643346786,
+            0.6822550296783447,
+            0.7279444932937622
+          ]
+        },
+        {
+          "name": "reference rear-door glass is about 28 inches wide 1",
+          "pass": true,
+          "widthM": 0.6822550296783447,
+          "referenceOpeningM": 0.707
+        },
+        {
+          "name": "B and C pillars occupy the measured side stations 1",
+          "pass": true,
+          "rearDoorGlassBoundsZ": [
+            -1.054627537727356,
+            -0.37237250804901123
+          ]
+        },
+        {
+          "name": "front wing has a flat ledge and a distinct outward hood return 1",
+          "pass": true,
+          "ledgeNormal": [
+            0,
+            0.9952369332313538,
+            0.09748578816652298
+          ],
+          "returnNormal": [
+            0.875390350818634,
+            0.4808199405670166,
+            0.05003909021615982
+          ],
+          "edgeNormal": [
+            0.6141047477722168,
+            0.7857692241668701,
+            0.07377040386199951
+          ]
+        },
+        {
+          "name": "final-space hood joint descends without an S-shaped wave 1",
+          "pass": true,
+          "maximumChordErrorM": 0.000743168131386529,
+          "descentM": 0.1536998301744461,
+          "spanM": 1.4728370755910873
+        },
+        {
+          "name": "window corner radii belong to actual holes rather than painted overlays 1",
+          "pass": true,
+          "rays": [
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            }
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire 1 -1.445",
+          "pass": true,
+          "faceNormal": [
+            0.9985446929931641,
+            0.00037285833968780935,
+            0.05392930656671524
+          ],
+          "innerNormal": [
+            -0.033300530165433884,
+            -0.9994451999664307,
+            0.0005568986525759101
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire 1 1.445",
+          "pass": true,
+          "faceNormal": [
+            0.9988844394683838,
+            0.0003742282569874078,
+            0.04722028970718384
+          ],
+          "innerNormal": [
+            -0.03330051898956299,
+            -0.9994451999664307,
+            0.0005568960914388299
+          ]
+        },
+        {
+          "name": "formed bumper side has outward normals 1",
+          "pass": true,
+          "middleNormal": [
+            0.9953573346138,
+            0,
+            0.09624867886304855
+          ]
+        },
+        {
+          "name": "EV pillar fairing faces the exterior 1",
+          "pass": true,
+          "middleNormal": [
+            0.013198940083384514,
+            0.4824020266532898,
+            0.8758504986763
+          ]
+        },
+        {
+          "name": "stock tire and bead-seat diameter use the selected factory option",
+          "pass": true,
+          "tireSize": "275/50R20",
+          "rimInches": 20,
+          "tread": "all-terrain"
+        },
+        {
+          "name": "wheelbase and roof envelope were not squashed to hide a silhouette error",
+          "pass": true,
+          "wheelbaseM": 2.89,
+          "heightM": 1.986
+        },
+        {
+          "name": "bonnet is a compound sheet with measurable height relief",
+          "pass": true,
+          "heightReliefM": 0.2137012481689453
+        },
+        {
+          "name": "hood over the front axle follows the 49-inch drawing datum",
+          "pass": true,
+          "heightM": 1.27543726838759,
+          "amgReferenceM": 1.246,
+          "evRaisedHood": true
+        },
+        {
+          "name": "side glass is below the formerly high greenhouse",
+          "pass": true
+        },
+        {
+          "name": "roof flange is shallow instead of a deep vertical visor",
+          "pass": true,
+          "heightRangeM": 0.03715360164642334
+        },
+        {
+          "name": "front roof crown rolls into the header",
+          "pass": true,
+          "crownYM": 1.98439112850667,
+          "edgeYM": 1.9663801426798124,
+          "rollM": 0.018010985826857562
+        },
+        {
+          "name": "wing indicator lenses are neutral and unlit at rest",
+          "pass": true
+        },
+        {
+          "name": "round MULTIBEAM size and placement follow the manufacturer front drawing",
+          "pass": true,
+          "diametersM": [
+            [
+              0.2179999900179983,
+              0.2179999900179983
+            ],
+            [
+              0.2179999900179983,
+              0.2179999900179983
+            ]
+          ],
+          "centerHeightsM": [
+            0.9090000032402472,
+            0.9090000032402472
+          ],
+          "centerSpacingM": 1.27,
+          "reference": {
+            "source": "March 2025 G-Class brochure page 84 front drawing",
+            "scalePxPerM": 453.7645275391612,
+            "diameterPx": [
+              96,
+              100
+            ],
+            "centerSpacingPx": 576,
+            "centerAboveGroundPx": [
+              412,
+              413
+            ],
+            "measurement": "Raster-derived estimates, not published engineering lamp dimensions."
+          }
+        },
+        {
+          "name": "fascia upper corners do not fold or face backward",
+          "pass": true,
+          "minimumNormalZ": 0.9953964948654175
+        },
+        {
+          "name": "actual fascia triangles retain outward winding around the lamps",
+          "pass": true,
+          "reversedTriangles": 0,
+          "minimumTriangleNormalZ": 0.03906001725647136,
+          "triangles": 4176
+        },
+        {
+          "name": "formed fascia has separate circular lamps and a drawing-width grille opening",
+          "pass": true,
+          "openRays": 32,
+          "solidRays": 32,
+          "misses": [],
+          "grilleRays": [
+            {
+              "xM": -0.47,
+              "solid": true,
+              "expectedSolid": true
+            },
+            {
+              "xM": -0.42,
+              "solid": false,
+              "expectedSolid": false
+            },
+            {
+              "xM": 0.42,
+              "solid": false,
+              "expectedSolid": false
+            },
+            {
+              "xM": 0.47,
+              "solid": true,
+              "expectedSolid": true
+            }
+          ],
+          "referenceGrilleWidthM": 0.8749031180400891
+        },
+        {
+          "name": "all eight protective molding sections stay level across the nose",
+          "pass": true,
+          "sections": [
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "checks": 32,
+      "pass": true,
+      "bonnetPeakYM": 1.272143006324768,
+      "sideGlassWidthsM": [
+        0.7953252643346786,
+        0.6822550296783447,
+        0.7279444932937622
+      ],
+      "tests": [
+        {
+          "name": "measured side-pane hierarchy -1",
+          "pass": true,
+          "widthsM": [
+            0.7953252643346786,
+            0.6822550296783447,
+            0.7279444932937622
+          ]
+        },
+        {
+          "name": "reference rear-door glass is about 28 inches wide -1",
+          "pass": true,
+          "widthM": 0.6822550296783447,
+          "referenceOpeningM": 0.707
+        },
+        {
+          "name": "B and C pillars occupy the measured side stations -1",
+          "pass": true,
+          "rearDoorGlassBoundsZ": [
+            -1.054627537727356,
+            -0.37237250804901123
+          ]
+        },
+        {
+          "name": "front wing has a flat ledge and a distinct outward hood return -1",
+          "pass": true,
+          "ledgeNormal": [
+            0,
+            0.9952369332313538,
+            0.09748578816652298
+          ],
+          "returnNormal": [
+            -0.7085978984832764,
+            0.702037513256073,
+            0.0709390863776207
+          ],
+          "edgeNormal": [
+            -0.6141047477722168,
+            0.7857692241668701,
+            0.07377040386199951
+          ]
+        },
+        {
+          "name": "final-space hood joint descends without an S-shaped wave -1",
+          "pass": true,
+          "maximumChordErrorM": 0.000743168131386529,
+          "descentM": 0.1536998301744461,
+          "spanM": 1.4728370755910873
+        },
+        {
+          "name": "window corner radii belong to actual holes rather than painted overlays -1",
+          "pass": true,
+          "rays": [
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            }
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire -1 -1.445",
+          "pass": true,
+          "faceNormal": [
+            -0.9996356964111328,
+            0.000186578108696267,
+            0.026990216225385666
+          ],
+          "innerNormal": [
+            0.02954597771167755,
+            -0.9995632767677307,
+            0.0005572963273152709
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire -1 1.445",
+          "pass": true,
+          "faceNormal": [
+            -0.99972003698349,
+            0.00018778587400447577,
+            0.02365991845726967
+          ],
+          "innerNormal": [
+            0.029545975849032402,
+            -0.9995632767677307,
+            0.0005572942900471389
+          ]
+        },
+        {
+          "name": "formed bumper side has outward normals -1",
+          "pass": true,
+          "middleNormal": [
+            -0.9953573346138,
+            0,
+            0.09624867886304855
+          ]
+        },
+        {
+          "name": "measured side-pane hierarchy 1",
+          "pass": true,
+          "widthsM": [
+            0.7953252643346786,
+            0.6822550296783447,
+            0.7279444932937622
+          ]
+        },
+        {
+          "name": "reference rear-door glass is about 28 inches wide 1",
+          "pass": true,
+          "widthM": 0.6822550296783447,
+          "referenceOpeningM": 0.707
+        },
+        {
+          "name": "B and C pillars occupy the measured side stations 1",
+          "pass": true,
+          "rearDoorGlassBoundsZ": [
+            -1.054627537727356,
+            -0.37237250804901123
+          ]
+        },
+        {
+          "name": "front wing has a flat ledge and a distinct outward hood return 1",
+          "pass": true,
+          "ledgeNormal": [
+            0,
+            0.9952369332313538,
+            0.09748578816652298
+          ],
+          "returnNormal": [
+            0.7085978984832764,
+            0.702037513256073,
+            0.0709390863776207
+          ],
+          "edgeNormal": [
+            0.6141047477722168,
+            0.7857692241668701,
+            0.07377040386199951
+          ]
+        },
+        {
+          "name": "final-space hood joint descends without an S-shaped wave 1",
+          "pass": true,
+          "maximumChordErrorM": 0.000743168131386529,
+          "descentM": 0.1536998301744461,
+          "spanM": 1.4728370755910873
+        },
+        {
+          "name": "window corner radii belong to actual holes rather than painted overlays 1",
+          "pass": true,
+          "rays": [
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -1.067,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.342
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.02,
+              "metal": true,
+              "expectedMetal": true
+            },
+            {
+              "sourceCorner": [
+                -0.36,
+                1.858
+              ],
+              "insetM": 0.06,
+              "metal": false,
+              "expectedMetal": false
+            }
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire 1 -1.445",
+          "pass": true,
+          "faceNormal": [
+            0.9996356964111328,
+            0.000186578108696267,
+            0.026990216225385666
+          ],
+          "innerNormal": [
+            -0.02954597771167755,
+            -0.9995632767677307,
+            0.0005572963273152709
+          ]
+        },
+        {
+          "name": "painted arch faces outward and dark wheelwell faces the tire 1 1.445",
+          "pass": true,
+          "faceNormal": [
+            0.99972003698349,
+            0.00018778587400447577,
+            0.02365991845726967
+          ],
+          "innerNormal": [
+            -0.029545975849032402,
+            -0.9995632767677307,
+            0.0005572942900471389
+          ]
+        },
+        {
+          "name": "formed bumper side has outward normals 1",
+          "pass": true,
+          "middleNormal": [
+            0.9953573346138,
+            0,
+            0.09624867886304855
+          ]
+        },
+        {
+          "name": "stock tire and bead-seat diameter use the selected factory option",
+          "pass": true,
+          "tireSize": "295/40R22",
+          "rimInches": 22,
+          "tread": "road-performance"
+        },
+        {
+          "name": "wheelbase and roof envelope were not squashed to hide a silhouette error",
+          "pass": true,
+          "wheelbaseM": 2.89,
+          "heightM": 1.979
+        },
+        {
+          "name": "bonnet is a compound sheet with measurable height relief",
+          "pass": true,
+          "heightReliefM": 0.2042444944381714
+        },
+        {
+          "name": "hood over the front axle follows the 49-inch drawing datum",
+          "pass": true,
+          "heightM": 1.2402633530795613,
+          "amgReferenceM": 1.246,
+          "evRaisedHood": true
+        },
+        {
+          "name": "side glass is below the formerly high greenhouse",
+          "pass": true
+        },
+        {
+          "name": "roof flange is shallow instead of a deep vertical visor",
+          "pass": true,
+          "heightRangeM": 0.030153632164001465
+        },
+        {
+          "name": "front roof crown rolls into the header",
+          "pass": true,
+          "crownYM": 1.9773910793382343,
+          "edgeYM": 1.9593801721405595,
+          "rollM": 0.01801090719767484
+        },
+        {
+          "name": "wing indicator lenses are neutral and unlit at rest",
+          "pass": true
+        },
+        {
+          "name": "round MULTIBEAM size and placement follow the manufacturer front drawing",
+          "pass": true,
+          "diametersM": [
+            [
+              0.2179999900179983,
+              0.2179999900179983
+            ],
+            [
+              0.2179999900179983,
+              0.2179999900179983
+            ]
+          ],
+          "centerHeightsM": [
+            0.9090000032402472,
+            0.9090000032402472
+          ],
+          "centerSpacingM": 1.27,
+          "reference": {
+            "source": "March 2025 G-Class brochure page 84 front drawing",
+            "scalePxPerM": 453.7645275391612,
+            "diameterPx": [
+              96,
+              100
+            ],
+            "centerSpacingPx": 576,
+            "centerAboveGroundPx": [
+              412,
+              413
+            ],
+            "measurement": "Raster-derived estimates, not published engineering lamp dimensions."
+          }
+        },
+        {
+          "name": "fascia upper corners do not fold or face backward",
+          "pass": true,
+          "minimumNormalZ": 0.9953964948654175
+        },
+        {
+          "name": "actual fascia triangles retain outward winding around the lamps",
+          "pass": true,
+          "reversedTriangles": 0,
+          "minimumTriangleNormalZ": 0.03333694400509947,
+          "triangles": 4176
+        },
+        {
+          "name": "formed fascia has separate circular lamps and a drawing-width grille opening",
+          "pass": true,
+          "openRays": 32,
+          "solidRays": 32,
+          "misses": [],
+          "grilleRays": [
+            {
+              "xM": -0.47,
+              "solid": true,
+              "expectedSolid": true
+            },
+            {
+              "xM": -0.42,
+              "solid": false,
+              "expectedSolid": false
+            },
+            {
+              "xM": 0.42,
+              "solid": false,
+              "expectedSolid": false
+            },
+            {
+              "xM": 0.47,
+              "solid": true,
+              "expectedSolid": true
+            }
+          ],
+          "referenceGrilleWidthM": 0.8749031180400891
+        },
+        {
+          "name": "all eight protective molding sections stay level across the nose",
+          "pass": true,
+          "sections": [
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            },
+            {
+              "centerY": 0.9949999991059304,
+              "thicknessY": 0.031849995255470276
+            }
+          ]
+        },
+        {
+          "name": "round covered spare remains round after the body proportion fit",
+          "pass": true,
+          "diametersM": [
+            0.7940000295639038,
+            0.7940000295639038
+          ]
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Photo-derived panel positions; not OEM CAD.",
+    "Native rendered comparison remains required."
+  ]
+}

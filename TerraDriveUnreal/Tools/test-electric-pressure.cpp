@@ -47,8 +47,10 @@ int main() {
     Check(ResolveMotorLayout(0,0)==MotorLayout::None,"factory combustion remains combustion without a swap");
     Check(ResolveMotorLayout(0,3)==MotorLayout::Triple,"stock Hummer layout keeps its three motors");
     Check(ResolveMotorLayout(0,4)==MotorLayout::Quad,"stock G580 layout keeps four independent motors");
-    Check(ResolveMotorLayout(1,4)==MotorLayout::Single&&ResolveMotorLayout(2,3)==MotorLayout::Dual&&ResolveMotorLayout(3,0)==MotorLayout::Quad,
-        "explicit swaps replace rather than silently preserve factory topology");
+    Check(ResolveMotorLayout(1,0)==MotorLayout::Single&&ResolveMotorLayout(2,0)==MotorLayout::Dual&&ResolveMotorLayout(3,0)==MotorLayout::Quad,
+        "combustion donors offer single dual and quad electric conversions");
+    for(int motors:{3,4})for(int stage:{1,2,3})
+        Check(ResolveMotorLayout(stage,motors)==MotorLayout::None,"factory EV conversion stages select combustion instead of replacing their motor topology");
     Check(ResolveMotorLayout(-5,4)==MotorLayout::Quad&&ResolveMotorLayout(99,0)==MotorLayout::Quad&&ResolveMotorLayout(0,99)==MotorLayout::None,
         "layout selection bounds persisted stages and rejects invalid factory metadata");
     Check(!ElectricAllWheelDrive(MotorLayout::Single)&&ElectricAllWheelDrive(MotorLayout::Dual)&&ElectricAllWheelDrive(MotorLayout::Triple)&&ElectricAllWheelDrive(MotorLayout::Quad),
@@ -57,6 +59,28 @@ int main() {
         !IndependentElectricWheel(MotorLayout::Quad,4)&&!IndependentElectricWheel(MotorLayout::Quad,-1),"independent wheel metadata respects the physical topology and wheel bounds");
     Check(MakeElectricSwap(0,200000,2100).Layout==MotorLayout::None&&MakeElectricSwap(0,200000,2100).NetMassKg==0,
         "no selected conversion creates no swap mass or motor");
+    Check(MakeCombustionSwap(0,4,116).Stage==0&&MakeCombustionSwap(3,0,116).Stage==0,
+        "ICE kits require a factory electric donor and an explicit conversion stage");
+    float previousICEPower=0,previousICEMass=-10000;
+    for(int stage:{1,2,3}) {
+        const auto kit=MakeCombustionSwap(stage,4,116);
+        Check(Near(kit.PowerW/745.7f,stage==1?350.f:stage==2?500.f:700.f)&&kit.PowerW>previousICEPower,
+            "gasoline conversion stages offer distinct 350 500 and 700 hp budgets");
+        Check(kit.NetMassKg<0&&kit.NetMassKg>previousICEMass&&Near(kit.NetMassKg,kit.KitMassKg-kit.RemovedDrivelineMassKg),
+            "gasoline swap removes the original battery and motor hardware exactly once");
+        Check(kit.GearRatios[0]>kit.GearRatios[7]&&kit.GearRatios[7]<1&&kit.ReverseRatio>0&&kit.FinalDrive>0,
+            "all gasoline kits supply a mechanical eight speed with overdrive reverse and a final ratio");
+        Check(CombustionSwapTorque(kit,750)>0&&CombustionSwapTorque(kit,3000)>CombustionSwapTorque(kit,750)&&
+            CombustionSwapTorque(kit,kit.RedlineRPM+150)==0&&CombustionSwapTorque(kit,nan)==0,
+            "gasoline torque has an idle ramp bounded redline and finite input guard");
+        for(float rpm:{750.f,2000.f,4000.f,5500.f,6500.f})
+            Check(CombustionSwapTorque(kit,rpm)*rpm*6.28318530718f/60<=kit.PowerW+1,
+                "the gasoline torque curve never exceeds its rated stage power");
+        previousICEPower=kit.PowerW;previousICEMass=kit.NetMassKg;
+    }
+    Check(Near(MakeCombustionSwap(1,3,170,1300).RemovedDrivelineMassKg,1300)&&
+        std::isfinite(MakeCombustionSwap(1,4,nan,nan).NetMassKg),
+        "explicit removed electric hardware mass overrides the estimate and invalid metadata remains finite");
     for(int count:{1,2,3,4}) {
         const auto factory=FactoryElectricConfig(count,432000,12000,10,16000);
         const auto drive=ElectricDriveTorque(factory,zero,1,1);

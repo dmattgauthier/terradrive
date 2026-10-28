@@ -213,7 +213,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   ConfigureCoachworkCollision();
   Chassis->SetMassOverrideInKg(NAME_None,Mass);
   Chassis->SetCenterOfMass(FVector::ZeroVector);
-  Damage = 0;
+  RepairDamage();
   Gear = 0;
   Direction = 1;
   ReverseReleaseRequired=false;ReverseHold=0;
@@ -406,7 +406,7 @@ void ATerraVehicle::Input(float Dt) {
     Terrain->SetRain(!Terrain->Rain);
   if (Press(EKeys::BackSpace)) {
     Terrain->ResetSoil();
-    Damage = 0;
+    RepairDamage();
     Parcels.Empty();
   }
 
@@ -457,33 +457,38 @@ void ATerraVehicle::Simulate(float Dt) {
   Speed = FVector::DotProduct(Velocity, Forward);
   const bool Electric = IsElectric();
   const auto EV=ElectricConfig();
+  const auto ICE=CombustionConfig();
+  const bool ConvertedICE=ICE.Stage>0;
+  const float IdleRPM=ConvertedICE?ICE.IdleRPM:700.f;
+  const float RedlineRPM=ConvertedICE?ICE.RedlineRPM:Spec->GetObjectField(TEXT("engine"))->GetNumberField(TEXT("redlineRPM"));
   if (LowRange) Gear = 0;
   const auto &Ratios = Spec->GetArrayField(TEXT("gears"));
-  float Ratio = Direction < 0 ? Number(TEXT("reverseRatio"), 3)
-                              : Ratios[Gear]->AsNumber();
-  float Final = Number(TEXT("finalDrive"), 4)*PortalReduction(),
+  const int GearCount=ConvertedICE?8:Ratios.Num();
+  Gear=FMath::Clamp(Gear,0,GearCount-1);
+  auto RatioAt=[&](int Index){return ConvertedICE?ICE.GearRatios[Index]:float(Ratios[Index]->AsNumber());};
+  float Ratio=Direction<0?(ConvertedICE?ICE.ReverseRatio:Number(TEXT("reverseRatio"),3)):RatioAt(Gear);
+  float Final=(ConvertedICE?ICE.FinalDrive:Number(TEXT("finalDrive"),4))*PortalReduction(),
         Low = EffectiveLowRatio();
   if(Electric){Ratio=EV.Reduction;Final=PortalReduction();Gear=0;}
   float MeanOmega = 0;
   for (auto &W : WheelState)
     MeanOmega += FMath::Abs(W.Omega) * .25f;
-  RPM = FMath::Max(Electric ? 0.f : 700.f,
+  RPM = FMath::Max(Electric ? 0.f : IdleRPM,
                    MeanOmega * Ratio * Final * Low * 60 / (2 * PI));
   if (!Electric && !LowRange && Direction > 0) {
-    float Red = Spec->GetObjectField(TEXT("engine"))
-                    ->GetNumberField(TEXT("redlineRPM"));
+    float Red=RedlineRPM;
     const float RoadRPM=FMath::Abs(Speed)/FMath::Max(.1f,Radius)*Ratio*Final*Low*60/(2*PI);
-    Gear=TerraSim::AutomaticGear(Gear,Ratios.Num()-1,RPM,RoadRPM,Red);
-    Ratio=Ratios[Gear]->AsNumber();
-    RPM=FMath::Max(700.f,MeanOmega*Ratio*Final*Low*60/(2*PI));
+    Gear=TerraSim::AutomaticGear(Gear,GearCount-1,RPM,RoadRPM,Red);
+    Ratio=RatioAt(Gear);
+    RPM=FMath::Max(IdleRPM,MeanOmega*Ratio*Final*Low*60/(2*PI));
   }
   if(!Electric){
     const auto Engine=Spec->GetObjectField(TEXT("engine"));
-    RPM=TerraSim::ConverterEngineRPM(RPM,Engine->GetNumberField(TEXT("idleRPM")),Throttle,
-        Number(TEXT("converterStallRPM"),FMath::Min(2300.f,float(Engine->GetNumberField(TEXT("peakTorqueRPM"))))));
+    RPM=TerraSim::ConverterEngineRPM(RPM,ConvertedICE?ICE.IdleRPM:Engine->GetNumberField(TEXT("idleRPM")),Throttle,
+        ConvertedICE?ICE.StallRPM:Number(TEXT("converterStallRPM"),FMath::Min(2300.f,float(Engine->GetNumberField(TEXT("peakTorqueRPM"))))));
   }
-  float Torque = Number(TEXT("torqueNm"), 350);
-  if (!Electric) {
+  float Torque=ConvertedICE?TerraSim::CombustionSwapTorque(ICE,RPM):Number(TEXT("torqueNm"),350);
+  if (!Electric && !ConvertedICE) {
     auto Curve =
         Spec->GetObjectField(TEXT("engine"))->GetArrayField(TEXT("curve"));
     for (int I = 1; I < Curve.Num(); I++) {
@@ -507,14 +512,14 @@ void ATerraVehicle::Simulate(float Dt) {
   // torque needed to balance tire reaction at redline. A second cut based on
   // last frame's RPM made loaded locked axles alternate drive and zero torque.
   TotalTorque *=
-      Throttle * Tuning.Power * Tuning.ElectricalPower * Tuning.DriveEfficiency * (1 - Damage * .35f) * Direction;
+      Throttle * Tuning.Power * Tuning.ElectricalPower * Tuning.DriveEfficiency * DamageDriveFactor() * Direction;
   const float WaterDepth=Terrain->Sample(GetActorLocation()).Water/100;
   TotalTorque*=1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f);
   if (Tracks && FMath::Abs(Speed) > 12)
     TotalTorque = 0;
   if (LowRange) TotalTorque *= FMath::Clamp(8.f-FMath::Abs(Speed),0.f,1.f);
   const float SteerAngle =
-      Steer * FMath::DegreesToRadians(34.f) / (1 + FMath::Abs(Speed) * .025f);
+      Steer * FMath::DegreesToRadians(34.f) / (1 + FMath::Abs(Speed) * .025f) + DamageSteeringOffset();
   float TotalLoad = 0;
   ContactCount = 0;
   LastTireForceN = 0;
@@ -578,7 +583,7 @@ void ATerraVehicle::Simulate(float Dt) {
   if (Overturned) { TotalTorque = 0; Throttle = 0; Steer = 0; }
   if (FMath::Abs(Speed)>11.1f) FrontLocked=RearLocked=false;
   float Omega[4];for(int I=0;I<4;++I){Omega[I]=WheelState[I].Omega;LastWheelDriveNm[I]=LastWheelRegenNm[I]=0;}
-  const float Environment= Tuning.DriveEfficiency*(1-Damage*.35f)*(1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f));
+  const float Environment= Tuning.DriveEfficiency*DamageDriveFactor()*(1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f));
   float ElectricThrottle=Throttle*(BatterySOC>.001f?1.f:0.f);
   if(Tracks&&FMath::Abs(Speed)>12)ElectricThrottle=0;
   
@@ -602,13 +607,13 @@ void ATerraVehicle::Simulate(float Dt) {
   const float AssistBrake = DescentAssist && Throttle<.05f
       ? FMath::Clamp((FMath::Abs(Speed)-2.f)*.45f,0.f,.8f) : 0.f;
   const float EffectiveBrake = FMath::Max(Brake,AssistBrake);
-  if(AssistBrake>Brake){BrakeLampLevel=5;for(auto Lamp:BrakeLamps)Lamp->SetScalarParameterValue(TEXT("TerraLamp"),5);}
+  if(AssistBrake>Brake){BrakeLampLevel=5;for(auto Lamp:BrakeLamps)Lamp->SetScalarParameterValue(TEXT("TerraLamp"),5);UpdateDamageVisuals();}
   const auto Regeneration=TerraSim::ElectricRegen(EV,Omega,EffectiveBrake,Throttle<.01f?.08f:0.f,
       FMath::Clamp((.99f-BatterySOC)/.04f,0.f,1.f),Low,PortalReduction(),Environment,FourDrive);
   const float Inertia=Tracks?24.f+Tuning.RotatingMass:WheelInertia(), R=Radius;
   const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
   const FQuat BodyRotation=Chassis->GetComponentQuat();
-  const float WheelRevLimit=Electric?0:float(Spec->GetObjectField(TEXT("engine"))->GetNumberField(TEXT("redlineRPM")))*2*PI/
+  const float WheelRevLimit=Electric?0:RedlineRPM*2*PI/
       (60*FMath::Max(.1f,Ratio*Final*Low));
   float Stiffness[4]={}, Drag[4]={}, Lateral[4]={}, LongLimit[4]={};
   for(int I=0;I<4;++I){
@@ -619,7 +624,7 @@ void ATerraVehicle::Simulate(float Dt) {
     const float EngineBrake=!Electric&&Driven&&Throttle<.05f&&LowRange?Mass*9.81f*R*.035f:0.f;
     const float Rut=TerraSim::RutResistance(W.RutDepth,R,W.Ground.Softness,W.Ground.Packing,Tracks);
     const auto Air=TerraSim::EvaluateTirePressure(WheelPressure(I),Number(I<2?TEXT("stockPSIFront"):TEXT("stockPSIRear"),Number(TEXT("stockPSI"),35)),Share*9.81f,Number(TEXT("mass"),2100)*9.81f*(I<2?FrontWeight:1-FrontWeight)*.5f,Speed,W.Ground.Softness,Tracks);
-    const float Service=EffectiveBrake*Mass*9.81f*R*.4f;
+    const float Service=EffectiveBrake*Mass*9.81f*R*.4f*DamageBrakeFactor();
     const float Regen=Regeneration.Independent[I]?Regeneration.Wheel[I]:Regeneration.Axle[I/2]*.5f;
     LastWheelRegenNm[I]=FMath::Min(Regen,FMath::Max(Service,Throttle<.01f?Regen:0.f));
     // Regeneration supplies part of the requested service brake, with friction
@@ -838,7 +843,7 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
         *GetPathNameSafe(OtherMesh?OtherMesh->GetStaticMesh():nullptr),*ContactTags,Result.Item,Result.FaceIndex,*Result.ImpactPoint.ToString(),*Local.ToString(),
         *Result.ImpactNormal.ToString(),Result.bStartPenetrating?Result.PenetrationDepth:0,*GetActorLocation().ToString(),*GetActorRotation().ToString(),*Chassis->GetPhysicsLinearVelocity().ToString());
   }
-  Damage = FMath::Clamp(Damage + ImpactDamage(Impulse.Size()), 0.f, 1.f);
+  RegisterDamageImpact(Impulse,Result,GroundHit);
   if (Terrain)
     Terrain->HitTree(Other, -Impulse, Result.ImpactPoint);
 }

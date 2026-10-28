@@ -1,5 +1,5 @@
 {
-  "revision": "expedition-electric-14",
+  "revision": "expedition-gclass-15",
   "pass": true,
   "checks": 88,
   "vehicles": [
@@ -233,54 +233,54 @@
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 248241,
-        "triangles": 356596,
+        "vertices": 276514,
+        "triangles": 394336,
         "materialObjects": 24,
         "bounds": [
           [
             -1.096000000094995,
             0.2505000013113022,
-            -2.4894909040192306
+            -2.4064909040192304
           ],
           [
             1.096000000094995,
-            1.9866598844528198,
-            2.2520000000474973
+            1.9870000005364419,
+            2.3350000000474975
           ]
         ]
       },
       "glazing": [
         {
           "pane": "front side -1",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "pane": "rear side -1",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "pane": "rear quarter -1",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "pane": "front side 1",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "pane": "rear side 1",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "pane": "rear quarter 1",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "pane": "upright windscreen",
-          "firstDistanceM": 3.3962489622181304
+          "firstDistanceM": 3.438726693666352
         },
         {
           "pane": "rear door glass",
-          "firstDistanceM": 1.7000022859714958
+          "firstDistanceM": 1.783002053063174
         },
         {
           "pane": "sunroof",
@@ -301,8 +301,8 @@
         {
           "case": "bounded original body geometry and material budget",
           "pass": true,
-          "triangles": 356596,
-          "vertices": 248241,
+          "triangles": 394336,
+          "vertices": 276514,
           "materialObjects": 24
         },
         {
@@ -361,7 +361,7 @@
         {
           "case": "stock roof follows the sourced closed-roof height",
           "pass": true,
-          "sourceTopYM": 1.9866598844528198,
+          "sourceTopYM": 1.9870000005364419,
           "referenceM": 1.986,
           "toleranceM": 0.025
         },
@@ -415,49 +415,49 @@
           "case": "front side -1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "case": "rear side -1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "case": "rear quarter -1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "case": "front side 1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "case": "rear side 1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "case": "rear quarter 1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "case": "upright windscreen has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 3.3962489622181304
+          "firstDistanceM": 3.438726693666352
         },
         {
           "case": "rear door glass has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 1.7000022859714958
+          "firstDistanceM": 1.783002053063174
         },
         {
           "case": "sunroof has a genuine first-hit glass opening",
@@ -468,12 +468,12 @@
         {
           "case": "bonnet has restrained physical transverse crown",
           "pass": true,
-          "crownM": 0.017747349970839377
+          "crownM": 0.03533778342200189
         },
         {
           "case": "drawn door sheet has physical shoulder relief",
           "pass": true,
-          "reliefM": 0.01416172854459119
+          "reliefM": 0.0123803028850904
         },
         {
           "case": "metal roof has a shallow transverse crown",
@@ -504,12 +504,13 @@
         {
           "case": "selected factory rim has open original spokes on both faces",
           "pass": true,
-          "spokeBranches": 20
+          "spokeBranches": 20,
+          "selectedRimInches": 20
         },
         {
           "case": "electric grille uses the distinct recessed closed black panel",
           "pass": true,
-          "panelZM": 2.1199999995529653
+          "panelZM": 2.197275532782078
         }
       ],
       "limitations": [
@@ -525,54 +526,54 @@
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 266752,
-        "triangles": 376180,
+        "vertices": 292713,
+        "triangles": 410064,
         "materialObjects": 23,
         "bounds": [
           [
             -1.098000000026077,
             0.31849999910593035,
-            -2.635494659958592
+            -2.5524946599585916
           ],
           [
             1.098000000026077,
             1.979659914970398,
-            2.2520000000474973
+            2.3350000000474975
           ]
         ]
       },
       "glazing": [
         {
           "pane": "front side -1",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "pane": "rear side -1",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "pane": "rear quarter -1",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "pane": "front side 1",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "pane": "rear side 1",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "pane": "rear quarter 1",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "pane": "upright windscreen",
-          "firstDistanceM": 3.3962489622181304
+          "firstDistanceM": 3.438726693666352
         },
         {
           "pane": "rear door glass",
-          "firstDistanceM": 1.7000022859714958
+          "firstDistanceM": 1.7830020530631736
         },
         {
           "pane": "sunroof",
@@ -593,8 +594,8 @@
         {
           "case": "bounded original body geometry and material budget",
           "pass": true,
-          "triangles": 376180,
-          "vertices": 266752,
+          "triangles": 410064,
+          "vertices": 292713,
           "materialObjects": 23
         },
         {
@@ -635,20 +636,20 @@
         {
           "case": "factory tire radius agrees with the physics tire",
           "pass": true,
-          "radiusM": 0.39150000736117363,
-          "physicsRadiusM": 0.3915
+          "radiusM": 0.3974935763604206,
+          "physicsRadiusM": 0.3974
         },
         {
           "case": "factory tire width includes shoulders without width inflation",
           "pass": true,
-          "widthM": 0.2853499999191614,
-          "physicsWidthM": 0.275
+          "widthM": 0.30586999991916136,
+          "physicsWidthM": 0.295
         },
         {
           "case": "factory wheel diameter stays at the selected bead seat",
           "pass": true,
-          "renderRadiusM": 0.25552400946617126,
-          "nominalRadiusM": 0.254
+          "renderRadiusM": 0.28107640147209173,
+          "nominalRadiusM": 0.2794
         },
         {
           "case": "stock roof follows the sourced closed-roof height",
@@ -707,49 +708,49 @@
           "case": "front side -1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "case": "rear side -1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "case": "rear quarter -1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "case": "front side 1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318711733540825
+          "firstDistanceM": 2.1400481960856217
         },
         {
           "case": "rear side 1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318728500214066
+          "firstDistanceM": 2.1400756911343732
         },
         {
           "case": "rear quarter 1 has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1318727239315542
+          "firstDistanceM": 2.140088629258735
         },
         {
           "case": "upright windscreen has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 3.3962489622181304
+          "firstDistanceM": 3.438726693666352
         },
         {
           "case": "rear door glass has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 1.7000022859714958
+          "firstDistanceM": 1.7830020530631736
         },
         {
           "case": "sunroof has a genuine first-hit glass opening",
@@ -760,12 +761,12 @@
         {
           "case": "bonnet has restrained physical transverse crown",
           "pass": true,
-          "crownM": 0.017747283289096583
+          "crownM": 0.03210133918609959
         },
         {
           "case": "drawn door sheet has physical shoulder relief",
           "pass": true,
-          "reliefM": 0.01416172854459119
+          "reliefM": 0.0123803028850904
         },
         {
           "case": "metal roof has a shallow transverse crown",
@@ -796,12 +797,13 @@
         {
           "case": "selected factory rim has open original spokes on both faces",
           "pass": true,
-          "spokeBranches": 20
+          "spokeBranches": 40,
+          "selectedRimInches": 22
         },
         {
           "case": "AMG vertical grille bars stand in front of the dark backing",
           "pass": true,
-          "setbackM": 0.03900000120699376
+          "setbackM": 0.0418371878862378
         }
       ],
       "limitations": [

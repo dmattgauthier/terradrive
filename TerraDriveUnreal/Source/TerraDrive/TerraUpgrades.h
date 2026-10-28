@@ -13,9 +13,9 @@ struct UpgradeSetup {
     }
 };
 inline int UpgradeStageCountForVersion(int version) {
-    return version==1||version==2?7:version==3?10:version==4?PartCount:0;
+    return version==1||version==2?7:version==3?10:version==4||version==5?PartCount:0;
 }
-inline bool DecodeUpgradeStages(const double* values,int count,int version,bool electrical,UpgradeSetup& result) {
+inline bool DecodeUpgradeStages(const double* values,int count,int version,bool electrical,UpgradeSetup& result,bool factoryElectric=false) {
     if(!values||count!=UpgradeStageCountForVersion(version)||count==0)return false;
     UpgradeSetup decoded;
     for(int i=0;i<count;++i){
@@ -23,6 +23,9 @@ inline bool DecodeUpgradeStages(const double* values,int count,int version,bool 
         if(!std::isfinite(value)||value<0||value>3||std::floor(value)!=value)return false;
         decoded.Stage[i]=int(value);
     }
+    // v4 allowed replacing a factory EV's motors. Reset that obsolete choice;
+    // never reinterpret the player's old electric conversion as a gasoline kit.
+    if(version<=4&&factoryElectric)decoded.Stage[EVSwap]=0;
     decoded.Sanitize(electrical);result=decoded;return true;
 }
 struct FactoryDrivetrain {

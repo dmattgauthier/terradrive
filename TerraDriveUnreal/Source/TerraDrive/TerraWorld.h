@@ -36,7 +36,12 @@ struct FTerraTile {
   TArray<FLinearColor> Colors;
   TArray<float> Delta, Packing, Churn,SinkLimit;
   FIntPoint Key;
-  bool Dirty = true;
+  bool Dirty = true,CoarseReplaced=false;
+};
+struct FTerraRetiredSoilMesh {
+  UProceduralMeshComponent* Mesh=nullptr;
+  FIntPoint Key,Coarse;
+  uint64 AfterTick=0;
 };
 struct FTerraSoilState {
   // Churn is accumulated physical shear work as well as a shading input.
@@ -87,6 +92,7 @@ public:
   void SetRain(bool Enabled);
   void ResetSoil();
   void ActivateSoil(FVector P,float RadiusCM=350);
+  bool HasVisibleSoilCoverage(FVector P,float RadiusCM=350) const;
   void TireMark(int Wheel,FVector Point,FVector Forward,float Width,float Slip,
       float LongSpeed,float LateralSpeed,bool Grounded,bool Constructed,float Dt);
   void BreakTireMarks();
@@ -122,6 +128,8 @@ private:
   TMap<FIntPoint, FTerraTile> Detail;
   TMap<FIntPoint, FTerraSoilState> SoilCache;
   TMap<FIntPoint, UProceduralMeshComponent *> Ground;
+  TArray<FTerraRetiredSoilMesh> RetiredSoilMeshes;
+  uint64 SoilWorldTick=0;
   UPROPERTY() TArray<TObjectPtr<UMaterialInterface>> Materials;
   UPROPERTY() TObjectPtr<UMaterialInterface> GroundBlendMaterial;
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Scenery;

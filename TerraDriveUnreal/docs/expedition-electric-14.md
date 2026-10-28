@@ -1,6 +1,6 @@
 # Expedition vehicles, electric drive and tire air control — pass 14
 
-**Native package verified.** The current Unreal Windows package passes 2,087 native checks and 1,393 portable checks, with 279 actually reviewed fresh captures across the nine-vehicle roster. Executable SHA-256: `aae82881c70ab24caa54dde45f7182e99c2f25ca417ae1c6c4444beee893a15e`. Complete asset cook 4, reports and scope are recorded in [validation-native.md](validation-native.md).
+**Historical pass-14 record.** Its 2,087 native checks, 1,393 portable checks and 279 reviewed captures belong to executable `aae82881c70ab24caa54dde45f7182e99c2f25ca417ae1c6c4444beee893a15e` and full asset cook4. The current pass15 [native validation](validation-native.md) supersedes that executable, the G-Class body/wheel selection, version4 saves and the factory-EV conversion semantics described here. Current factory EVs retain their motor layout when tuning and offer gasoline conversion kits; single/dual/quad EV swaps are for factory combustion donors.
 
 This round expands the garage to **nine vehicles and twelve upgrade systems**. It adds original reference-built EarthCruiser EXP, Mercedes-Benz G 580 with EQ Technology and Mercedes-AMG G 63 bodies, distinct electric motor layouts, regenerative/service-brake blending, and finite-rate tire inflation/deflation. The preserved browser implementation remains unchanged.
 

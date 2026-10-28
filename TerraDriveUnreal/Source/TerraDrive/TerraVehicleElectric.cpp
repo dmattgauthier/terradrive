@@ -5,6 +5,12 @@
 int ATerraVehicle::FactoryMotorCount() const {return int(Number(TEXT("electricMotors"),VehicleIndex==4?3:0));}
 TerraSim::MotorLayout ATerraVehicle::ElectricLayout() const {return TerraSim::ResolveMotorLayout(UpgradeStage(TerraSim::EVSwap),FactoryMotorCount());}
 bool ATerraVehicle::IsElectric() const {return ElectricLayout()!=TerraSim::MotorLayout::None;}
+bool ATerraVehicle::IsFactoryElectric() const {return FactoryMotorCount()>0;}
+bool ATerraVehicle::IsICEConversion() const {return IsFactoryElectric()&&UpgradeStage(TerraSim::EVSwap)>0;}
+TerraSim::CombustionConfiguration ATerraVehicle::CombustionConfig() const {
+  return TerraSim::MakeCombustionSwap(UpgradeStage(TerraSim::EVSwap),FactoryMotorCount(),
+    Number(TEXT("batteryKWh"),VehicleIndex==4?170.f:116.f),Number(TEXT("electricHardwareMassKg"),0));
+}
 bool ATerraVehicle::IndependentWheel(int Index) const {return TerraSim::IndependentElectricWheel(ElectricLayout(),Index);}
 bool ATerraVehicle::DrivenWheel(int Index) const {
   const auto Layout=ElectricLayout();
@@ -14,17 +20,11 @@ bool ATerraVehicle::DrivenWheel(int Index) const {
 TerraSim::ElectricConfiguration ATerraVehicle::ElectricConfig() const {
   const int Stage=UpgradeStage(TerraSim::EVSwap),Factory=FactoryMotorCount();
   const float StockMass=Number(TEXT("mass"),2100),StockPower=Number(TEXT("powerHP"),285)*745.7f;
+  if(Factory>0&&Stage>0)return {}; // Factory EV conversion stages are gasoline kits.
   auto C=Stage?TerraSim::MakeElectricSwap(Stage,StockPower,StockMass):
     TerraSim::FactoryElectricConfig(Factory,StockPower,Number(TEXT("wheelTorqueNm"),Number(TEXT("torqueNm"),350)*Number(TEXT("electricReduction"),9.f)*.95f),
       Number(TEXT("electricReduction"),9.f),Number(TEXT("motorMaxRPM"),16000));
   if(C.Layout==TerraSim::MotorLayout::None)return C;
-  if(Stage&&Factory){
-    // A replacement removes the factory traction pack and drive units. The
-    // donor/kit mass estimates are explicit; never add a second battery pack.
-    const float Pack=Number(TEXT("batteryKWh"),VehicleIndex==4?170.f:116.f)/.185f;
-    const float Removed=Number(TEXT("electricHardwareMassKg"),Pack+Factory*75.f+70.f);
-    C.RemovedDrivelineMassKg=Removed;C.NetMassKg=C.KitMassKg-Removed;
-  }
   if(!Stage){C.BatteryKWh=Number(TEXT("batteryKWh"),VehicleIndex==4?170.f:116.f);C.BatteryMassKg=C.BatteryKWh/.185f;}
   C.FrontShare=Number(TEXT("frontTorqueFraction"),C.Layout==TerraSim::MotorLayout::Triple?1.f/3.f:.5f);
   if(Stage)C.FrontShare=C.Layout==TerraSim::MotorLayout::Single?.5f:.45f;
@@ -37,12 +37,13 @@ TerraSim::ElectricConfiguration ATerraVehicle::ElectricConfig() const {
   C.MaxMotorRPM=FMath::Min(C.MaxMotorRPM,SafeSpeed/FMath::Max(.15f,WheelRadius)*C.Reduction*60/(2*PI));
   return C;
 }
-float ATerraVehicle::PowerHP() const {return IsElectric()?ElectricConfig().PowerW/745.7f:Power/745.7f*Tuning.Power;}
+float ATerraVehicle::PowerHP() const {return IsElectric()?ElectricConfig().PowerW/745.7f:(IsICEConversion()?CombustionConfig().PowerW:Power)/745.7f*Tuning.Power;}
 FString ATerraVehicle::PowertrainDescription() const {
   const auto C=ElectricConfig();
-  if(C.Layout==TerraSim::MotorLayout::None)return TEXT("Combustion / automatic");
+  if(IsICEConversion())return FString::Printf(TEXT("Gasoline V8 / 8-speed / %.0f hp"),PowerHP());
+  if(C.Layout==TerraSim::MotorLayout::None)return TEXT("Factory combustion / automatic");
   const int Motors=TerraSim::ElectricMotorCount(C.Layout);
-  return FString::Printf(TEXT("%d motor EV / %.0f kWh / %.0f%% charge"),Motors,C.BatteryKWh,BatterySOC*100);
+  return FString::Printf(TEXT("%s %d motor EV / %.0f kWh / %.0f%% charge"),IsFactoryElectric()?TEXT("Factory"):TEXT("Converted"),Motors,C.BatteryKWh,BatterySOC*100);
 }
 float ATerraVehicle::WheelPressure(int Index) const {
   const float Front=Number(TEXT("stockPSIFront"),Number(TEXT("stockPSI"),35));
