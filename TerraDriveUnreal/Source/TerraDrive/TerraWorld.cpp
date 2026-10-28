@@ -184,8 +184,10 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
                          N - 1),
         J = FMath::Clamp(FMath::RoundToInt((P.Y / 100 - Origin) / Step), 0,
                          N - 1);
-    S.Water = FMath::Max(0.f, 100 * Water[I * N + J] + BaseHeight(P.X, P.Y) -
-                                  S.Height);
+    // A zero source depth means dry ground, not a water plane at its old
+    // surface. Ruts only deepen water that actually existed before excavation.
+    const float StandingWater=Water[I*N+J];
+    S.Water=StandingWater>0 ? FMath::Max(0.f,100*StandingWater+BaseHeight(P.X,P.Y)-S.Height):0.f;
   }
   FIntPoint K(FMath::FloorToInt(P.X / TileCM), FMath::FloorToInt(P.Y / TileCM));
   const auto *T = Detail.Find(K);const auto *Cached=T?nullptr:SoilCache.Find(K);

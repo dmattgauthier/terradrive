@@ -1,14 +1,13 @@
 // Geometry and visibility regressions for the native coachwork pipeline.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {bodyRefinement} from './body-refinement.mjs';
-import {nativeVehicle,vehicleFinishes} from './vehicle-realism.mjs';
+import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
 import {nativeGeometry as geo} from './vehicle-geometry.mjs';
-import {refineVehicle} from './vehicle-fidelity.mjs';
+import {expeditionStyle,inspectExpeditionVehicle} from './validate-expedition-vehicles.mjs';
 const results=[];
 for(const spec of VEHICLES){
- const view=nativeVehicle(spec);bodyRefinement(view,spec);vehicleFinishes(view,spec);const wheelParts=refineVehicle(view,spec);view.root.updateMatrixWorld(true);
+ const {view,parts:wheelParts}=prepareNativeVehicle(spec);view.root.updateMatrixWorld(true);
  let vertices=0,unitNormals=0,flanges=0;
  view.body.traverse(o=>{
   if(!o.isMesh)return;
@@ -21,7 +20,9 @@ for(const spec of VEHICLES){
   }
   vertices+=p.count;if(o.name==='glazing-inset-flange')flanges++;
  });
- assert.ok(vertices>200000,spec.id+' complete coachwork');
+ // Keep the original six completeness regressions. New originals are checked
+ // against physical envelopes/openings, rather than rewarding extra vertices.
+ if(!expeditionStyle(spec))assert.ok(vertices>200000,spec.id+' complete coachwork');
  assert.ok(unitNormals/vertices>.995,spec.id+' normalized shading');
  const visibility=[];
  const firstSolid=(start,dir)=>{
@@ -125,9 +126,12 @@ for(const spec of VEHICLES){
  const tireBox=new geo.THREE.Box3().setFromObject(wheelParts.tire),size=tireBox.getSize(new geo.THREE.Vector3());
  assert.ok(Math.abs(Math.max(size.y,size.z)/2-spec.tireRadius)<.004,spec.name+' tread matches mechanical radius');
  assert.ok(size.x>=spec.tireWidth*.99&&size.x<spec.tireWidth*1.10,spec.name+' tire shoulder width');
- assert.equal(view.wheels[0].root.userData.factoryWheelRevision,3);
- results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:3,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},pass:true});view.dispose();
+ assert.equal(view.wheels[0].root.userData.factoryWheelRevision,['g580','g63'].includes(spec.bodyStyle)?14:3);
+ const expedition=expeditionStyle(spec)?inspectExpeditionVehicle(view,spec,wheelParts):undefined;
+ results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:view.wheels[0].root.userData.factoryWheelRevision,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},...(expedition?{expedition}:{}),pass:true});view.dispose();
 }
-const report={revision:'mechanical-soil-13',vehicles:results,pass:true};
+assert.equal(results.length,9,'complete expedition roster');
+const report={revision:'expedition-electric-14',vehicles:results,newExpeditionChecks:results.reduce((n,r)=>n+(r.expedition?.checks||0),0),pass:true};
+assert.equal(report.newExpeditionChecks,88,'meaningful original geometry checks for the new three');
 fs.writeFileSync(new URL('../docs/model-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

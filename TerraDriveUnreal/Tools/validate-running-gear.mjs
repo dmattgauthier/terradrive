@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {brakeRotorModel,brakeCaliperModel,refineFactoryWheel} from './vehicle-fidelity.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
+import {refineGClass} from './mercedes-gclass.mjs';
+import {refineEarthCruiser} from './earthcruiser-exp.mjs';
 
 function inspect(group){
   group.updateMatrixWorld(true);let triangles=0,vertices=0;
@@ -39,19 +41,25 @@ for(const [name,ceramic,solid]of [['vented',false,false],['ceramic',true,false],
 const caliper=brakeCaliperModel();rows.push({name:'caliper',...inspect(caliper)});
 assert.ok(new THREE.Box3().setFromObject(caliper).getSize(new THREE.Vector3()).x<.13,'caliper clears barrel depth');
 for(const spec of VEHICLES){
-  const wheel={root:new THREE.Group(),tireSpin:new THREE.Group(),rimSpin:new THREE.Group()};
+  const wheel={root:new THREE.Group(),tireSpin:new THREE.Group(),rimSpin:new THREE.Group()};wheel.tireShape=wheel.tireSpin;wheel.root.add(wheel.tireSpin,wheel.rimSpin);
   const rubber=new THREE.MeshStandardMaterial(),tread=new THREE.MeshStandardMaterial();
-  refineFactoryWheel(wheel,spec,{rubber,tread});
+  const root=new THREE.Group();root.userData.nativeFidelity={version:3};const view={root,wheels:[wheel],materials:{rubber,tread}};
+  if(['g580','g63'].includes(spec.bodyStyle))refineGClass(view,spec);
+  else if(spec.bodyStyle==='earthcruiser')refineEarthCruiser(view,spec);
+  else refineFactoryWheel(wheel,spec,{rubber,tread});
   const r=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5,row=inspect(wheel.rimSpin),barrels=[];
-  wheel.rimSpin.traverse(o=>{if(o.name.includes('closed-drop-centre'))barrels.push(o);});
+  wheel.rimSpin.traverse(o=>{if(o.name.includes('closed-drop-centre')||o.name==='earthcruiser-rim-with-closed-inner-barrel')barrels.push(o);});
   assert.equal(barrels.length,1,'closed drop-centre barrel');
   assert.ok(row.bounds[1][1]<=r*1.02&&row.bounds[0][1]>=-r*1.02,spec.id+' fixed factory rim diameter');
   // Probe a radial line through the drop centre. It must hit both barrel
   // walls: a single-sided lathe strip would disappear when viewed inboard.
-  const hits=new THREE.Raycaster(new THREE.Vector3(0,0,0),new THREE.Vector3(0,1,0),0,r*1.2).intersectObject(barrels[0],false);
+  const radialX=spec.bodyStyle==='earthcruiser'?.08:0;
+  const hits=new THREE.Raycaster(new THREE.Vector3(radialX,0,0),new THREE.Vector3(0,1,0),0,r*1.2).intersectObject(barrels[0],false);
   assert.ok(hits.length>0,spec.id+' barrel has an interior-facing wall');
-  rows.push({name:spec.id+' rim',...row});
+  assert.ok(hits.some(h=>h.distance>=r*.80&&h.distance<r),spec.id+' barrel has an interior-facing wall at the actual selected rim');
+  rows.push({name:spec.id+' rim',rimStyle:wheel.rimSpin.children[0]?.name||spec.bodyStyle,innerBarrelHits:hits.map(h=>h.distance),...row});
 }
+assert.equal(VEHICLES.length,9,'all nine actual factory rim designs');
 fs.mkdirSync('Saved',{recursive:true});
-fs.writeFileSync('Saved/mechanical13-runninggear-geometry.json',JSON.stringify({passed:true,checks:['finite unit normals','true rotor holes and hub bore','bounded rotor cost','fixed factory rim radius','closed barrel inner wall'],rows},null,2));
+fs.writeFileSync('Saved/expedition14-runninggear-geometry.json',JSON.stringify({revision:'expedition-electric-14',passed:true,vehicles:9,checks:['finite unit normals','true rotor holes and hub bore','bounded rotor cost','fixed factory rim radius','closed actual custom barrel inner wall'],rows},null,2));
 console.log(JSON.stringify({passed:true,models:rows.map(({name,triangles})=>({name,triangles}))}));

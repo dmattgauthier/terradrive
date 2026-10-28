@@ -17,9 +17,22 @@ $taskExit=$taskGame.ExitCode
 if($null -eq $taskExit){throw 'Native process exit code unavailable'}
 if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh mechanical report'}
 $taskResult=Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json
-# Four migration/persistence checks; six x eight capability checks; 24 x
-# ten stationary hardware/physics checks; 18 stage-growth and six x four spin checks.
-$taskExpected=334
+# The native validator writes its exact vehicle/stage matrix before testing.
+# Requiring a fresh plan prevents a partial run or an old packaged executable
+# from satisfying a smaller historical count.
+$taskPlanPath=Join-Path $taskOut 'mechanical-fixtures.json'
+if(!(Test-Path -LiteralPath $taskPlanPath) -or (Get-Item -LiteralPath $taskPlanPath).LastWriteTime -lt $taskStart){throw 'No fresh mechanical fixture plan'}
+$taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw | ConvertFrom-Json
+$taskRoster=Get-Content -LiteralPath (Join-Path $taskRoot 'Content/NativeData/vehicle-ground-probes.json') -Raw | ConvertFrom-Json
+$taskVehicleCount=@($taskRoster.vehicles).Count
+$taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 0 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and $taskPlan.partCount -eq 12 -and $taskPlan.portalStages -eq 4 -and @($taskPlan.trials).Count -eq $taskVehicleCount*$taskPlan.portalStages
+$taskCoverage=[Collections.Generic.HashSet[string]]::new()
+foreach($taskTrial in $taskPlan.trials){
+ $taskPlanValid=$taskPlanValid -and $taskTrial.vehicle -ge 0 -and $taskTrial.vehicle -lt $taskVehicleCount -and $taskTrial.stage -ge 0 -and $taskTrial.stage -lt $taskPlan.portalStages
+ [void]$taskCoverage.Add(('{0}:{1}' -f $taskTrial.vehicle,$taskTrial.stage))
+}
+$taskExpected=[int]$taskPlan.migrationChecks+[int]$taskPlan.persistenceChecks+$taskVehicleCount*([int]$taskPlan.capabilityChecksPerVehicle+[int]$taskPlan.growthChecksPerVehicle+[int]$taskPlan.spinChecksPerVehicle)+@($taskPlan.trials).Count*[int]$taskPlan.stationaryChecksPerTrial
+if(!$taskPlanValid -or $taskCoverage.Count -ne $taskVehicleCount*$taskPlan.portalStages -or $taskPlan.expectedChecks -ne $taskExpected){throw 'Mechanical fixture plan does not cover the complete generated roster and portal-stage matrix'}
 $taskFailures=@($taskResult.tests | Where-Object {!$_.pass});$taskErrors=@(Select-String -LiteralPath $taskLog -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
 if($taskExit -ne 0 -or $taskFailures.Count -or $taskErrors.Count -or $taskResult.tests.Count -ne $taskExpected){$taskFailures | Select-Object case,value,pass | Format-Table -AutoSize | Out-String | Write-Output;throw ('Mechanical check failed: '+$taskReport+'; exit '+$taskExit+'; checks '+$taskResult.tests.Count+'/'+$taskExpected)}
 Write-Output ('PASS '+$taskResult.tests.Count+' native mechanical checks; exit 0')

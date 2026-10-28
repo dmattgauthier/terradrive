@@ -165,6 +165,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   auto &List = Terrain->Data->GetArrayField(TEXT("vehicles"));
   const int PreviousRoute = RouteIndex;
   Terrain->BreakTireMarks();
+  if(Spec.IsValid()&&Initialized){PressureProfiles[VehicleIndex]=PressureTarget;BatteryProfiles[VehicleIndex]=BatterySOC;}
   VehicleIndex = (Index + List.Num()) % List.Num();
   Spec = List[VehicleIndex]->AsObject();
   VehicleName = Spec->GetStringField(TEXT("name"));
@@ -186,7 +187,9 @@ void ATerraVehicle::SelectVehicle(int Index) {
   Spring = Suspension->GetNumberField(TEXT("springRate"));
   Damping = Suspension->GetNumberField(TEXT("damping"));
   Rest = Suspension->GetNumberField(TEXT("restLength"));
-  Pressure = Number(TEXT("stockPSI"), 35);
+  Pressure = PressureTarget=PressureProfiles[VehicleIndex]>0?PressureProfiles[VehicleIndex]:Number(TEXT("stockPSIFront"),Number(TEXT("stockPSI"),35));
+  BatterySOC=BatteryProfiles[VehicleIndex];TireAirRequested=false;LastRegenPowerW=0;
+  for(int I=0;I<4;++I)LastWheelDriveNm[I]=LastWheelRegenNm[I]=0;
   const float Length=Number(TEXT("bodyLength"),Number(TEXT("length"),4.8f));
   const float HalfWidth=Number(TEXT("width"),1.8f)*.42f;
   const float HalfHeight=VehicleIndex==5?CG-Number(TEXT("clearance"),.158f):.22f;
@@ -199,8 +202,9 @@ void ATerraVehicle::SelectVehicle(int Index) {
   const float Rise=FMath::Min(.16f,HalfHeight*.55f);
   for(int I=0;I<2;++I){
     auto *C=I==0?FrontCollision.Get():RearCollision.Get();
-    C->SetBoxExtent(FVector((End-EndStart)*.5f,HalfWidth,HalfHeight-Rise*.5f)*100);
-    C->SetRelativeLocation(FVector((I==0?1.f:-1.f)*(End+EndStart)*.5f,0,Rise*.5f)*100);
+    const float BodyEnd=Number(I==0?TEXT("bodyFrontEndM"):TEXT("bodyRearEndM"),End);
+    C->SetBoxExtent(FVector(FMath::Max(.05f,(BodyEnd-EndStart)*.5f),HalfWidth,HalfHeight-Rise*.5f)*100);
+    C->SetRelativeLocation(FVector((I==0?1.f:-1.f)*(BodyEnd+EndStart)*.5f,0,Rise*.5f)*100);
   }
   Chassis->SetMassOverrideInKg(NAME_None, Mass);
   RoofCollision->SetBoxExtent(FVector(Number(TEXT("length"),4.8)*.30f,
@@ -344,7 +348,7 @@ void ATerraVehicle::Input(float Dt) {
       const auto Demand=TerraSim::DriverControls(Direction,TestForward,TestReverse,0,0,TestStop,Speed,Dt,ReverseHold,ReverseReleaseRequired);
       Throttle=Demand.Throttle;Brake=Demand.Brake;
     }else{Throttle = TestThrottle;Brake = TestBrake;}
-    Steer = FMath::FInterpTo(Steer, TestSteer, Dt, 5);
+    Steer = FMath::FInterpTo(Steer, TestSteer, Dt, 5*TirePressureHandling().SteeringResponse);
     return;
   }
   auto Down = [&](FKey Key) { return PC->IsInputKeyDown(Key); };
@@ -391,11 +395,11 @@ void ATerraVehicle::Input(float Dt) {
     }else Notice = TEXT("Stop to shift low range");
   }
   if (Press(EKeys::Equals) || Press(EKeys::Add)) {
-    Pressure = FMath::Min(65.f, Pressure + 2);
+    RequestTirePressure(PressureTarget+2);
     SaveSetup();
   }
   if (Press(EKeys::Hyphen) || Press(EKeys::Subtract)) {
-    Pressure = FMath::Max(10.f, Pressure - 2);
+    RequestTirePressure(PressureTarget-2);
     SaveSetup();
   }
   if (Press(EKeys::P))
@@ -427,7 +431,7 @@ void ATerraVehicle::Input(float Dt) {
                  (Down(EKeys::A) || Down(EKeys::Left) ? 1.f : 0.f);
   if (FMath::Abs(AX) > .1f)
     Target = AX;
-  Steer = FMath::FInterpConstantTo(Steer, Target, Dt, Target == 0 ? 3.5f : 2.f);
+  Steer = FMath::FInterpConstantTo(Steer, Target, Dt, (Target == 0 ? 3.5f : 2.f)*TirePressureHandling().SteeringResponse);
   Throttle = 0;
   Brake = LT;
   if (Garage) {
@@ -451,13 +455,15 @@ void ATerraVehicle::Simulate(float Dt) {
   FVector Velocity = Chassis->GetPhysicsLinearVelocity() / 100,
           Up = GetActorUpVector(), Forward = GetActorForwardVector();
   Speed = FVector::DotProduct(Velocity, Forward);
-  const bool Electric = VehicleIndex == 4;
+  const bool Electric = IsElectric();
+  const auto EV=ElectricConfig();
   if (LowRange) Gear = 0;
   const auto &Ratios = Spec->GetArrayField(TEXT("gears"));
   float Ratio = Direction < 0 ? Number(TEXT("reverseRatio"), 3)
                               : Ratios[Gear]->AsNumber();
   float Final = Number(TEXT("finalDrive"), 4)*PortalReduction(),
         Low = EffectiveLowRatio();
+  if(Electric){Ratio=EV.Reduction;Final=PortalReduction();Gear=0;}
   float MeanOmega = 0;
   for (auto &W : WheelState)
     MeanOmega += FMath::Abs(W.Omega) * .25f;
@@ -524,7 +530,7 @@ void ATerraVehicle::Simulate(float Dt) {
     const FVector Local(Wheelbase * (Front ? 1-FrontWeight : -FrontWeight)*100,
         (I%2 ? 1:-1)*Track*50, (Number(TEXT("tireRadius"),.42f)+Rest-CG-Preload-Tuning.Lift)*100);
     const FVector Mount = GetActorTransform().TransformPosition(Local);
-    W.Angle = Front ? SteerAngle : Electric ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
+    W.Angle = Front ? SteerAngle : VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
     const FVector WF = FQuat(Up,W.Angle).RotateVector(Forward);
     const float AxleWidth=Front?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth;
     const auto Support = Terrain->CastTireSupport(Mount,Up,WF,Radius*100,AxleWidth*100,-30,(Rest+Droop)*100,this);
@@ -556,11 +562,14 @@ void ATerraVehicle::Simulate(float Dt) {
     W.ForceSide = FVector::CrossProduct(Normal,W.ForceForward).GetSafeNormal();
     W.LongSpeed = FVector::DotProduct(W.PointVelocity,W.ForceForward);
     W.LateralSpeed = FVector::DotProduct(W.PointVelocity,W.ForceSide);
-    W.Footprint=TerraSim::FootprintLength(W.Load,Pressure,Tracks?.48f:AxleWidth,Radius,Tracks);
+    W.Footprint=TerraSim::FootprintLength(W.Load,WheelPressure(I),Tracks?.48f:AxleWidth,Radius,Tracks);
     W.RutDepth=W.Constructed?0:W.Ground.RutDepth;
-    W.Grip=TerraSim::TerrainGrip(W.Ground.Mu,W.Load,StaticLoad,Pressure,Number(TEXT("stockPSI"),35),
+    const float Placard=Number(Front?TEXT("stockPSIFront"):TEXT("stockPSIRear"),Number(TEXT("stockPSI"),35));
+    const auto Air=TerraSim::EvaluateTirePressure(WheelPressure(I),Placard,StaticLoad,Number(TEXT("mass"),2100)*9.81f*(Front?FrontWeight:1-FrontWeight)*.5f,Speed,W.Ground.Softness,Tracks);
+    const float BaseGrip=TerraSim::TerrainGrip(W.Ground.Mu,W.Load,StaticLoad,Placard,Placard,
         W.Ground.MaxSink>0,Tracks,W.Ground.Packing,W.Slip,W.Ground.Water/100,W.LongSpeed)*Tuning.Grip*
         (Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
+    W.Grip=BaseGrip*Air.LongitudinalGrip;W.SideGrip=BaseGrip*Air.LateralGrip;W.CorneringResponse=Air.CorneringStiffness;
     Capacities[I] = W.Load*W.Grip*Radius;
   }
   bool InvertedTrackSupport=false;
@@ -568,12 +577,20 @@ void ATerraVehicle::Simulate(float Dt) {
   Overturned = Up.Z < .15f && !InvertedTrackSupport;
   if (Overturned) { TotalTorque = 0; Throttle = 0; Steer = 0; }
   if (FMath::Abs(Speed)>11.1f) FrontLocked=RearLocked=false;
+  float Omega[4];for(int I=0;I<4;++I){Omega[I]=WheelState[I].Omega;LastWheelDriveNm[I]=LastWheelRegenNm[I]=0;}
+  const float Environment= Tuning.DriveEfficiency*(1-Damage*.35f)*(1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f));
+  float ElectricThrottle=Throttle*(BatterySOC>.001f?1.f:0.f);
+  if(Tracks&&FMath::Abs(Speed)>12)ElectricThrottle=0;
+  
+  const auto MotorDrive=TerraSim::ElectricDriveTorque(EV,Omega,ElectricThrottle,Direction,Low,PortalReduction(),Environment,FourDrive);
+  if(Electric){RPM=0;for(float MotorRPM:MotorDrive.MotorRPM)RPM=FMath::Max(RPM,MotorRPM);}
   for (int Axle=0;Axle<2;++Axle) {
-    const bool Driven = DrivenWheel(Axle*2);
-    if (!Driven) continue;
+    if (!DrivenWheel(Axle*2)) continue;
     const int A=Axle*2;
+    if(Electric&&IndependentWheel(A)){Drives[A]=MotorDrive.Wheel[A];Drives[A+1]=MotorDrive.Wheel[A+1];continue;}
     const bool BothDriven=DrivenWheel(0)&&DrivenWheel(2);
-    const float Demand=TotalTorque*(BothDriven?(VehicleIndex==5?(Axle==0?.40f:.60f):.5f):1.f);
+    const float FrontShare=Number(TEXT("frontTorqueFraction"),.5f);
+    const float Demand=Electric?MotorDrive.Axle[Axle]:TotalTorque*(BothDriven?(Axle==0?FrontShare:1-FrontShare):1.f);
     const bool Locked=Axle==0?FrontLocked:RearLocked;
     auto Split=TerraSim::SplitAxleTorque(Demand,Capacities[A],Capacities[A+1],Locked);
     if(!Locked&&UpgradeStage(TerraSim::Differentials)>=3){
@@ -586,6 +603,8 @@ void ATerraVehicle::Simulate(float Dt) {
       ? FMath::Clamp((FMath::Abs(Speed)-2.f)*.45f,0.f,.8f) : 0.f;
   const float EffectiveBrake = FMath::Max(Brake,AssistBrake);
   if(AssistBrake>Brake){BrakeLampLevel=5;for(auto Lamp:BrakeLamps)Lamp->SetScalarParameterValue(TEXT("TerraLamp"),5);}
+  const auto Regeneration=TerraSim::ElectricRegen(EV,Omega,EffectiveBrake,Throttle<.01f?.08f:0.f,
+      FMath::Clamp((.99f-BatterySOC)/.04f,0.f,1.f),Low,PortalReduction(),Environment,FourDrive);
   const float Inertia=Tracks?24.f+Tuning.RotatingMass:WheelInertia(), R=Radius;
   const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
   const FQuat BodyRotation=Chassis->GetComponentQuat();
@@ -597,19 +616,25 @@ void ATerraVehicle::Simulate(float Dt) {
     const float Share=Mass*(I<2?FrontWeight:1-FrontWeight)*.5f;
     Stiffness[I]=TerraSim::ContactStiffness(W.Load*(W.Ground.Surface==1?10.f:5.f)/FMath::Max(2.f,FMath::Abs(W.LongSpeed)),Share,Dt);
     const bool Driven=DrivenWheel(I);
-    const float EngineBrake=Driven&&Throttle<.05f&&LowRange?Mass*9.81f*R*.035f:0.f;
+    const float EngineBrake=!Electric&&Driven&&Throttle<.05f&&LowRange?Mass*9.81f*R*.035f:0.f;
     const float Rut=TerraSim::RutResistance(W.RutDepth,R,W.Ground.Softness,W.Ground.Packing,Tracks);
-    const float LowPressureRoad=W.Ground.MaxSink==0?FMath::Max(0.f,1-Pressure/Number(TEXT("stockPSI"),35))*.018f:0;
-    Drag[I]=(W.Ground.Rolling*(Tracks?1.45f:1.f)+Rut+LowPressureRoad)*W.Load*R+EffectiveBrake*Mass*9.81f*R*.4f+EngineBrake;
-    const float Limit=W.Grip*W.Load;
-    const float LateralRate=W.Load*5.5f/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
+    const auto Air=TerraSim::EvaluateTirePressure(WheelPressure(I),Number(I<2?TEXT("stockPSIFront"):TEXT("stockPSIRear"),Number(TEXT("stockPSI"),35)),Share*9.81f,Number(TEXT("mass"),2100)*9.81f*(I<2?FrontWeight:1-FrontWeight)*.5f,Speed,W.Ground.Softness,Tracks);
+    const float Service=EffectiveBrake*Mass*9.81f*R*.4f;
+    const float Regen=Regeneration.Independent[I]?Regeneration.Wheel[I]:Regeneration.Axle[I/2]*.5f;
+    LastWheelRegenNm[I]=FMath::Min(Regen,FMath::Max(Service,Throttle<.01f?Regen:0.f));
+    // Regeneration supplies part of the requested service brake, with friction
+    // supplying the rest. Only modest coast regen is additional drag.
+    const float BlendedBrake=FMath::Max(Service,LastWheelRegenNm[I]);
+    Drag[I]=(W.Ground.Rolling*(Tracks?1.45f:1.f)+Rut+Air.RollingCoefficientAdd)*W.Load*R+BlendedBrake+EngineBrake;
+    const float Limit=W.Grip*W.Load,SideLimit=W.SideGrip*W.Load;
+    const float LateralRate=W.Load*5.5f*W.CorneringResponse/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
     const float LateralResponse=1+LateralRate*Dt*TerraSim::ContactCoupling/Share;
-    Lateral[I]=FMath::Clamp(-W.Load*FMath::Atan2(W.LateralSpeed,FMath::Max(2.f,FMath::Abs(W.LongSpeed)))*5.5f/LateralResponse,-Limit,Limit);
-    LongLimit[I]=FMath::Sqrt(FMath::Max(0.f,Limit*Limit-Lateral[I]*Lateral[I]));
+    Lateral[I]=FMath::Clamp(-W.Load*FMath::Atan2(W.LateralSpeed,FMath::Max(2.f,FMath::Abs(W.LongSpeed)))*5.5f*W.CorneringResponse/LateralResponse,-SideLimit,SideLimit);
+    LongLimit[I]=Limit*FMath::Sqrt(FMath::Max(0.f,1-FMath::Square(Lateral[I]/FMath::Max(1.f,SideLimit))));
   }
   for(int Axle=0;Axle<2;++Axle){
     const int A=Axle*2,B=A+1;
-    const bool Locked=Axle==0?FrontLocked:RearLocked;
+    const bool Locked=(Axle==0?FrontLocked:RearLocked)&&!IndependentWheel(A);
     if(Locked){
       // A locked axle shares shaft speed as well as torque. Solve both tire
       // contact constraints together, including both wheels' inertia, so an
@@ -622,6 +647,7 @@ void ATerraVehicle::Simulate(float Dt) {
             FMath::Clamp(Stiffness[B]*(Direction*WheelRevLimit*R-WheelState[B].LongSpeed),-LongLimit[B],LongLimit[B]));
         Drive=TerraSim::RevLimitedTorque(Drive,Previous,Inertia*2,Dt,WheelRevLimit,Reaction,DragTorque);
       }
+      LastWheelDriveNm[A]=LastWheelDriveNm[B]=Drive*.5f;
       const float Free=Previous+Drive*Dt/(Inertia*2);
       WheelState[A].Omega=WheelState[B].Omega=TerraSim::BrakedAxleOmega(Free,Stiffness[A],Stiffness[B],
           WheelState[A].LongSpeed,WheelState[B].LongSpeed,LongLimit[A],LongLimit[B],R,Dt,Inertia*2,Drag[A]+Drag[B]);
@@ -630,9 +656,10 @@ void ATerraVehicle::Simulate(float Dt) {
       const float DragTorque=FMath::Sign(W.Omega)*Drag[I];
       const float Reaction=R*FMath::Clamp(Stiffness[I]*(Direction*WheelRevLimit*R-W.LongSpeed),-LongLimit[I],LongLimit[I]);
       float Demand=Drives[I];
-      if(Throttle>.02f&&Spec->GetObjectField(TEXT("features"))->GetBoolField(TEXT("tractionControl")))
+      if(DrivenWheel(I)&&Throttle>.02f&&(IndependentWheel(I)||Spec->GetObjectField(TEXT("features"))->GetBoolField(TEXT("tractionControl"))))
         Demand=TerraSim::TractionControlledTorque(Demand,W.Omega,W.LongSpeed,R,Inertia,Dt,Stiffness[I],LongLimit[I],Drag[I],Direction);
       const float Drive=Electric?Demand:TerraSim::RevLimitedTorque(Demand,W.Omega,Inertia,Dt,WheelRevLimit,Reaction,DragTorque);
+      LastWheelDriveNm[I]=Drive;
       const float Free=W.Omega+Drive*Dt/Inertia;
       W.Omega=TerraSim::BrakedWheelOmega(Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I],Drag[I]);
     }
@@ -656,9 +683,10 @@ void ATerraVehicle::Simulate(float Dt) {
       // Using a quarter of total mass at every tire overcorrected roll on
       // taller vehicles, leaving an alternating residual contact velocity.
       FX=FMath::Clamp(-ContactMass(W.ForceForward)*W.LongSpeed/FMath::Max(Dt,.008f)+Share*9.81f*W.ForceForward.Z,-HoldLimit,HoldLimit);
-      FY=FMath::Clamp(-ContactMass(W.ForceSide)*W.LateralSpeed/FMath::Max(Dt,.008f)+Share*9.81f*W.ForceSide.Z,-W.Grip*W.Load,W.Grip*W.Load);
+      FY=FMath::Clamp(-ContactMass(W.ForceSide)*W.LateralSpeed/FMath::Max(Dt,.008f)+Share*9.81f*W.ForceSide.Z,-W.SideGrip*W.Load,W.SideGrip*W.Load);
     }
-    const float Scale=TerraSim::FrictionScale(FX,FY,W.Grip,W.Load);
+    const float Ellipse=FMath::Sqrt(FMath::Square(FX/FMath::Max(1.f,W.Grip*W.Load))+FMath::Square(FY/FMath::Max(1.f,W.SideGrip*W.Load)));
+    const float Scale=Ellipse>1?1/Ellipse:1;
     FX*=Scale; FY*=Scale;
     if(AutoTest&&RouteIndex==8&&int(RouteTime)!=int(RouteTime+Dt))
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_CONTACT t=%.1f wheel=%d dt=%.3f fx=%.0f fy=%.0f omega=%.2f long=%.2f lateral=%.2f distance=%.3f normal=%s"),RouteTime,I,Dt,FX,FY,W.Omega,W.LongSpeed,W.LateralSpeed,W.Distance,*W.Ground.Normal.ToString());
@@ -676,7 +704,7 @@ void ATerraVehicle::Simulate(float Dt) {
         const FVector SoilPoint(Bottom.X,Bottom.Y,Terrain->Height(Bottom.X,Bottom.Y));
         FVector SoilForward=FQuat(Up,W.Angle).RotateVector(Forward);SoilForward.Z=0;SoilForward.Normalize();
         const auto SoilSurface=Terrain->Sample(SoilPoint);
-        const float PressurePatch=TerraSim::FootprintLength(W.SoilLoad,Pressure,TireWidth,Radius,Tracks);
+        const float PressurePatch=TerraSim::FootprintLength(W.SoilLoad,WheelPressure(I),TireWidth,Radius,Tracks);
         const float Patch=TerraSim::SoftSoilFootprint(PressurePatch,W.SoilLoad,TireWidth,Radius,
             SoilSurface.MaxSink,W.SoilSlip,SoilSurface.Churn,SoilSurface.RutDepth).Length;
         const float Travel=FVector::Dist2D(W.LastSoil,SoilPoint);
@@ -691,10 +719,10 @@ void ATerraVehicle::Simulate(float Dt) {
           const float Slip=Connected?FMath::Lerp(W.LastSoilSlip,W.SoilSlip,Blend):W.SoilSlip;
           // Tire carcass pressure and sink-dependent rolling arc determine
           // the same supported area used by the soil's pressure solve.
-          const float PressureFootprint=TerraSim::FootprintLength(SupportedLoad,Pressure,TireWidth,Radius,Tracks);
+          const float PressureFootprint=TerraSim::FootprintLength(SupportedLoad,WheelPressure(I),TireWidth,Radius,Tracks);
           const float Footprint=TerraSim::SoftSoilFootprint(PressureFootprint,SupportedLoad,TireWidth,Radius,
               SoilSurface.MaxSink,Slip,SoilSurface.Churn,SoilSurface.RutDepth).Length;
-          Terrain->Deform(Point,Tangent,SupportedLoad,Pressure,TireWidth,Footprint,Slip,W.LongSpeed,SoilTimer/Steps);
+          Terrain->Deform(Point,Tangent,SupportedLoad,WheelPressure(I),TireWidth,Footprint,Slip,W.LongSpeed,SoilTimer/Steps);
         }
         W.LastSoil=SoilPoint;W.LastSoilForward=SoilForward;
         W.LastSoilLoad=W.SoilLoad;W.LastSoilSlip=W.SoilSlip;W.SoilConnected=true;
@@ -705,7 +733,12 @@ void ATerraVehicle::Simulate(float Dt) {
     if(!W.ContactValid||W.Load<50||W.Constructed)W.SoilConnected=false;
     Terrain->TireMark(I,W.Contact,W.ForceForward,Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth),W.Slip,W.LongSpeed,W.LateralSpeed,
         W.ContactValid&&W.Load>50&&!Overturned,W.Constructed,Dt);
-    W.Rotation+=W.Omega*Dt; W.Pressure=Pressure;
+    W.Rotation+=W.Omega*Dt; W.Pressure=WheelPressure(I);
+  }
+  LastRegenPowerW=0;
+  if(Electric){float Consumed=0;for(int I=0;I<4;++I){Consumed+=FMath::Max(0.f,LastWheelDriveNm[I]*WheelState[I].Omega);LastRegenPowerW+=LastWheelRegenNm[I]*FMath::Abs(WheelState[I].Omega)*.82f;}
+    LastRegenPowerW=FMath::Min(LastRegenPowerW,Regeneration.RecoveredPowerW);
+    BatterySOC=FMath::Clamp(BatterySOC+(LastRegenPowerW-Consumed/FMath::Max(.5f,EV.Efficiency)-350.f)*Dt/FMath::Max(1.f,EV.BatteryKWh*3600000.f),0.f,1.f);
   }
   UpdateWheelVisuals();
   UpdateVisualDetails();
@@ -756,6 +789,7 @@ void ATerraVehicle::Tick(float Dt) {
   if(!Garage){
     Terrain->ActivateSoil(GetActorLocation());
     SoilTimer += Dt;
+    UpdateTireAir(Dt);
     Simulate(Dt);
     UpdateSpray(Dt);
     UpdateRoute(Dt);

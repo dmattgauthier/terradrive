@@ -16,6 +16,7 @@
 
 namespace TerraMomentumValidation {
 namespace {
+constexpr int BoundaryTrialCount=7,ChecksPerBoundary=4,ChecksPerRiseVehicle=9,BarrierChecks=2;
 struct FTrial {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TWeakObjectPtr<UProceduralMeshComponent> Bump;
@@ -27,20 +28,25 @@ struct FTrial {
   float LoadedDistance[4]={};
   int PairMask=0,EncounteredMask=0;
   FVector Start=FVector::ZeroVector,Direction=FVector::ForwardVector,BumpCenter=FVector::ZeroVector,LastPosition=FVector::ZeroVector;
-  TArray<FVector> BodyProbes[6];
-  FString ProbeAssets[6];
-  bool ProbesReady[6]={};
+  TArray<FVector> BodyProbes[ATerraVehicle::VehicleCount];
+  FString ProbeAssets[ATerraVehicle::VehicleCount];
+  bool ProbesReady[ATerraVehicle::VehicleCount]={};
   FString Name;
   void NextPhase(int P){Phase=P;Time=0;Frames=0;}
 };
 FTrial State;
+FString FixturePlanPath(const TCHAR* Name){
+  FString Report;
+  if(FParse::Value(FCommandLine::Get(),TEXT("TerraReport="),Report)&&!Report.IsEmpty())return FPaths::GetPath(Report)/Name;
+  return FPaths::ProjectSavedDir()/TEXT("Validation")/Name;
+}
 void LoadBodyProbes(){
   FString Json;TSharedPtr<FJsonObject> Root;
   if(!FFileHelper::LoadFileToString(Json,*(FPaths::ProjectContentDir()/TEXT("NativeData/vehicle-ground-probes.json")))||
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)||!Root.IsValid())return;
   const TArray<TSharedPtr<FJsonValue>> *Vehicles=nullptr;
-  if(!Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=6)return;
-  for(int I=0;I<6;++I){
+  if(!Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=ATerraVehicle::VehicleCount)return;
+  for(int I=0;I<ATerraVehicle::VehicleCount;++I){
     const auto Vehicle=(*Vehicles)[I]->AsObject();if(!Vehicle.IsValid())continue;
     const TArray<TSharedPtr<FJsonValue>> *Probes=nullptr;FString Hash,Asset;
     if(!Vehicle->TryGetArrayField(TEXT("probes"),Probes)||Probes->Num()<32||Probes->Num()>60||
@@ -59,6 +65,17 @@ void LoadBodyProbes(){
       Valid&=Regions.Contains(Region);
     State.ProbeAssets[I]=Asset;State.ProbesReady[I]=Valid&&State.BodyProbes[I].Num()==Probes->Num();
   }
+}
+void WriteFixturePlan(ATerraVehicle* V){
+  auto Plan=MakeShared<FJsonObject>();Plan->SetNumberField(TEXT("version"),1);Plan->SetNumberField(TEXT("vehicleCount"),ATerraVehicle::VehicleCount);
+  Plan->SetNumberField(TEXT("boundaryTrialCount"),BoundaryTrialCount);Plan->SetNumberField(TEXT("checksPerBoundary"),ChecksPerBoundary);
+  Plan->SetNumberField(TEXT("checksPerRiseVehicle"),ChecksPerRiseVehicle);Plan->SetNumberField(TEXT("barrierChecks"),BarrierChecks);
+  Plan->SetNumberField(TEXT("expectedChecks"),BoundaryTrialCount*ChecksPerBoundary+ATerraVehicle::VehicleCount*ChecksPerRiseVehicle+BarrierChecks);
+  TArray<TSharedPtr<FJsonValue>> Rises;for(int I=0;I<ATerraVehicle::VehicleCount;++I)Rises.Add(MakeShared<FJsonValueNumber>(I));Plan->SetArrayField(TEXT("riseVehicles"),Rises);
+  TArray<TSharedPtr<FJsonValue>> Boundaries;
+  if(V->Terrain->TransitionData.IsValid())for(const auto& F:V->Terrain->TransitionData->GetArrayField(TEXT("fixtures")))Boundaries.Add(MakeShared<FJsonValueString>(F->AsObject()->GetStringField(TEXT("name"))));
+  Plan->SetArrayField(TEXT("boundaries"),Boundaries);
+  FString Json;if(FJsonSerializer::Serialize(Plan,TJsonWriterFactory<>::Create(&Json)))FFileHelper::SaveStringToFile(Json,*FixturePlanPath(TEXT("momentum-fixtures.json")));
 }
 void Capture(const FString &Name){
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraCapture")))
@@ -166,14 +183,14 @@ void EndTrial(){State.Trial++;State.NextPhase(0);}
 }
 
 bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check){
-  if(State.Vehicle.Get()!=V){State=FTrial();State.Vehicle=V;LoadBodyProbes();}
+  if(State.Vehicle.Get()!=V){State=FTrial();State.Vehicle=V;LoadBodyProbes();WriteFixturePlan(V);}
   State.Time+=FMath::Min(Dt,.1f);
-  if(State.Trial<7){
+  if(State.Trial<BoundaryTrialCount){
     if(!V->Terrain->TransitionData.IsValid()){
       Check(TEXT("momentum boundary fixture manifest is available"),false,0);return true;
     }
     const auto &Fixtures=V->Terrain->TransitionData->GetArrayField(TEXT("fixtures"));
-    if(Fixtures.Num()!=7){Check(TEXT("momentum has seven boundary fixtures"),false,Fixtures.Num());return true;}
+    if(Fixtures.Num()!=BoundaryTrialCount){Check(TEXT("momentum has seven boundary fixtures"),false,Fixtures.Num());return true;}
     if(State.Phase==0){
       const auto F=Fixtures[State.Trial]->AsObject();const auto P=F->GetArrayField(TEXT("p")),N=F->GetArrayField(TEXT("normal")),Pair=F->GetArrayField(TEXT("pair"));
       State.Name=F->GetStringField(TEXT("name"));State.Direction=FVector(N[0]->AsNumber(),N[1]->AsNumber(),0).GetSafeNormal();
@@ -201,8 +218,8 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
     }
     return false;
   }
-  if(State.Trial<13){
-    const int Vehicle=State.Trial-7;
+  if(State.Trial<BoundaryTrialCount+ATerraVehicle::VehicleCount){
+    const int Vehicle=State.Trial-BoundaryTrialCount;
     if(State.Phase==0){
       if(!State.Bump.IsValid())MakeBump(V);
       State.Direction=FVector::ForwardVector;State.Name=FString::Printf(TEXT("vehicle %d"),Vehicle);
@@ -236,7 +253,7 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
     }
     return false;
   }
-  if(State.Trial==13){
+  if(State.Trial==BoundaryTrialCount+ATerraVehicle::VehicleCount){
     if(State.Phase==0){
       if(State.Bump.IsValid())State.Bump->SetCollisionEnabled(ECollisionEnabled::NoCollision);
       const FVector P=V->Terrain->Spawns[1];State.Direction=FVector::ForwardVector;

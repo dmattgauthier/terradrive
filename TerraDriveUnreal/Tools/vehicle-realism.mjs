@@ -9,8 +9,13 @@ import {nativeGeometry as geo,mergeStaticMeshes} from './vehicle-geometry.mjs';
 import {nativeInterior} from './vehicle-cabin.mjs';
 import {nativeFender} from './vehicle-fenders.mjs';
 import {urusView} from './urus-body.mjs';
-import {refineFactoryWheel} from './vehicle-fidelity.mjs';
+import {refineVehicle,refineFactoryWheel} from './vehicle-fidelity.mjs';
+import {bodyRefinement} from './body-refinement.mjs';
+import {buildEarthCruiser,refineEarthCruiser} from './earthcruiser-exp.mjs';
+import {gClassView,refineGClass} from './mercedes-gclass.mjs';
 export function nativeVehicle(spec){
+  if(spec.bodyStyle==='earthcruiser')return buildEarthCruiser(spec);
+  if(['g580','g63'].includes(spec.bodyStyle))return gClassView(spec);
   if(spec.bodyStyle==='urus')return urusView(spec);
   const view=new VehicleView(new geo.THREE.Scene(),spec);
   const originalWheel=view._wheel.bind(view);
@@ -44,4 +49,12 @@ export function vehicleFinishes(view,spec){
     if(mat.userData.vehicleLampLens){mat.roughness=.075;mat.opacity=mat.userData.vehicleTintedLens?.42:.18;}
   }
   view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,version:3,automotiveFinishes:true};
+}
+
+export function prepareNativeVehicle(spec){
+ const view=nativeVehicle(spec);let parts;
+ if(spec.bodyStyle==='earthcruiser')parts=refineEarthCruiser(view,spec);
+ else if(['g580','g63'].includes(spec.bodyStyle))parts=refineGClass(view,spec);
+ else {bodyRefinement(view,spec);vehicleFinishes(view,spec);parts=refineVehicle(view,spec);}
+ if(['earthcruiser','g580','g63'].includes(spec.bodyStyle))vehicleFinishes(view,spec);return {view,parts};
 }

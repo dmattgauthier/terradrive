@@ -1,0 +1,814 @@
+{
+  "revision": "expedition-electric-14",
+  "pass": true,
+  "checks": 88,
+  "vehicles": [
+    {
+      "vehicle": "EarthCruiser EXP",
+      "id": "earthcruiser-exp",
+      "style": "earthcruiser",
+      "checks": 24,
+      "pass": true,
+      "sourceOnly": true,
+      "geometry": {
+        "vertices": 219678,
+        "triangles": 329064,
+        "materialObjects": 26,
+        "bounds": [
+          [
+            -1.246999979019165,
+            0.2428528517484665,
+            -3.7535998821258545
+          ],
+          [
+            1.246999979019165,
+            2.7685000896453857,
+            2.700000047683716
+          ]
+        ]
+      },
+      "glazing": [
+        {
+          "pane": "camper right pane",
+          "firstDistanceM": 0.9428999423980713
+        },
+        {
+          "pane": "camper left pane",
+          "firstDistanceM": 0.9428999423980713
+        },
+        {
+          "pane": "cab windscreen",
+          "firstDistanceM": 0.13153384362208786
+        }
+      ],
+      "tests": [
+        {
+          "case": "finite original body vertices and normal streams",
+          "pass": true,
+          "nonfinite": 0
+        },
+        {
+          "case": "unit source shading normals",
+          "pass": true,
+          "normalizedFraction": 1
+        },
+        {
+          "case": "bounded original body geometry and material budget",
+          "pass": true,
+          "triangles": 329064,
+          "vertices": 219678,
+          "materialObjects": 26
+        },
+        {
+          "case": "body datum agrees with the mechanical CG and axle midpoint",
+          "pass": true,
+          "bodyOffset": [
+            0,
+            -1.12,
+            0.16827499999999995
+          ]
+        },
+        {
+          "case": "four detached split wheel rigs retain their export hub pivots",
+          "pass": true,
+          "wheelHubSourcePositions": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "case": "factory tire radius agrees with the physics tire",
+          "pass": true,
+          "radiusM": 0.4715504967920575,
+          "physicsRadiusM": 0.4699
+        },
+        {
+          "case": "factory tire width includes shoulders without width inflation",
+          "pass": true,
+          "widthM": 0.35501539991916137,
+          "physicsWidthM": 0.3429
+        },
+        {
+          "case": "factory wheel diameter stays at the selected bead seat",
+          "pass": true,
+          "renderRadiusM": 0.2180590033531189,
+          "nominalRadiusM": 0.21589999999999998
+        },
+        {
+          "case": "stock roof follows the sourced closed-roof height",
+          "pass": true,
+          "sourceTopYM": 2.7685000896453857,
+          "referenceM": 2.7685999999999997,
+          "toleranceM": 0.025
+        },
+        {
+          "case": "body and selected rear hardware follow the reference length envelope",
+          "pass": true,
+          "sourceLengthM": 6.45359992980957,
+          "referenceM": 6.4516,
+          "toleranceM": 0.06
+        },
+        {
+          "case": "mirror and external trim span stays within the selected envelope",
+          "pass": true,
+          "sourceWidthWithMirrorsM": 2.49399995803833,
+          "referenceM": 2.5,
+          "toleranceM": 0.06,
+          "referenceStatus": "photo-estimated mirror span"
+        },
+        {
+          "case": "visual axle hardpoints retain the published wheelbase",
+          "pass": true,
+          "wheelbaseM": 3.3655,
+          "axlesInContactDatumM": [
+            1.68275,
+            -1.68275
+          ],
+          "axlesInCGFrameM": [
+            1.8510250000000001,
+            -1.514475
+          ],
+          "note": "Detached wheel meshes remain at their hub pivots; native placement at these mechanical hardpoints is verified separately."
+        },
+        {
+          "case": "brake and reverse use separate dynamic material roles",
+          "pass": true,
+          "dynamicMeshCounts": {
+            "brake": 2,
+            "reverse": 1
+          }
+        },
+        {
+          "case": "unmeasured suspension calibration is labeled and primary sources retained",
+          "pass": true,
+          "suspensionStatus": "Simulation wheel-rate/rest/travel/damping calibration, not measured EC98 suspension.",
+          "sources": [
+            "https://earthcruiser.com/wp-content/uploads/2023/11/EC98_Sales_Flyer-1.pdf",
+            "https://earthcruiser.com/earthcruiser-announces-next-generation-overland-vehicle-platform/"
+          ]
+        },
+        {
+          "case": "camper right pane has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 0.9428999423980713
+        },
+        {
+          "case": "camper left pane has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 0.9428999423980713
+        },
+        {
+          "case": "cab windscreen has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 0.13153384362208786
+        },
+        {
+          "case": "cab-over pass-through is not filled by an opaque cab wall",
+          "pass": true,
+          "firstOpaqueAfterWindscreenZM": -3.2690000534057617
+        },
+        {
+          "case": "closed pop-top retains solar panel 0",
+          "pass": true,
+          "sourceTopYM": 2.7660000324249268
+        },
+        {
+          "case": "closed pop-top retains solar panel 1",
+          "pass": true,
+          "sourceTopYM": 2.7660000324249268
+        },
+        {
+          "case": "closed pop-top retains solar panel 2",
+          "pass": true,
+          "sourceTopYM": 2.7660000324249268
+        },
+        {
+          "case": "closed pop-top retains solar panel 3",
+          "pass": true,
+          "sourceTopYM": 2.7660000324249268
+        },
+        {
+          "case": "closed pop-top retains solar panel 4",
+          "pass": true,
+          "sourceTopYM": 2.7660000324249268
+        },
+        {
+          "case": "cab-over front has formed depth rather than a single box face",
+          "pass": true,
+          "cabUpperZM": 2.1851617033497193,
+          "cabLowerZM": 2.41845758709912
+        }
+      ],
+      "limitations": [
+        "Offline source geometry; no native rendered acceptance.",
+        "Overall dimensions are sourced; panel stations, CG, suspension calibration and selected mirror/overhang fits include estimates."
+      ]
+    },
+    {
+      "vehicle": "Mercedes-Benz G 580 with EQ Technology",
+      "id": "mercedes-g580-ev",
+      "style": "g580",
+      "checks": 32,
+      "pass": true,
+      "sourceOnly": true,
+      "geometry": {
+        "vertices": 248241,
+        "triangles": 356596,
+        "materialObjects": 24,
+        "bounds": [
+          [
+            -1.096000000094995,
+            0.2505000013113022,
+            -2.4894909040192306
+          ],
+          [
+            1.096000000094995,
+            1.9866598844528198,
+            2.2520000000474973
+          ]
+        ]
+      },
+      "glazing": [
+        {
+          "pane": "front side -1",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "pane": "rear side -1",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "pane": "rear quarter -1",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "pane": "front side 1",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "pane": "rear side 1",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "pane": "rear quarter 1",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "pane": "upright windscreen",
+          "firstDistanceM": 3.3962489622181304
+        },
+        {
+          "pane": "rear door glass",
+          "firstDistanceM": 1.7000022859714958
+        },
+        {
+          "pane": "sunroof",
+          "firstDistanceM": 1.014594862936224
+        }
+      ],
+      "tests": [
+        {
+          "case": "finite original body vertices and normal streams",
+          "pass": true,
+          "nonfinite": 0
+        },
+        {
+          "case": "unit source shading normals",
+          "pass": true,
+          "normalizedFraction": 1
+        },
+        {
+          "case": "bounded original body geometry and material budget",
+          "pass": true,
+          "triangles": 356596,
+          "vertices": 248241,
+          "materialObjects": 24
+        },
+        {
+          "case": "body datum agrees with the mechanical CG and axle midpoint",
+          "pass": true,
+          "bodyOffset": [
+            0,
+            -0.73,
+            0
+          ]
+        },
+        {
+          "case": "four detached split wheel rigs retain their export hub pivots",
+          "pass": true,
+          "wheelHubSourcePositions": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "case": "factory tire radius agrees with the physics tire",
+          "pass": true,
+          "radiusM": 0.39150000736117363,
+          "physicsRadiusM": 0.3915
+        },
+        {
+          "case": "factory tire width includes shoulders without width inflation",
+          "pass": true,
+          "widthM": 0.2853499999191614,
+          "physicsWidthM": 0.275
+        },
+        {
+          "case": "factory wheel diameter stays at the selected bead seat",
+          "pass": true,
+          "renderRadiusM": 0.25552400946617126,
+          "nominalRadiusM": 0.254
+        },
+        {
+          "case": "stock roof follows the sourced closed-roof height",
+          "pass": true,
+          "sourceTopYM": 1.9866598844528198,
+          "referenceM": 1.986,
+          "toleranceM": 0.025
+        },
+        {
+          "case": "body and selected rear hardware follow the reference length envelope",
+          "pass": true,
+          "sourceLengthM": 4.741490904066728,
+          "referenceM": 4.728,
+          "toleranceM": 0.06
+        },
+        {
+          "case": "mirror and external trim span stays within the selected envelope",
+          "pass": true,
+          "sourceWidthWithMirrorsM": 2.19200000018999,
+          "referenceM": 2.187,
+          "toleranceM": 0.06,
+          "referenceStatus": "manufacturer mirror width"
+        },
+        {
+          "case": "visual axle hardpoints retain the published wheelbase",
+          "pass": true,
+          "wheelbaseM": 2.89,
+          "axlesInContactDatumM": [
+            1.445,
+            -1.445
+          ],
+          "axlesInCGFrameM": [
+            1.445,
+            -1.445
+          ],
+          "note": "Detached wheel meshes remain at their hub pivots; native placement at these mechanical hardpoints is verified separately."
+        },
+        {
+          "case": "brake and reverse use separate dynamic material roles",
+          "pass": true,
+          "dynamicMeshCounts": {
+            "brake": 3,
+            "reverse": 2
+          }
+        },
+        {
+          "case": "unmeasured suspension calibration is labeled and primary sources retained",
+          "pass": true,
+          "suspensionStatus": "Simulation wheel-rate/rest/travel/damping calibration; not measured Mercedes suspension.",
+          "sources": [
+            "https://www.mbusa.com/en/future-vehicles/2025-mercedes-benz-electric-g-class",
+            "https://www.mbusa.com/en/vehicles/model/g-class/suv/g63w4"
+          ]
+        },
+        {
+          "case": "front side -1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "case": "rear side -1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "case": "rear quarter -1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "case": "front side 1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "case": "rear side 1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "case": "rear quarter 1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "case": "upright windscreen has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 3.3962489622181304
+        },
+        {
+          "case": "rear door glass has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 1.7000022859714958
+        },
+        {
+          "case": "sunroof has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 1.014594862936224
+        },
+        {
+          "case": "bonnet has restrained physical transverse crown",
+          "pass": true,
+          "crownM": 0.017747349970839377
+        },
+        {
+          "case": "drawn door sheet has physical shoulder relief",
+          "pass": true,
+          "reliefM": 0.01416172854459119
+        },
+        {
+          "case": "metal roof has a shallow transverse crown",
+          "pass": true,
+          "crownM": 0.007363281491169715
+        },
+        {
+          "case": "four formed wheel extensions are distinct from the cab shell",
+          "pass": true
+        },
+        {
+          "case": "rear attachment and exhaust geometry identify the actual variant",
+          "pass": true,
+          "variant": "g580"
+        },
+        {
+          "case": "rear reflectors are static and only lamps receive brake commands",
+          "pass": true,
+          "brakeEmitters": 3,
+          "reverseEmitters": 2
+        },
+        {
+          "case": "native capability metadata distinguishes virtual and mechanical differentials",
+          "pass": true,
+          "electricMotors": 4,
+          "lowRatio": 2
+        },
+        {
+          "case": "selected factory rim has open original spokes on both faces",
+          "pass": true,
+          "spokeBranches": 20
+        },
+        {
+          "case": "electric grille uses the distinct recessed closed black panel",
+          "pass": true,
+          "panelZM": 2.1199999995529653
+        }
+      ],
+      "limitations": [
+        "Offline source geometry; no native rendered acceptance.",
+        "Overall dimensions are sourced; panel stations, CG, suspension calibration and selected mirror/overhang fits include estimates."
+      ]
+    },
+    {
+      "vehicle": "Mercedes-AMG G 63",
+      "id": "mercedes-amg-g63",
+      "style": "g63",
+      "checks": 32,
+      "pass": true,
+      "sourceOnly": true,
+      "geometry": {
+        "vertices": 266752,
+        "triangles": 376180,
+        "materialObjects": 23,
+        "bounds": [
+          [
+            -1.098000000026077,
+            0.31849999910593035,
+            -2.635494659958592
+          ],
+          [
+            1.098000000026077,
+            1.979659914970398,
+            2.2520000000474973
+          ]
+        ]
+      },
+      "glazing": [
+        {
+          "pane": "front side -1",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "pane": "rear side -1",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "pane": "rear quarter -1",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "pane": "front side 1",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "pane": "rear side 1",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "pane": "rear quarter 1",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "pane": "upright windscreen",
+          "firstDistanceM": 3.3962489622181304
+        },
+        {
+          "pane": "rear door glass",
+          "firstDistanceM": 1.7000022859714958
+        },
+        {
+          "pane": "sunroof",
+          "firstDistanceM": 1.0215948686692142
+        }
+      ],
+      "tests": [
+        {
+          "case": "finite original body vertices and normal streams",
+          "pass": true,
+          "nonfinite": 0
+        },
+        {
+          "case": "unit source shading normals",
+          "pass": true,
+          "normalizedFraction": 1
+        },
+        {
+          "case": "bounded original body geometry and material budget",
+          "pass": true,
+          "triangles": 376180,
+          "vertices": 266752,
+          "materialObjects": 23
+        },
+        {
+          "case": "body datum agrees with the mechanical CG and axle midpoint",
+          "pass": true,
+          "bodyOffset": [
+            0,
+            -0.8,
+            -0.1156000000000001
+          ]
+        },
+        {
+          "case": "four detached split wheel rigs retain their export hub pivots",
+          "pass": true,
+          "wheelHubSourcePositions": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "case": "factory tire radius agrees with the physics tire",
+          "pass": true,
+          "radiusM": 0.39150000736117363,
+          "physicsRadiusM": 0.3915
+        },
+        {
+          "case": "factory tire width includes shoulders without width inflation",
+          "pass": true,
+          "widthM": 0.2853499999191614,
+          "physicsWidthM": 0.275
+        },
+        {
+          "case": "factory wheel diameter stays at the selected bead seat",
+          "pass": true,
+          "renderRadiusM": 0.25552400946617126,
+          "nominalRadiusM": 0.254
+        },
+        {
+          "case": "stock roof follows the sourced closed-roof height",
+          "pass": true,
+          "sourceTopYM": 1.979659914970398,
+          "referenceM": 1.979,
+          "toleranceM": 0.025
+        },
+        {
+          "case": "body and selected rear hardware follow the reference length envelope",
+          "pass": true,
+          "sourceLengthM": 4.887494660006089,
+          "referenceM": 4.873,
+          "toleranceM": 0.06
+        },
+        {
+          "case": "mirror and external trim span stays within the selected envelope",
+          "pass": true,
+          "sourceWidthWithMirrorsM": 2.196000000052154,
+          "referenceM": 2.187,
+          "toleranceM": 0.06,
+          "referenceStatus": "manufacturer mirror width"
+        },
+        {
+          "case": "visual axle hardpoints retain the published wheelbase",
+          "pass": true,
+          "wheelbaseM": 2.89,
+          "axlesInContactDatumM": [
+            1.445,
+            -1.445
+          ],
+          "axlesInCGFrameM": [
+            1.3294,
+            -1.5606000000000002
+          ],
+          "note": "Detached wheel meshes remain at their hub pivots; native placement at these mechanical hardpoints is verified separately."
+        },
+        {
+          "case": "brake and reverse use separate dynamic material roles",
+          "pass": true,
+          "dynamicMeshCounts": {
+            "brake": 3,
+            "reverse": 2
+          }
+        },
+        {
+          "case": "unmeasured suspension calibration is labeled and primary sources retained",
+          "pass": true,
+          "suspensionStatus": "Simulation wheel-rate/rest/travel/damping calibration; not measured Mercedes suspension.",
+          "sources": [
+            "https://www.mbusa.com/en/future-vehicles/2025-mercedes-benz-electric-g-class",
+            "https://www.mbusa.com/en/vehicles/model/g-class/suv/g63w4"
+          ]
+        },
+        {
+          "case": "front side -1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "case": "rear side -1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "case": "rear quarter -1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "case": "front side 1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318711733540825
+        },
+        {
+          "case": "rear side 1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318728500214066
+        },
+        {
+          "case": "rear quarter 1 has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 2.1318727239315542
+        },
+        {
+          "case": "upright windscreen has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 3.3962489622181304
+        },
+        {
+          "case": "rear door glass has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 1.7000022859714958
+        },
+        {
+          "case": "sunroof has a genuine first-hit glass opening",
+          "pass": true,
+          "firstMaterialRole": "glass",
+          "firstDistanceM": 1.0215948686692142
+        },
+        {
+          "case": "bonnet has restrained physical transverse crown",
+          "pass": true,
+          "crownM": 0.017747283289096583
+        },
+        {
+          "case": "drawn door sheet has physical shoulder relief",
+          "pass": true,
+          "reliefM": 0.01416172854459119
+        },
+        {
+          "case": "metal roof has a shallow transverse crown",
+          "pass": true,
+          "crownM": 0.0073632739238997935
+        },
+        {
+          "case": "four formed wheel extensions are distinct from the cab shell",
+          "pass": true
+        },
+        {
+          "case": "rear attachment and exhaust geometry identify the actual variant",
+          "pass": true,
+          "variant": "g63"
+        },
+        {
+          "case": "rear reflectors are static and only lamps receive brake commands",
+          "pass": true,
+          "brakeEmitters": 3,
+          "reverseEmitters": 2
+        },
+        {
+          "case": "native capability metadata distinguishes virtual and mechanical differentials",
+          "pass": true,
+          "electricMotors": 0,
+          "lowRatio": 2.93
+        },
+        {
+          "case": "selected factory rim has open original spokes on both faces",
+          "pass": true,
+          "spokeBranches": 20
+        },
+        {
+          "case": "AMG vertical grille bars stand in front of the dark backing",
+          "pass": true,
+          "setbackM": 0.03900000120699376
+        }
+      ],
+      "limitations": [
+        "Offline source geometry; no native rendered acceptance.",
+        "Overall dimensions are sourced; panel stations, CG, suspension calibration and selected mirror/overhang fits include estimates."
+      ]
+    }
+  ],
+  "acceptance": "Source-only original geometry. Native import, render, suspension and gameplay verification remain separate."
+}

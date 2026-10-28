@@ -141,7 +141,7 @@ int main(){
     build.Stage[TerraSim::Engine]=999;build.Stage[TerraSim::Tires]=-8;
     auto sanitized=TerraSim::Tune(build,false,true);
     check(sanitized.Power==engine.Power&&sanitized.Grip==1,"out of range saved stages are clamped safely");
-    check(TerraSim::Electrical==6&&TerraSim::Drivetrain==7&&TerraSim::Differentials==8&&TerraSim::Portals==9&&TerraSim::PartCount==10,"persistent original upgrade indices remain unchanged");
+    check(TerraSim::Electrical==6&&TerraSim::Drivetrain==7&&TerraSim::Differentials==8&&TerraSim::Portals==9&&TerraSim::EVSwap==10&&TerraSim::TireAir==11&&TerraSim::PartCount==12,"persistent original upgrade indices remain unchanged while electric and tire air append at ten and eleven");
     const TerraSim::FactoryDrivetrain factories[]={
         {true,false,false,true,true,4}, {true,false,false,true,true,3.06f},
         {false,false,true,false,false,1}, {false,false,false,false,false,1},
@@ -184,12 +184,26 @@ int main(){
     check(TerraSim::DecodeUpgradeStages(legacy,7,1,true,migrated)&&migrated.Stage[TerraSim::Engine]==2&&migrated.Stage[TerraSim::Portals]==0,"v1 seven-category saves migrate with new hardware stock");
     check(TerraSim::DecodeUpgradeStages(legacy,7,2,false,migrated)&&migrated.Stage[TerraSim::Electrical]==0&&migrated.Stage[TerraSim::Drivetrain]==0,"v2 saves retain supported categories and zero missing hardware");
     double modern[]={0,1,2,3,0,1,2,1,2,3};
-    check(TerraSim::DecodeUpgradeStages(modern,10,3,true,migrated)&&migrated.Stage[TerraSim::Portals]==3,"v3 save round trip carries all ten upgrade categories");
+    check(TerraSim::DecodeUpgradeStages(modern,10,3,true,migrated)&&migrated.Stage[TerraSim::Portals]==3&&migrated.Stage[TerraSim::EVSwap]==0&&migrated.Stage[TerraSim::TireAir]==0,"v3 saves retain all ten original categories and default electric and tire air to stock");
     for(double bad:{-1.,4.,.5,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}){
         modern[7]=bad;const auto before=migrated;
         check(!TerraSim::DecodeUpgradeStages(modern,10,3,true,migrated)&&migrated.Stage[TerraSim::Portals]==before.Stage[TerraSim::Portals]&&migrated.Stage[TerraSim::Drivetrain]==before.Stage[TerraSim::Drivetrain],"malformed stage data is rejected without partial save mutation");
     }
     check(!TerraSim::DecodeUpgradeStages(legacy,7,3,true,migrated)&&!TerraSim::DecodeUpgradeStages(legacy,7,9,true,migrated),"wrong stage count and unknown save versions are rejected");
+    check(TerraSim::UpgradeStageCountForVersion(1)==7&&TerraSim::UpgradeStageCountForVersion(2)==7&&TerraSim::UpgradeStageCountForVersion(3)==10&&TerraSim::UpgradeStageCountForVersion(4)==12,"save version lengths remain explicit rather than inheriting the current part count");
+    double electricBuild[]={0,1,2,3,0,1,2,1,2,3,3,2};
+    check(TerraSim::DecodeUpgradeStages(electricBuild,12,4,true,migrated)&&migrated.Stage[TerraSim::EVSwap]==3&&migrated.Stage[TerraSim::TireAir]==2&&migrated.Stage[TerraSim::Portals]==3&&migrated.Stage[TerraSim::Engine]==1,"v4 saves retain conversion and tire air alongside every original hardware category");
+    for(int part:{int(TerraSim::EVSwap),int(TerraSim::TireAir)}){
+        const double original=electricBuild[part];
+        for(double bad:{-1.,4.,.5,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}){
+            electricBuild[part]=bad;const auto before=migrated;
+            const bool rejected=!TerraSim::DecodeUpgradeStages(electricBuild,12,4,true,migrated);
+            bool unchanged=true;for(int i=0;i<TerraSim::PartCount;++i)unchanged&=migrated.Stage[i]==before.Stage[i];
+            check(rejected&&unchanged,"invalid electric or air stage rejects the complete v4 build atomically");
+        }
+        electricBuild[part]=original;
+    }
+    check(!TerraSim::DecodeUpgradeStages(electricBuild,10,4,true,migrated)&&!TerraSim::DecodeUpgradeStages(electricBuild,12,3,true,migrated),"v4 truncated rows and v3 rows with appended undeclared fields reject without partial migration");
     check(TerraSim::ValidSupport(.25f,-.3f,.57f,1),"upright support within suspension travel");
     check(!TerraSim::ValidSupport(-1,-.3f,.57f,1),"ground behind the suspension cannot support a rolled car");
     check(!TerraSim::ValidSupport(5,-.3f,.57f,1),"airborne wheel cannot reach distant ground");

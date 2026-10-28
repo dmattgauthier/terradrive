@@ -4,7 +4,7 @@
 
 namespace TerraSim {
 // The original seven indices are persistent save data; append new hardware.
-enum UpgradePart { Suspension, Engine, Tires, Wheels, Frame, Body, Electrical, Drivetrain, Differentials, Portals, PartCount };
+enum UpgradePart { Suspension, Engine, Tires, Wheels, Frame, Body, Electrical, Drivetrain, Differentials, Portals, EVSwap, TireAir, PartCount };
 struct UpgradeSetup {
     int Stage[PartCount] = {};
     void Sanitize(bool electrical) {
@@ -13,7 +13,7 @@ struct UpgradeSetup {
     }
 };
 inline int UpgradeStageCountForVersion(int version) {
-    return version==1||version==2?7:version==3?PartCount:0;
+    return version==1||version==2?7:version==3?10:version==4?PartCount:0;
 }
 inline bool DecodeUpgradeStages(const double* values,int count,int version,bool electrical,UpgradeSetup& result) {
     if(!values||count!=UpgradeStageCountForVersion(version)||count==0)return false;

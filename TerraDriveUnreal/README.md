@@ -1,6 +1,8 @@
 # Terra Drive native port
 
-The [drivetrain, running gear and soil pass 13](docs/mechanical-soil-13.md) adds
+The [expedition, electric drive and tire-air pass 14](docs/expedition-electric-14.md) expands the native garage to **nine vehicles and twelve upgrade categories**, adding the EarthCruiser EXP, Mercedes-Benz G 580 with EQ Technology and Mercedes-AMG G 63. Original reference-built bodies accompany distinct factory electric layouts, fictional staged conversions, regenerative/service-brake blending and finite-rate tire-air systems. The current Windows package passes **2,087 native checks** and **1,393 portable checks**, with **279 fresh native captures actually reviewed**. Exact executable/cook provenance, measured results and limits are in [validation-native.md](docs/validation-native.md).
+
+The preceding [drivetrain, running gear and soil pass 13](docs/mechanical-soil-13.md) added
 staged four-wheel drive, low range, axle lockers and portal conversions in the
 garage, more detailed moving wheel-area hardware, surface-specific tire spray
 and varied physical rut shoulders. Final package verification is recorded in
@@ -35,8 +37,8 @@ Materials instances preserve the authored dark carbon tint. The
 [rut refinement](docs/rut-refinement.md) replaces repeated pointed soil piles
 with continuous rounded grooves, broad bounded shoulders, packed snow and
 surface-specific exposed-soil shading. Run `Tools/verify-ruts.ps1` for the
-physical profile fixtures and `Tools/verify-winter.ps1 -Mode Art` for all six
-vehicles' close native views. Art and rut fixtures use the Quality preset at a
+physical profile fixtures and `Tools/verify-winter.ps1 -Mode Art` for all nine
+vehicles' current close native views. Art and rut fixtures use the Quality preset at a
 20 FPS test cap; player saves and graphics settings are isolated.
 
 Soft-ground footprints now couple tire pressure, sink and the rolling contact
@@ -59,7 +61,7 @@ The [rendering and GPU update](docs/rendering-and-gpu.md) corrects angle-depende
 
 The [all-vehicle coachwork round](docs/model-refinement-6.md) revises the six models' glazing, cabin surfaces and body details. It includes open Urus windshield/hatch surrounds, native seat/headrest shading, flatter SUV fender shelves, Civic panel changes, Sprinter liners and HUMMER haunch/mirror changes. Use `node Tools/validate-models.mjs` for the geometry and glazing regression checks; native build evidence is in `docs/native-validation.json`.
 
-The latest [vehicle and landscape pass](docs/realism-terrain.md) adds curved-surface normals and rounded fittings, automotive finishes across all six vehicles, lighter view-dependent glazing, MW landscape textures/foliage and scanned Winter Scene snow, rock and ice. It requires the acquired **MW Landscape Auto Material** and **Automotive Winter Scene** packs as well as Automotive Materials. The document explains how the packs feed the deformable native terrain and how to add them from your Epic library.
+The earlier [vehicle and landscape pass](docs/realism-terrain.md) added curved-surface normals and rounded fittings, automotive finishes across the original six vehicles, lighter view-dependent glazing, MW landscape textures/foliage and scanned Winter Scene snow, rock and ice. It requires the acquired **MW Landscape Auto Material** and **Automotive Winter Scene** packs as well as Automotive Materials. The document explains how the packs feed the deformable native terrain and how to add them from your Epic library.
 
 The latest physics correction restores finite-tread support on uneven rigid ledges after the sphere query rejects a side contact. See [ground-contact.md](docs/ground-contact.md) and run `Tools/verify-native.ps1 -GroundOnly` for the focused regression. Current bodies remain procedural approximations; [vehicle-art-production.md](docs/vehicle-art-production.md) describes the recommended mesh, material and reference-review pipeline for a substantial visual improvement.
 
@@ -116,7 +118,7 @@ After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows
 
 The verifier requires a fresh JSON report, a successful game exit, and all expanded checks passing. Its report and game log are in `Saved/Validation`; rendered screenshots are saved by the packaged game in its `TerraDrive/Saved/Screenshots` directory. These checks cover asset loading, acceleration, braking, steering, snow flotation, soil accounting, region spawns, camera clearance, rollover/airborne contact, moving debris, loop/gap collision, axle lockers, descent assist, nine challenge route spawns, upgrade effects, save/reload isolation, matched stock/tuned driving and garage entry/exit, pressure response, rut continuity and physical scenery contact. They do not establish full behavioral parity with the browser reference.
 
-Use `Tools/verify-mechanical.ps1` for all-six hardware, save migration, portal ride-height and moving wheel-area checks, and `Tools/verify-spray.ps1` for the six material-specific ejection fixtures. `Tools/verify-ruts.ps1` includes physical bank variation, asymmetric displacement, deterministic replay and actual driven mud/snow tracks.
+Use `Tools/verify-electric-pressure.ps1` for isolated nine-vehicle factory/conversion, save migration, moving tire-air and matched road/sand trials. Its user directory is separate from ordinary player settings. `Tools/test-electric-pressure.cmd` runs the portable electric/pressure checks without launching Unreal. Use `Tools/verify-mechanical.ps1` for hardware, save migration, portal ride-height and moving wheel-area checks across all nine vehicles, and `Tools/verify-spray.ps1` for the six material-specific ejection fixtures. `Tools/verify-ruts.ps1` includes physical bank variation, asymmetric displacement, deterministic replay and actual driven mud/snow tracks. Run native checks serially with the game and editor closed before each run.
 
 Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison. Each attempt starts with repaired terrain and the same stock setup, so earlier tire ruts and compaction cannot bias the second attempt.
 
@@ -142,7 +144,7 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 | Z / U | Rear / front differential lock; stop and select required driveline first |
 | Shift + W | Crawl throttle |
 | K | Descent assist on supported vehicles |
-| + / - | Tire pressure |
+| + / - | Raise/lower the front pressure target by 2 PSI; equals/numpad-plus and hyphen/numpad-minus are supported |
 | X / Q | Attach/detach nearest standing-tree anchor / reel winch |
 | Tab | Open vehicle and upgrade garage while stopped; return to driving |
 | Drag / scroll over garage vehicle | Orbit / zoom; Front, Side, Rear and Reset buttons select views |
@@ -160,11 +162,11 @@ This is a migration preview. Browser regression results are reference evidence, 
 
 See [offroad-challenges.md](docs/offroad-challenges.md) for route descriptions, driving techniques and the native axle/contact model.
 
-The game opens in the vehicle garage. Stock plus three upgrade stages across ten categories are available immediately and saved independently for each vehicle. Drivetrain, differential and portal stages add missing hardware while retaining factory capabilities. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [garage-and-terrain.md](docs/garage-and-terrain.md) for stages, persistence and material reproduction.
+The game opens in the scrollable nine-vehicle garage. Stock plus three upgrade stages across twelve categories are available immediately and saved independently for each vehicle. Drivetrain, differential, portal, EV conversion and tire-air stages retain factory capabilities and describe the current configuration separately from factory-character notes. The Upgrades menu shows actual front/rear PSI, the front target, air-system status and **−2 / +2** and **ROAD PRESSURE** controls. Rear pressure follows the vehicle's axle-pressure ratio. Garage adjustment and vehicle selection service the saved target immediately; installed trail systems change actual pressure over time and pause beyond their operating speed. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [pass 14](docs/expedition-electric-14.md) for current stages and pressure behavior, and the earlier [garage-and-terrain.md](docs/garage-and-terrain.md) for the original integration.
 
 Player-facing measurements use mph, feet/inches, pounds, PSI, horsepower and pounds-force. The new tire-contact and model pass is described in [terrain-interaction-and-models.md](docs/terrain-interaction-and-models.md). Run `Tools/test-core.cmd` for the standalone simulation checks.
 
-Native controls and researched model refinements are described in [vehicle-model-research.md](docs/vehicle-model-research.md). The extended suite covers brake input/holding for all six vehicles, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling.
+Earlier controls and researched refinements for the original six vehicles are described in [vehicle-model-research.md](docs/vehicle-model-research.md). Their regression coverage includes brake input/holding, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling. The current nine-vehicle additions and their separate source/native acceptance boundary are described in [pass 14](docs/expedition-electric-14.md).
 
 See [lighting-tracks-urus.md](docs/lighting-tracks-urus.md) for the original V8 Urus Performante, brake/reverse lights, CC0 scan sources and photographic sky. Vendored native sources are under Vendor/Environment. Run Tools/fetch-environment-assets.py only to recover missing source downloads; normal builds use the included offline copies.
 

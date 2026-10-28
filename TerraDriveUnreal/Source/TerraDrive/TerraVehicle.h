@@ -3,6 +3,8 @@
 #include "GameFramework/Pawn.h"
 #include "TerraWorld.h"
 #include "TerraUpgrades.h"
+#include "TerraElectric.h"
+#include "TerraPressure.h"
 #include "TerraVehicle.generated.h"
 class UBoxComponent;
 class UStaticMeshComponent;
@@ -21,7 +23,7 @@ struct FTerraWheel {
   FTerraSample Ground;
   FVector ForceForward, ForceSide, PointVelocity;
   float LongSpeed = 0, LateralSpeed = 0, Angle = 0, Grip = 0,
-        Footprint = .14f, RutDepth = 0, FrictionLimit = 0;
+        Footprint = .14f, RutDepth = 0, FrictionLimit = 0, SideGrip = 0, CorneringResponse = 1;
   bool ContactValid = false, Constructed = false;
   FVector LastSoil=FVector::ZeroVector,LastSoilForward=FVector::ForwardVector;
   float SoilLoad=0,SoilSlip=0,LastSoilLoad=0,LastSoilSlip=0;
@@ -121,11 +123,30 @@ public:
   float EffectiveLowRatio() const {return LowRange?DriveCapabilities().LowRatio:1.f;}
   float PortalLift() const {return Tuning.PortalLift;}
   float PortalReduction() const {return Tuning.PortalReduction;}
-  bool DrivenWheel(int Index) const {return TerraSim::DrivenAxle(DriveCapabilities(),FourDrive,Index<2);}
+  bool DrivenWheel(int Index) const;
+  int FactoryMotorCount() const;
+  TerraSim::MotorLayout ElectricLayout() const;
+  TerraSim::ElectricConfiguration ElectricConfig() const;
+  bool IsElectric() const;
+  bool IndependentWheel(int Index) const;
+  float SpecValue(const TCHAR* Key,float Default=0)const{return Number(Key,Default);}
+  bool TireAirRequested=false;
+  float PressureTarget=35,BatterySOC=.75f,LastRegenPowerW=0;
+  float LastWheelDriveNm[4]={},LastWheelRegenNm[4]={};
+  void RequestTirePressure(float Target,bool Persist=true);
+  void AdvanceTireAirForValidation(float Dt){if(AutoTest)UpdateTireAir(Dt);}
+  bool TireAirPowered()const{return Damage<.99f&&(!IsElectric()||BatterySOC>.005f);}
+  float WheelPressure(int Index) const;
+  TerraSim::TirePressureBounds TireAirBounds() const;
+  TerraSim::PressureEffects TirePressureHandling(bool Front=true) const;
+  FString PowertrainDescription() const;
+  FString TireAirDescription() const;
+  float PressureProfiles[9]={};
+  float BatteryProfiles[9]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
   FString DriveDescription() const;
   int UpgradeStage(int Part) const { return Builds[VehicleIndex].Stage[Part]; }
-  bool HasElectrical() const { return VehicleIndex != 2; }
-  float PowerHP() const { return Power/745.7f*Tuning.Power*Tuning.ElectricalPower; }
+  bool HasElectrical() const { return VehicleIndex != 2||IsElectric(); }
+  float PowerHP() const;
   float SuspensionTravel() const { return .46f+Tuning.Travel; }
   float TireDiameter() const { return Radius*200/2.54f; }
   float GripMultiplier() const { return Tuning.Grip; }
@@ -139,7 +160,7 @@ public:
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
   float BumpTravel(bool Front) const;
   void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0; }
-  static constexpr int VehicleCount=6;
+  static constexpr int VehicleCount=9;
   TerraSim::UpgradeSetup Builds[VehicleCount];
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> BrakeLamps;
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> ReverseLamps;
@@ -173,5 +194,6 @@ private:
   void CreateVisualDetails();
   void UpdateVisualDetails();
   void SaveSetup();
+  void UpdateTireAir(float Dt);
   void UpdateRoute(float Dt);
 };

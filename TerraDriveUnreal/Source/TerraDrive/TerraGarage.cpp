@@ -34,14 +34,52 @@ FSlateFontInfo Font(int Size, bool Bold=false) { return FCoreStyle::GetDefaultFo
 TSharedRef<STextBlock> Label(const FString &S,int Size=12,FLinearColor Color=White,bool Bold=false) {
   return SNew(STextBlock).Text(FText::FromString(S)).Font(Font(Size,Bold)).ColorAndOpacity(Color);
 }
-const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV"),TEXT("URUS")};
+const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV"),TEXT("URUS"),TEXT("EARTHCRUISER"),TEXT("G 580 EV"),TEXT("AMG G 63")};
 const TCHAR* Roles[]={TEXT("RUBICON  /  TECHNICAL CRAWLER"),TEXT("BADLANDS  /  ALL-TERRAIN"),
- TEXT("SPORT  /  LIGHT & AGILE"),TEXT("2500  /  EXPEDITION VAN"),TEXT("3X SUV  /  ELECTRIC TORQUE"),TEXT("PERFORMANTE  /  V8 SUPER SUV")};
+ TEXT("SPORT  /  LIGHT & AGILE"),TEXT("2500  /  EXPEDITION VAN"),TEXT("3X SUV  /  ELECTRIC TORQUE"),TEXT("PERFORMANTE  /  V8 SUPER SUV"),
+ TEXT("EXP98  /  OVERLAND CAB-OVER"),TEXT("EQ TECHNOLOGY  /  FOUR-MOTOR EV"),TEXT("AMG  /  V8 & FACTORY LOCKERS")};
 const TCHAR* Notes[]={TEXT("Solid axles, low range and front/rear lockers.\nA deliberate line is your best tool."),
  TEXT("Independent front suspension and locking axles.\nBuilt for speed between the obstacles."),
  TEXT("Lightweight front-wheel drive.\nFind the smooth line and keep momentum."),
  TEXT("Long wheelbase and rear-wheel drive.\nManage clearance and choose wide approaches."),
- TEXT("Electric all-wheel drive and rear steering.\nImmediate torque meets substantial weight."),TEXT("Twin-turbo V8, steel coils and road tires.\nChoose flowing trails over deep rock steps.")};
+ TEXT("Electric all-wheel drive and rear steering.\nImmediate torque meets substantial weight."),TEXT("Twin-turbo V8, steel coils and road tires.\nChoose flowing trails over deep rock steps."),
+ TEXT("A heavy expedition cabin on leaf-sprung axles.\nUse low range and allow room for the rear overhang."),
+ TEXT("Four-wheel motor torque control and low range.\nA heavy electric off-roader with a rear Design Box."),
+ TEXT("V8 power, low range and three factory locks.\nSide-exit exhaust and a covered rear spare.")};
+static_assert(UE_ARRAY_COUNT(ShortNames)==ATerraVehicle::VehicleCount,"Garage names must match the vehicle roster");
+static_assert(UE_ARRAY_COUNT(Roles)==ATerraVehicle::VehicleCount,"Garage roles must match the vehicle roster");
+static_assert(UE_ARRAY_COUNT(Notes)==ATerraVehicle::VehicleCount,"Garage notes must match the vehicle roster");
+
+TSharedRef<SWidget> PressureControls(TWeakObjectPtr<ATerraVehicle> Vehicle){
+  auto Adjust=[Vehicle](float Delta){if(Vehicle.IsValid())Vehicle->RequestTirePressure(Vehicle->PressureTarget+Delta);return FReply::Handled();};
+  return SNew(SBorder).BorderImage(&Card).BorderBackgroundColor(FLinearColor(.055,.09,.09)).Padding(12)
+    [SNew(SVerticalBox)
+      +SVerticalBox::Slot().AutoHeight()[Label(TEXT("TIRE PRESSURE"),10,Mint,true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,6)
+      [SNew(STextBlock).Text_Lambda([Vehicle]{return FText::FromString(Vehicle.IsValid()?FString::Printf(TEXT("ACTUAL   F %.1f  /  R %.1f PSI"),Vehicle->WheelPressure(0),Vehicle->WheelPressure(2)):TEXT(""));}).Font(Font(11,true)).ColorAndOpacity(White)]
+      +SVerticalBox::Slot().AutoHeight()
+      [SNew(SHorizontalBox)
+        +SHorizontalBox::Slot().AutoWidth()
+        [SNew(SButton).ButtonStyle(&ButtonStyle()).ButtonColorAndOpacity(FLinearColor(.14,.23,.21)).ContentPadding(FMargin(11,8))
+          .IsEnabled_Lambda([Vehicle]{return Vehicle.IsValid()&&Vehicle->PressureTarget>Vehicle->TireAirBounds().MinimumPSI+.05f;})
+          .OnClicked_Lambda([Adjust]{return Adjust(-2.f);})[Label(TEXT("- 2"),12,Mint,true)]]
+        +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center).HAlign(HAlign_Center).Padding(6,0)
+        [SNew(STextBlock).Text_Lambda([Vehicle]{return FText::FromString(Vehicle.IsValid()?FString::Printf(TEXT("%.0f PSI"),Vehicle->PressureTarget):TEXT(""));}).Font(Font(17,true)).ColorAndOpacity(White)]
+        +SHorizontalBox::Slot().AutoWidth()
+        [SNew(SButton).ButtonStyle(&ButtonStyle()).ButtonColorAndOpacity(FLinearColor(.14,.23,.21)).ContentPadding(FMargin(11,8))
+          .IsEnabled_Lambda([Vehicle]{return Vehicle.IsValid()&&Vehicle->PressureTarget<Vehicle->TireAirBounds().MaximumPSI-.05f;})
+          .OnClicked_Lambda([Adjust]{return Adjust(2.f);})[Label(TEXT("+ 2"),12,Mint,true)]]]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,7,0,0)
+      [SNew(STextBlock).Text_Lambda([Vehicle]{return FText::FromString(Vehicle.IsValid()?Vehicle->TireAirDescription():TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(Mint).AutoWrapText(true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,5,0,0)
+      [SNew(STextBlock).Text_Lambda([Vehicle]{if(!Vehicle.IsValid())return FText::GetEmpty();const auto Bounds=Vehicle->TireAirBounds();return FText::FromString(FString::Printf(TEXT("Front target range %.0f-%.0f PSI\nRear follows its axle pressure setup."),Bounds.MinimumPSI,Bounds.MaximumPSI));}).Font(Font(9)).ColorAndOpacity(Muted).AutoWrapText(true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,8,0,0)
+      [SNew(SButton).ButtonStyle(&ButtonStyle()).ButtonColorAndOpacity(FLinearColor(.12,.20,.19)).ContentPadding(FMargin(8,7)).HAlign(HAlign_Center)
+        .IsEnabled_Lambda([Vehicle]{return Vehicle.IsValid();})
+        .OnClicked_Lambda([Vehicle]{if(Vehicle.IsValid())Vehicle->RequestTirePressure(Vehicle->TireAirBounds().RoadPSI);return FReply::Handled();})[Label(TEXT("ROAD PRESSURE"),10,White,true)]]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,7,0,0)
+      [SNew(STextBlock).Text(FText::FromString(TEXT("Garage service adjusts immediately. On the trail, fitted air control sets flow and speed limits."))).Font(Font(9)).ColorAndOpacity(Muted).AutoWrapText(true)]];
+}
 }
 class STerraVehiclePreview : public SCompoundWidget {
 public:
@@ -176,7 +214,6 @@ TSharedRef<SWidget> STerraGarage::Metric(const FString &Name,TAttribute<FText> V
 }
 TSharedRef<SWidget> STerraGarage::VehiclePage() {
   auto List=SNew(SVerticalBox);
-  List->AddSlot().AutoHeight().Padding(4,0,0,12)[Label(TEXT("CHOOSE YOUR VEHICLE"),12,Mint,true)];
   for(int I=0;I<ATerraVehicle::VehicleCount;++I) {
     List->AddSlot().AutoHeight().Padding(0,0,0,8)
     [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(18,10))
@@ -190,25 +227,33 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
         +SVerticalBox::Slot().AutoHeight().Padding(0,5,0,0)[Label(Roles[I],9,Muted)]]];
   }
   return SNew(SHorizontalBox)
-    +SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(322)[List]]
+    +SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(322)
+      [SNew(SVerticalBox)
+        +SVerticalBox::Slot().AutoHeight().Padding(4,0,0,10)[Label(TEXT("CHOOSE YOUR VEHICLE"),12,Mint,true)]
+        +SVerticalBox::Slot().FillHeight(1)[SNew(SScrollBox)+SScrollBox::Slot()[List]]
+        +SVerticalBox::Slot().AutoHeight().Padding(4,6,0,0)[Label(TEXT("SCROLL FOR ALL NINE VEHICLES"),9,Muted)]]]
     +SHorizontalBox::Slot().FillWidth(1).Padding(20,0)
       [SNew(STerraVehiclePreview).Vehicle(Vehicle.Get())]
     +SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(285)
-      [SNew(SBorder).BorderImage(&Panel).Padding(24)
-        [SNew(SVerticalBox)
+      [SNew(SBorder).BorderImage(&Panel).Padding(20)
+        [SNew(SScrollBox)+SScrollBox::Slot()[SNew(SVerticalBox)
           +SVerticalBox::Slot().AutoHeight()[Label(TEXT("READY FOR THE NEXT LINE"),10,Mint,true)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,12,0,14)
           [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(23,true)).ColorAndOpacity(White).AutoWrapText(true)]
-          +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,18)
-          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Notes[Vehicle.IsValid()?Vehicle->VehicleIndex:0]);}).Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]
+          +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,4)[Label(TEXT("FACTORY CHARACTER"),9,Muted,true)]
+          +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,14)
+          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Notes[FMath::Clamp(Vehicle.IsValid()?Vehicle->VehicleIndex:0,0,ATerraVehicle::VehicleCount-1)]);}).Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]
+          +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,4)[Label(TEXT("CURRENT POWERTRAIN"),9,Muted,true)]
+          +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,12)
+          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->PowertrainDescription():TEXT(""));}).Font(Font(11,true)).ColorAndOpacity(Mint).AutoWrapText(true)]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("OUTPUT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f hp"),Vehicle.IsValid()?Vehicle->PowerHP():0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("WEIGHT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f lb"),Vehicle.IsValid()?TerraUnits::Pounds(Vehicle->Mass):0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("TIRE DIAMETER"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.1f in"),Vehicle.IsValid()?Vehicle->TireDiameter():0));}))]
-          +SVerticalBox::Slot().FillHeight(1)[SNew(SSpacer)]
-          +SVerticalBox::Slot().AutoHeight()
+          +SVerticalBox::Slot().AutoHeight()[SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->TireAirDescription():TEXT(""));}).Font(Font(10)).ColorAndOpacity(Muted).AutoWrapText(true)]
+          +SVerticalBox::Slot().AutoHeight().Padding(0,14,0,0)
           [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(12,10)).ButtonColorAndOpacity(FLinearColor(.18,.3,.24))
             .OnClicked_Lambda([this]{Page=1;Pages->SetActiveWidgetIndex(1);return FReply::Handled();})[Label(TEXT("BUILD THIS VEHICLE   >"),12,Mint,true)]]
-        ]]];
+        ]]]];
 }
 TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
   auto Stages=SNew(SHorizontalBox);
@@ -235,23 +280,33 @@ TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
 }
 TSharedRef<SWidget> STerraGarage::UpgradePage() {
   auto Rows=SNew(SVerticalBox);
-  for(int I=0;I<TerraSim::PartCount;++I) Rows->AddSlot().AutoHeight().Padding(0,0,0,5)[UpgradeRow(I)];
+  for(int I=0;I<TerraSim::PartCount;++I){
+    if(I==0||I==TerraSim::Drivetrain)Rows->AddSlot().AutoHeight().Padding(3,I?14:0,0,8)
+      [Label(I?TEXT("DRIVE, ENERGY & AIR"):TEXT("CHASSIS & GRIP"),10,Mint,true)];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[UpgradeRow(I)];
+  }
+  auto Sheet=SNew(SVerticalBox)
+    +SVerticalBox::Slot().AutoHeight()[Label(TEXT("THE BUILD SHEET"),11,Mint,true)]
+    +SVerticalBox::Slot().AutoHeight().Padding(0,10,0,14)
+    [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(22,true)).ColorAndOpacity(White).AutoWrapText(true)]
+    +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("POWER"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f hp"),Vehicle.IsValid()?Vehicle->PowerHP():0));}))]
+    +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("TIRE GRIP"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("+%.0f%%"),Vehicle.IsValid()?(Vehicle->GripMultiplier()-1)*100:0));}))]
+    +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("RUNNING WEIGHT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f lb"),Vehicle.IsValid()?TerraUnits::Pounds(Vehicle->Mass):0));}))]
+    +SVerticalBox::Slot().AutoHeight()[Label(TEXT("POWERTRAIN"),10,Muted,true)]
+    +SVerticalBox::Slot().AutoHeight().Padding(0,4,0,10)
+    [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->PowertrainDescription():TEXT(""));}).Font(Font(12,true)).ColorAndOpacity(Mint).AutoWrapText(true)]
+    +SVerticalBox::Slot().AutoHeight()[Label(TEXT("DRIVE SELECTED"),10,Muted,true)]
+    +SVerticalBox::Slot().AutoHeight().Padding(0,4,0,14)
+    [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->DriveDescription():TEXT(""));}).Font(Font(12,true)).ColorAndOpacity(White).AutoWrapText(true)]
+    +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,14)[PressureControls(Vehicle)]
+    +SVerticalBox::Slot().AutoHeight()[Label(TEXT("I   TRAIL   /   II   EXPEDITION\nIII   COMPETITION"),10,Mint,true)]
+    +SVerticalBox::Slot().AutoHeight().Padding(0,9,0,0)
+    [SNew(STextBlock).Text(FText::FromString(TEXT("Changes apply immediately. Each vehicle remembers its build and pressure target."))).Font(Font(10)).ColorAndOpacity(Muted).AutoWrapText(true)];
   return SNew(SHorizontalBox)
     +SHorizontalBox::Slot().AutoWidth().Padding(0,0,20,0)[SNew(SBox).WidthOverride(295)
-      [SNew(SBorder).BorderImage(&Panel).Padding(24)
-        [SNew(SVerticalBox)
-          +SVerticalBox::Slot().AutoHeight()[Label(TEXT("THE BUILD SHEET"),11,Mint,true)]
-          +SVerticalBox::Slot().AutoHeight().Padding(0,12,0,22)
-          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(24,true)).ColorAndOpacity(White).AutoWrapText(true)]
-          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("POWER"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f hp"),Vehicle.IsValid()?Vehicle->PowerHP():0));}))]
-          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("TIRE GRIP"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("+%.0f%%"),Vehicle.IsValid()?(Vehicle->GripMultiplier()-1)*100:0));}))]
-          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("RUNNING WEIGHT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f lb"),Vehicle.IsValid()?TerraUnits::Pounds(Vehicle->Mass):0));}))]
-          +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("DRIVE SELECTED"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->DriveDescription():TEXT(""));}))]
-          +SVerticalBox::Slot().FillHeight(1)[SNew(SSpacer)]
-          +SVerticalBox::Slot().AutoHeight()[Label(TEXT("I    TRAIL\nII   EXPEDITION\nIII  COMPETITION"),12,Mint,true)]
-          +SVerticalBox::Slot().AutoHeight().Padding(0,14,0,0)
-          [SNew(STextBlock).Text(FText::FromString(TEXT("Changes apply immediately.\nChoose stock at any time.\nEach vehicle remembers its build."))).Font(Font(11)).ColorAndOpacity(Muted).AutoWrapText(true)]
-        ]]]
+      [SNew(SBorder).BorderImage(&Panel).Padding(20)[SNew(SScrollBox)+SScrollBox::Slot()[Sheet]]]]
     +SHorizontalBox::Slot().FillWidth(1)
-      [SNew(SScrollBox)+SScrollBox::Slot()[Rows]];
+      [SNew(SVerticalBox)
+        +SVerticalBox::Slot().AutoHeight().Padding(3,0,0,8)[Label(FString::Printf(TEXT("%d UPGRADE SYSTEMS   /   STOCK + THREE STAGES"),int(TerraSim::PartCount)),11,Mint,true)]
+        +SVerticalBox::Slot().FillHeight(1)[SNew(SScrollBox)+SScrollBox::Slot()[Rows]]];
 }

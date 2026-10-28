@@ -4,23 +4,48 @@
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
 namespace TerraMechanicalValidation {
 namespace {
+constexpr int PortalStages=4;
+constexpr int MigrationChecks=3,PersistenceChecks=2,CapabilityChecksPerVehicle=8,
+  StationaryChecksPerTrial=10,GrowthChecksPerVehicle=PortalStages-1,SpinChecksPerVehicle=4;
 struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
-  TerraSim::UpgradeSetup Before[6];
+  TerraSim::UpgradeSetup Before[ATerraVehicle::VehicleCount];
   int Trial=0,Phase=0,OriginalVehicle=0,StockBoxes=0;
   float Time=0,PreviousHeight=0;
 } State;
 FString Fixture(const TCHAR* Name){return FPaths::ProjectSavedDir()/TEXT("Validation")/Name;}
+FString FixturePlanPath(const TCHAR* Name){
+  FString Report;
+  if(FParse::Value(FCommandLine::Get(),TEXT("TerraReport="),Report)&&!Report.IsEmpty())return FPaths::GetPath(Report)/Name;
+  return FPaths::ProjectSavedDir()/TEXT("Validation")/Name;
+}
 bool SameBuilds(ATerraVehicle* V,const TerraSim::UpgradeSetup* Builds){
-  for(int I=0;I<6;I++)for(int P=0;P<TerraSim::PartCount;P++)if(V->Builds[I].Stage[P]!=Builds[I].Stage[P])return false;
+  for(int I=0;I<ATerraVehicle::VehicleCount;I++)for(int P=0;P<TerraSim::PartCount;P++)if(V->Builds[I].Stage[P]!=Builds[I].Stage[P])return false;
   return true;
+}
+bool WriteFixturePlan(){
+  auto Root=MakeShared<FJsonObject>();Root->SetNumberField(TEXT("version"),1);
+  Root->SetNumberField(TEXT("vehicleCount"),ATerraVehicle::VehicleCount);Root->SetNumberField(TEXT("partCount"),TerraSim::PartCount);
+  Root->SetNumberField(TEXT("portalStages"),PortalStages);Root->SetNumberField(TEXT("migrationChecks"),MigrationChecks);
+  Root->SetNumberField(TEXT("persistenceChecks"),PersistenceChecks);Root->SetNumberField(TEXT("capabilityChecksPerVehicle"),CapabilityChecksPerVehicle);
+  Root->SetNumberField(TEXT("stationaryChecksPerTrial"),StationaryChecksPerTrial);Root->SetNumberField(TEXT("growthChecksPerVehicle"),GrowthChecksPerVehicle);
+  Root->SetNumberField(TEXT("spinChecksPerVehicle"),SpinChecksPerVehicle);
+  TArray<TSharedPtr<FJsonValue>> Trials;
+  for(int I=0;I<ATerraVehicle::VehicleCount;++I)for(int Stage=0;Stage<PortalStages;++Stage){
+    auto Trial=MakeShared<FJsonObject>();Trial->SetNumberField(TEXT("vehicle"),I);Trial->SetNumberField(TEXT("stage"),Stage);Trials.Add(MakeShared<FJsonValueObject>(Trial));
+  }
+  Root->SetArrayField(TEXT("trials"),Trials);
+  Root->SetNumberField(TEXT("expectedChecks"),MigrationChecks+PersistenceChecks+ATerraVehicle::VehicleCount*(CapabilityChecksPerVehicle+GrowthChecksPerVehicle+SpinChecksPerVehicle)+Trials.Num()*StationaryChecksPerTrial);
+  FString Json;return FJsonSerializer::Serialize(Root,TJsonWriterFactory<>::Create(&Json))&&FFileHelper::SaveStringToFile(Json,*FixturePlanPath(TEXT("mechanical-fixtures.json")));
 }
 bool WriteFixture(int Version,int Cars,int Parts,bool Invalid=false){
   auto Root=MakeShared<FJsonObject>();Root->SetNumberField(TEXT("version"),Version);Root->SetNumberField(TEXT("vehicle"),2);
@@ -34,31 +59,49 @@ bool WriteFixture(int Version,int Cars,int Parts,bool Invalid=false){
   FString Json;return FJsonSerializer::Serialize(Root,TJsonWriterFactory<>::Create(&Json))&&FFileHelper::SaveStringToFile(Json,*Fixture(TEXT("mechanical-migration.json")));
 }
 void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
-  for(int Version:{1,2}){
-    const int Cars=Version==1?5:6;
-    bool Valid=WriteFixture(Version,Cars,7)&&V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
-    for(int I=0;I<6;I++)for(int P=0;P<TerraSim::PartCount;P++){
-      const int Expected=I>=Cars||P>=7?0:I==2&&P==TerraSim::Electrical?0:(P+I)%4;
+  const bool PlanWritten=WriteFixturePlan();
+  for(int Version:{1,2,3}){
+    const int Cars=Version==1?5:6,Parts=Version<3?7:10;
+    bool Valid=PlanWritten&&WriteFixture(Version,Cars,Parts)&&V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
+    for(int I=0;I<ATerraVehicle::VehicleCount;I++)for(int P=0;P<TerraSim::PartCount;P++){
+      const int Expected=I>=Cars||P>=Parts?0:I==2&&P==TerraSim::Electrical?0:(P+I)%4;
       Valid&=V->Builds[I].Stage[P]==Expected;
     }
     Check(FString::Printf(TEXT("v%d garage migration retains old stages and defaults new hardware to stock"),Version),Valid,Version);
   }
-  TerraSim::UpgradeSetup Loaded[6];for(int I=0;I<6;I++)Loaded[I]=V->Builds[I];
+  TerraSim::UpgradeSetup Loaded[ATerraVehicle::VehicleCount];for(int I=0;I<ATerraVehicle::VehicleCount;I++)Loaded[I]=V->Builds[I];
   const bool Rejected=WriteFixture(2,6,7,true)&&!V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
   Check(TEXT("malformed legacy garage rejects atomically"),Rejected&&SameBuilds(V,Loaded),Rejected?1:0);
-  for(int I=0;I<6;I++){V->Builds[I]={};V->Builds[I].Stage[TerraSim::Drivetrain]=I%4;V->Builds[I].Stage[TerraSim::Differentials]=(I+1)%4;V->Builds[I].Stage[TerraSim::Portals]=(I+2)%4;Loaded[I]=V->Builds[I];}
-  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v3.json")));
+  for(int I=0;I<ATerraVehicle::VehicleCount;I++){
+    V->Builds[I]={};
+    for(int P=0;P<TerraSim::PartCount;++P)V->Builds[I].Stage[P]=I==2&&P==TerraSim::Electrical?0:(P+I)%4;
+    Loaded[I]=V->Builds[I];
+  }
+  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v4.json")));
+  FString Json;TSharedPtr<FJsonObject> Root;
+  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v4.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
+  if(Shape){
+    double Version=0;const TArray<TSharedPtr<FJsonValue>>* Cars=nullptr;
+    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==4&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
+    if(Shape)for(const auto& Car:*Cars){const TArray<TSharedPtr<FJsonValue>>* Parts=nullptr;Shape&=Car->TryGetArray(Parts)&&Parts->Num()==TerraSim::PartCount;}
+  }
   for(auto& B:V->Builds)B={};
-  RoundTrip&=V->LoadGarage(Fixture(TEXT("mechanical-v3.json")))&&SameBuilds(V,Loaded);
-  Check(TEXT("v3 garage round trip persists drivetrain lockers and portals for all six vehicles"),RoundTrip,TerraSim::PartCount);
-  for(int I=0;I<6;I++)V->Builds[I]=State.Before[I];
+  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v4.json")))&&SameBuilds(V,Loaded);
+  Check(TEXT("v4 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
+  for(int I=0;I<ATerraVehicle::VehicleCount;I++)V->Builds[I]=State.Before[I];
 }
 void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
   const int I=V->VehicleIndex;
   const FString Label=FString::Printf(TEXT("vehicle %d "),I);
   V->ResetUpgrades(false);
   const auto Stock=V->DriveCapabilities();
-  Check(Label+TEXT("stock factory drivetrain and lockers retained"),Stock.FourDrive==(I!=2&&I!=3)&&Stock.FrontLocker==(I==0||I==1||I==4)&&Stock.RearLocker==(I==0||I==1||I==4)&&V->HasLowRange()==(I<2),Stock.LowRatio);
+  const auto Factory=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[I]->AsObject();
+  const auto Features=Factory->GetObjectField(TEXT("features"));
+  bool FactoryFourDrive=false;
+  for(const auto& Mode:Factory->GetArrayField(TEXT("driveModes")))FactoryFourDrive|=Mode->AsString().Contains(TEXT("4"))||Mode->AsString().Contains(TEXT("AWD"));
+  const bool FactoryFrontPrimary=Factory->GetStringField(TEXT("defaultMode"))==TEXT("FWD");
+  const float FactoryLow=FMath::Max(1.f,float(Factory->GetNumberField(TEXT("lowRatio"))));
+  Check(Label+TEXT("stock factory drivetrain and lockers retained"),Stock.FourDrive==FactoryFourDrive&&Stock.FrontPrimary==FactoryFrontPrimary&&Stock.FrontLocker==Features->GetBoolField(TEXT("frontLocker"))&&Stock.RearLocker==Features->GetBoolField(TEXT("rearLocker"))&&FMath::IsNearlyEqual(Stock.LowRatio,FactoryLow,.001f)&&V->HasLowRange()==(FactoryLow>1.05f),Stock.LowRatio);
   V->SetUpgrade(TerraSim::Drivetrain,1,false);V->FourDrive=true;
   Check(Label+TEXT("4H conversion drives all four wheels"),V->HasFourDrive()&&V->DrivenWheel(0)&&V->DrivenWheel(1)&&V->DrivenWheel(2)&&V->DrivenWheel(3),V->Mass);
   V->SetUpgrade(TerraSim::Drivetrain,2,false);V->LowRange=true;
@@ -66,7 +109,7 @@ void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,flo
   V->SetUpgrade(TerraSim::Drivetrain,3,false);
   Check(Label+TEXT("crawler stage strengthens reduction while retaining factory gearing"),V->EffectiveLowRatio()>=3.5f&&V->EffectiveLowRatio()>=Stock.LowRatio,V->EffectiveLowRatio());
   V->SetUpgrade(TerraSim::Differentials,1,false);
-  Check(Label+TEXT("main drive axle locker retrofit is present"),V->HasLocker(I==2),V->UpgradeStage(TerraSim::Differentials));
+  Check(Label+TEXT("main drive axle locker retrofit is present"),V->HasLocker(FactoryFrontPrimary),V->UpgradeStage(TerraSim::Differentials));
   V->SetUpgrade(TerraSim::Differentials,2,false);V->Speed=0;V->FourDrive=V->LowRange=true;
   V->FrontLocked=V->RearLocked=false;V->ToggleLocker(false);V->ToggleLocker(true);
   Check(Label+TEXT("both retrofitted lockers engage through the player controls"),V->HasLocker(true)&&V->HasLocker(false)&&V->FrontLocked&&V->RearLocked,V->FrontLocked+V->RearLocked);
@@ -125,14 +168,14 @@ void SpinChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
   if(State.Vehicle.Get()!=V){
     State=FState();State.Vehicle=V;State.OriginalVehicle=V->VehicleIndex;
-    for(int I=0;I<6;I++)State.Before[I]=V->Builds[I];
+    for(int I=0;I<ATerraVehicle::VehicleCount;I++)State.Before[I]=V->Builds[I];
     SaveChecks(V,Check);
   }
-  if(State.Trial>=24){
-    V->SetGarage(true);for(int I=0;I<6;I++)V->Builds[I]=State.Before[I];V->SelectVehicle(State.OriginalVehicle);V->SetGarage(false);
+  if(State.Trial>=ATerraVehicle::VehicleCount*PortalStages){
+    V->SetGarage(true);for(int I=0;I<ATerraVehicle::VehicleCount;I++)V->Builds[I]=State.Before[I];V->SelectVehicle(State.OriginalVehicle);V->SetGarage(false);
     return true;
   }
-  const int Vehicle=State.Trial/4,Stage=State.Trial%4;
+  const int Vehicle=State.Trial/PortalStages,Stage=State.Trial%PortalStages;
   const FString Label=FString::Printf(TEXT("vehicle %d portal stage %d "),Vehicle,Stage);
   if(State.Phase==0){
     V->SetGarage(true);V->SelectVehicle(Vehicle);V->TeleportZone(1);V->ResetUpgrades(false);

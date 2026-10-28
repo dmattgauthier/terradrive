@@ -20,7 +20,7 @@ TArray<FCoachwork> LoadCoachwork(){
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraValidate")))FParse::Value(FCommandLine::Get(),TEXT("TerraCoachworkData="),File);
   TSharedPtr<FJsonObject> Root;const TArray<TSharedPtr<FJsonValue>>* Vehicles=nullptr;
   if(!FFileHelper::LoadFileToString(Json,*File)||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)||!Root.IsValid()||
-      !Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=6)return Profiles;
+      !Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=ATerraVehicle::VehicleCount)return Profiles;
   for(const auto& Value:*Vehicles){
     const auto Item=Value->AsObject();FCoachwork P;const TArray<TSharedPtr<FJsonValue>>* Hulls=nullptr;
     if(!Item.IsValid()||!Item->TryGetStringField(TEXT("asset"),P.Asset)||!Item->TryGetStringField(TEXT("objSha256"),P.Hash)||P.Hash.Len()!=64||

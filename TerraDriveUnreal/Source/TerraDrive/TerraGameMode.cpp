@@ -22,6 +22,7 @@
 #include "TerraVehicle.h"
 #include "TerraRolloverValidation.h"
 #include "TerraMechanicalValidation.h"
+#include "TerraElectricPressureValidation.h"
 #include "TerraSprayValidation.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "ProceduralMeshComponent.h"
@@ -54,7 +55,7 @@ void ATerraHUD::DrawHUD() {
   if (!V || !Canvas || V->Garage)
     return;
   float W = Canvas->SizeX, H = Canvas->SizeY;
-  DrawRect(FLinearColor(.015, .025, .028, .88), 18, 18, 510, 172);
+  DrawRect(FLinearColor(.015, .025, .028, .88), 18, 18, 640, 196);
   DrawText(TEXT("TERRA DRIVE  /  NATIVE PREVIEW"), FLinearColor(.82, .9, .76),
            34, 28, nullptr, 1.25f);
   DrawText(V->VehicleName, FLinearColor::White, 34, 56, nullptr, 1.1f);
@@ -65,18 +66,19 @@ void ATerraHUD::DrawHUD() {
            FLinearColor::White, 34, 82, nullptr, 1.3f);
   DrawText(FString::Printf(TEXT("%s   %.0f PSI   %s"),*V->SurfaceName,V->Pressure,*V->DriveDescription()),FLinearColor(.72,.83,.88),34,116);
   DrawText(FString::Printf(TEXT("AXLES  Front: %s   Rear: %s   %s"),
-      V->FrontLocked?TEXT("LOCKED"):TEXT("open"),V->RearLocked?TEXT("LOCKED"):TEXT("open"),
+      V->IndependentWheel(0)?TEXT("motor control"):V->FrontLocked?TEXT("LOCKED"):TEXT("open"),V->IndependentWheel(2)?TEXT("motor control"):V->RearLocked?TEXT("LOCKED"):TEXT("open"),
       V->DescentAssist?TEXT("DESCENT ON"):TEXT("")),FLinearColor(.95,.8,.4),34,145);
+  DrawText(V->TireAirDescription()+ (V->IsElectric()?TEXT(" / ")+V->PowertrainDescription():TEXT("")),FLinearColor(.72,.83,.88),34,173);
   DrawText(V->Overturned?TEXT("ROLLED OVER - no tire grip. R to recover."):V->Notice,
-      FLinearColor(.93,.82,.54),24,204);
-  if (!V->RouteStatus.IsEmpty()) DrawText(V->RouteStatus,FLinearColor::White,24,232);
+      FLinearColor(.93,.82,.54),24,230);
+  if (!V->RouteStatus.IsEmpty()) DrawText(V->RouteStatus,FLinearColor::White,24,258);
   DrawRect(FLinearColor(.015, .025, .028, .83), 18, H - 112, W - 36, 94);
   DrawText(TEXT("W/S  Drive / brake; hold opposite input through a stop to reverse     A/D  "
                 "Steer     Space  Brake     RMB + mouse  Camera"),
            FLinearColor(.85, .88, .88), 30, H - 80);
   DrawText(TEXT("1-9 Regions    J Next challenge    V Garage    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
            FLinearColor(.85, .88, .88), 30, H - 54);
-  DrawText(TEXT("Shift+W Crawl    K Descent assist    R Recover    0 Winter / proving ground    Tab Garage    Esc Quit"),
+  DrawText(TEXT("+/- Tire PSI target    Shift+W Crawl    K Descent assist    R Recover    0 Winter / proving ground    Tab Garage    Esc Quit"),
            FLinearColor(.85,.88,.88),30,H-30);
   if (V->WinchAttached)
     DrawText(FString::Printf(TEXT("WINCH %.0f lbf"), TerraUnits::PoundsForce(V->WinchTension)),
@@ -90,7 +92,7 @@ void ATerraGameMode::Tick(float Dt) {
   if (!FParse::Param(FCommandLine::Get(), TEXT("TerraValidate")))
     return;
   TestTime += Dt;
-  if (TestTime > 750) {
+  if (TestTime > 1100) {
     Results.Add(TEXT("{\"case\":\"validation timeout or missing world\",\"pass\":false}"));
     FinishValidation();
     return;
@@ -113,6 +115,10 @@ void ATerraGameMode::Tick(float Dt) {
   };
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverOnly"))){
     if(TerraRolloverValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraElectricPressureOnly"))){
+    if(TerraElectricPressureValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraMechanicalOnly"))){
@@ -818,7 +824,7 @@ void ATerraGameMode::Tick(float Dt) {
       const float Expected=V->ExpectedRideHeight();
       Check(TEXT("Hummer lifted driving height matches garage target"),FMath::Abs(Height-Expected)<.065f,Height-Expected);
       UE_LOG(LogTemp,Display,TEXT("TERRA_RIDE stock=%.4f lifted=%.4f target=%.4f"),StockRideHeight,Height,Expected);
-      for(int Part=0;Part<TerraSim::PartCount;++Part)V->SetUpgrade(Part,3,false);
+      for(int Part=0;Part<TerraSim::EVSwap;++Part)V->SetUpgrade(Part,3,false);
       V->TeleportZone(1);Next(43);
     }
   } else if(Stage==43){
@@ -1136,7 +1142,7 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>2.5f){
       const int PhotoViews=AllModels?10:6;
       if(++ModelView==PhotoViews){
-        if(AllModels){if(++ModelVehicle==6)FinishValidation();else Next(64);}
+        if(AllModels){if(++ModelVehicle==ATerraVehicle::VehicleCount)FinishValidation();else Next(64);}
         else if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);
       }else Next(65);
     }

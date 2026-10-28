@@ -1,4 +1,4 @@
-param([ValidateSet('Detail','Movement','Winter','Art')][string]$Mode='Detail',[int]$TimeoutSeconds=240,[switch]$FullTextureDiagnostic)
+param([ValidateSet('Detail','Movement','Winter','Art')][string]$Mode='Detail',[int]$TimeoutSeconds=600,[switch]$FullTextureDiagnostic)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd -ErrorAction SilentlyContinue){throw 'Close game/editor before this isolated native check.'}
@@ -48,7 +48,33 @@ if($null -eq $gameExit){throw 'Native process exit code unavailable'}
 if(!(Test-Path -LiteralPath $report) -or (Get-Item -LiteralPath $report).LastWriteTime -lt $started){throw ('No fresh native report: '+$log)}
 $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $failed=@($result.tests | Where-Object {!$_.pass})
-$minimum=if($Mode -eq 'Detail'){15}elseif($Mode -eq 'Art'){66}elseif($Mode -eq 'Movement'){84}else{46}
+$minimum=if($Mode -eq 'Detail'){15}else{46}
+$expected=$null
+if($Mode -in @('Art','Movement')){
+    $roster=Get-Content -LiteralPath (Join-Path $projectRoot 'Content/NativeData/vehicle-ground-probes.json') -Raw | ConvertFrom-Json
+    $vehicleCount=@($roster.vehicles).Count
+    if($vehicleCount -lt 1){throw 'The generated vehicle fixture roster is empty'}
+    if($Mode -eq 'Art'){
+        # One native automotive-material assertion and all ten views per
+        # actual exported body. Require every named case as well as the count.
+        $expected=$vehicleCount*11
+        $caseNames=@($result.tests.case)
+        for($vehicle=0;$vehicle -lt $vehicleCount;$vehicle++){
+            if(('Vehicle {0} cooked body uses Epic automotive paint and trim' -f $vehicle) -notin $caseNames){throw ('Missing automotive-material result for vehicle '+$vehicle)}
+            for($view=0;$view -lt 10;$view++){if(('Vehicle {0} body renders in close photo view {1}' -f $vehicle,$view) -notin $caseNames){throw ('Missing native art view '+$vehicle+':'+$view)}}
+        }
+    }else{
+        $planPath=Join-Path $output 'momentum-fixtures.json'
+        if(!(Test-Path -LiteralPath $planPath) -or (Get-Item -LiteralPath $planPath).LastWriteTime -lt $started){throw 'No fresh momentum fixture plan'}
+        $plan=Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
+        $coverage=@($plan.riseVehicles | Sort-Object -Unique)
+        $planValid=$plan.version -eq 1 -and $plan.vehicleCount -eq $vehicleCount -and $plan.boundaryTrialCount -eq 7 -and @($plan.boundaries).Count -eq 7 -and @($plan.riseVehicles).Count -eq $vehicleCount -and $coverage.Count -eq $vehicleCount
+        for($vehicle=0;$vehicle -lt $vehicleCount;$vehicle++){$planValid=$planValid -and $vehicle -in $coverage}
+        $expected=[int]$plan.boundaryTrialCount*[int]$plan.checksPerBoundary+$vehicleCount*[int]$plan.checksPerRiseVehicle+[int]$plan.barrierChecks
+        if(!$planValid -or $plan.expectedChecks -ne $expected){throw 'Momentum fixture plan does not cover every exported vehicle and original terrain boundary'}
+    }
+}
+$countValid=if($null -ne $expected){@($result.tests).Count -eq $expected}else{@($result.tests).Count -ge $minimum}
 $errors=@(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
-if($gameExit -ne 0 -or $failed.Count -or $errors.Count -or @($result.tests).Count -lt $minimum){$failed | Format-Table | Out-String | Write-Output;throw ('Native '+$Mode+' verification failed, exit '+$gameExit+': '+$report)}
+if($gameExit -ne 0 -or $failed.Count -or $errors.Count -or !$countValid){$failed | Format-Table | Out-String | Write-Output;throw ('Native '+$Mode+' verification failed, exit '+$gameExit+': '+$report+'; checks '+@($result.tests).Count+'/'+$expected)}
 Write-Output ('PASS '+$Mode+' '+@($result.tests).Count+' native checks; fresh report and exit 0')

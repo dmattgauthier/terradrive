@@ -22,12 +22,17 @@ struct FCase { int Vehicle,Zone;float Roll; };
 struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TWeakObjectPtr<ACameraActor> Camera;
-  TArray<FVector> Probes[6];TArray<FCase> Cases;
+  TArray<FVector> Probes[ATerraVehicle::VehicleCount];TArray<FCase> Cases;
   int Trial=0,Phase=0,Samples=0;float Time=0,MinimumClearance=10000;
   bool Ready=false,Finite=true,RequestedPoseSeen=false,OverturnedSeen=false,PoweredWhileOverturned=false;
 };
 FState State;
 FString Label(const FCase& C){return FString::Printf(TEXT("rollover vehicle %d %s %.0f degrees"),C.Vehicle,C.Zone==0?TEXT("Pine Ridge"):TEXT("tarmac"),C.Roll);}
+FString FixturePlanPath(const TCHAR* Name){
+  FString Report;
+  if(FParse::Value(FCommandLine::Get(),TEXT("TerraReport="),Report)&&!Report.IsEmpty())return FPaths::GetPath(Report)/Name;
+  return FPaths::ProjectSavedDir()/TEXT("Validation")/Name;
+}
 bool Load(){
   FString File=FPaths::ProjectContentDir()/TEXT("NativeData/vehicle-collision.json"),Json;
   // A loose fixture lets the unchanged cooked meshes demonstrate the old
@@ -35,16 +40,23 @@ bool Load(){
   FParse::Value(FCommandLine::Get(),TEXT("TerraCoachworkData="),File);
   TSharedPtr<FJsonObject> Root;const TArray<TSharedPtr<FJsonValue>>* Vehicles=nullptr;
   if(!FFileHelper::LoadFileToString(Json,*File)||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)||!Root.IsValid()||
-      !Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=6)return false;
-  for(int I=0;I<6;I++){
+      !Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=ATerraVehicle::VehicleCount)return false;
+  for(int I=0;I<ATerraVehicle::VehicleCount;I++){
     const auto Item=(*Vehicles)[I]->AsObject();const TArray<TSharedPtr<FJsonValue>>* Probes=nullptr;
     if(!Item.IsValid()||!Item->TryGetArrayField(TEXT("rolloverProbes"),Probes)||Probes->Num()<64||Probes->Num()>384)return false;
     for(const auto& Value:*Probes){const auto& A=Value->AsArray();if(A.Num()!=3)return false;const FVector P(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber());if(P.ContainsNaN())return false;State.Probes[I].Add(P);}
   }
   const bool Quick=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverQuick"));
-  for(int Zone:{1,0})for(int I=0;I<6;I++)if(!Quick||I==3)for(float Roll:{-90.f,90.f,180.f})State.Cases.Add({I,Zone,Roll});
+  for(int Zone:{1,0})for(int I=0;I<ATerraVehicle::VehicleCount;I++)if(!Quick||I==3)for(float Roll:{-90.f,90.f,180.f})State.Cases.Add({I,Zone,Roll});
   for(float Roll:{-55.f,55.f,-110.f,110.f})State.Cases.Add({3,0,Roll});
-  return true;
+  auto Plan=MakeShared<FJsonObject>();Plan->SetNumberField(TEXT("version"),1);Plan->SetNumberField(TEXT("vehicleCount"),ATerraVehicle::VehicleCount);Plan->SetBoolField(TEXT("quick"),Quick);
+  const bool Coachwork=FParse::Param(FCommandLine::Get(),TEXT("TerraExpectCoachworkCollision"));
+  const int ChecksPerPose=Coachwork?8:6;
+  Plan->SetBoolField(TEXT("coachworkCollisionRequired"),Coachwork);Plan->SetNumberField(TEXT("checksPerPose"),ChecksPerPose);
+  TArray<TSharedPtr<FJsonValue>> Cases;
+  for(const auto& C:State.Cases){auto Item=MakeShared<FJsonObject>();Item->SetNumberField(TEXT("vehicle"),C.Vehicle);Item->SetNumberField(TEXT("zone"),C.Zone);Item->SetNumberField(TEXT("roll"),C.Roll);Cases.Add(MakeShared<FJsonValueObject>(Item));}
+  Plan->SetArrayField(TEXT("cases"),Cases);Plan->SetNumberField(TEXT("expectedChecks"),1+State.Cases.Num()*ChecksPerPose);
+  return FJsonSerializer::Serialize(Plan,TJsonWriterFactory<>::Create(&Json))&&FFileHelper::SaveStringToFile(Json,*FixturePlanPath(TEXT("rollover-fixtures.json")));
 }
 void Prepare(ATerraVehicle* V,const FCase& C){
   // Exercise the player's menu selection/upgrade/return path before each drop.
@@ -66,7 +78,7 @@ void Place(ATerraVehicle* V,const FCase& C){
 }
 }
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
-  if(State.Vehicle.Get()!=V){State=FState();State.Vehicle=V;State.Ready=Load();Check(TEXT("rollover probe data covers all six actual body meshes"),State.Ready,State.Ready?6:0);if(!State.Ready)return true;}
+  if(State.Vehicle.Get()!=V){State=FState();State.Vehicle=V;State.Ready=Load();Check(FString::Printf(TEXT("rollover probe data covers all %d actual body meshes"),ATerraVehicle::VehicleCount),State.Ready,State.Ready?ATerraVehicle::VehicleCount:0);if(!State.Ready)return true;}
   if(State.Trial>=State.Cases.Num())return true;
   const auto C=State.Cases[State.Trial];const FString Name=Label(C);
   if(State.Phase==0){Prepare(V,C);return false;}

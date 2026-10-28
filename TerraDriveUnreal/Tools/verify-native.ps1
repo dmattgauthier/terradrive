@@ -1,4 +1,4 @@
-param([string]$Executable='', [int]$TimeoutSeconds=900, [switch]$GroundOnly, [switch]$LockersOnly, [switch]$BrakeOnly)
+param([string]$Executable='', [int]$TimeoutSeconds=1200, [switch]$GroundOnly, [switch]$LockersOnly, [switch]$BrakeOnly)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 if (!$Executable) { $Executable=Join-Path $projectRoot 'Build\Windows\TerraDrive\Binaries\Win64\TerraDrive.exe' }
@@ -54,8 +54,11 @@ $result=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
 $renderErrors=@(Select-String -LiteralPath $log -Pattern 'LogProceduralComponent: Error|missing usage flag|Fatal error|Assertion failed|doesn.t have a valid ShaderMap')
 if($renderErrors.Count){throw "Native mesh/render diagnostics failed. Inspect $log"}
 $failed=@($result.tests | Where-Object { !$_.pass })
-$minimumChecks=if($GroundOnly){19}elseif($LockersOnly){4}elseif($BrakeOnly){18}else{287}
-if($BrakeOnly -and @($result.tests).Count -ne 18){throw "Focused braking check count changed; expected exactly 18. Inspect $report"}
+$roster=Get-Content -LiteralPath (Join-Path $projectRoot 'Content/NativeData/vehicle-ground-probes.json') -Raw | ConvertFrom-Json
+$vehicleCount=@($roster.vehicles).Count
+# Per car:3 mesh,2 service-brake,5 garage,6 lamp and3 banked-ground checks.
+$minimumChecks=if($GroundOnly){1+3*$vehicleCount}elseif($LockersOnly){4}elseif($BrakeOnly){6+2*$vehicleCount}else{173+19*$vehicleCount}
+if(@($result.tests).Count -ne $minimumChecks){throw "Native check count changed; expected exactly $minimumChecks. Inspect $report"}
 if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt $minimumChecks) {
     $failed | Format-Table | Out-String | Write-Output
     throw "Native checks failed (exit $gameExit). Inspect $report and $log"

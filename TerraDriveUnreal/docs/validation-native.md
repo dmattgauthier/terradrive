@@ -1,111 +1,83 @@
-# Native validation — drivetrain, running gear and soil pass 13
+# Native validation — expedition, electric drive and tire air pass 14
 
-The Windows game was compiled, imported, fully cooked and packaged with Unreal
-Engine 5.8.3. The current package passes **1,415 native checks**, **467 portable
-simulation checks** and **648 portable spray-response checks**. The native image review covered **198 fresh native captures**, including sixty vehicle views, forty
-rollover poses, twelve stock/portal views (six pairs) and six controlled ejection views.
-All reports and pictures belong to the same current executable. Its compiled
-code stage retains the verified full asset cook without changing its containers.
+The current Windows package is verified. Unreal Engine 5.8.3 compiled, imported, fully cooked and packaged this round. **2,087/2,087 native checks** across fourteen modes, **1,393/1,393 portable checks**, and actual review of **279 fresh native PNGs** belong to the same executable and accepted asset cook.
 
-| Native mode | Passed |
-| --- | ---: |
-| Mechanical | 334/334 |
-| Spray | 44/44 |
-| Full | 287/287 |
-| Ruts | 117/117 |
-| Art | 66/66 |
-| Rollover | 321/321 |
-| Movement | 84/84 |
-| Detail | 15/15 |
-| Winter | 46/46 |
-| Transitions | 53/53 |
-| Cool | 16/16 |
-| Balanced | 16/16 |
-| QualitySmoke | 16/16 |
+The garage contains **nine vehicles and twelve upgrade categories**. The additions are the reference-built EarthCruiser EXP, Mercedes-Benz G 580 with EQ Technology and Mercedes-AMG G 63. Factory HUMMER EV three-motor and G 580 four-motor layouts remain distinct from the fictional single/dual/quad conversion kits. Original procedural geometry and calibrated game physics remain approximations.
 
-The new Mechanical mode covers all six factory configurations, added four-wheel
-high drive, low/crawler range and selectable lockers, legacy-save migration and
-version 3 persistence. All 24 stock/portal configurations settle with four loaded
-tires; actual welded mass, incremental clearance, installed housings and loaded
-materials are checked. Six short drives verify that rims and friction rotors
-follow their wheels while calipers follow steering without wheel spin.
+| Native mode | Passed | Highest sampled GPU temperature |
+| --- | ---: | ---: |
+| ElectricPressure | 245/245 | 63°C |
+| Mechanical | 500/500 | 62°C |
+| Spray | 44/44 | 60°C |
+| Full | 344/344 | 64°C |
+| Ruts | 117/117 | 65°C |
+| Art | 99/99 | 64°C |
+| Rollover | 465/465 | 62°C |
+| Movement | 111/111 | 71°C |
+| Detail | 15/15 | 55°C |
+| Winter | 46/46 | 57°C |
+| Transitions | 53/53 | 56°C |
+| Cool | 16/16 | 63°C |
+| Balanced | 16/16 | 66°C |
+| QualitySmoke | 16/16 | 63°C |
 
-Spray mode isolates grass, mud, snow, sand, gravel and water using controlled
-loaded-wheel inputs. It verifies material-specific emissions, varying finite
-transforms, world-space motion, complete expiry and non-emitting pavement,
-airborne/tipped tires and solid constructed rock. Actual motor-driven mud/snow
-rut trials and Full driving checks provide separate terrain-interaction evidence.
+Native run interval: **2026-10-28T01:09:52.692Z to 2026-10-28T01:58:44.691Z**. Final evidence was assembled at **2026-10-28T02:00:50.631Z**. The portable suites comprise **480 simulation**, **265 electric/pressure** and **648 spray-response** checks; their source dependencies and compiled-program hashes are recorded in the machine-readable evidence.
 
-Ruts retains continuity, depth, slope, packing, unloaded/rigid-ground, repair,
-cache and volume accounting checks. Added checks measure unequal bank
-distribution, changing physical spread along the path and exact deterministic
-replay of floor/shoulder/packing/shear history. Reviewed profiles show broader,
-irregular low banks in mud/wet grass and compacted snow channels. Firm dirt and
-sand relief remain subtle in daylight. The straight controlled fixtures have
-straight overall wheel paths; their local shoulders vary.
+## Electric drive, pressure and persistence
 
-Full includes braking/reverse and Space-stop checks for every vehicle, wheel
-support, equipment, deformable terrain and the stock Urus twenty-gate quarry
-route. Movement covers seven coasting terrain boundaries, six rises, suspension,
-brakes and a solid obstacle. Its short trials retain their fixed 20 Hz test clock;
-player driving retains the normal clock. Rollover covers forty stock garage-to-
-driving side/roof/partial-roll poses and recovery. Every requested tipped pose
-must be observed; gravity, pose and velocity are not corrected during a drop.
-Winter checks retain the full acquired level and four short road-driving trials.
+The 245-check ElectricPressure mode inspects all **36 factory/conversion configurations** (nine vehicles × four stages), loaded assets, real Chaos mass, supported settling, driven wheels and restoration of factory output/mass. Native save checks retain nine independent pressure and battery states and all twelve category slots; malformed legacy data reject atomically. These checks use isolated fixture/user storage and preserve the six monitored ordinary settings files.
 
-Vehicle review covers front, side, rear, oblique, bonnet, closure, pillar and
-overhead views. Revised barrels, fasteners, calipers, rotors and articulated
-running gear are original procedural reconstructions fitted to retained
-hardpoints. They are not measured CAD assemblies or an additional solved
-suspension-linkage simulation. The six body envelopes remain retained except
-for the three factory spare-wheel revisions. No manufacturer-CAD or production
-racing-game fidelity is claimed.
+The HUMMER SUV now uses a **170 kWh C/3-rated simulation energy basis**, replacing the erroneous 212 kWh assumption. GMC's [MY2024 SUV brochure, pages 8 and 15](https://www.gmc.com/content/dam/gmc/na/us/english/index/about/download-brochures/2024-models/GMTH23CT000-2024-HUMMER-EV-SUV-FO-031924.pdf) identifies its 20-module pack; GM's [MY2025 EPA application, PDF page 18](https://dis.epa.gov/otaqpub/display_file.jsp?docid=61422&flag=1) rates that module count at 170 kWh at C/3. Applying that rated basis to the MY2024 configuration is an inference, not an established MY2024 usable/net/gross capacity. Native factory checks independently require HUMMER 170 kWh and G 580 116 kWh. The correction changes the simulated energy clock and estimated replacement donor mass; stock operating mass, power and torque remain unchanged. The donor-pack mass still uses a generic 185 Wh/kg estimate, not a measured HUMMER pack weight.
 
-Current executable SHA-256:
+Three installed air stages change actual pressure while the vehicle moves. Target requests, loaded minimum/maximum bounds, speed and power interlocks, volume scaling and garage service are tested separately. The observed deflation samples were:
 
-`0eceea64de4767f4f859c89e6b0c386c45cb8d779434910b7b2c850223bd44bb`
+| Air stage | Elapsed time | Actual drop | Expected volume-scaled drop | Moving frames |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 1.300 sec | 0.300 PSI | 0.300 PSI | 26 |
+| 2 | 1.300 sec | 0.524 PSI | 0.524 PSI | 26 |
+| 3 | 1.300 sec | 0.899 PSI | 0.899 PSI | 26 |
 
-Full import/cook/package log: `Saved/mechanical13-build-3.log`; SHA-256:
+The Civic's three conversion stages and the three new factory vehicles complete real launch, steering, lift-off and service-brake trials. Factory gasoline vehicles show no electrical generation; the electric configurations show lift-off generation. Portable tests separately cover power/RPM conservation, battery energy limits and low-speed regenerative fade. This is a bounded battery/regen model, not a cell, thermal-management or real retrofit simulation.
 
-`7881128f7a68c321970e3d15773872344b9a4a324c5f1beca131fb482b701922`
+Matched Civic road braking starts at **26.8 mph**. At 33.0 versus 16.5 PSI, stopping distance is **24.56 versus 28.64 feet**: **16.6% longer** when aired down. Both stop with four loaded contacts and no scenery impacts. The matched **17.9 mph** steering entry uses a 1.2-second input: yaw is **18.924° versus 14.429°**, a **23.8% lower** response at half pressure. These are controlled game measurements, not tire safety advice.
 
-The package contains 242 source-derived meshes, 72 body convex sections and eight
-verified NativeData files. All five package containers were fingerprinted and
-their extracted NativeData bytes match the current source. The import reads
-back Nanite support on scanned materials and instancing overrides on project-
-owned Epic automotive rotor instances. All native modes reject missing usage
-flags and default-material fallbacks. Original acquired Epic parents are not
-edited by the instance-override recipe.
+The paired stock-Jeep sand trials use the same natural, unobstructed lane, mass, 5.59 mph rolling entry and bounded throttle controller. Measurements cover the common **13.12–26.25 foot** path window, with **66 spatial samples per pass**, and require travel beyond 34.45 feet. Forces and vehicle motion remain live after the initial rolling setup.
 
-The first cooked candidate exposed five rotor-orientation failures caused by
-absolute instances lagging the chassis's final physics update. Chassis-relative
-running gear corrected them. A later numerical candidate was rejected visually
-for a snow test camera below terrain and missing renderer-usage settings. Its
-build, images and reports are retained privately. The current full cook includes
-the material and camera fixes. A later code-only stage corrects the descent
-fixture: it now begins on the actual rocky slope after the stock vehicle has
-activated, and requires downhill travel, loss of elevation and controlled peak
-speed. The cooked content is unchanged. Diagnostic candidates are excluded from
-current acceptance.
+| Sand trial | PSI | Mean carcass patch | Mean tire load | Mean speed | Maximum retained rut | Rut coverage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Placard | 37 | 3.937 in | 1120.2 lbf | 4.46 mph | 1.214 in | 100% |
+| Aired down | 20 | 4.977 in | 1116.9 lbf | 4.35 mph | 1.217 in | 100% |
 
-All 1,214 preserved browser files, the player's garage and graphics files, the
-original terrain height data and both protected original Winter Scene maps
-match the fresh pre-pass checkpoint. Publication retains 189 browser entries and
-86 binary entries from the approved source repository. Generated Windows builds,
-UAssets, acquired Epic/Fab assets, reference photos and private app/player files
-remain outside the public source upload.
+The measured carcass patch grows **26.4%** at reduced pressure, with matched load/speed tolerances and zero object or terrain body impacts. Both paths remain bounded and conserve displaced/compacted soil volume. The accepted rolling contact arc can dominate the pressure patch, so this result does **not** establish a large rut-depth reduction. The dry-rut water correction keeps a zero source water depth dry instead of inventing a water plane at the former surface; native sand profiles reject unintended standing water. Existing genuinely wet ground still deepens its water layer as soil is excavated.
 
-Driving, art, soil and Quality-smoke verification use a 20 FPS cap. Brief Cool
-and Balanced samples exercise their 30/45 FPS limits. Every native run uses the
-77°C cutoff. The highest sampled GPU
-temperature across these runs was **69°C**. This is capped automated
-verification and static image review, not a separate manual/controller session,
-normal 60 FPS endurance run, long-session thermal guarantee or reboot diagnosis.
+Pressure grip, squirm, steering stiffness, rolling loss, loaded target bounds and air rates are calibrated game estimates, not manufacturer load/inflation tables. Garage selection and resume provide a stationary tire service; trail hardware changes actual pressure at a finite rate. Conversion output, battery/donor mass and packaging are fictional simulator choices. A factory EV replacement removes its estimated original traction hardware rather than stacking another complete battery on top.
 
-Physical ruts use the proving ground's bounded height field. The acquired Winter
-Expedition landscape and road remain authored/static. Airborne debris is a
-short-lived visual effect, not a collection of persistent loose rigid bodies.
-Aftermarket portal/drivetrain conversions are fictional simulator options.
+## Vehicles, terrain and rendered inspection
 
-Machine-readable evidence is in [native-validation.json](native-validation.json).
-Implementation and controls are in [mechanical-soil-13.md](mechanical-soil-13.md).
+The review includes **90 model views**, **58 observed rollover/drop poses**, **18 stock/portal hardware images**, **21 electric/pressure images**, plus native terrain, ruts, movement, Winter Expedition, Full and preset frames. Every requested rollover pose was actually observed. Nine source bodies, actual custom rims, glazing and coachwork support remain covered; the separate new-expedition source suite has **88 checks**. The Mercedes rear header repair fills the diagnostic roof slit while a separate **89-check private source comparison** retains every prior mesh and exact overall bounds. Native capture review remains separate from those source checks.
+
+All six legacy body OBJ files are byte-identical to the pre-pass checkpoint; this round adds three original bodies rather than remodelling the previous six. Shapes, interiors, fine optics, surfacing and mechanical assemblies remain procedural approximations below OEM CAD or production racing-game/Forza fidelity. Mechanical visuals are not a separate solved linkage simulation. The menu, configured previews and pressure/powertrain readouts appear in the reviewed native captures; there is no claim of a separate manual/controller play session.
+
+The earlier isolated cook3 desktop inspection covered the expanded vehicle list, upgrade categories and conversion choices. The user stopped Computer Use with Escape when the optional cook4 desktop recheck began. Desktop interaction stopped at that point; the second isolated UI script was not launched. The final acceptance uses cook4 automated driving trials and actual rendered capture review. A separate final-cook interactive check of the garage pressure buttons is not claimed.
+
+Full, Movement, Ruts, Mechanical, Spray and Rollover retain driving/contact, braking/reverse, stock/tuned hardware, soil accounting, material-specific ejection and recovery coverage for the expanded roster. The acquired Winter Expedition remains complete, with four short start/drive trials and internal-road-join queries. The whole road has not been driven continuously by this acceptance suite. Its authored landscape/road stay static; physical excavation remains the proving ground's bounded height field. Tire debris is a short-lived visual effect, not persistent loose rigid-body terrain.
+
+## Exact package and preservation
+
+Executable: `Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe`
+
+Executable SHA-256: `aae82881c70ab24caa54dde45f7182e99c2f25ca417ae1c6c4444beee893a15e`
+
+Accepted complete asset cook: **iteration 4**, completed **2026-10-28T01:08:16.3762976Z**. Log: `Saved/expedition14-build-4.log`.
+
+Cook log SHA-256: `fff14cbc63e3e34db5a47c52433155e6bb3f7ab59afbea80c21df027cad8466c`
+
+The compiled and staged executable bytes match. The accepted cook binds **272 source-derived meshes**, **108 body convex sections**, **eight NativeData files**, **five package containers** and **120 frozen Source/Tools/Config files**. Extracted packaged NativeData match the recorded source bytes. Reports and reviewed captures follow this producer; superseded diagnostics and the pre-header candidate are excluded from acceptance.
+
+All **1,214 local browser files**, current player garage/graphics settings, original terrain data and both protected original Winter Scene maps match the fresh checkpoint. No older saves were restored. The source publication inventory preserves the previously approved 189 browser entries and 86 binary entries. Generated builds/UAssets, raw acquired Epic/Fab packs, manufacturer reference photos and private app/player files are excluded from publication.
+
+## GPU scope and limits
+
+There are **1824 recorded GPU samples** across the fourteen modes. The highest sampled temperature is **71°C**; Full averages **33.35% GPU utilization** and **11.07 W**, with a **64°C** peak. Driving, art, soil and QualitySmoke use a **20 FPS test cap**; brief Cool/Balanced runs exercise their 30/45 FPS settings. Every native wrapper retains the **77°C cutoff**. These short capped runs and static image reviews do not establish normal 60 FPS endurance, long-session thermal stability, or the cause of a PC crash/reboot.
+
+Machine-readable evidence: [native-validation.json](native-validation.json). Implementation, controls and approximation boundaries: [pass 14](expedition-electric-14.md), [electric/pressure research](electric-pressure-research.md), [EarthCruiser research](earthcruiser-exp-research.md), [Mercedes research](mercedes-gclass-research.md). Prior pass-13 evidence is historical at [commit 62f17be](https://github.com/dmattgauthier/terradrive/blob/62f17be6595f7496f56b064747e0ad7e79201611/TerraDriveUnreal/docs/validation-native.md); its executable, counts and captures must not be substituted for this round.
