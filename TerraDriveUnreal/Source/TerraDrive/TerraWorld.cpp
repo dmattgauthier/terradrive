@@ -3,7 +3,6 @@
 #include "TerraSoilVariation.h"
 #include "TerraSoilMeshComponent.h"
 #include "TerraContact.h"
-#include "TerraWinter.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -69,7 +68,6 @@ ATerraWorld::ATerraWorld() {
   RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("WorldRoot"));
 }
 float ATerraWorld::SnowDrift(float X,float Y) const {
-  if(TerraWinter::IsActive(GetWorld()))return 0;
   const float Snow=SurfaceBlend(X,Y).Weight[6];
   if(Snow<.001f)return 0;
   // Broad wind-built shelves (in cm), not collision-only decoration. Sampling
@@ -84,7 +82,6 @@ float ATerraWorld::SnowDrift(float X,float Y) const {
   return Snow*Snow*(8.f+30.f*Wind*Wind*Wind+18.f*FMath::Pow(Shelf,6)+Ripple);
 }
 float ATerraWorld::BaseHeight(float X, float Y) const {
-  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Height(GetWorld(),X,Y);
   if (N < 2)
     return 0;
   float GX =
@@ -104,7 +101,6 @@ float ATerraWorld::BaseHeight(float X, float Y) const {
   return U+V<=1?A+(B-A)*U+(C-A)*V:D+(C-D)*(1-U)+(B-D)*(1-V);
 }
 uint8 ATerraWorld::SurfaceAt(float X, float Y) const {
-  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Sample(GetWorld(),FVector(X,Y,TerraWinter::Height(GetWorld(),X,Y))).Surface;
   if (!N)
     return 0;
   int I = FMath::Clamp(FMath::RoundToInt((X / 100 - Origin) / Step), 0, N - 1),
@@ -128,7 +124,6 @@ float ATerraWorld::LooseDirt(float X,float Y) const {
 }
 FTerraSurfaceBlend ATerraWorld::SurfaceBlend(float X,float Y) const {
   FTerraSurfaceBlend Result;
-  if(TerraWinter::IsActive(GetWorld())){Result.Weight[SurfaceAt(X,Y)]=1;return Result;}
   if(N<2||BlendWeights.Num()!=N*N*7){Result.Weight[SurfaceAt(X,Y)]=1;return Result;}
   const float GX=FMath::Clamp((X/100-Origin)/Step,0.f,float(N-1)-.0001f),GY=FMath::Clamp((Y/100-Origin)/Step,0.f,float(N-1)-.0001f);
   const int I=FMath::FloorToInt(GX),J=FMath::FloorToInt(GY);const float U=GX-I,V=GY-J;
@@ -139,7 +134,6 @@ FTerraSurfaceBlend ATerraWorld::SurfaceBlend(float X,float Y) const {
   return Result;
 }
 float ATerraWorld::Height(float X, float Y) const {
-  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Height(GetWorld(),X,Y);
   FIntPoint K(FMath::FloorToInt(X / TileCM), FMath::FloorToInt(Y / TileCM));
   const FTerraTile *T = Detail.Find(K);
   const FTerraSoilState *Cached=T?nullptr:SoilCache.Find(K);
@@ -170,7 +164,6 @@ float ATerraWorld::SoilSinkLimit(float X,float Y,const FTerraSurfaceBlend &Blend
   return FMath::Max(0.f,Limit);
 }
 FTerraSample ATerraWorld::Sample(FVector P) const {
-  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Sample(GetWorld(),P);
   FTerraSample S;
   S.Height = Height(P.X, P.Y);
   S.Displacement=(S.Height-BaseHeight(P.X,P.Y))/100;
@@ -223,7 +216,6 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
 }
 FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM,
     float MinCM,float MaxCM) const {
-  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Support(GetWorld(),Mount,Up,RadiusCM,MinCM,MaxCM,nullptr);
   FTerraSupport Result;
   Up = Up.GetSafeNormal();
   // A tire's finite suspension ray points away from the ground on a rolled
@@ -249,7 +241,6 @@ FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM
 }
 FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM,
     float MinCM, float MaxCM, const AActor *Ignore, bool *RigidEncountered) const {
-  if(TerraWinter::IsActive(GetWorld()))return TerraWinter::Support(GetWorld(),Mount,Up,RadiusCM,MinCM,MaxCM,Ignore);
   Up=Up.GetSafeNormal();
   auto Result=GroundSupport(Mount,Up,RadiusCM,MinCM,MaxCM);
   FCollisionQueryParams Params(SCENE_QUERY_STAT(TerraSuspension), true, Ignore);
@@ -351,7 +342,6 @@ void ATerraWorld::BeginPlay() {
     UE_LOG(LogTemp, Error, TEXT("Terra world manifest missing"));
     return;
   }
-  if(TerraWinter::IsActive(GetWorld())){TerraWinter::Initialize(*this);return;}
   TArray<uint8> Bytes;
   if (!FFileHelper::LoadFileToArray(Bytes, *(FPaths::ProjectContentDir() /
                                              TEXT("NativeData/terrain.bin"))))
@@ -574,7 +564,6 @@ bool ATerraWorld::HasVisibleSoilCoverage(FVector P,float RadiusCM) const {
   return Missing==0;
 }
 void ATerraWorld::ActivateSoil(FVector P,float RadiusCM){
-  if(TerraWinter::IsActive(GetWorld()))return;
   for(int X=FMath::FloorToInt((P.X-RadiusCM)/TileCM);X<=FMath::FloorToInt((P.X+RadiusCM)/TileCM);++X)
     for(int Y=FMath::FloorToInt((P.Y-RadiusCM)/TileCM);Y<=FMath::FloorToInt((P.Y+RadiusCM)/TileCM);++Y)
       if(SoilCache.Contains({X,Y}))EnsureTile({X,Y});
@@ -628,7 +617,6 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
 void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
                          float Width, float Length, float Slip, float Speed,
                          float Dt) {
-  if(TerraWinter::IsActive(GetWorld()))return;
   auto S = Sample(P);
   if (S.MaxSink <= 0 || Load < 50)
     return;

@@ -22,6 +22,7 @@
 #include "TerraVehicle.h"
 #include "TerraRolloverValidation.h"
 #include "TerraMechanicalValidation.h"
+#include "TerraTurningValidation.h"
 #include "TerraElectricPressureValidation.h"
 #include "TerraDamageValidation.h"
 #include "TerraSprayValidation.h"
@@ -32,7 +33,6 @@
 #include "TerraContact.h"
 #include "TerraGraphics.h"
 #include "TerraMomentumValidation.h"
-#include "TerraWinterValidation.h"
 #include "TerraRutValidation.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
@@ -80,7 +80,7 @@ void ATerraHUD::DrawHUD() {
            FLinearColor(.85, .88, .88), 30, H - 80);
   DrawText(TEXT("1-9 Regions    J Next challenge    V Garage    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
            FLinearColor(.85, .88, .88), 30, H - 54);
-  DrawText(TEXT("+/- Tire PSI target    Shift+W Crawl    K Descent assist    R Recover    0 Winter / proving ground    Tab Garage    Esc Quit"),
+  DrawText(TEXT("+/- Tire PSI target    Shift+W Crawl    K Descent assist    R Recover    Tab Garage    Esc Quit"),
            FLinearColor(.85,.88,.88),30,H-30);
   if (V->WinchAttached)
     DrawText(FString::Printf(TEXT("WINCH %.0f lbf"), TerraUnits::PoundsForce(V->WinchTension)),
@@ -116,9 +116,16 @@ void ATerraGameMode::Tick(float Dt) {
     return;
   }
   auto Capture = [&](const TCHAR *Name) {
-    if (FParse::Param(FCommandLine::Get(),TEXT("TerraCapture")))
-      FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
+    if (FParse::Param(FCommandLine::Get(),TEXT("TerraCapture"))){
+      FString Directory;
+      if(!FParse::Value(FCommandLine::Get(),TEXT("TerraCaptureDir="),Directory)||Directory.IsEmpty())Directory=FPaths::ProjectSavedDir()/TEXT("Screenshots");
+      FScreenshotRequest::RequestScreenshot(Directory/Name,true,false);
+    }
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraTurningOnly"))){
+    if(TerraTurningValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
   if(DamageValidation){
     if(TerraDamageValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
@@ -141,10 +148,6 @@ void ATerraGameMode::Tick(float Dt) {
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRutOnly"))){
     if(TerraRutValidation::Tick(V,Dt,Check,Capture))FinishValidation();
-    return;
-  }
-  if(FParse::Param(FCommandLine::Get(),TEXT("TerraWinterOnly"))){
-    if(TerraWinterValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   auto Next = [&](int NewStage) { Stage=NewStage; StageTime=0; Captured=false; MaxProgress=0; };
@@ -171,6 +174,12 @@ void ATerraGameMode::Tick(float Dt) {
     V->TestDriverInput=true;V->TestSteer=0;V->TestForward=V->TestReverse=V->TestStop=false;
     Next(36);LogReverseBrake(TEXT("start"));
   };
+  float LockerLine=-.50f;
+  FParse::Value(FCommandLine::Get(),TEXT("TerraLockerLine="),LockerLine);
+  LockerLine=FMath::Clamp(LockerLine,-1.1f,1.1f);
+  float LockerStopBuffer=.55f;
+  FParse::Value(FCommandLine::Get(),TEXT("TerraLockerStopBuffer="),LockerStopBuffer);
+  LockerStopBuffer=FMath::Clamp(LockerStopBuffer,.15f,.75f);
   auto LockerTrial = [&](bool Locked) {
     // Each comparison needs virgin soil and the same stock vehicle. The open
     // pass must not leave ruts/packing for only the locked pass to negotiate.
@@ -184,7 +193,7 @@ void ATerraGameMode::Tick(float Dt) {
     // Follow the low side of the first articulated ledge in both trials.
     // The centre ridge correctly high-centres the modeled running board;
     // axle lockers cannot overcome a chassis supported by rock.
-    constexpr float TargetLateral=-.50f;
+    const float TargetLateral=LockerLine;
     const FVector Requested=V->GetActorLocation()+Side*(TargetLateral*100);
     FVector Position=Requested;
     FHitResult Floor;FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraLockerStart),true,V);
@@ -533,9 +542,9 @@ void ATerraGameMode::Tick(float Dt) {
       V->TestSteer=V->TestThrottle=0;V->TestBrake=1;
       if(StageTime>2){
         LockerDriving=true;LockerDriveTime=0;Start=Route.Spawn;
-        V->TestBrake=0;V->TestThrottle=.35f;
-        UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_DRIVE locked=%d targetLateral=-0.50 position=%s routeCenter=%s yaw=%.3f entrySpeed=%.4f mass=%.1f inertia=%s"),
-            Stage==18,*V->GetActorLocation().ToString(),*Start.ToString(),V->GetActorRotation().Yaw,V->Chassis->GetPhysicsLinearVelocity().Size()/100,
+        V->TestBrake=0;V->TestThrottle=.28f;
+        UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_DRIVE locked=%d targetLateral=%.2f position=%s routeCenter=%s yaw=%.3f entrySpeed=%.4f mass=%.1f inertia=%s"),
+            Stage==18,LockerLine,*V->GetActorLocation().ToString(),*Start.ToString(),V->GetActorRotation().Yaw,V->Chassis->GetPhysicsLinearVelocity().Size()/100,
             V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       }
     }else{
@@ -544,11 +553,30 @@ void ATerraGameMode::Tick(float Dt) {
       // zero steering allowed different paths and a legitimate running-board
       // hang-up on the centre ridge, obscuring the traction comparison.
       // This only requests ordinary steering; no body force or yaw is set.
-      const float Correction=FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(-.50f-Lateral,2.5f)),-18.f,18.f);
+      const float Correction=FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(LockerLine-Lateral,2.5f)),-18.f,18.f);
       const float HeadingError=FMath::FindDeltaAngleDegrees(V->GetActorRotation().Yaw,Route.Yaw+Correction);
       const float YawRate=V->Chassis->GetPhysicsAngularVelocityInDegrees().Z;
-      V->TestSteer=FMath::Clamp(HeadingError/24.f-YawRate*.012f,-1.f,1.f);
-      V->TestThrottle=.35f;V->TestBrake=0;
+      // A rollback reverses the steering-to-yaw relationship. The previous
+      // forward-only controller steered the wrong way while sliding back,
+      // then held full lock and spun the locked vehicle across the ledge.
+      const float TravelSign=V->Speed<-.20f?-1.f:1.f;
+      V->TestSteer=FMath::Clamp(TravelSign*(HeadingError/24.f-YawRate*.012f),-1.f,1.f);
+      // Use the same ordinary crawl driver in both comparisons: a 2.5 mph
+      // target and the player's Shift-throttle ceiling, rather than charging
+      // the first ledge at the low-range rev limit. No body/yaw force is set.
+      // End a hazardous attempt with the actual service brake, as a driver
+      // would, instead of continuing to spin against a blocked ledge for the
+      // remainder of the observation. The 22-inch course-edge buffer is
+      // independent of progress and applies identically to both axle setups.
+      const bool Holding=V->TestBrake>.5f||TireEdge>StripHalfWidth-LockerStopBuffer||
+          FMath::Abs(YawError)>20.f||FMath::Abs(V->GetActorRotation().Roll)>30.f;
+      if(Holding){
+        if(V->TestBrake<.5f)UE_LOG(LogTemp,Display,TEXT("TERRA_LOCKER_HOLD locked=%d t=%.2f clearance=%.3f yaw=%.3f roll=%.3f progress=%.3f"),
+            Stage==18,LockerDriveTime,StripHalfWidth-TireEdge,YawError,V->GetActorRotation().Roll,MaxProgress);
+        V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
+      }else{
+        V->TestThrottle=FMath::Clamp(.12f+(1.1f-V->Speed)*.25f,0.f,.28f);V->TestBrake=0;
+      }
       MaxProgress=FMath::Max(MaxProgress,float(FVector::DotProduct(V->GetActorLocation()-Start,Forward))/100);
       const int Second=FMath::FloorToInt(LockerDriveTime);
       if(Second!=LockerSampleSecond){

@@ -189,7 +189,23 @@ export function refineVehicle(view,spec){
   // Replace lost canvas text with real geometry, and keep native body identity
   // independent of any font/HTML renderer in the shipped game.
   if(spec.bodyStyle==='jeep')for(const side of [-1,1]){
-    const label=text(view.body,'RUBICON',.63,.029,decal);label.position.set(side*.699,1.215,1.385);label.rotation.y=side*Math.PI/2;
+    const label=text(view.body,'RUBICON',.63,.029,decal);label.position.set(side*.781,1.215,1.385);label.rotation.y=side*Math.PI/2;
+    label.name='wrangler-rubicon-bonnet-label-'+side;
+    // Follow the widened, gently tapered bonnet instead of hiding the old
+    // fixed-width lettering inside its side sheet. Retain extrusion depth.
+    view.body.updateWorldMatrix(true,true);
+    const bodyInverse=view.body.matrixWorld.clone().invert(),q=new THREE.Vector3(),n=new THREE.Vector3();
+    const edge=z=>{const v=Math.max(0,Math.min(1,(z-.748)/(2.160-.748)));return .775-.013*v+.004*Math.sin(v*Math.PI)+.0055;};
+    label.traverse(o=>{
+      if(!o.isMesh)return;o.geometry=o.geometry.clone();
+      const toBody=bodyInverse.clone().multiply(o.matrixWorld),toLocal=toBody.clone().invert(),normalToBody=new THREE.Matrix3().getNormalMatrix(toBody),normalToLocal=new THREE.Matrix3().getNormalMatrix(toLocal),p=o.geometry.attributes.position,ns=o.geometry.attributes.normal;
+      for(let i=0;i<p.count;i++){
+        q.fromBufferAttribute(p,i).applyMatrix4(toBody);const z=q.z,e=.0001,slope=(edge(z+e)-edge(z-e))/(2*e);
+        n.fromBufferAttribute(ns,i).applyMatrix3(normalToBody);n.z-=side*slope*n.x;n.applyMatrix3(normalToLocal).normalize();
+        q.x+=side*(edge(z)-.781);q.applyMatrix4(toLocal);p.setXYZ(i,q.x,q.y,q.z);ns.setXYZ(i,n.x,n.y,n.z);
+      }
+      o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();
+    });
   }
   if(spec.bodyStyle==='van'){
     const label=text(view.body,'SPRINTER',.31,.045,alloy);label.position.set(.57,.947,-3.027);label.rotation.y=Math.PI;

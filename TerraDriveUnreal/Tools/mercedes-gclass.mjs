@@ -90,6 +90,19 @@ function badge(g,mat,p,r=.115,rear=false){
   }return group;
 }
 function perimeter(g,mat,contour,map,r=.0025){return line(g,mat,[...contour,contour[0]].map(p=>map(...p)),r);}
+function mappedJoint(g,mat,points,map,r,closed=true){
+  // Sample the panel BEFORE mapping its depth. Connecting only the corner
+  // points ran a straight chord from the tucked roof to the lower door,
+  // hiding the middle of the shut line inside the painted body.
+  const boundary=closed?[...points,points[0]]:points,vertices=[];
+  for(let i=1;i<boundary.length;i++){
+    const a=boundary[i-1],b=boundary[i],steps=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.012));
+    for(let j=0;j<steps;j++)vertices.push(new T.Vector3(...map(lerp(a[0],b[0],j/steps),lerp(a[1],b[1],j/steps))));
+  }
+  vertices.push(new T.Vector3(...map(...boundary.at(-1))));
+  const path=new T.CurvePath();for(let i=1;i<vertices.length;i++)path.add(new T.LineCurve3(vertices[i-1],vertices[i]));
+  return mesh(g,new T.TubeGeometry(path,Math.max(8,Math.ceil(path.getLength()/.016)),r,8,false),mat);
+}
 function glassOpening(g,glass,trim,contour,map,side){
   // Glass and its returns occupy genuine holes in the cab skin. No opaque
   // full-size backing sheet is allowed behind a window.
@@ -221,8 +234,9 @@ export function buildGClass(view,spec=view.spec){
   // The press-side photograph and the manufacturer's orthographic drawing
   // show shallow drawn door pans, rounded shoulder breaks and turned-in end
   // corners. A single flat wall made the correctly sized chassis look long.
-  const bodyX=(y,z)=>halfCab-.013*Math.exp(-(((y-.83)/.23)**2))+.010*Math.exp(-(((y-1.238)/.065)**2))
-    -.027*(Math.abs(z)/2.30)**18-.011*(1-smooth(y,.47,.62));
+  const doorDraw=z=>smooth(Math.min(...[.693,-.270,-.309,-1.150].map(j=>Math.abs(z-j))),.006,.040);
+  const bodyX=(y,z)=>halfCab+doorDraw(z)*(-.013*Math.exp(-(((y-.83)/.23)**2))+.010*Math.exp(-(((y-1.238)/.065)**2))
+    -.011*(1-smooth(y,.47,.62)))-.027*(Math.abs(z)/2.30)**18;
   const jointStartZ=.737,jointEndZ=gClassCoachworkPoint(0,0,2.145)[2];
   const wingJointY=z=>lerp(1.200,1.045,clamp((gClassCoachworkPoint(0,0,z)[2]-jointStartZ)/(jointEndZ-jointStartZ),0,1));
   const wingTop=z=>z<=.730?1.285:coachworkSourceY(lerp(1.185,wingJointY(z)-.012,smooth(z,.730,.747)),z);
@@ -237,15 +251,21 @@ export function buildGClass(view,spec=view.spec){
     const sideMap=(z,y)=>[side*cabX(y),y,z];
     named(mappedPolygon(g,paint,rounded([[-2.287,1.285],[-2.287,1.913],[-2.217,1.947],[.441,1.947],[.719,1.285]],.018),sideMap,windows,side>0,5),'gclass-cab-skin-with-three-open-windows-'+side);
     windows.forEach((w,i)=>{paintedGlazingReturn(g,paint,w,sideMap,side);named(glassOpening(g,i===0?m.glass:m.privacyGlass,trim,w,sideMap,side),'gclass-side-glass-'+side+'-'+i);});
-    // Door seams continue into separately modeled thin, straight pillars.
-    for(const z of [-.270,-1.150]){
-      const pts=rounded([[z,1.292],[z,.610],[z-.030,.540],[z-.090,.515]],.022);
-      perimeter(g,trim,pts,(zz,y)=>[side*(bodyX(y,zz)+.002),y,zz],.0014);
-    }
-    for(const [zFront,zBack]of [[.713,-.270],[-.309,-1.150]]){
-      const contour=rounded([[zFront,1.287],[zBack,1.287],[zBack,.56],[zBack+.07,.52],[zFront-.04,.52]],.028);
-      perimeter(g,trim,contour,(z,y)=>[side*(bodyX(y,z)+.0012),y,z],.00125);
-    }
+    // One complete shut line per door. Closing a partial vertical stroke
+    // used to draw a second, diagonal line back up the door. Author these in
+    // the final contact datum so the lower sheet / cab join cannot kink them.
+    const doors=[
+      [[.423,1.917],[-.270,1.917],[-.270,.560],[-.222,.520],[.655,.520],[.693,.560],[.693,1.185]],
+      [[-.309,1.917],[-1.150,1.917],[-1.150,.900],[-.925,.540],[-.895,.520],[-.353,.520],[-.309,.560]]
+    ];
+    doors.forEach((points,i)=>{
+      const contour=rounded(points,.020,8),joint=mappedJoint(g,trim,contour,(z,y)=>{
+        const sy=coachworkSourceY(y,z),x=y>=1.185?cabX(sy):bodyX(sy,z);
+        return[side*(x+.0022),y,z];
+      },.00135);
+      joint.name='gclass-continuous-door-shut-line-'+side+'-'+i;
+      joint.userData.gClassReferenceSpace=true;
+    });
     // Characteristic proud hinges and push-button pull handles.
     for(const z of [.646,-.330])for(const y of [.705,1.187]){
       box(g,paint,[side*.915,y,z],[.025,.055,.070],.006);
@@ -274,9 +294,11 @@ export function buildGClass(view,spec=view.spec){
     box(g,m.drl,[side*1.038,1.408,.615],[.107,.009,.009],.003);
     rigidRange(g,mirrorStart,[side*1.032,1.426,.498],'gclass-rigid-mirror');
     // Wing-top indicators retain the G's recognizable separate raised pods.
-    box(g,black,[side*.812,1.397,1.969],[.178,.039,.125],.015);
-    named(box(g,m.gIndicatorLens,[side*.813,1.421,1.972],[.156,.027,.108],.012),'gclass-neutral-wing-indicator-'+side);
-    for(let i=0;i<6;i++)box(g,m.chrome,[side*(.751+i*.024),1.422,2.027],[.002,.018,.002],.0005);
+    const indicatorStart=g.children.length,indicatorY=coachworkSourceY(wingJointY(1.969)+.024,1.969);
+    box(g,black,[side*.812,indicatorY,1.969],[.178,.032,.125],.013);
+    named(box(g,m.gIndicatorLens,[side*.813,indicatorY+.022,1.972],[.156,.022,.108],.010),'gclass-neutral-wing-indicator-'+side);
+    for(let i=0;i<6;i++)box(g,m.chrome,[side*(.751+i*.024),indicatorY+.023,2.027],[.002,.014,.002],.0005);
+    rigidRange(g,indicatorStart,[side*.812,indicatorY,1.969],'gclass-seated-wing-indicator-'+side);
     // Wide horizontal arch shoulders and beveled diagonal ends, not round
     // semicircular bicycle mudguards. EV flares have a softer rolled crown.
     for(const axle of [-1.445,1.445]){
@@ -318,14 +340,23 @@ export function buildGClass(view,spec=view.spec){
   // the clamshell seam, and the nose rolls over instead of ending as a slab.
   // The EV uses the smoother, higher aerodynamic pressing; AMG keeps sharper
   // twin power ribs and a lower centre. These are actual surfaces, not lines.
-  const hoodPressingY=(x,z)=>1.369+(ev?.038:0)+.033*(1-(x/.756)**4)
-    +.017*Math.sin(clamp((z-.737)/1.408,0,1)*Math.PI)
-    +(ev?.010:.021)*Math.exp(-(((Math.abs(x)-.397)/(ev?.105:.064))**2))*smooth(z,.81,1.10)*(1-smooth(z,1.91,2.12))
-    -.027*smooth(z,1.99,2.145)-.070*(1-smooth(z,.737,1.50));
+  // The side drawing's 49-inch front-axle hood datum and front/three-quarter
+  // press photos define a shallow continuous cap. The former pre-fit crown
+  // became a broad trough with a steep raised lip after the nonlinear fit.
+  const hoodStations=[[.737,1.290],[1.10,1.283],[1.445,1.254],[1.85,1.190],[2.145,1.125]];
+  const hoodCentre=z=>{
+    let i=0;while(i<hoodStations.length-2&&z>hoodStations[i+1][0])i++;
+    const a=hoodStations[i],b=hoodStations[i+1],h=b[0]-a[0],t=clamp((z-a[0])/h,0,1);
+    const slope=k=>k===0?(hoodStations[1][1]-hoodStations[0][1])/(hoodStations[1][0]-hoodStations[0][0]):k===hoodStations.length-1?(hoodStations[k][1]-hoodStations[k-1][1])/(hoodStations[k][0]-hoodStations[k-1][0]):(hoodStations[k+1][1]-hoodStations[k-1][1])/(hoodStations[k+1][0]-hoodStations[k-1][0]);
+    return(2*t**3-3*t*t+1)*a[1]+(t**3-2*t*t+t)*h*slope(i)+(-2*t**3+3*t*t)*b[1]+(t**3-t*t)*h*slope(i+1);
+  };
   const hoodY=(x,z)=>{
-    const raw=hoodPressingY(x,z),blend=smooth(Math.abs(x),.600,.758);
-    if(!blend)return raw;
-    return coachworkSourceY(lerp(gClassCoachworkPoint(x,raw,z)[1],wingJointY(z)+(ev?.045:.027),blend),z);
+    const ax=Math.abs(x),across=ax/.758,edge=wingJointY(z)+(ev?.045:.027);
+    const rib=(ev?.0045:.010)*Math.exp(-(((ax-.397)/(ev?.125:.055))**2))*smooth(z,.80,1.06)*(1-smooth(z,1.94,2.14));
+    const crown=hoodCentre(z)+(ev?.032:0)+.006*(1-across*across)+rib;
+    // Roll only the outer shoulder. A broad crown keeps the EV hood smooth
+    // without dropping the flank into a deep gutter alongside the centre.
+    return coachworkSourceY(lerp(crown,edge,smooth(across,ev?.77:.76,1)),z);
   };
   const wingHeight=(x,z)=>{
     const edge=bodyX(wingTop(z),z),ledge=coachworkSourceY(wingJointY(z),z),ax=Math.abs(x),foldEnd=ev?.795:.787;
@@ -341,9 +372,13 @@ export function buildGClass(view,spec=view.spec){
     named(line(g,trim,Array.from({length:65},(_,i)=>{const z=lerp(.746,2.14,i/64),x=ev?.795:.787;return[side*x,wingHeight(x,z)+.001,z];}),.0016),'gclass-low-clamshell-hood-seam-'+side);
     // A distinct front wing joint and cowl return interrupt the long flat
     // nose-side sheet while retaining the manufacturer's axle locations.
-    named(line(g,trim,[[side*(bodyX(1.281,.726)+.002),1.281,.726],[side*(bodyX(1.06,.641)+.002),1.06,.641],[side*(bodyX(.894,.505)+.002),.894,.505]],.0017),'gclass-cowl-wing-joint-'+side);
+    const wingJoint=named(mappedJoint(g,trim,[[.731,1.185],[.825,.995],[.945,.880]],(z,y)=>[side*(bodyX(coachworkSourceY(y,z),z)+.002),y,z],.0015,false),'gclass-cowl-wing-joint-'+side);
+    wingJoint.userData.gClassReferenceSpace=true;
   }
-  named(surface(g,paint,56,8,(u,v)=>{const x=lerp(-.758,.758,u),top=hoodY(x,2.145);return[x,lerp(top,Math.min(top-.012,1.356),v),2.145+.012*Math.sin(v*Math.PI/2)];},true),'gclass-rolled-bonnet-nose');
+  named(surface(g,paint,56,8,(u,v)=>{
+    const x=lerp(-.758,.758,u),z=2.145+.012*Math.sin(v*Math.PI/2),top=gClassCoachworkPoint(x,hoodY(x,2.145),2.145)[1];
+    return[x,coachworkSourceY(top-.024*v,z),z];
+  },true),'gclass-rolled-bonnet-nose');
   // Cowl and upright windshield share straight side boundaries.
   box(g,paint,[0,1.321,.703],[1.785,.062,.115],.014);
   const windshield=glazingContour([[-.824,1.345],[.824,1.345],[.797,1.897],[-.797,1.897]],.055),windMap=(x,y)=>[x,y,lerp(.727,.458,(y-1.345)/.552)+.006*(1-(x/.824)**2)];
@@ -378,9 +413,15 @@ export function buildGClass(view,spec=view.spec){
   box(g,paint,[0,height-.025,-2.221],[1.74,ev?.052:.044,ev?.175:.118],ev?.024:.018);
   // Front outer ring has real circular lamp and grille apertures.
   const frontMap=(x,y)=>{
-    const top=Math.abs(x)<=.758?hoodY(x,2.145):wingHeight(Math.abs(x),2.145);
+    const hood=Math.abs(x)<=.758?hoodY(x,2.145):wingHeight(Math.abs(x),2.145);
+    const top=coachworkSourceY(gClassCoachworkPoint(x,hood,2.145)[1]-.030,2.143);
     return[x,y+smooth(y,1.205,1.398)*(top-1.398),2.143-.021*(Math.abs(x)/.91)**4];
   };
+  for(const side of [-1,1])named(surface(g,paint,24,8,(u,v)=>{
+    const x=side*lerp(.758,.899,u),front=frontMap(x,1.398),z=lerp(2.145,front[2],v);
+    const top=gClassCoachworkPoint(x,wingHeight(Math.abs(x),2.145),2.145)[1],bottom=gClassCoachworkPoint(...front)[1];
+    return[x,coachworkSourceY(lerp(top,bottom,v),z),z];
+  },side>0),'gclass-formed-front-wing-nose-return-'+side);
   // Triangulate this sheet in its FINAL X/Y plane. Deforming triangles after
   // cutting a pre-fit hole could fold a few narrow triangles into the lamp.
   // The formed silhouette and depth are retained, while the holes are true
@@ -393,7 +434,15 @@ export function buildGClass(view,spec=view.spec){
   const lampSourceY=coachworkSourceY(GCLASS_LANDMARKS.headlampCenterY,2.151);
   const lampHoles=lampCenters.map(cx=>circle(cx,GCLASS_LANDMARKS.headlampCenterY,GCLASS_LANDMARKS.headlampDiameter/2+.002,96));
   const grille=finalBoundary(rect(-.438,.438,1.015,1.365,.039));
-  const frontSheet=named(mappedPolygon(g,paint,finalBoundary(rect(-.899,.899,.880,1.398,.025)),(x,y)=>[x,y,gClassCoachworkPoint(x,0,frontMap(x,0)[2])[2]],[...lampHoles,grille],false,3),'gclass-front-sheet-with-round-apertures');
+  const panelOutline=rect(-.865,.865,.991,1.390,.105),frontDepth=(x,y)=>[x,y,gClassCoachworkPoint(x,0,frontMap(x,0)[2])[2]];
+  const frontSheet=named(mappedPolygon(g,ev?black:paint,finalBoundary(ev?panelOutline:rect(-.899,.899,.880,1.398,.025)),(x,y)=>{const p=frontDepth(x,y);if(ev)p[2]+=.0015;return p;},[...lampHoles,grille],false,3),'gclass-front-sheet-with-round-apertures');
+  if(ev){
+    // A formed painted fascia sits beneath the separate applied Black Panel.
+    // Both share the real lamp/grille holes; overlapping coplanar contour
+    // boundaries must not triangulate into spikes at the bonnet corners.
+    const surround=named(mappedPolygon(g,paint,finalBoundary(rect(-.899,.899,.880,1.398,.025)),frontDepth,[...lampHoles,grille],false,3),'g580-painted-fascia-under-black-panel');
+    surround.userData.gClassReferenceSpace=true;
+  }
   // Dense contour edges can leave float-rounding slivers on a collinear
   // boundary. Remove only triangles below 0.000000005 m² in the X/Y
   // triangulation plane; their curved Z samples do not define sheet area.
@@ -408,8 +457,7 @@ export function buildGClass(view,spec=view.spec){
   box(g,black,[0,1.190,2.100],[.874,.344,.040],.029);
   if(ev){
     // Optional factory Black Panel / LED surround, selected deliberately.
-    const outline=rect(-.865,.865,.991,1.390,.105);
-    perimeter(g,m.drl,outline,(x,y)=>[x,y,frontMap(x,y)[2]+.008],.0048);
+    perimeter(g,m.drl,panelOutline,(x,y)=>[x,y,frontMap(x,y)[2]+.008],.0048);
     for(const y of [1.105,1.271])box(g,metal,[0,y,2.142],[.824,.019,.015],.005);
   }else{
     for(let i=0;i<13;i++)box(g,metal,[(i-6)*.068,1.190,2.143],[.011,.294,.032],.004);
@@ -419,7 +467,7 @@ export function buildGClass(view,spec=view.spec){
   const crest=disc(g,m.chrome,[0,1.361,2.047],.018,.002,24);crest.rotation.x=0;
   // Closed formed bumper around genuine recessed lower openings.
   const lowerOuter=rounded([[-.940,.470],[.940,.470],[.958,.799],[.875,.925],[-.875,.925],[-.958,.799]],.038);
-  const lowerHoles=ev?[rect(-.488,.488,.596,.746,.017),rect(-.820,-.650,.601,.758,.028),rect(.650,.820,.601,.758,.028)]:[rect(-.472,.472,.555,.747,.020),rect(-.839,-.551,.567,.819,.025),rect(.551,.839,.567,.819,.025)];
+  const lowerHoles=ev?[rect(-.488,.488,.596,.746,.030),rect(-.832,-.632,.590,.778,.060),rect(.632,.832,.590,.778,.060)]:[rect(-.472,.472,.555,.747,.035),rect(-.854,-.530,.557,.831,.055),rect(.530,.854,.557,.831,.055)];
   const bumperMap=(x,y)=>[x,y,2.249-.065*(Math.abs(x)/.96)**3-.036*smooth(y,.77,.93)];
   mappedPolygon(g,paint,lowerOuter,bumperMap,lowerHoles,false,5);
   // Closed rounded bumper corners carry the front face back into each wing.
@@ -524,12 +572,12 @@ export function buildGClass(view,spec=view.spec){
   else{box(g,trim,[0,.444,.890],[.520,.227,.920],.042);box(g,metal,[0,.341,.859],[.565,.045,.739],.009);}
   box(g,m.interior,[0,.522,-.580],[1.694,.071,2.604],.010);
   fitCoachworkToReference(g);
-  view.root.userData.visualModel={type:'Original photo/reference reconstruction, no imported manufacturer CAD',version:15,modelYear:2025,variant:owner,
+  view.root.userData.visualModel={type:'Original photo/reference reconstruction, no imported manufacturer CAD',version:16,modelYear:2025,variant:owner,
     selectedEquipment:ev?'20in AMG10spoke wheels, optional Black Panel/LED outline, Design Box':'Optional R20 22in AMG forged multi-spoke wheels / 295/40R22 road tires, stainless covered spare, side exhaust',
     dimensions:GCLASS_LANDMARKS,limitations:['photo-estimated panel curvature and interior','no production UV/normal bake or bespoke LOD authored here','native rendering requires integration verification']};
-  view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:15,straightPillars:true,realWindowOpenings:true,glazingReturns:true,formedBonnet:true,variantSpecificGrille:true,measuredWindowHierarchy:true,compoundWingShoulders:true,rolledBumperCorners:true,evAeroFairings:ev,
+  view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:16,straightPillars:true,realWindowOpenings:true,glazingReturns:true,formedBonnet:true,variantSpecificGrille:true,measuredWindowHierarchy:true,compoundWingShoulders:true,rolledBumperCorners:true,evAeroFairings:ev,
     separateRearDesignBox:ev,coveredFactorySpare:!ev,amgSideExhaust:!ev,originalGeometry:true,importedManufacturerCAD:false};
-  view.root.userData.bodyRefinement={version:15,variant:owner,windowOpenings:9,frontLampApertures:2,exposedDoorHinges:8};
+  view.root.userData.bodyRefinement={version:16,variant:owner,windowOpenings:9,frontLampApertures:2,exposedDoorHinges:8,continuousDoorJoints:true,seatedWingIndicators:true};
   return view;
 }
 
@@ -575,6 +623,6 @@ export function refineGClass(view,spec){
     const discarded=new Set();wheel.rimSpin.traverse(o=>{if(o.geometry)discarded.add(o.geometry);});wheel.rimSpin.clear();discarded.forEach(geometry=>geometry.dispose());wheel.rimSpin.add(gClassRim(spec));
     wheel.root.userData.factoryWheelRevision=15;
   }
-  view.root.userData.nativeFidelity={version:3,bodySurfaceRevision:15,splitTireAndRim:true,factorySpokeProfile:isEV(spec)?'g580-20-10spoke':'g63-22-forged-multispoke',formedCarcass:true,beveledTread:true,coveredSpare:!isEV(spec),rearDesignBox:isEV(spec),geometryLettering:true,bodyClearcoat:true};
+  view.root.userData.nativeFidelity={version:3,bodySurfaceRevision:16,splitTireAndRim:true,factorySpokeProfile:isEV(spec)?'g580-20-10spoke':'g63-22-forged-multispoke',formedCarcass:true,beveledTread:true,coveredSpare:!isEV(spec),rearDesignBox:isEV(spec),geometryLettering:true,bodyClearcoat:true};
   return{tire:view.wheels[0].tireShape,rim:view.wheels[0].rimSpin};
 }

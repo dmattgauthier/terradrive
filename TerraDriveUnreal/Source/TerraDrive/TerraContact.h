@@ -3,6 +3,14 @@
 #include <cmath>
 
 namespace TerraSim {
+// Preserve the proving-ground recovery boundary independently of optional maps.
+inline bool OutsideProvingGround(float x,float y,float z) {
+    return z < -3000.f || x*x+y*y > 56000.f*56000.f;
+}
+inline float SupportedBrakeMass(float mass,float load,float totalLoad) {
+    if(load<=0||totalLoad<=0)return 0;
+    return std::max(0.f,mass)*std::clamp(load/totalLoad,0.f,1.f);
+}
 inline float FootprintCoverage(float distance,float halfExtent,float halfCell) {
     return std::max(0.f,std::min(distance+halfCell,halfExtent)-
                            std::max(distance-halfCell,-halfExtent))/(2*halfCell);
@@ -79,5 +87,52 @@ inline float BrakedAxleOmega(float freeOmega,float c0,float c1,float v0,float v1
     const float tendency=freeOmega-reactionAtRest;
     if(std::abs(tendency)<=impulse)return 0;
     return LimitedAxleOmega(freeOmega-std::copysign(impulse,tendency),c0,c1,v0,v1,limit0,limit1,radius,dt,inertia);
+}
+
+struct TireForces { float Longitudinal=0,Lateral=0; };
+inline float AckermannAngle(float axleAngle,float otherAxleAngle,float lateralOffset,float wheelbase) {
+    const float signedSpan=std::copysign(std::max(.5f,std::abs(wheelbase)),wheelbase);
+    const float curvature=(std::tan(axleAngle)-std::tan(otherAxleAngle))/signedSpan;
+    return std::atan(std::tan(axleAngle)/std::max(.35f,1-lateralOffset*curvature));
+}
+// Spend the friction ellipse on the two slips together. Reserving the entire
+// lateral demand first leaves exactly zero longitudinal reaction at full
+// lock: even a free rolling wheel is then held still by its rolling drag.
+// As longitudinal slip grows it must take a share of the same bounded grip.
+inline TireForces CombinedTireForces(float rawLongitudinal,float lateral,
+                                    float longitudinalLimit,float lateralLimit) {
+    if(longitudinalLimit<=0||lateralLimit<=0)return {};
+    const float x=rawLongitudinal/longitudinalLimit,y=lateral/lateralLimit;
+    const float scale=std::max(1.f,std::sqrt(x*x+y*y));
+    return {rawLongitudinal/scale,lateral/scale};
+}
+inline float CombinedLongitudinal(float omega,float c,float speed,float radius,
+                                 float limit,float lateralFraction) {
+    return CombinedTireForces(std::max(0.f,c)*(omega*radius-speed),lateralFraction,limit,1.f).Longitudinal;
+}
+// Monotone implicit wheel/contact solve, including genuine brake holding.
+// The bracket is the maximum available tire impulse, so it also handles an
+// unloaded tire, wheelspin, reverse and a fully locked service brake.
+inline float CombinedWheelOmega(float freeOmega,float c,float speed,float radius,
+    float dt,float inertia,float limit,float lateralFraction,float brakeTorque) {
+    const float impulse=std::max(0.f,brakeTorque)*dt/inertia;
+    const float tendency=freeOmega-CombinedLongitudinal(0,c,speed,radius,limit,lateralFraction)*radius*dt/inertia;
+    if(std::abs(tendency)<=impulse)return 0;
+    const float free=freeOmega-std::copysign(impulse,tendency),reach=std::max(0.f,limit)*radius*dt/inertia;
+    float lo=free-reach,hi=free+reach;
+    for(int i=0;i<24;++i){const float omega=(lo+hi)*.5f;
+        if(omega+CombinedLongitudinal(omega,c,speed,radius,limit,lateralFraction)*radius*dt/inertia>free)hi=omega;else lo=omega;}
+    return (lo+hi)*.5f;
+}
+inline float CombinedAxleOmega(float freeOmega,float c0,float c1,float v0,float v1,
+    float limit0,float limit1,float lateral0,float lateral1,float radius,float dt,float inertia,float brakeTorque) {
+    const auto reaction=[&](float omega){return CombinedLongitudinal(omega,c0,v0,radius,limit0,lateral0)+CombinedLongitudinal(omega,c1,v1,radius,limit1,lateral1);};
+    const float impulse=std::max(0.f,brakeTorque)*dt/inertia,tendency=freeOmega-reaction(0)*radius*dt/inertia;
+    if(std::abs(tendency)<=impulse)return 0;
+    const float free=freeOmega-std::copysign(impulse,tendency),reach=(std::max(0.f,limit0)+std::max(0.f,limit1))*radius*dt/inertia;
+    float lo=free-reach,hi=free+reach;
+    for(int i=0;i<24;++i){const float omega=(lo+hi)*.5f;
+        if(omega+reaction(omega)*radius*dt/inertia>free)hi=omega;else lo=omega;}
+    return (lo+hi)*.5f;
 }
 }

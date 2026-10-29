@@ -1,21 +1,62 @@
 {
-  "revision": 15,
+  "revision": 16,
   "sourceOnly": true,
   "pass": true,
-  "checks": 67,
+  "checks": 93,
   "minimumVerticalSlope": 0.2255394776701225,
   "variants": [
     {
       "vehicle": "mercedes-g580-ev",
-      "checks": 33,
+      "checks": 46,
       "pass": true,
-      "bonnetPeakYM": 1.3037012815475464,
+      "bonnetPeakYM": 1.3279999494552612,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
         0.7279444932937622
       ],
       "tests": [
+        {
+          "name": "front wing return closes the sheet above the fascia -1",
+          "pass": true,
+          "outwardNormal": [
+            -0.03596290200948715,
+            -0.5322839021682739,
+            0.8458017110824585
+          ],
+          "hit": true
+        },
+        {
+          "name": "one straight continuous door rear joint -1 0",
+          "pass": true,
+          "sampleCount": 54,
+          "maximumZDeviationM": 4.470348535789981e-10
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange -1 0",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "one straight continuous door rear joint -1 1",
+          "pass": true,
+          "sampleCount": 53,
+          "maximumZDeviationM": 5.9604645663569045e-9
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange -1 1",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "wing indicator is seated on the fender -1",
+          "pass": true,
+          "undersideY": 1.0733632460675813,
+          "wingY": 1.0653632476188613,
+          "gapM": 0.007999998448720014
+        },
         {
           "name": "measured side-pane hierarchy -1",
           "pass": true,
@@ -188,6 +229,47 @@
             0.4824020266532898,
             0.8758504986763
           ]
+        },
+        {
+          "name": "front wing return closes the sheet above the fascia 1",
+          "pass": true,
+          "outwardNormal": [
+            0.03596290200948715,
+            -0.5322839021682739,
+            0.8458017110824585
+          ],
+          "hit": true
+        },
+        {
+          "name": "one straight continuous door rear joint 1 0",
+          "pass": true,
+          "sampleCount": 54,
+          "maximumZDeviationM": 4.470348535789981e-10
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange 1 0",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "one straight continuous door rear joint 1 1",
+          "pass": true,
+          "sampleCount": 53,
+          "maximumZDeviationM": 5.9604645663569045e-9
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange 1 1",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "wing indicator is seated on the fender 1",
+          "pass": true,
+          "undersideY": 1.0733632460675813,
+          "wingY": 1.0653632476188613,
+          "gapM": 0.007999998448720014
         },
         {
           "name": "measured side-pane hierarchy 1",
@@ -376,14 +458,20 @@
           "heightM": 1.986
         },
         {
+          "name": "bonnet nose is a thin rolled return across the entire width",
+          "pass": true,
+          "minimumM": 0.023999929428100586,
+          "maximumM": 0.024000167846679688
+        },
+        {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.2137012481689453
+          "heightReliefM": 0.23799991607666016
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
           "pass": true,
-          "heightM": 1.27543726838759,
+          "heightM": 1.29199345380679,
           "amgReferenceM": 1.246,
           "evRaisedHood": true
         },
@@ -443,14 +531,14 @@
         {
           "name": "fascia upper corners do not fold or face backward",
           "pass": true,
-          "minimumNormalZ": 0.9953964948654175
+          "minimumNormalZ": 0.9963521957397461
         },
         {
           "name": "actual fascia triangles retain outward winding around the lamps",
           "pass": true,
           "reversedTriangles": 0,
-          "minimumTriangleNormalZ": 0.03906001725647136,
-          "triangles": 4176
+          "minimumTriangleNormalZ": 0.05715830881067314,
+          "triangles": 4068
         },
         {
           "name": "formed fascia has separate circular lamps and a drawing-width grille opening",
@@ -524,15 +612,56 @@
     },
     {
       "vehicle": "mercedes-amg-g63",
-      "checks": 32,
+      "checks": 45,
       "pass": true,
-      "bonnetPeakYM": 1.272143006324768,
+      "bonnetPeakYM": 1.2996225357055664,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
         0.7279444932937622
       ],
       "tests": [
+        {
+          "name": "front wing return closes the sheet above the fascia -1",
+          "pass": true,
+          "outwardNormal": [
+            -0.03596290200948715,
+            -0.5322839021682739,
+            0.8458017110824585
+          ],
+          "hit": true
+        },
+        {
+          "name": "one straight continuous door rear joint -1 0",
+          "pass": true,
+          "sampleCount": 54,
+          "maximumZDeviationM": 4.470348535789981e-10
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange -1 0",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "one straight continuous door rear joint -1 1",
+          "pass": true,
+          "sampleCount": 53,
+          "maximumZDeviationM": 5.9604645663569045e-9
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange -1 1",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "wing indicator is seated on the fender -1",
+          "pass": true,
+          "undersideY": 1.0733632460675813,
+          "wingY": 1.0653632476188613,
+          "gapM": 0.007999998448720014
+        },
         {
           "name": "measured side-pane hierarchy -1",
           "pass": true,
@@ -696,6 +825,47 @@
             0,
             0.09624867886304855
           ]
+        },
+        {
+          "name": "front wing return closes the sheet above the fascia 1",
+          "pass": true,
+          "outwardNormal": [
+            0.03596290200948715,
+            -0.5322839021682739,
+            0.8458017110824585
+          ],
+          "hit": true
+        },
+        {
+          "name": "one straight continuous door rear joint 1 0",
+          "pass": true,
+          "sampleCount": 54,
+          "maximumZDeviationM": 4.470348535789981e-10
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange 1 0",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "one straight continuous door rear joint 1 1",
+          "pass": true,
+          "sampleCount": 53,
+          "maximumZDeviationM": 5.9604645663569045e-9
+        },
+        {
+          "name": "lower door seam lies on a straight formed flange 1 1",
+          "pass": true,
+          "samples": 8,
+          "depthVariationM": 0
+        },
+        {
+          "name": "wing indicator is seated on the fender 1",
+          "pass": true,
+          "undersideY": 1.0733632460675813,
+          "wingY": 1.0653632476188613,
+          "gapM": 0.007999998448720014
         },
         {
           "name": "measured side-pane hierarchy 1",
@@ -875,14 +1045,20 @@
           "heightM": 1.979
         },
         {
+          "name": "bonnet nose is a thin rolled return across the entire width",
+          "pass": true,
+          "minimumM": 0.023999810218811035,
+          "maximumM": 0.024000048637390137
+        },
+        {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.2042444944381714
+          "heightReliefM": 0.22762250900268555
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
           "pass": true,
-          "heightM": 1.2402633530795613,
+          "heightM": 1.259993372834084,
           "amgReferenceM": 1.246,
           "evRaisedHood": true
         },
@@ -948,8 +1124,8 @@
           "name": "actual fascia triangles retain outward winding around the lamps",
           "pass": true,
           "reversedTriangles": 0,
-          "minimumTriangleNormalZ": 0.03333694400509947,
-          "triangles": 4176
+          "minimumTriangleNormalZ": 0.03906001725647136,
+          "triangles": 4203
         },
         {
           "name": "formed fascia has separate circular lamps and a drawing-width grille opening",

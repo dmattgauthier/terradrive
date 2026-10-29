@@ -16,6 +16,21 @@ for(const spec of [G580,G63]){
   const midNormal=o=>{const n=o.geometry.attributes.normal;return new T.Vector3().fromBufferAttribute(n,Math.floor(n.count/2));};
   const glass=[];
   for(const side of [-1,1]){
+    const wingNose=object('gclass-formed-front-wing-nose-return-'+side),noseNormal=midNormal(wingNose);
+    const noseRay=new T.Raycaster(view.body.localToWorld(new T.Vector3(side*.84,1.018,3)),new T.Vector3(0,0,-1),0,5).intersectObject(wingNose,false)[0];
+    check('front wing return closes the sheet above the fascia '+side,!!noseRay&&noseNormal.z>.3,{outwardNormal:noseNormal.toArray(),hit:!!noseRay});
+    for(let door=0;door<2;door++){
+      const joint=object('gclass-continuous-door-shut-line-'+side+'-'+door),p=joint.geometry.attributes.position,z=door===0?-.270:-1.150;
+      const centres=[];for(let i=0;i<p.count;i+=9){const q=new T.Vector3();for(let j=0;j<8;j++)q.add(new T.Vector3().fromBufferAttribute(p,i+j));q.multiplyScalar(1/8);if(q.y>1.00&&q.y<1.85&&Math.abs(q.z-z)<.018)centres.push(q);}
+      const error=Math.max(...centres.map(q=>Math.abs(q.z-z)));
+      check('one straight continuous door rear joint '+side+' '+door,centres.length>=5&&error<.0001&&joint.userData.gClassReferenceSpace===true,{sampleCount:centres.length,maximumZDeviationM:error});
+      const lower=centres.filter(q=>q.y>.65&&q.y<1.13),xs=lower.map(q=>q.x),waviness=Math.max(...xs)-Math.min(...xs);
+      check('lower door seam lies on a straight formed flange '+side+' '+door,lower.length>=3&&waviness<.00015,{samples:lower.length,depthVariationM:waviness});
+    }
+    const indicator=object('gclass-seated-wing-indicator-'+side),ib=new T.Box3().setFromObject(indicator),icy=ib.min.y+spec.cgHeight;
+    // Box underside follows the wing, rather than hovering above the ledge.
+    const z=1.969,finalZ=gClassCoachworkPoint(0,0,z)[2],frontZ=gClassCoachworkPoint(0,0,2.145)[2],wingY=1.200+(1.045-1.200)*(finalZ-.737)/(frontZ-.737);
+    check('wing indicator is seated on the fender '+side,icy>=wingY-.003&&icy<wingY+.014,{undersideY:icy,wingY,gapM:icy-wingY});
     const widths=[0,1,2].map(i=>bounds(object('gclass-side-glass-'+side+'-'+i)).getSize(new T.Vector3()).z);
     // The true front corner fillet trims the extreme lower A-pillar point;
     // retain the wider-front / narrower-rear-door hierarchy and fixed pillars.
@@ -49,6 +64,9 @@ for(const spec of [G580,G63]){
   check('stock tire and bead-seat diameter use the selected factory option',ev?spec.tireSize==='275/50R20'&&spec.rimDiameterInches===20:spec.tireSize==='295/40R22'&&spec.rimDiameterInches===22&&spec.tireType==='road-performance',{tireSize:spec.tireSize,rimInches:spec.rimDiameterInches,tread:spec.tireType});
   check('wheelbase and roof envelope were not squashed to hide a silhouette error',spec.wheelbase===2.89&&spec.height>(ev?1.98:1.97),{wheelbaseM:spec.wheelbase,heightM:spec.height});
   const bonnet=object('gclass-sculpted-clamshell-bonnet'),bn=bounds(bonnet);
+  const lip=object('gclass-rolled-bonnet-nose').geometry.attributes.position,lipHeights=[];
+  for(let col=0;col<=56;col++)lipHeights.push(lip.getY(col)-lip.getY(8*57+col));
+  check('bonnet nose is a thin rolled return across the entire width',lipHeights.every(h=>Math.abs(h-.024)<.00001),{minimumM:Math.min(...lipHeights),maximumM:Math.max(...lipHeights)});
   check('bonnet is a compound sheet with measurable height relief',bn.max.y-bn.min.y>.045&&midNormal(bonnet).y>.9,{heightReliefM:bn.max.y-bn.min.y});
   const localOrigin=view.body.localToWorld(new T.Vector3(0,2,1.445));view.root.updateMatrixWorld(true);
   const hoodHit=new T.Raycaster(localOrigin,new T.Vector3(0,-1,0),0,2).intersectObject(bonnet,false)[0];
@@ -101,6 +119,6 @@ assert.ok(rows[0].bonnetPeakYM-rows[1].bonnetPeakYM>.020,'EV raised bonnet is ph
 let minimumVerticalSlope=Infinity;
 for(let z=-2.7;z<=2.4;z+=.031)for(let y=0;y<=2.1;y+=.013){const slope=(gClassCoachworkPoint(0,y+.0001,z)[1]-gClassCoachworkPoint(0,y-.0001,z)[1])/.0002;minimumVerticalSlope=Math.min(minimumVerticalSlope,slope);}
 assert.ok(minimumVerticalSlope>.1,'reference fit does not fold any body sheet');
-const report={revision:15,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','Native rendered comparison remains required.']};
+const report={revision:16,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','Native rendered comparison remains required.']};
 fs.writeFileSync(new URL('../docs/gclass-shape-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.vehicle,checks:r.checks,glass:r.sideGlassWidthsM,bonnetPeakYM:r.bonnetPeakYM}))}));

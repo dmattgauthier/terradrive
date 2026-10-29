@@ -24,7 +24,7 @@ def file_sha(path):
 
 def protected_files():
     result={}
-    for directory in ['Content/Meshes','Content/Maps','Content/NativeData','Content/AutomotiveWinterScene/Maps','SourceAssets']:
+    for directory in ['Content/Meshes','Content/Maps','Content/NativeData','SourceAssets']:
         for folder,_,files in os.walk(os.path.join(root,directory)):
             for filename in files:
                 path=os.path.join(folder,filename)

@@ -3,7 +3,6 @@
 #include "TerraSimCore.h"
 #include "TerraContact.h"
 #include "TerraDriving.h"
-#include "TerraWinter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -273,7 +272,7 @@ void ATerraVehicle::TeleportZone(int Index) {
       Terrain->Spawns[Zone] + FVector(0, 0, CG * 100 + 12 + Tuning.Lift * 100 + (Radius-Number(TEXT("tireRadius"),.42f))*100);
   Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);
   Chassis->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-  SetActorLocationAndRotation(P, FRotator(0,TerraWinter::SpawnYaw(GetWorld(),Zone),0), false, nullptr,
+  SetActorLocationAndRotation(P, FRotator::ZeroRotator, false, nullptr,
                               ETeleportType::TeleportPhysics);
   for (auto &W : WheelState)
     W = FTerraWheel();
@@ -330,7 +329,7 @@ void ATerraVehicle::UpdateRoute(float Dt) {
     // Curving trails cross gate planes along their own tangent. Historical
     // loop gates retain their explicitly authored +/-X direction.
     FVector GateForward(GateDirection,0,0);
-    if(RouteIndex==8||TerraWinter::IsActive(GetWorld())){const FVector Previous=GateIndex>0?Route.Gates[GateIndex-1]:Route.Spawn;GateForward=(G-Previous).GetSafeNormal2D();}
+    if(RouteIndex==8){const FVector Previous=GateIndex>0?Route.Gates[GateIndex-1]:Route.Spawn;GateForward=(G-Previous).GetSafeNormal2D();}
     const FVector GateSide(-GateForward.Y,GateForward.X,0);
     if (FVector::DotProduct(PreviousRoutePosition-G,GateForward)<0 && FVector::DotProduct(P-G,GateForward)>=0 &&
         FMath::Abs(FVector::DotProduct(P-G,GateSide)) < Route.GateWidth*50 && FMath::Abs(P.Z-G.Z)<300) ++GateIndex;
@@ -353,7 +352,6 @@ void ATerraVehicle::Input(float Dt) {
   }
   auto Down = [&](FKey Key) { return PC->IsInputKeyDown(Key); };
   auto Press = [&](FKey Key) { return PC->WasInputKeyJustPressed(Key); };
-  if(Press(EKeys::Zero)){TerraWinter::Travel(this);return;}
   if (Press(EKeys::Escape)) {
     PC->ConsoleCommand(TEXT("quit"));
     return;
@@ -520,6 +518,7 @@ void ATerraVehicle::Simulate(float Dt) {
   if (LowRange) TotalTorque *= FMath::Clamp(8.f-FMath::Abs(Speed),0.f,1.f);
   const float SteerAngle =
       Steer * FMath::DegreesToRadians(34.f) / (1 + FMath::Abs(Speed) * .025f) + DamageSteeringOffset();
+  const float RearSteerAngle=VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
   float TotalLoad = 0;
   ContactCount = 0;
   LastTireForceN = 0;
@@ -535,7 +534,8 @@ void ATerraVehicle::Simulate(float Dt) {
     const FVector Local(Wheelbase * (Front ? 1-FrontWeight : -FrontWeight)*100,
         (I%2 ? 1:-1)*Track*50, (Number(TEXT("tireRadius"),.42f)+Rest-CG-Preload-Tuning.Lift)*100);
     const FVector Mount = GetActorTransform().TransformPosition(Local);
-    W.Angle = Front ? SteerAngle : VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
+    W.Angle=Tracks?(Front?SteerAngle:RearSteerAngle):TerraSim::AckermannAngle(Front?SteerAngle:RearSteerAngle,
+        Front?RearSteerAngle:SteerAngle,(I%2?1.f:-1.f)*Track*.5f,Front?Wheelbase:-Wheelbase);
     const FVector WF = FQuat(Up,W.Angle).RotateVector(Forward);
     const float AxleWidth=Front?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth;
     const auto Support = Terrain->CastTireSupport(Mount,Up,WF,Radius*100,AxleWidth*100,-30,(Rest+Droop)*100,this);
@@ -635,7 +635,7 @@ void ATerraVehicle::Simulate(float Dt) {
     const float LateralRate=W.Load*5.5f*W.CorneringResponse/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
     const float LateralResponse=1+LateralRate*Dt*TerraSim::ContactCoupling/Share;
     Lateral[I]=FMath::Clamp(-W.Load*FMath::Atan2(W.LateralSpeed,FMath::Max(2.f,FMath::Abs(W.LongSpeed)))*5.5f*W.CorneringResponse/LateralResponse,-SideLimit,SideLimit);
-    LongLimit[I]=Limit*FMath::Sqrt(FMath::Max(0.f,1-FMath::Square(Lateral[I]/FMath::Max(1.f,SideLimit))));
+    LongLimit[I]=Limit;
   }
   for(int Axle=0;Axle<2;++Axle){
     const int A=Axle*2,B=A+1;
@@ -654,8 +654,10 @@ void ATerraVehicle::Simulate(float Dt) {
       }
       LastWheelDriveNm[A]=LastWheelDriveNm[B]=Drive*.5f;
       const float Free=Previous+Drive*Dt/(Inertia*2);
-      WheelState[A].Omega=WheelState[B].Omega=TerraSim::BrakedAxleOmega(Free,Stiffness[A],Stiffness[B],
-          WheelState[A].LongSpeed,WheelState[B].LongSpeed,LongLimit[A],LongLimit[B],R,Dt,Inertia*2,Drag[A]+Drag[B]);
+      WheelState[A].Omega=WheelState[B].Omega=TerraSim::CombinedAxleOmega(Free,Stiffness[A],Stiffness[B],
+          WheelState[A].LongSpeed,WheelState[B].LongSpeed,LongLimit[A],LongLimit[B],
+          Lateral[A]/FMath::Max(1.f,WheelState[A].SideGrip*WheelState[A].Load),
+          Lateral[B]/FMath::Max(1.f,WheelState[B].SideGrip*WheelState[B].Load),R,Dt,Inertia*2,Drag[A]+Drag[B]);
     }else for(int I=A;I<=B;++I){
       auto &W=WheelState[I];
       const float DragTorque=FMath::Sign(W.Omega)*Drag[I];
@@ -666,19 +668,25 @@ void ATerraVehicle::Simulate(float Dt) {
       const float Drive=Electric?Demand:TerraSim::RevLimitedTorque(Demand,W.Omega,Inertia,Dt,WheelRevLimit,Reaction,DragTorque);
       LastWheelDriveNm[I]=Drive;
       const float Free=W.Omega+Drive*Dt/Inertia;
-      W.Omega=TerraSim::BrakedWheelOmega(Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I],Drag[I]);
+      W.Omega=TerraSim::CombinedWheelOmega(Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I],
+          Lateral[I]/FMath::Max(1.f,W.SideGrip*W.Load),Drag[I]);
     }
   }
+  float BrakeSupportLoad=0;
+  for(const auto &Wheel:WheelState)if(Wheel.ContactValid&&Wheel.Load>50)BrakeSupportLoad+=Wheel.Load;
   for (int I=0;I<4;++I) {
     auto &W=WheelState[I];
     const float C=Stiffness[I];
-    float FX=FMath::Clamp(C*(W.Omega*R-W.LongSpeed),-LongLimit[I],LongLimit[I]);
-    float FY=Lateral[I];
+    const auto Combined=TerraSim::CombinedTireForces(C*(W.Omega*R-W.LongSpeed),Lateral[I],LongLimit[I],W.SideGrip*W.Load);
+    float FX=Combined.Longitudinal,FY=Combined.Lateral;
     if(EffectiveBrake>.05f&&FMath::Abs(W.LongSpeed)<1.f&&W.ContactValid&&W.Load>50){
       // Static friction opposes the remaining contact velocity and the gravity
       // component along the slope. This is still bounded by brake torque and
       // the same combined tire grip; it never freezes an airborne chassis.
-      const float Share=Mass*(I<2?FrontWeight:1-FrontWeight)*.5f;
+      // Only loaded contacts can hold the body on a slope. A fixed quarter
+      // share lost gravity compensation whenever cross-axle articulation
+      // lifted tires, even though the remaining tires had sufficient grip.
+      const float Share=TerraSim::SupportedBrakeMass(Mass,W.Load,BrakeSupportLoad);
       const float HoldLimit=FMath::Min(LongLimit[I],Drag[I]/R);
       auto ContactMass=[&](FVector Axis){
         const FVector Arm=BodyRotation.UnrotateVector(FVector::CrossProduct(W.Contact/100-BodyCenter,Axis));
@@ -768,7 +776,8 @@ void ATerraVehicle::Simulate(float Dt) {
                   1.7f);
   } else
     WinchTension = 0;
-  if (TerraWinter::OutsideBounds(GetWorld(),GetActorLocation()))
+  const FVector Position=GetActorLocation();
+  if(TerraSim::OutsideProvingGround(Position.X,Position.Y,Position.Z))
     TeleportZone(Zone);
 }
 void ATerraVehicle::Tick(float Dt) {
@@ -784,7 +793,6 @@ void ATerraVehicle::Tick(float Dt) {
   if (!Initialized) {
     if(!AutoTest)LoadGarage(GaragePath());
     SelectVehicle(AutoTest?0:LastVehicle);
-    TerraWinter::RestoreTravel(this);
     Initialized = true;
     if(!AutoTest)SetGarage(true);
   }
@@ -829,7 +837,7 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
   if (SpawnCooldown > 0)
     return;
   const float Impact=Impulse.Size()/FMath::Max(1.f,Chassis->GetMass()*100);
-  const bool GroundHit=Other&&(Other->ComponentHasTag(TEXT("TerraGround"))||Other->ComponentHasTag(TEXT("TerraWinterTerrain"))||
+  const bool GroundHit=Other&&(Other->ComponentHasTag(TEXT("TerraGround"))||
       Other->GetClass()->GetName().StartsWith(TEXT("Landscape")));
   if(GroundHit){++TerrainBodyHits;TerrainImpactMPS=FMath::Max(TerrainImpactMPS,Impact);}
   else {++ObjectBodyHits;ObjectImpactMPS=FMath::Max(ObjectImpactMPS,Impact);}

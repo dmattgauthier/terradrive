@@ -233,8 +233,8 @@
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 276514,
-        "triangles": 394336,
+        "vertices": 280010,
+        "triangles": 397492,
         "materialObjects": 24,
         "bounds": [
           [
@@ -301,8 +301,8 @@
         {
           "case": "bounded original body geometry and material budget",
           "pass": true,
-          "triangles": 394336,
-          "vertices": 276514,
+          "triangles": 397492,
+          "vertices": 280010,
           "materialObjects": 24
         },
         {
@@ -468,7 +468,7 @@
         {
           "case": "bonnet has restrained physical transverse crown",
           "pass": true,
-          "crownM": 0.03533778342200189
+          "crownM": 0.04265906954735588
         },
         {
           "case": "drawn door sheet has physical shoulder relief",
@@ -526,8 +526,8 @@
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 292713,
-        "triangles": 410064,
+        "vertices": 292569,
+        "triangles": 409899,
         "materialObjects": 23,
         "bounds": [
           [
@@ -594,8 +594,8 @@
         {
           "case": "bounded original body geometry and material budget",
           "pass": true,
-          "triangles": 410064,
-          "vertices": 292713,
+          "triangles": 409899,
+          "vertices": 292569,
           "materialObjects": 23
         },
         {
@@ -761,7 +761,7 @@
         {
           "case": "bonnet has restrained physical transverse crown",
           "pass": true,
-          "crownM": 0.03210133918609959
+          "crownM": 0.04184931231983424
         },
         {
           "case": "drawn door sheet has physical shoulder relief",

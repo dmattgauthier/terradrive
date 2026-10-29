@@ -290,11 +290,9 @@ for i, asset in enumerate(data['assets']):
         unreal.SystemLibrary.collect_garbage()
 
 exec(compile(open(os.path.join(root,'Tools','import-fab.py'),encoding='utf8').read(),'import-fab.py','exec'),globals())
-# The complete acquired winter scene is loaded next. Release native import
-# working objects first on the 16 GB development machine.
+# Release mesh/material working objects before saving the proving ground.
 materials.clear()
 unreal.SystemLibrary.collect_garbage()
-exec(compile(open(os.path.join(root,'Tools','winter-level.py'),encoding='utf8').read(),'winter-level.py','exec'),globals())
 level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 if lib.does_asset_exist('/Game/Maps/ProvingGround'):
     ok = level.load_level('/Game/Maps/ProvingGround')

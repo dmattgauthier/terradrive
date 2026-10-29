@@ -1,4 +1,4 @@
-param([ValidateSet('Detail','Movement','Winter','Art')][string]$Mode='Detail',[int]$TimeoutSeconds=600,[switch]$FullTextureDiagnostic)
+param([ValidateSet('Detail','Movement','Art')][string]$Mode='Detail',[int]$TimeoutSeconds=600,[switch]$FullTextureDiagnostic)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd -ErrorAction SilentlyContinue){throw 'Close game/editor before this isolated native check.'}
@@ -11,12 +11,11 @@ $arguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=160
     ('-TerraReport="'+$report+'"'),('-TerraGarage="'+(Join-Path $output 'winter-test-garage.json')+'"'),
     ('-TerraGraphics="'+(Join-Path $output 'winter-test-graphics.json')+'"'),('-abslog="'+$log+'"'))
 if($Mode -eq 'Detail'){$arguments+='-TerraTerrainDetailOnly'}
-if($Mode -in @('Detail','Winter')){$arguments+='-TerraGraphicsMode=2'}
+if($Mode -eq 'Detail'){$arguments+='-TerraGraphicsMode=2'}
 # Keep the short coasting fixtures' observation density independent of render
 # stalls. The 20 FPS cap still limits GPU load; only the test simulation clock
 # is fixed. Player driving does not use this switch.
 if($Mode -eq 'Movement'){$arguments+='-TerraMomentumOnly';$arguments+='-UseFixedTimeStep';$arguments+='-FPS=20'}
-if($Mode -eq 'Winter'){$arguments+='-TerraWinterOnly';$TimeoutSeconds=420}
 if($Mode -eq 'Art'){$arguments+='-TerraModelHeroOnly';$arguments+='-TerraGraphicsMode=2'}
 if($FullTextureDiagnostic){$arguments+='-ExecCmds="r.Streaming.FullyLoadUsedTextures 1"'}
 $info=[System.Diagnostics.ProcessStartInfo]::new()

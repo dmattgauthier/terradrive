@@ -1,15 +1,15 @@
 {
-  "revision": "gclass-powertrain-damage-15",
+  "revision": "steering-coachwork-proving-ground-16",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 495244,
-      "normalizedFraction": 0.9999818271397534,
+      "vertices": 493882,
+      "normalizedFraction": 0.9999817770236615,
       "visibility": [
         {
           "pane": "recessed cowl",
-          "floorHeightM": 1.275242293713935,
-          "rimClearanceM": 0.003327891808841521
+          "floorHeightM": 1.2752452586083671,
+          "rimClearanceM": 0.005077715074035538
         }
       ],
       "tire": {
@@ -389,7 +389,7 @@
     },
     {
       "vehicle": "Mercedes-Benz G 580 with EQ Technology",
-      "vertices": 276514,
+      "vertices": 284868,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -406,8 +406,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 276514,
-          "triangles": 394336,
+          "vertices": 284868,
+          "triangles": 405008,
           "materialObjects": 24,
           "bounds": [
             [
@@ -474,8 +474,8 @@
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 394336,
-            "vertices": 276514,
+            "triangles": 405008,
+            "vertices": 284868,
             "materialObjects": 24
           },
           {
@@ -641,7 +641,7 @@
           {
             "case": "bonnet has restrained physical transverse crown",
             "pass": true,
-            "crownM": 0.03533778342200189
+            "crownM": 0.04265906954735588
           },
           {
             "case": "drawn door sheet has physical shoulder relief",
@@ -695,7 +695,7 @@
     },
     {
       "vehicle": "Mercedes-AMG G 63",
-      "vertices": 292713,
+      "vertices": 296187,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -712,8 +712,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 292713,
-          "triangles": 410064,
+          "vertices": 296187,
+          "triangles": 416299,
           "materialObjects": 23,
           "bounds": [
             [
@@ -780,8 +780,8 @@
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 410064,
-            "vertices": 292713,
+            "triangles": 416299,
+            "vertices": 296187,
             "materialObjects": 23
           },
           {
@@ -947,7 +947,7 @@
           {
             "case": "bonnet has restrained physical transverse crown",
             "pass": true,
-            "crownM": 0.03210133918609959
+            "crownM": 0.04184931231983424
           },
           {
             "case": "drawn door sheet has physical shoulder relief",

@@ -3,6 +3,7 @@
 #include "../Source/TerraDrive/TerraContact.h"
 #include "../Source/TerraDrive/TerraUnits.h"
 #include "../Source/TerraDrive/TerraDriving.h"
+#include <array>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -11,6 +12,32 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    for(float dt:{1.f/20,1.f/30,1.f/60,.1f})for(float direction:{-1.f,1.f})for(float lateral:{0.f,.8f,1.f}){
+        const float speed=direction*4,r=.4f,c=9000,limit=4000,drag=160,inertia=3;
+        float wheel=speed/r,axle=wheel;
+        for(int i=0;i<80;i++){
+            wheel=TerraSim::CombinedWheelOmega(wheel,c,speed,r,dt,inertia,limit,lateral,drag);
+            axle=TerraSim::CombinedAxleOmega(axle,c,c,speed,speed*.85f,limit,limit,lateral,lateral,r,dt,inertia*2,drag*2);
+        }
+        check(wheel*direction>std::abs(speed)/r*.90f,"unbraked rolling tire keeps turning at saturated lateral grip");
+        check(axle*direction>std::abs(speed)/r*.80f,"locked axle retains rolling speed at full steering demand");
+        check(TerraSim::CombinedWheelOmega(wheel,c,speed,r,dt,inertia,limit,lateral,10000)==0,"combined slip still lets the service brake lock a moving tire");
+        const auto forces=TerraSim::CombinedTireForces(c*(wheel*r-speed),lateral*limit,limit,limit);
+        check(forces.Longitudinal*forces.Longitudinal+forces.Lateral*forces.Lateral<=limit*limit*1.00001f,"combined contact never exceeds its friction ellipse");
+        const float next=TerraSim::CombinedWheelOmega(wheel,c,speed,r,dt,inertia,limit,lateral,drag);
+        const float balance=(next-wheel)*inertia/dt+TerraSim::CombinedLongitudinal(next,c,speed,r,limit,lateral)*r+direction*drag;
+        check(std::abs(balance)<.1f,"implicit rolling solution balances tire and drag torque");
+    }
+    for(float angle:{-.55f,.55f}){
+        const float left=TerraSim::AckermannAngle(angle,0,-.8f,2.89f),right=TerraSim::AckermannAngle(angle,0,.8f,2.89f);
+        const float leftRadius=2.89f/std::tan(left),rightRadius=2.89f/std::tan(right);
+        check(std::abs((leftRadius-rightRadius)-1.6f)<.00001f,"front steering angles share a turn centre instead of scrubbing in parallel");
+        const float rear=-angle*.25f;
+        for(float side:{-.8f,.8f}){
+            const float f=TerraSim::AckermannAngle(angle,rear,side,2.89f),r=TerraSim::AckermannAngle(rear,angle,side,-2.89f);
+            check(std::abs(std::tan(f)/std::tan(angle)-std::tan(r)/std::tan(rear))<.00001f,"counter-steering rear axle shares the front axle turn centre");
+        }
+    }
     check(TerraSim::AutomaticGear(0,7,7000,100,6800)==0,"stationary wheelspin cannot shift first gear into a cruising ratio");
     check(TerraSim::AutomaticGear(3,7,3500,100,6800)==2,"hill stall downshifts despite spinning wheels");
     check(TerraSim::AutomaticGear(0,7,6000,6000,6800)==1,"road-speed acceleration still upshifts normally");
@@ -474,5 +501,34 @@ int main(){
         }
         check(std::isfinite(angle)&&peak<.15f&&std::abs(angle)<.01f,"brake holding and suspension settle together for tall vehicles across frame times");
     }
+    check(!TerraSim::OutsideProvingGround(0,0,0),"normal proving-ground positions retain vehicle control");
+    check(!TerraSim::OutsideProvingGround(56000,0,-3000),"recovery boundary retains its original inclusive limits");
+    check(TerraSim::OutsideProvingGround(0,0,-3001),"a vehicle falling below the proving ground is recovered");
+    check(TerraSim::OutsideProvingGround(56001,0,0)&&TerraSim::OutsideProvingGround(-56001,0,0),"recovery covers either horizontal direction");
+    check(TerraSim::OutsideProvingGround(40000,40000,0),"recovery uses radial distance rather than a square bound");
+    for(const auto loads: {std::array<float,4>{5000,5000,5000,5000},
+                          std::array<float,4>{0,10000,10000,0},
+                          std::array<float,4>{7000,0,5000,8000},
+                          std::array<float,4>{0,0,0,20000}}){
+        for(float dt:{.05f,.1f})for(float mu:{.2f,1.f}){
+            const float mass=2250,slope=.45f,total=loads[0]+loads[1]+loads[2]+loads[3];
+            float speed=0;bool bounded=true;
+            for(int frame=0;frame<int(1/dt);++frame){
+                float force=0;
+                for(float load:loads){
+                    const float share=TerraSim::SupportedBrakeMass(mass,load,total);
+                    const float grip=mu*load;
+                    const float hold=std::clamp(share*9.81f*std::sin(slope)-share*speed/dt,-grip,grip);
+                    bounded&=std::abs(hold)<=grip+.001f;force+=hold;
+                }
+                speed+=(force/mass-9.81f*std::sin(slope))*dt;
+            }
+            check(mu>.5f?std::abs(speed)<.0001f:speed<-.5f,
+                "brakes hold a slope through only the loaded tires, and still slide when available grip is insufficient");
+            check(bounded,"slope holding never creates friction beyond the loaded tire budget");
+        }
+    }
+    check(TerraSim::SupportedBrakeMass(2250,0,20000)==0,"an unloaded tire supplies no slope holding force");
+    check(TerraSim::SupportedBrakeMass(2250,0,0)==0,"an airborne vehicle receives no artificial brake support");
     std::cout<<"PASS "<<count<<" native simulation core checks\n";
 }

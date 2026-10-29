@@ -29,7 +29,7 @@ export function buildSUV(view, geometry, bronco) {
     if(bronco){m.badlandsBadge=m.badge.clone();m.badlandsBadge.color.set('#e7aa35');m.badlandsBadge.metalness=.12;m.badlandsBadge.roughness=.40;}
     const top = bronco ? 1.873 : 1.86, half = bronco ? 0.874 : 0.833, nose = bronco ? 2.16 : 2.13, tail = bronco ? -2.075 : -2.07;
     const belt = bronco ? 1.225 : 1.19, hood = bronco ? 1.275 : 1.245, frontRoof = bronco ? 0.36 : 0.31;
-    const frontHalf = bronco ? half - .030 : half - .137;
+    const frontHalf = bronco ? half - .030 : .775;
     // The Bronco's upper door skin meets its frameless glazing. Its previous
     // deep rolled shoulder stopped below and inboard of the glass, leaving
     // an open strip under the doors/quarter. Re-forming the continuous shell
@@ -100,11 +100,12 @@ export function buildSUV(view, geometry, bronco) {
       const sampled=Array.from({length:101},(_,i)=>{const point=curve.getPoint(i/100);return [side*(skinX(point.y,point.x)+.0013),point.y,point.x];});
       curvedLine(g,m.dark,sampled,radius);
     };
-    // Separate hood skin gives the flared fenders and tall narrow Jeep bonnet their actual silhouette.
-    const hoodWidth = bronco ? 1.63 : 1.39, hoodRear=bronco?.700:.748;
+    // JL bonnet and matching side sheets stay broad through the cowl and
+    // middle, then taper gently into the grille. The former reverse taper
+    // narrowed the back by more than six inches and pinched the whole nose.
+    const hoodWidth = bronco ? 1.63 : 1.55, hoodRear=bronco?.700:.748;
     const hoodHalf=v=>{
-      const t=clamp((v-.68)/.32,0,1);
-      return hoodWidth/2-v*.008+(bronco?0:.075*t*t*(3-2*t));
+      return bronco?hoodWidth/2-v*.008:.775-v*.013+.004*Math.sin(v*Math.PI);
     };
     const hoodSample=(u,v)=>{
       const z = THREE.MathUtils.lerp(hoodRear, nose + .030, v), x = u * 2 - 1;
@@ -156,7 +157,7 @@ export function buildSUV(view, geometry, bronco) {
     // The bonnet used to extend back underneath the windshield. A separate
     // formed cowl now occupies the correct short interval behind it, with a
     // real recessed ventilation opening rather than a dark patch on paint.
-    const cowlRear=.604,cowlWidth=bronco?.827:.760;
+    const cowlRear=.604,cowlWidth=bronco?.827:.785;
     const cowlPoint=(x,z)=>{
       const t=clamp((z-cowlRear)/(hoodRear-cowlRear),0,1),half=THREE.MathUtils.lerp(cowlWidth,hoodWidth/2,t);
       const front=hoodPoint(x,hoodRear)[1]-.009;
@@ -216,10 +217,10 @@ export function buildSUV(view, geometry, bronco) {
         return [p[0]+side*.004*Math.sin(v*Math.PI),THREE.MathUtils.lerp(low,p[1],v),p[2]];
       },side>0);
       if (!bronco) {
-        roundedBox(g,m.black,side*.744,1.178,.858,.032,.111,.088,.012);
-        roundedBox(g,m.dark,side*.764,1.192,.858,.014,.073,.058,.010);
-        for(const y of [1.142,1.218])cylinder(g,m.black,side*.771,y,.858,.008,.052,'z',14);
-        for(const z of [.833,.883])cylinder(g,m.grille,side*.776,1.158,z,.004,.005,'x',10);
+        roundedBox(g,m.black,side*.787,1.178,.858,.032,.111,.088,.012);
+        roundedBox(g,m.dark,side*.807,1.192,.858,.014,.073,.058,.010);
+        for(const y of [1.142,1.218])cylinder(g,m.black,side*.814,y,.858,.008,.052,'z',14);
+        for(const z of [.833,.883])cylinder(g,m.grille,side*.819,1.158,z,.004,.005,'x',10);
       } else {
         // Factory trail sights are molded, apertured handles integrated with
         // the bonnet shoulder, with a narrow slot and solid mounting ends.

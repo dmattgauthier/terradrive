@@ -103,5 +103,5 @@ export function bodyRefinement(view,spec){
   }
   geo.computeBoundingBox();geo.computeBoundingSphere();
  });
- view.root.userData.bodyRefinement={version:3,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true};
+ view.root.userData.bodyRefinement={version:style==='jeep'?16:3,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true};
 }

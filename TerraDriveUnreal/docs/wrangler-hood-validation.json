@@ -1,0 +1,68 @@
+{
+  "revision": 16,
+  "checks": 10,
+  "pass": true,
+  "stationsM": [
+    0.82,
+    1.4,
+    2.1
+  ],
+  "widthsM": [
+    1.5579588413238525,
+    1.55405592918396,
+    1.5286918878555298
+  ],
+  "tests": [
+    {
+      "name": "bonnet is broad where it meets the cowl",
+      "pass": true,
+      "value": 1.5579588413238525
+    },
+    {
+      "name": "middle of bonnet keeps the broad Rubicon planform",
+      "pass": true,
+      "value": 1.55405592918396
+    },
+    {
+      "name": "grille end stays within the established nose envelope",
+      "pass": true,
+      "value": 1.5286918878555298
+    },
+    {
+      "name": "bonnet no longer pinches at the cowl relative to the nose",
+      "pass": true,
+      "value": 0.029266953468322754
+    },
+    {
+      "name": "matching side-sheet draw avoids an hourglass through the middle",
+      "pass": true,
+      "value": 1.55405592918396
+    },
+    {
+      "name": "mechanical wheelbase is preserved",
+      "pass": true,
+      "value": 3.008
+    },
+    {
+      "name": "Rubicon lettering remains visible outside the widened bonnet -1",
+      "pass": true,
+      "value": 0.04999999999999993
+    },
+    {
+      "name": "projected label retains unit shading normals -1",
+      "pass": true,
+      "value": true
+    },
+    {
+      "name": "Rubicon lettering remains visible outside the widened bonnet 1",
+      "pass": true,
+      "value": 0.050000000000000155
+    },
+    {
+      "name": "projected label retains unit shading normals 1",
+      "pass": true,
+      "value": true
+    }
+  ],
+  "referenceStatus": "Original photo-based shape estimates; panel widths are not OEM measurements."
+}

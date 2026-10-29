@@ -1,0 +1,88 @@
+{
+  "revision": 16,
+  "checks": 20,
+  "pass": true,
+  "tests": [
+    {
+      "name": "removed Content/Maps/WinterExpedition.umap",
+      "pass": true
+    },
+    {
+      "name": "removed Content/AutomotiveWinterScene/Maps",
+      "pass": true
+    },
+    {
+      "name": "removed Content/WinterGameplay",
+      "pass": true
+    },
+    {
+      "name": "removed Content/NativeData/winter-level.json",
+      "pass": true
+    },
+    {
+      "name": "removed Source/TerraDrive/TerraWinter.cpp",
+      "pass": true
+    },
+    {
+      "name": "removed Source/TerraDrive/TerraWinter.h",
+      "pass": true
+    },
+    {
+      "name": "removed Source/TerraDrive/TerraWinterValidation.cpp",
+      "pass": true
+    },
+    {
+      "name": "removed Source/TerraDrive/TerraWinterValidation.h",
+      "pass": true
+    },
+    {
+      "name": "removed Tools/winter-level.py",
+      "pass": true
+    },
+    {
+      "name": "removed Tools/winter-survey.py",
+      "pass": true
+    },
+    {
+      "name": "one proving-ground map is explicitly cooked",
+      "pass": true
+    },
+    {
+      "name": "retired destination absent from packaging settings",
+      "pass": true
+    },
+    {
+      "name": "no retired runtime/travel hooks in Source/TerraDrive/TerraWorld.cpp",
+      "pass": true
+    },
+    {
+      "name": "no retired runtime/travel hooks in Source/TerraDrive/TerraVehicle.cpp",
+      "pass": true
+    },
+    {
+      "name": "no retired runtime/travel hooks in Source/TerraDrive/TerraGarage.cpp",
+      "pass": true
+    },
+    {
+      "name": "no retired runtime/travel hooks in Source/TerraDrive/TerraGameMode.cpp",
+      "pass": true
+    },
+    {
+      "name": "asset importer cannot recreate the destination",
+      "pass": true
+    },
+    {
+      "name": "standalone verifier cannot invoke retired map mode",
+      "pass": true
+    },
+    {
+      "name": "shared acquired winter detail remains Content/AutomotiveWinterScene/Megascans/Surfaces",
+      "pass": true
+    },
+    {
+      "name": "shared acquired winter detail remains Content/AutomotiveWinterScene/Megascans/3D_Assets",
+      "pass": true
+    }
+  ],
+  "scope": "Source and installed Content; cooked package absence must be checked after a fresh cook."
+}

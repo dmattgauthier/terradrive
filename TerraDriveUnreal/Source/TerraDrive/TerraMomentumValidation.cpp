@@ -78,8 +78,11 @@ void WriteFixturePlan(ATerraVehicle* V){
   FString Json;if(FJsonSerializer::Serialize(Plan,TJsonWriterFactory<>::Create(&Json)))FFileHelper::SaveStringToFile(Json,*FixturePlanPath(TEXT("momentum-fixtures.json")));
 }
 void Capture(const FString &Name){
-  if(FParse::Param(FCommandLine::Get(),TEXT("TerraCapture")))
-    FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Screenshots")/Name,true,false);
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraCapture"))){
+    FString Directory;
+    if(!FParse::Value(FCommandLine::Get(),TEXT("TerraCaptureDir="),Directory)||Directory.IsEmpty())Directory=FPaths::ProjectSavedDir()/TEXT("Screenshots");
+    FScreenshotRequest::RequestScreenshot(Directory/Name,true,false);
+  }
 }
 void Park(ATerraVehicle *V,int VehicleIndex,FVector Ground,FVector Direction){
   V->SelectVehicle(VehicleIndex);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);

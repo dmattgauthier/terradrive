@@ -1,8 +1,8 @@
 # Terra Drive native port
 
-The current native pass refines both Mercedes G-Class bodies and their wheel/body proportions, distinguishes factory-EV power tuning from donor-specific engine conversions, and adds [visible impact damage with Free Run](docs/vehicle-damage.md). Factory EV motor layouts stay fixed; gasoline conversion kits provide 350/500/700 hp base outputs. The package passes **2,288 native checks** and **830 portable checks**, with **327 fresh captures actually reviewed**. Exact package provenance, measurements and limits are in [validation-native.md](docs/validation-native.md). The garage retains nine vehicles and twelve upgrade categories from [pass 14](docs/expedition-electric-14.md).
+The current [steering and front coachwork pass 16](docs/steering-coachwork-16.md) corrects wheel rotation at full steering lock, rebuilds the G580/G63 bonnet and front details with straighter door gaps, and broadens the Wrangler bonnet at its middle and cowl. Winter Expedition is removed; the proving ground retains its snow region and shared winter scenery. The verified Windows package passes **3,331 native checks** and **1,643 portable checks**, with **434 fresh captures actually reviewed**. The [native validation record](docs/validation-native.md) identifies the exact executable, full asset cook, visual observations and limits.
 
-**Known performance limitation:** real-time quarry play remains poor. A separate current-machine profile after unused applications were closed averages about **3.33 FPS**, dominated by CPU physics work. The cause within physics remains unresolved. The fixed 20 Hz validation clock verifies controlled behavior and does not fix player performance; the passing functional checks do not establish smooth gameplay. See the [measurements and limits](docs/validation-native.md).
+**Known performance limitation:** the previous pass-15 real-time quarry profile averaged about **3.33 FPS**, dominated by CPU physics. That bottleneck remains unresolved. This pass verifies the requested behavior and model changes; it does not establish a frame-rate improvement or fix the reported PC crashes. Fixed-clock functional runs do not establish smooth real-time gameplay. See the [measurements and limits](docs/validation-native.md).
 
 The preceding [drivetrain, running gear and soil pass 13](docs/mechanical-soil-13.md) added
 staged four-wheel drive, low range, axle lockers and portal conversions in the
@@ -51,9 +51,9 @@ local layer, and sustained wheelspin develops deeper disturbance over time.
 trials; the complete rut check includes those trials and the six-surface
 physical profile fixtures.
 
-The winter round adds a **Winter Expedition** destination containing the complete acquired Automotive Winter Scene, including its road, landscape, cliffs, foliage, snow clumps and lighting. Use the garage destination button or **0** to travel between it and the proving ground. The selected vehicle and upgrades carry across. See [winter-level.md](docs/winter-level.md) for setup and the authored-landscape deformation limitation.
+Winter Expedition has been removed at the player’s request, including its destination button, travel key, map preparation and cooked-map entries. The proving ground retains its snow region, snow deformation and shared acquired winter textures/rocks. See [destination removal](docs/winter-level.md).
 
-The proving ground gains sharper acquired snow/grass scans, physical snow relief, slushy fringes and more meadow planting. See [winter-ground-detail.md](docs/winter-ground-detail.md). The [vehicle model refinement](docs/model-refinement-7.md) adds recessed Urus geometry, body-detail corrections and revised factory tires/wheels. [Momentum and suspension](docs/momentum-and-suspension.md) explains the shaped undertray and progressive suspension stops. Use `Tools/verify-winter.ps1 -Mode Detail`, `Movement`, `Winter` or `Art` for the focused native checks.
+The proving ground gains sharper acquired snow/grass scans, physical snow relief, slushy fringes and more meadow planting. See [winter-ground-detail.md](docs/winter-ground-detail.md). The [vehicle model refinement](docs/model-refinement-7.md) adds recessed Urus geometry, body-detail corrections and revised factory tires/wheels. [Momentum and suspension](docs/momentum-and-suspension.md) explains the shaped undertray and progressive suspension stops. Use `Tools/verify-winter.ps1 -Mode Detail`, `Movement` or `Art` for the focused native checks.
 
 Target: Unreal Engine **5.8.3**, Windows x64. The simulation is native C++, with Chaos rigid-body dynamics, native static mesh assets, procedural terrain and instanced tire spray. There is no web view, JavaScript runtime or HTTP server in the native game.
 
@@ -89,7 +89,7 @@ Open `TerraDrive.uproject` to edit. Packaged output is under `Build/Windows/`. G
 
 Run editor import and packaging in a normal Windows process context. A restricted process sandbox can make Unreal exit before logging, and UE 5.8 staging writes a temporary `StagedBuild_TerraDrive.ini` under the installed engine's `Intermediate/Build/BuildCookRun` directory. Automation logs stay in `Saved/AutomationLogs`; importer diagnostics are in `Saved/Logs/import-assets.log`. The importer uses forward slashes in the Python script argument and requires a fresh completion marker and saved map. Interrupted mesh imports can be resumed.
 
-For an optional **ground-material-only iteration** after the initial asset import, `Tools/rebuild-ground.py` reuses the existing texture loader and ground recipes. It updates dirty project-owned textures/materials and leaves mesh, Fab and winter-map preparation out of that run. Existing exported data and baked transition masks are required. From this project directory, with the game and editor closed:
+For an optional **ground-material-only iteration** after the initial asset import, `Tools/rebuild-ground.py` reuses the existing texture loader and ground recipes. It updates dirty project-owned textures/materials and leaves mesh and Fab preparation out of that run. Existing exported data and baked transition masks are required. From this project directory, with the game and editor closed:
 
 ```powershell
 $groundProject = (Resolve-Path '.\TerraDrive.uproject').Path
@@ -126,7 +126,7 @@ Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
 
-For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-native-code.ps1` builds the game target and copies the matching executable/symbols into the packaged folder, checking executable parity and unchanged package sizes/timestamps. It avoids repeatedly archiving the full winter scenery. It does not cook assets, update external runtime dependencies, or replace the full packaging workflow after content/configuration changes.
+For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-native-code.ps1` builds the game target and copies the matching executable/symbols into the packaged folder, checking executable parity and unchanged package sizes/timestamps. It avoids repeatedly archiving unchanged cooked content. It does not cook assets, update external runtime dependencies, or replace the full packaging workflow after content/configuration changes.
 
 ## Controls
 
@@ -138,7 +138,7 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 | Right mouse + mouse | Orbit camera |
 | C | Near/far chase camera |
 | 1–9 | Trail, tarmac, rock, mud, marsh, sand, Summit park, snow, Granite Trials |
-| 0 | Travel between the complete Winter Expedition and native proving ground |
+
 | J | Cycle nine challenge routes |
 | V | Open vehicle selection while stopped |
 | T | Equip/remove flotation tracks while stopped; Civic excluded |
