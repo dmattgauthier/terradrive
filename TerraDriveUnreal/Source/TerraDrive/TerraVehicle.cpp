@@ -796,17 +796,21 @@ void ATerraVehicle::Tick(float Dt) {
     Initialized = true;
     if(!AutoTest)SetGarage(true);
   }
+  const float BodyContactDt=Dt;
   Dt = FMath::Min(Dt, .1f);
   Input(Dt);
   UpdateLamps();
   if(!Garage){
     Terrain->ActivateSoil(GetActorLocation());
+    ProcessBodyGroundContacts(BodyContactDt);
+    UpdateBodyGroundGrip();
     SoilTimer += Dt;
     UpdateTireAir(Dt);
     Simulate(Dt);
     UpdateSpray(Dt);
     UpdateRoute(Dt);
   }else{
+    PendingBodyGroundContacts.Reset();
     CameraArm->bEnableCameraLag=false;
     CameraArm->TargetArmLength=GarageDistance;
     CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,-15));
@@ -841,6 +845,7 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
       Other->GetClass()->GetName().StartsWith(TEXT("Landscape")));
   if(GroundHit){++TerrainBodyHits;TerrainImpactMPS=FMath::Max(TerrainImpactMPS,Impact);}
   else {++ObjectBodyHits;ObjectImpactMPS=FMath::Max(ObjectImpactMPS,Impact);}
+  if(GroundHit)QueueBodyGroundContact(Impulse,Result);
   if(AutoTest&&(Impact>.25f||GetWorld()->GetTimeSeconds()>=NextBodyDiagnosticTime)){
     NextBodyDiagnosticTime=GetWorld()->GetTimeSeconds()+1;
     const auto *OtherMesh=Cast<UStaticMeshComponent>(Other);

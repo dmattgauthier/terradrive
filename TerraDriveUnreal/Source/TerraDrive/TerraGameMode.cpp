@@ -21,6 +21,7 @@
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
 #include "TerraRolloverValidation.h"
+#include "TerraBodyGroundValidation.h"
 #include "TerraMechanicalValidation.h"
 #include "TerraTurningValidation.h"
 #include "TerraElectricPressureValidation.h"
@@ -122,6 +123,10 @@ void ATerraGameMode::Tick(float Dt) {
       FScreenshotRequest::RequestScreenshot(Directory/Name,true,false);
     }
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraBodyGroundOnly"))){
+    if(TerraBodyGroundValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraTurningOnly"))){
     if(TerraTurningValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;

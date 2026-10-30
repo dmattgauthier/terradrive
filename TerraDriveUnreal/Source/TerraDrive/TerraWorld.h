@@ -68,6 +68,12 @@ struct FTerraCrushable {
   FTransform Original;
   float Flattened=0;
 };
+struct FTerraBodyMark {
+  FVector Point=FVector::ZeroVector,Forward=FVector::ForwardVector;
+  float Width=60,Length=100;
+  uint8 Surface=0;
+  uint32 Seed=0;
+};
 UCLASS()
 class TERRADRIVE_API ATerraWorld : public AActor {
   GENERATED_BODY()
@@ -87,7 +93,13 @@ public:
   float Height(float X, float Y) const;
   float SnowDrift(float X,float Y) const;
   void Deform(FVector P, FVector Forward, float Load, float Pressure,
-              float Width, float Length, float Slip, float Speed, float Dt);
+              float Width, float Length, float Slip, float Speed, float Dt,bool BodyContact=false);
+  void BodyGroundContact(FVector Point,FVector Forward,float Load,float Width,float Length,float Speed,float Dt);
+  int BodyMarkCount() const { return BodyMarks.Num(); }
+  const TArray<FTerraBodyMark>& BodyGroundMarks() const { return BodyMarks; }
+  bool HasRenderedBodyImpression(FVector Point,float RadiusCM=180) const;
+  int BodyScrapeCount=0,BodyImpressionCount=0;
+  UPROPERTY() TObjectPtr<UProceduralMeshComponent> BodyMarkMesh;
   void HitTree(UPrimitiveComponent *Component, FVector Impulse, FVector Point);
   void SetRain(bool Enabled);
   void ResetSoil();
@@ -149,6 +161,12 @@ private:
   float MarkPhase[4]={0,0,0,0};
   int NextMark=0,ThrottleMarkRefresh=0;
   void RebuildTireMarks();
+  TArray<FTerraBodyMark> BodyMarks;
+  bool BodyMarksDirty=false;
+  TSet<int> DirtyBodyMarkChunks;
+  uint32 BodyMarkSequence=0;
+  int NextBodyMark=0;
+  void RebuildBodyMarks();
   TArray<FTerraCrushable> Crushable;
   TMap<FIntPoint,TArray<int32>> PlantGrid;
   void RegisterCrushable(UInstancedStaticMeshComponent *Mesh,int32 Index);

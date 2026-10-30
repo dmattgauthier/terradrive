@@ -1,368 +1,192 @@
 {
-  "update": "steering-coachwork-proving-ground-16",
-  "verifiedAt": "2026-10-29T01:19:47.366806+00:00",
+  "update": "rollover-contact-ground-disturbance-17",
+  "verifiedAt": "2026-10-30T02:03:00.562325+00:00",
   "pass": true,
   "nativeAccepted": true,
   "engine": "Unreal Engine 5.8.3",
   "executable": {
     "path": "Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe",
-    "bytes": 332770304,
-    "sha256": "be0e2aa2106a900639874eee4741aa24158bddf5fade6ac7360e2612cea779dc"
+    "sha256": "b362c60160c72b18410d8a789b5143b9e683bbc22b94eec843d68acbf701f9ae",
+    "bytes": 332812288
   },
   "assetCook": {
-    "kind": "full-asset-cook5-plus-native-code-stage6",
-    "baseFullAssetCook": {
-      "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/asset-cook.json",
-      "bytes": 3515,
-      "sha256": "eb503c9b3d0e42d1020c5646205a06ee5664247d77dc8454943d7f3029557205"
-    },
-    "fullCookProducerSourceManifest": {
-      "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/source-frozen.json",
-      "bytes": 22416,
-      "sha256": "af983db8af4a7776b6789f61b07c93e08d549305bdd744ca4d1c09fa735b10b8"
-    },
-    "nativeCodeStage": {
-      "iteration": 6,
-      "completed": "2026-10-29T00:17:03.5522515Z",
-      "receipt": {
-        "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/code-stage-receipt.json",
-        "bytes": 1593,
-        "sha256": "16bc408d91f3cbaadfda32d0ada85c4e7b009feea8219ccc1697e4962dc4e722"
-      },
-      "buildLog": {
-        "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/code-build.log",
-        "bytes": 3136,
-        "sha256": "50d34cae11440ce5e22eff7099f6af51260bb460ea95d4aae170b03717a9d08f"
-      },
-      "changedSource": [
-        "Source/TerraDrive/TerraContact.h",
-        "Source/TerraDrive/TerraGameMode.cpp",
-        "Source/TerraDrive/TerraVehicle.cpp",
-        "Tools/test-core.cpp"
-      ],
-      "unchangedOtherProducerFiles": 127,
-      "exactReverseDeltaVerified": true,
-      "driverSourceProvenance": {
-        "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode5/asset-cook.json",
-        "bytes": 5716,
-        "sha256": "424beb7cd78bcbca199a71bbdaef771ced3c720c62ed83ced3b9c9b7488e1cd4"
-      },
-      "originalDriverSource": {
-        "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode5/full-cook-game-mode.cpp",
-        "bytes": 102872,
-        "sha256": "1586d5beb0c676ba1aa330c8b454997199ffc28a074216f477f327cf4a1c8c70"
-      },
-      "originalRuntimeSources": [
-        {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/BaseCookSources/TerraContact.h",
-          "bytes": 8397,
-          "sha256": "d693fbb833cb51e5408eff30da151f319b19417b79fcb746396e9fb8e67113be"
-        },
-        {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/BaseCookSources/TerraVehicle.cpp",
-          "bytes": 48487,
-          "sha256": "9c15a1f8ee52c56bd71c169806e14deb59a982710d51a66a4af8322dd749c30a"
-        },
-        {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/BaseCookSources/test-core.cpp",
-          "bytes": 45812,
-          "sha256": "b2329277cf429f75638c40c4dd3f5809a60034cb3ab551d27f219ad9c84b868e"
-        }
-      ],
-      "geometryUnchangedSinceFullCook": true,
-      "runtimeBrakeHoldingChanged": true,
-      "driverLimits": {
-        "lineMetres": -0.5,
-        "targetMPS": 1.1,
-        "throttleCeiling": 0.28,
-        "edgeBrakeBufferMetres": 0.55,
-        "yawBrakeDegrees": 20,
-        "rollBrakeDegrees": 30,
-        "minimumRequiredTireClearanceMetres": 0,
-        "observationSeconds": 14
-      },
-      "change": "Loaded-contact brake holding distributes gravity compensation by actual tire support, retaining friction/brake-torque bounds. Thirty-four portable incline/support/grip checks added. Automatic locker driver uses ordinary bounded crawl, reverse-aware steering and actual brake holding. Original course, thresholds, collision, duration and post guards are unchanged."
+    "kind": "full cook and native package for body-ground pass17",
+    "build": {
+      "started": "2026-10-30T00:34:05.4168414Z",
+      "phase": "built, native verification pending",
+      "pass": true,
+      "completed": "2026-10-30T00:43:04.9848515Z"
     },
     "receipt": {
-      "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/asset-cook.json",
-      "sha256": "6da729b84180965501e59cb631bf96eb015e72d20f5de6a7e765401693f46a8e",
-      "bytes": 6829
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/asset-cook.json",
+      "sha256": "55ed80484eb931cedb7fd3f7e83cf99b9221c59f686a8ceb17f899a36fbfa5e5",
+      "bytes": 3831
     },
-    "scope": "Full cook5 with byte-exact content and a subsequent native brake-holding/validation-driver C++ stage; all final behavioral and visual gates use the same staged executable.",
-    "buildAttempt": 5,
-    "completed": "2026-10-28T23:38:53.1841707Z",
-    "producerSource": {
-      "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/source-frozen.json",
-      "bytes": 22416,
-      "sha256": "c5957c70d952b7aabb1b2f4ebc5f6e60b3f00aa5a0391a258d8d7197923d49cd"
+    "sourceManifest": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/source-frozen.json",
+      "sha256": "a907b8aa6c85f94634d63e83b4bb2b0ed7c146195d3b2ae8e6e74688a7ebba47",
+      "bytes": 24060
     },
-    "sourceFiles": 131,
-    "meshCount": 272,
-    "coachworkHullCount": 108,
-    "nativeData": [
-      {
-        "path": "Content/NativeData/terrain-blend.bin",
-        "bytes": 17942423,
-        "sha256": "d4d185b487183a15debd116b02cb0bfa9cc4641cb8464994c3249101d3be205b"
-      },
-      {
-        "path": "Content/NativeData/terrain-transitions.json",
-        "bytes": 616,
-        "sha256": "01236808144b554fa23328b689d3472c75166df9592266c6dd7c5cfeefca8dd0"
-      },
-      {
-        "path": "Content/NativeData/terrain.bin",
-        "bytes": 23068825,
-        "sha256": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee"
-      },
-      {
-        "path": "Content/NativeData/texture-credits.json",
-        "bytes": 34157,
-        "sha256": "b9502ba635959c1b4cc8ff7476fb07ace515c0f7229f600ee43bdb93f3193867"
-      },
-      {
-        "path": "Content/NativeData/vehicle-collision.json",
-        "bytes": 906199,
-        "sha256": "a815ffc02fa703d426a5d2b15f72ce37d2a5acdc737d23fe14b0bc792f3248bb"
-      },
-      {
-        "path": "Content/NativeData/vehicle-ground-probes.json",
-        "bytes": 147691,
-        "sha256": "f6afdec85495e2bff198a6f263615683f73d39942c54aadc9fd2dc8b5b482940"
-      },
-      {
-        "path": "Content/NativeData/world.json",
-        "bytes": 6162204,
-        "sha256": "b67792a98e6da7496d09a683fb0bc3daed55b7b56132488c36f69772a4fc0785"
-      }
-    ],
+    "sourceFileCount": 140,
+    "ownedBodyMaterial": {
+      "path": "Content/Materials/BodyGroundScuff.uasset",
+      "sha256": "094fbf24533a320edbb0dee749b618e6ffcf27bf58ce69ee5bd4838572fcd619",
+      "bytes": 5978
+    },
     "containers": [
       {
         "path": "Build/Windows/TerraDrive/Content/Paks/global.ucas",
-        "bytes": 3199872,
-        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae",
+        "bytes": 3199872
       },
       {
         "path": "Build/Windows/TerraDrive/Content/Paks/global.utoc",
-        "bytes": 782,
-        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b",
+        "bytes": 782
       },
       {
         "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.pak",
-        "bytes": 54739701,
-        "sha256": "9e84cdb1234ec8945bf8851574a914bde8ef9ca71c10b098c6e328a2d487da02"
+        "sha256": "d35cfeb79b8d4a054def7ce8dd18fcdcc8777cf9e9e0561931821f7497449277",
+        "bytes": 54739701
       },
       {
         "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
-        "bytes": 879194816,
-        "sha256": "1e8999fa659dbcd80f3ca8e36533fbaf394e0172c13a24b5404136d164ef64fc"
+        "sha256": "cecb1988d2b41d2d22d4e23b8d45ebe11d818d12c0ece760d8805728b852cf77",
+        "bytes": 879215344
       },
       {
         "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
-        "bytes": 720625,
-        "sha256": "82b2e2c4209257887b4a11444361928a0a5a5ff79cd1d912e968ee4b646ae9d2"
+        "sha256": "a62643b4240db6954aa8af123a80b1c0ea962ec98839dbc013a3385d78062637",
+        "bytes": 720846
+      }
+    ],
+    "nativeData": [
+      {
+        "path": "Content/NativeData/terrain-blend.bin",
+        "sha256": "d4d185b487183a15debd116b02cb0bfa9cc4641cb8464994c3249101d3be205b",
+        "bytes": 17942423
+      },
+      {
+        "path": "Content/NativeData/terrain-transitions.json",
+        "sha256": "01236808144b554fa23328b689d3472c75166df9592266c6dd7c5cfeefca8dd0",
+        "bytes": 616
+      },
+      {
+        "path": "Content/NativeData/terrain.bin",
+        "sha256": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
+        "bytes": 23068825
+      },
+      {
+        "path": "Content/NativeData/texture-credits.json",
+        "sha256": "b9502ba635959c1b4cc8ff7476fb07ace515c0f7229f600ee43bdb93f3193867",
+        "bytes": 34157
+      },
+      {
+        "path": "Content/NativeData/vehicle-collision.json",
+        "sha256": "a815ffc02fa703d426a5d2b15f72ce37d2a5acdc737d23fe14b0bc792f3248bb",
+        "bytes": 906199
+      },
+      {
+        "path": "Content/NativeData/vehicle-ground-probes.json",
+        "sha256": "f6afdec85495e2bff198a6f263615683f73d39942c54aadc9fd2dc8b5b482940",
+        "bytes": 147691
+      },
+      {
+        "path": "Content/NativeData/world.json",
+        "sha256": "b67792a98e6da7496d09a683fb0bc3daed55b7b56132488c36f69772a4fc0785",
+        "bytes": 6162204
       }
     ],
     "packageContents": {
-      "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/package-contents.json",
-      "sha256": "625b2cecb790b2ec57fd71988220d338663c380604c08fb892518bfb7b01e12c",
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/package-contents.json",
+      "sha256": "d967525a18df83d6fdf9220def3d09742e51125c2a7a25a451fe5e8f3b9b81a7",
       "bytes": 1479
     },
-    "retiredDestinationAbsent": true
+    "meshCount": 272,
+    "hullCount": 108
   },
   "native": {
-    "checksPassed": 3331,
-    "checksTotal": 3331,
-    "freshCapturesActuallyReviewed": 434,
+    "checksPassed": 2306,
+    "checksTotal": 2306,
+    "freshCapturesActuallyReviewed": 342,
     "modes": [
       {
-        "mode": "Art",
-        "checksPassed": 99,
-        "checksTotal": 99,
+        "mode": "BodyGround",
+        "checksPassed": 469,
+        "checksTotal": 469,
         "processExit": 0,
-        "capturesReviewed": 90,
-        "maximumSampledGpuTemperatureC": 59.0,
-        "clock": "real time",
+        "freshCapturesActuallyReviewed": 78,
+        "clock": "realTime",
         "requestedRenderCapFPS": 20,
-        "graphicsMode": "2",
-        "started": "2026-10-29T00:31:48.6901212Z",
-        "completed": "2026-10-29T00:36:45.6358824Z",
-        "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Art/receipt.json",
-          "sha256": "f7808cae0e3925c14a73964d2aaf277b2277b6194037d1a7d1ecf4b8782c5696",
-          "bytes": 1630
-        },
-        "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Art/result.json",
-          "sha256": "d08d17c264d356121d1c5d121f5b8c7c4a19c858197dd0960ebac804795d768c",
-          "bytes": 8370
-        },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Art/game.log",
-          "sha256": "1a1267d76a2d72262f5760f83b87eee7ccf007050c83a27988c5c0abaed3020c",
-          "bytes": 102166
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Art/gpu.json",
-          "sha256": "e8941203c8651cc3b0b71553c82f9b3dd15c288ca9887defa1995404ddf83e11",
-          "bytes": 26875
-        },
-        "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Art/observed.json",
-          "sha256": "4dfccb19cdb517e0db4c677367635561b29420ff46500d808400e563743e028d",
-          "bytes": 16149
-        }
-      },
-      {
-        "mode": "Turning",
-        "checksPassed": 572,
-        "checksTotal": 572,
-        "processExit": 0,
-        "capturesReviewed": 20,
-        "maximumSampledGpuTemperatureC": 62.0,
-        "clock": "fixed 20 Hz simulation",
-        "requestedRenderCapFPS": 20,
-        "graphicsMode": "0",
-        "started": "2026-10-29T00:36:52.0005594Z",
-        "completed": "2026-10-29T00:38:27.5037742Z",
-        "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Turning/receipt.json",
-          "sha256": "c85d27a91cd251144b905fd6a35528e3a00d61d525cff031abdc0fe4badc2148",
-          "bytes": 1696
-        },
-        "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Turning/result.json",
-          "sha256": "0d25a666f74c07edf6b4c37d4b3f2a808ea0518e2ed9fe3c290f47471604013f",
-          "bytes": 69454
-        },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Turning/game.log",
-          "sha256": "2d0cb45c4c543c085dd5b65885673f5cb1412a0483bc5ab4824605b2c0df5504",
-          "bytes": 207045
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Turning/gpu.json",
-          "sha256": "07399517671e9c84685a8de8e0c0e59674e2695bf612939e104eab7c2c424de6",
-          "bytes": 8142
-        },
-        "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Turning/observed.json",
-          "sha256": "a1456fb12c9202e5edeabbf9bc378eea5ed7059ecfdc0aed6f21bffe446da879",
-          "bytes": 4624
-        }
-      },
-      {
-        "mode": "TurningRealTime",
-        "checksPassed": 572,
-        "checksTotal": 572,
-        "processExit": 0,
-        "capturesReviewed": 20,
-        "maximumSampledGpuTemperatureC": 60.0,
-        "clock": "real time",
-        "requestedRenderCapFPS": 20,
-        "graphicsMode": "0",
-        "started": "2026-10-29T00:38:29.1004586Z",
-        "completed": "2026-10-29T00:41:13.0058150Z",
-        "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/TurningRealTime/receipt.json",
-          "sha256": "9e66545c7e0d0c8a3e7659c7064510f0afe1073c84ea822f6f8c58cb54d29a12",
-          "bytes": 1693
-        },
-        "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/TurningRealTime/result.json",
-          "sha256": "9af7a05a175b6c6d9b1f282433fb3bd345eb15452dd47684587c1189314bbe6b",
-          "bytes": 69454
-        },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/TurningRealTime/game.log",
-          "sha256": "9e49c35b7155855dfee63f10b2650efe691866e7c72b30920ecc4452bb6fabd9",
-          "bytes": 206397
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/TurningRealTime/gpu.json",
-          "sha256": "8c1f663ff1e72be5218785a12f378d6ff70e4bcadd5b488025afbad2bbd5bdf1",
-          "bytes": 14715
-        },
-        "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/TurningRealTime/observed.json",
-          "sha256": "4281662807ac9057a5be049564dd4ee41d81df4accf31a7426ce6cfe5a9cf518",
-          "bytes": 4494
-        }
-      },
-      {
-        "mode": "Full",
-        "checksPassed": 344,
-        "checksTotal": 344,
-        "processExit": 0,
-        "capturesReviewed": 109,
-        "maximumSampledGpuTemperatureC": 63.0,
-        "clock": "fixed 20 Hz simulation",
-        "requestedRenderCapFPS": 20,
-        "graphicsMode": "0",
-        "started": "2026-10-29T00:21:17.5122613Z",
-        "completed": "2026-10-29T00:31:33.0284825Z",
-        "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Full/receipt.json",
-          "sha256": "dbd5fd7a5b4b1c34844c5c12af0295139197428838085160c3aad946e7324478",
-          "bytes": 1653
-        },
-        "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Full/result.json",
-          "sha256": "a3d0dba1f5fb4b409e0973247db35d6434925020f7c2a2c1cf93499ba1c9100b",
-          "bytes": 29029
-        },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Full/game.log",
-          "sha256": "b46e402df79d2e5a009eb526e230f65b3c0bdbac79c38c809dafae46d2813d05",
-          "bytes": 301549
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Full/gpu.json",
-          "sha256": "ae3cb774c6004d3663dd78d887d734566e358ab0581437efbefa5a048b2c6892",
-          "bytes": 53698
-        },
-        "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Full/observed.json",
-          "sha256": "13c6a1705b8a1ee1b5003727262c2ab75a8543d2e7513208c0bd159d324c8ae9",
-          "bytes": 19752
-        }
-      },
-      {
-        "mode": "Mechanical",
-        "checksPassed": 500,
-        "checksTotal": 500,
-        "processExit": 0,
-        "capturesReviewed": 18,
+        "captureResolution": [
+          1600,
+          900
+        ],
         "maximumSampledGpuTemperatureC": 58.0,
-        "clock": "real time",
-        "requestedRenderCapFPS": 20,
-        "graphicsMode": "0",
-        "started": "2026-10-29T00:41:14.4152365Z",
-        "completed": "2026-10-29T00:43:19.8449891Z",
         "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Mechanical/receipt.json",
-          "sha256": "c53ebc6d5beb9bcc5b36f24767507b75627006fe0331912f2503f77a53cef016",
-          "bytes": 1675
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/BodyGround/receipt.json",
+          "sha256": "3a0ad1e4712e45e0af2b3ad7c74bcd77c407e7aedc8ea6982568b6d26aedd535",
+          "bytes": 1624
         },
         "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Mechanical/result.json",
-          "sha256": "950bc051a308c5e14f74b84f64b667d9f885ad4cdf088ca2acaca3db713f8f3b",
-          "bytes": 62229
-        },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Mechanical/game.log",
-          "sha256": "71790fa958c718b4cbeb8f1c7384b71f8439fdebc064dc50b16d7eec4798f975",
-          "bytes": 192177
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Mechanical/gpu.json",
-          "sha256": "067506cfddaad4dcbabf765c5ce6fca7a6adb6064028eabf7c7a0426f4e01a03",
-          "bytes": 11202
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/BodyGround/result.json",
+          "sha256": "62024d50c9a90dd1959a9862546f71a45a5b259c848299b0e572e274083e1e9e",
+          "bytes": 59118
         },
         "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Mechanical/observed.json",
-          "sha256": "e3cc98bdcfa96b6c0a97c5d5013213b509975deb16bef78b3e5b6595b59d9d66",
-          "bytes": 4214
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/BodyGround/observed.json",
+          "sha256": "37630e1a6ecd37a307e9c7d46bc83bcf70f4053ebd0901ca92d43fcc3b7fe5d7",
+          "bytes": 14858
+        },
+        "log": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/BodyGround/game.log",
+          "sha256": "6b3b46b1c8df34dbac4e045837525d76b6129f93071f5ac492a542064ddfbdb0",
+          "bytes": 453190
+        },
+        "gpuSamples": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/BodyGround/gpu.json",
+          "sha256": "0bbee4b65191387e1f6579902c5e3eb6102c738412e3ce1208d1b4f355f9b8a7",
+          "bytes": 36790
+        },
+        "observationDeltaCapSeconds": 0.1
+      },
+      {
+        "mode": "Rollover",
+        "checksPassed": 465,
+        "checksTotal": 465,
+        "processExit": 0,
+        "freshCapturesActuallyReviewed": 58,
+        "clock": "fixed10Hz",
+        "requestedRenderCapFPS": 20,
+        "captureResolution": [
+          1600,
+          900
+        ],
+        "maximumSampledGpuTemperatureC": 56.0,
+        "receipt": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Rollover/receipt.json",
+          "sha256": "622f0f7be4be3eecbee80a1471eb0df4c138d2ff8785b74dd1e96fbb0597f808",
+          "bytes": 1757
+        },
+        "result": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Rollover/result.json",
+          "sha256": "e4aa10fc7c2c436cbe0c7c36b4a3a13bbc2fca8abb123d0eca1b87f88af73b53",
+          "bytes": 58480
+        },
+        "imageReview": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/Rollover/observed.json",
+          "sha256": "a808fdab09be305e3031cea2cd06761394aa02597e7196f4e7261ee9973e9674",
+          "bytes": 11289
+        },
+        "log": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Rollover/game.log",
+          "sha256": "397bbd8d24a916a7620dd93a750660d971f90ade8244c5432ef212b07d3013da",
+          "bytes": 470626
+        },
+        "gpuSamples": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Rollover/gpu.json",
+          "sha256": "88896d632df9ee470642d0c60339277ab245bbc7f67913b064e719d068aef072",
+          "bytes": 57650
         }
       },
       {
@@ -370,113 +194,116 @@
         "checksPassed": 111,
         "checksTotal": 111,
         "processExit": 0,
-        "capturesReviewed": 16,
-        "maximumSampledGpuTemperatureC": 64.0,
-        "clock": "fixed 20 Hz simulation",
+        "freshCapturesActuallyReviewed": 16,
+        "clock": "fixed20Hz",
         "requestedRenderCapFPS": 20,
-        "graphicsMode": "0",
-        "started": "2026-10-29T00:43:21.0262417Z",
-        "completed": "2026-10-29T00:45:33.6335154Z",
+        "captureResolution": [
+          1600,
+          900
+        ],
+        "maximumSampledGpuTemperatureC": 58.0,
         "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Movement/receipt.json",
-          "sha256": "8697ca13165b53fa96ddfede0b2c385865ebe6fd2a428508a98781bacd8b06ac",
-          "bytes": 1703
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Movement/receipt.json",
+          "sha256": "fa57c4ff4c20f450547d2a48074a311244e39e6705389bcf7922af8100a9a753",
+          "bytes": 1718
         },
         "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Movement/result.json",
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Movement/result.json",
           "sha256": "866799edee6847723b237eed4f26346b3c868a205673544f3efbdad0f2fce6bc",
           "bytes": 9458
         },
+        "imageReview": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/Movement/observed.json",
+          "sha256": "621fd5814a22a978296d4c843e9ef65cf2d3fd9c942e7a12d0f3eb45cc536bd7",
+          "bytes": 3766
+        },
         "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Movement/game.log",
-          "sha256": "aee3f2086acd737205821d7960e504cf2ada616a85573a0be05438f7a8e4f005",
-          "bytes": 109740
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Movement/game.log",
+          "sha256": "91c7e68e1e8c2e91caf4433f081928cb4730a6d5707cdb6d8af53997d994e96c",
+          "bytes": 109894
         },
         "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Movement/gpu.json",
-          "sha256": "c91ca7608a322674babe7817c174f07ea110ccbd704bf9d4e400fedaa257ef6f",
-          "bytes": 10766
-        },
-        "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Movement/observed.json",
-          "sha256": "6960cee43a83a70fa0dd09b91767aec60b91ef49bbfead6a494bb8fa3f56db81",
-          "bytes": 3695
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Movement/gpu.json",
+          "sha256": "283f6ac0b1cdadd91b41ab9da8941930a1e1860eefdb5263e39c905eeac13e25",
+          "bytes": 12618
         }
       },
       {
-        "mode": "Rollover",
-        "checksPassed": 465,
-        "checksTotal": 465,
+        "mode": "Turning",
+        "checksPassed": 572,
+        "checksTotal": 572,
         "processExit": 0,
-        "capturesReviewed": 58,
-        "maximumSampledGpuTemperatureC": 59.0,
-        "clock": "real time",
+        "freshCapturesActuallyReviewed": 20,
+        "clock": "fixed20Hz",
         "requestedRenderCapFPS": 20,
-        "graphicsMode": "0",
-        "started": "2026-10-29T00:52:14.8356662Z",
-        "completed": "2026-10-29T01:03:03.1397148Z",
+        "captureResolution": [
+          1600,
+          900
+        ],
+        "maximumSampledGpuTemperatureC": 62.0,
         "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Rollover/receipt.json",
-          "sha256": "152d1a98f7cd1c4f9b43332e458c05413485f710043f8ba2b909a02c41d19a42",
-          "bytes": 1700
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Turning/receipt.json",
+          "sha256": "2be8e70ccd359029e3c30eadb037320b3cc5fe91cb175f95ffcded078b6127b9",
+          "bytes": 1711
         },
         "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Rollover/result.json",
-          "sha256": "a1a357d32e64210242168791da2a544142fd782f61174dac297f4803ffe17fa1",
-          "bytes": 58497
-        },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Rollover/game.log",
-          "sha256": "bed21cb2a8ca3a4481f59f68c8ca4e2190edbf6ebb00da0dc2ec9a238fd5c6e6",
-          "bytes": 463032
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Rollover/gpu.json",
-          "sha256": "d816741b2c2235da7489a61d862fb58eecaa37e2607cb71fd125942492a57170",
-          "bytes": 56420
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Turning/result.json",
+          "sha256": "0d25a666f74c07edf6b4c37d4b3f2a808ea0518e2ed9fe3c290f47471604013f",
+          "bytes": 69454
         },
         "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Rollover/observed.json",
-          "sha256": "57e72e3f4ea485c68360be2d48aa422a013ca041fb5a7baa64f6ae539f7dac26",
-          "bytes": 11199
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/Turning/observed.json",
+          "sha256": "82232ffd15f2ae9e881a7f87867cb4e6f332cb1c1d3ca201c3c38c499afb1510",
+          "bytes": 4657
+        },
+        "log": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Turning/game.log",
+          "sha256": "c0a8142d580286b089203e7cc9a9b7fca1adb1f709b08fd7afd78e87bf22189c",
+          "bytes": 206914
+        },
+        "gpuSamples": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Turning/gpu.json",
+          "sha256": "0059c1c844cb56a5b33a20adc813a15a17e27accef4db4708ba800c9395f3183",
+          "bytes": 8578
         }
       },
       {
-        "mode": "ElectricPressure",
-        "checksPassed": 279,
-        "checksTotal": 279,
+        "mode": "Full",
+        "checksPassed": 344,
+        "checksTotal": 344,
         "processExit": 0,
-        "capturesReviewed": 36,
-        "maximumSampledGpuTemperatureC": 58.0,
-        "clock": "real time",
+        "freshCapturesActuallyReviewed": 109,
+        "clock": "pacedFixed20Hz",
         "requestedRenderCapFPS": 20,
-        "graphicsMode": "0",
-        "started": "2026-10-29T01:03:07.4522820Z",
-        "completed": "2026-10-29T01:09:11.4872157Z",
+        "captureResolution": [
+          1280,
+          720
+        ],
+        "maximumSampledGpuTemperatureC": 57.0,
         "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/ElectricPressure/receipt.json",
-          "sha256": "6dc8a28f12e3f32ab3c62d71a75cc7cee20de97ae139dfad9fb98751fb0fc23f",
-          "bytes": 1717
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Full/receipt.json",
+          "sha256": "557ea64421b8edb86b37c60327a2a57e7eb95622f5b695636a52f3df9ea6698d",
+          "bytes": 2111
         },
         "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/ElectricPressure/result.json",
-          "sha256": "819725c9caab1c82dafeaacef60599c36cbd6dcebcce5ac1364142e5e62b8ced",
-          "bytes": 39920
-        },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/ElectricPressure/game.log",
-          "sha256": "da0e1e8d0f760df594cfadcdb264efac9149dabf54f14eba22f247656c6f08c3",
-          "bytes": 206124
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/ElectricPressure/gpu.json",
-          "sha256": "8f70da11a3ec5b2aedf0498d24b8e5c7550e49ef52eb9b484665501b2f0d8bbc",
-          "bytes": 31314
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Full/result.json",
+          "sha256": "4d068e4befd6bdaa55ffd78ade1b39d1d9b7bbbefc0e6cf247204cbbd0241afd",
+          "bytes": 29029
         },
         "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/ElectricPressure/observed.json",
-          "sha256": "7cfbd20f684e47241f2744d8300e183edb8a3608d2822b8403574e9fb7bf6859",
-          "bytes": 7476
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/Full/observed.json",
+          "sha256": "ba78b08fd8e19d28b9b6f282145daf08cb6c167d042fc7c0acd9c73fcc179287",
+          "bytes": 19577
+        },
+        "log": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Full/game.log",
+          "sha256": "57942abd985cea498c58d095a6c8e61fc97d02e4bc66ea2f913b395032154088",
+          "bytes": 301668
+        },
+        "gpuSamples": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Full/gpu.json",
+          "sha256": "8eb806eedcdb5c9a89fd917950563880e555bef09b24eb13f901018704db0a74",
+          "bytes": 73019
         }
       },
       {
@@ -484,75 +311,38 @@
         "checksPassed": 117,
         "checksTotal": 117,
         "processExit": 0,
-        "capturesReviewed": 16,
-        "maximumSampledGpuTemperatureC": 54.0,
-        "clock": "real time",
+        "freshCapturesActuallyReviewed": 16,
+        "clock": "realTime",
         "requestedRenderCapFPS": 20,
-        "graphicsMode": "2",
-        "started": "2026-10-29T01:09:14.2040590Z",
-        "completed": "2026-10-29T01:11:30.5810156Z",
+        "captureResolution": [
+          1600,
+          900
+        ],
+        "maximumSampledGpuTemperatureC": 54.0,
         "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Ruts/receipt.json",
-          "sha256": "c573b4c2993991b33dacf0154996201de10aa8a69ba5713756a594295e550d7c",
-          "bytes": 1632
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Ruts/receipt.json",
+          "sha256": "9be21955d2392607cea2d7a32be58414d9a083f3d1a5d2279afdfff10a986cb6",
+          "bytes": 1647
         },
         "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Ruts/result.json",
-          "sha256": "8492041abcec05cd866baefe67c22b739bd272ae23588dc9f1ef894d1f492326",
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Ruts/result.json",
+          "sha256": "cf6fa39d5757915e4215f02f4f20c6f31d827fb5a8c1c4e5c5ce871a0ee8f549",
           "bytes": 11356
         },
-        "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Ruts/game.log",
-          "sha256": "5def6b9de5442bb4727630e194d2baac5ec9c87af6f00ef68bf4d4a69763964b",
-          "bytes": 109048
-        },
-        "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Ruts/gpu.json",
-          "sha256": "b56e43519ec66fb3cf4da73bc3c3743fec618e1da374792eb7c988c0743a2ca7",
-          "bytes": 10686
-        },
         "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Ruts/observed.json",
-          "sha256": "017e097765ff3824fc26286e733a04c194327ede59b97012e4e189f0ca035e6a",
-          "bytes": 3750
-        }
-      },
-      {
-        "mode": "Spray",
-        "checksPassed": 44,
-        "checksTotal": 44,
-        "processExit": 0,
-        "capturesReviewed": 6,
-        "maximumSampledGpuTemperatureC": 54.0,
-        "clock": "real time",
-        "requestedRenderCapFPS": 20,
-        "graphicsMode": "2",
-        "started": "2026-10-29T01:11:32.0043325Z",
-        "completed": "2026-10-29T01:12:24.2306646Z",
-        "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Spray/receipt.json",
-          "sha256": "7787c176c6f8b16bc459e8cdef22d7aed092a21c7921f5e5c69854da0f44be6d",
-          "bytes": 1637
-        },
-        "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Spray/result.json",
-          "sha256": "e7b7fba4423f69a9773cdb26a80b021e8036d5edeb96c44af7d6e17e9bc4630c",
-          "bytes": 4564
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/Ruts/observed.json",
+          "sha256": "7c354d8db0064f0c5d4c8e792f9484aebaf6b620424b4cbbb60b40d18e4ed063",
+          "bytes": 3806
         },
         "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Spray/game.log",
-          "sha256": "cc98916379b85ee62e7d2b76d9c194bc63b7ec55eb8b1133f7fab971b49193e4",
-          "bytes": 101481
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Ruts/game.log",
+          "sha256": "e1b96639357d6224b17cc105b90fd03d8059e8f97ae3c317c94970375f0a6ba6",
+          "bytes": 109241
         },
         "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Spray/gpu.json",
-          "sha256": "51d6f3a6fae00c0ed1a21260c33913cf058c3fcc33f80787b627b815de496af4",
-          "bytes": 4344
-        },
-        "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Spray/observed.json",
-          "sha256": "0bedf744dd01b79be84efb509701ab7144001c24f5fcfb024217ace057ad7ab1",
-          "bytes": 2022
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Ruts/gpu.json",
+          "sha256": "0821e85a614f7b8bcb122d6d9c7ef36cf4045c633e19e71b30c610e108ed9f44",
+          "bytes": 10403
         }
       },
       {
@@ -560,105 +350,988 @@
         "checksPassed": 228,
         "checksTotal": 228,
         "processExit": 0,
-        "capturesReviewed": 45,
-        "maximumSampledGpuTemperatureC": 57.0,
-        "clock": "real time",
+        "freshCapturesActuallyReviewed": 45,
+        "clock": "realTime",
         "requestedRenderCapFPS": 20,
-        "graphicsMode": "2",
-        "started": "2026-10-29T01:12:24.9086878Z",
-        "completed": "2026-10-29T01:17:52.8028050Z",
+        "captureResolution": [
+          1600,
+          900
+        ],
+        "maximumSampledGpuTemperatureC": 56.0,
         "receipt": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Damage/receipt.json",
-          "sha256": "158a0bf0814ef067f922e7fc277a4fbf23bf8a0091cb9f5f7d53f0d6db5038eb",
-          "bytes": 1647
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Damage/receipt.json",
+          "sha256": "38e85089ab11fbf40465855dd38dfc31b2cbd5c9cb925b752b901669d5503f51",
+          "bytes": 1662
         },
         "result": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Damage/result.json",
-          "sha256": "43f2d2d9070ebde308a60b852997e351c33204de8a401d5968c24b5ae417e65b",
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Damage/result.json",
+          "sha256": "7d1a457b9e2b64ec376194e167046216a72854dee36d931dfa2e385052fa34e3",
           "bytes": 25845
         },
+        "imageReview": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/Damage/observed.json",
+          "sha256": "8f0d29943d644f9b94baf075c1a3d8e121e42aef60614821d4a248a24349e63a",
+          "bytes": 8979
+        },
         "log": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Damage/game.log",
-          "sha256": "c8596aa7ed7e21607b2fbbc6ff65115f9cf7d00de696bbccb123d33ce9978f29",
-          "bytes": 204808
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Damage/game.log",
+          "sha256": "c79b4925e08b546d022281f5c0981e2252d4fe7d5dd7d96b451b68f60fcf3b4e",
+          "bytes": 198984
         },
         "gpuSamples": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Validation/Damage/gpu.json",
-          "sha256": "49d801b3678018387c79005e22d521508368636c9222b4d75a3aaa1d09100eac",
-          "bytes": 28889
-        },
-        "imageReview": {
-          "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/Review/Damage/observed.json",
-          "sha256": "744c2a44493a714c4a8f24677c4595018512082ebe2650e09557a54bc8b46749",
-          "bytes": 8879
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/Damage/gpu.json",
+          "sha256": "bb18b079b2791ffaf93c27e1eb906c7f132f97bfeb1911d2cb1f9a6ab0935f5e",
+          "bytes": 29026
         }
       }
     ],
+    "requestedRenderCapFPS": 20,
+    "sampledThermalCutoffC": 77,
+    "maximumSampledGpuTemperatureC": 62.0,
     "manualOrControllerSession": false,
-    "fullRateEnduranceTest": false,
-    "allModesRequestedRenderCapFPS": 20,
-    "thermalCutoffC": 77,
-    "maximumSampledGpuTemperatureC": 64.0
+    "fullRateEnduranceTest": false
   },
   "portable": {
-    "pass": true,
-    "total": 1643,
-    "simulation": 648,
-    "electricPressure": 300,
-    "damage": 47,
-    "spray": 648,
-    "coreReceipt": {
-      "path": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6/portable-core.json",
-      "sha256": "869ffde50299831eeae5ea88d8928d8237283854288e72855a9b4eccd09d8519",
-      "bytes": 579
+    "checksPassed": 230,
+    "bodyGround": {
+      "pass": true,
+      "checks": 230,
+      "observedOutput": "PASS 230 body ground checks; 0 failures\n",
+      "source": {
+        "path": "Source/TerraDrive/TerraBodyGround.h",
+        "sha256": "902315ca69eca74590d744cdf015d767a8eef46b1b8a00e14abeb0a9812cc0cb",
+        "bytes": 1450
+      },
+      "test": {
+        "path": "Tools/test-body-ground.cpp",
+        "sha256": "a5e8cb8ae632d5411564110e8f8a457a49d63f82a2e830373d6abc97f5e40c8d",
+        "bytes": 2608
+      },
+      "binary": {
+        "path": "Saved/test-body-ground.exe",
+        "sha256": "bd1ed68e3c5e485fa6911a911322a6c136cdceb7aa272df6b9b330a02134bf66",
+        "bytes": 151552
+      }
     }
   },
-  "sourceGeometry": {
-    "allNineVehicleGeometryNormalsOpeningsAndWheelsPass": true,
-    "gclassAssertions": 93,
-    "wranglerAssertions": 10,
-    "expeditionAssertions": 88,
-    "provingGroundOnlyAssertions": 20,
-    "changedBodyMeshes": 3,
-    "totalExportedMeshes": 272
-  },
-  "preservation": {
-    "pass": true,
-    "browserFilesUnchanged": 1214,
-    "playerFiles": [
+  "supplemental": {
+    "excludedFromFinalNativeTotals": true,
+    "modes": [
       {
-        "bytes": 1150,
-        "sha256": "ebb97cafc3c9a45991d4f3b5c26eb9e38fc18b58747783f71d3bd1e7654abdac",
-        "path": "Build/Windows/TerraDrive/Saved/garage-builds.json"
-      },
-      {
-        "bytes": 25,
-        "sha256": "7fc551251542fe476e18f213de4614fe4669231df4fb29ab6a87a938c0fd19e0",
-        "path": "Build/Windows/TerraDrive/Saved/graphics-settings.json"
+        "mode": "QuickDefault",
+        "checksPassed": 73,
+        "checksTotal": 73,
+        "processExit": 0,
+        "freshCapturesActuallyReviewed": 12,
+        "clock": "realTime",
+        "requestedRenderCapFPS": 20,
+        "captureResolution": [
+          1600,
+          900
+        ],
+        "maximumSampledGpuTemperatureC": 59.0,
+        "receipt": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/QuickDefault/receipt.json",
+          "sha256": "fd468b175c181dac18bdc4164998404c76d3e7c1c36b608431a06308abdfa78e",
+          "bytes": 1661
+        },
+        "result": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/QuickDefault/result.json",
+          "sha256": "8d0e85f93731eca138e77c2f01f1a8aec409607c20c337132acacbe86c2a1d3d",
+          "bytes": 9169
+        },
+        "imageReview": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/QuickDefault/observed.json",
+          "sha256": "4dfd0e4d6f4bb487dd4bc1ddb5af07e85022361d384d34a0b74d9546b296d344",
+          "bytes": 3090
+        },
+        "log": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/QuickDefault/game.log",
+          "sha256": "9f366247f985eec0c4d2656e57baa543b4ed7621143b086401df88835c823532",
+          "bytes": 146396
+        },
+        "gpuSamples": {
+          "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/QuickDefault/gpu.json",
+          "sha256": "3e5c5e386c542859ac8235f64412b5fdf071f827aa143af50274b665cd572c9f",
+          "bytes": 5844
+        },
+        "observationDeltaCapSeconds": 0.1
       }
     ],
-    "sourceAssetFiles": 275,
-    "changedSourceAssets": [
-      "import.json",
-      "mercedes_amg_g63_body.obj",
-      "mercedes_g580_ev_body.obj",
-      "wrangler_rubicon_body.obj"
+    "description": "Same final executable: six-case normal quick smoke, excluded from full-matrix totals. All 12 supplemental captures actually reviewed."
+  },
+  "bodyGroundObservations": [
+    {
+      "trial": 0.0,
+      "vehicle": 0.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 90.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 1.6797,
+      "travelM": 5.7189,
+      "minClearanceCM": -0.0034,
+      "grip": 0.48,
+      "marks": 18.0,
+      "depthM": 0.0,
+      "recoveredWheels": 1.0
+    },
+    {
+      "trial": 1.0,
+      "vehicle": 0.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 95.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.4718,
+      "minClearanceCM": -0.0039,
+      "grip": 0.48,
+      "marks": 28.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 2.0,
+      "vehicle": 0.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 108.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 5.8599,
+      "minClearanceCM": 0.009,
+      "grip": 0.48,
+      "marks": 25.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 3.0,
+      "vehicle": 1.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 99.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.5525,
+      "minClearanceCM": -0.003,
+      "grip": 0.48,
+      "marks": 26.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 4.0,
+      "vehicle": 1.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 91.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.5507,
+      "minClearanceCM": -0.0003,
+      "grip": 0.48,
+      "marks": 35.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 5.0,
+      "vehicle": 1.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 108.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.5558,
+      "minClearanceCM": 0.1792,
+      "grip": 0.48,
+      "marks": 29.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 6.0,
+      "vehicle": 2.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 90.0,
+      "finalMPS": 5.7631,
+      "speedAt2MPS": 6.7086,
+      "travelM": 36.2552,
+      "minClearanceCM": 4.637,
+      "grip": 0.48,
+      "marks": 6.0,
+      "depthM": 0.0,
+      "recoveredWheels": 1.0
+    },
+    {
+      "trial": 7.0,
+      "vehicle": 2.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 90.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 5.7357,
+      "minClearanceCM": -0.1319,
+      "grip": 0.48,
+      "marks": 28.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 8.0,
+      "vehicle": 2.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 91.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.5463,
+      "minClearanceCM": -0.0004,
+      "grip": 0.48,
+      "marks": 34.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 9.0,
+      "vehicle": 3.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 92.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0482,
+      "travelM": 3.3164,
+      "minClearanceCM": -0.9026,
+      "grip": 0.48,
+      "marks": 21.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 10.0,
+      "vehicle": 3.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 107.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 5.2096,
+      "minClearanceCM": -0.0553,
+      "grip": 0.48,
+      "marks": 45.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 11.0,
+      "vehicle": 3.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 107.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.7,
+      "travelM": 5.1884,
+      "minClearanceCM": -0.2876,
+      "grip": 0.48,
+      "marks": 23.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 12.0,
+      "vehicle": 4.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 107.0,
+      "finalMPS": 1.6879,
+      "speedAt2MPS": 2.6579,
+      "travelM": 15.159,
+      "minClearanceCM": -0.1011,
+      "grip": 0.48,
+      "marks": 21.0,
+      "depthM": 0.0,
+      "recoveredWheels": 1.0
+    },
+    {
+      "trial": 13.0,
+      "vehicle": 4.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 107.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.1126,
+      "minClearanceCM": -0.2611,
+      "grip": 0.48,
+      "marks": 40.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 14.0,
+      "vehicle": 4.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 92.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.4595,
+      "travelM": 6.3149,
+      "minClearanceCM": -0.3523,
+      "grip": 0.48,
+      "marks": 34.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 15.0,
+      "vehicle": 5.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 91.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 5.5115,
+      "minClearanceCM": -0.0033,
+      "grip": 0.48,
+      "marks": 22.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 16.0,
+      "vehicle": 5.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 91.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.546,
+      "minClearanceCM": -0.0001,
+      "grip": 0.48,
+      "marks": 32.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 17.0,
+      "vehicle": 5.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 91.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.553,
+      "minClearanceCM": 0.0645,
+      "grip": 0.48,
+      "marks": 28.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 18.0,
+      "vehicle": 6.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 91.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 5.0029,
+      "minClearanceCM": -1.9536,
+      "grip": 0.48,
+      "marks": 37.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 19.0,
+      "vehicle": 6.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 90.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 4.555,
+      "minClearanceCM": -1.8061,
+      "grip": 0.48,
+      "marks": 41.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 20.0,
+      "vehicle": 6.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 91.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 4.6075,
+      "minClearanceCM": -0.2177,
+      "grip": 0.48,
+      "marks": 30.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 21.0,
+      "vehicle": 7.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 90.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.5554,
+      "minClearanceCM": -0.001,
+      "grip": 0.48,
+      "marks": 26.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 22.0,
+      "vehicle": 7.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 92.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.5521,
+      "minClearanceCM": -0.1478,
+      "grip": 0.48,
+      "marks": 31.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 23.0,
+      "vehicle": 7.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 90.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.1233,
+      "minClearanceCM": -0.0716,
+      "grip": 0.48,
+      "marks": 28.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 24.0,
+      "vehicle": 8.0,
+      "surface": 1.0,
+      "roll": -90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 90.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 5.9678,
+      "minClearanceCM": -0.0006,
+      "grip": 0.48,
+      "marks": 32.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 25.0,
+      "vehicle": 8.0,
+      "surface": 1.0,
+      "roll": 90.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 103.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.5533,
+      "minClearanceCM": -0.001,
+      "grip": 0.48,
+      "marks": 27.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 26.0,
+      "vehicle": 8.0,
+      "surface": 1.0,
+      "roll": 180.0,
+      "coast": 1.0,
+      "legacy": 0.0,
+      "frames": 93.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 6.548,
+      "minClearanceCM": 0.0183,
+      "grip": 0.48,
+      "marks": 26.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 27.0,
+      "vehicle": 0.0,
+      "surface": 0.0,
+      "roll": 90.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 31.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 0.023,
+      "minClearanceCM": -0.0013,
+      "grip": 0.58,
+      "marks": 11.0,
+      "depthM": 0.01067,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 28.0,
+      "vehicle": 0.0,
+      "surface": 0.0,
+      "roll": 180.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 32.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0315,
+      "travelM": 0.1131,
+      "minClearanceCM": -0.0232,
+      "grip": 0.58,
+      "marks": 13.0,
+      "depthM": 0.01027,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 29.0,
+      "vehicle": 0.0,
+      "surface": 2.0,
+      "roll": 90.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 59.0,
+      "finalMPS": 0.0355,
+      "speedAt2MPS": 0.0548,
+      "travelM": 0.0446,
+      "minClearanceCM": -0.5263,
+      "grip": 0.55,
+      "marks": 22.0,
+      "depthM": 0.05374,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 30.0,
+      "vehicle": 0.0,
+      "surface": 2.0,
+      "roll": 180.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 59.0,
+      "finalMPS": 0.0613,
+      "speedAt2MPS": 0.2605,
+      "travelM": 0.11,
+      "minClearanceCM": -0.0896,
+      "grip": 0.55,
+      "marks": 11.0,
+      "depthM": 0.05471,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 31.0,
+      "vehicle": 0.0,
+      "surface": 3.0,
+      "roll": 90.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 60.0,
+      "finalMPS": 0.0734,
+      "speedAt2MPS": 0.2365,
+      "travelM": 1.416,
+      "minClearanceCM": 16.3194,
+      "grip": 0.53,
+      "marks": 7.0,
+      "depthM": 0.07339,
+      "recoveredWheels": 1.0
+    },
+    {
+      "trial": 32.0,
+      "vehicle": 0.0,
+      "surface": 3.0,
+      "roll": 180.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 60.0,
+      "finalMPS": 0.0009,
+      "speedAt2MPS": 0.0,
+      "travelM": 0.0114,
+      "minClearanceCM": 1.497,
+      "grip": 0.53,
+      "marks": 10.0,
+      "depthM": 0.06336,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 33.0,
+      "vehicle": 0.0,
+      "surface": 4.0,
+      "roll": 90.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 60.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 0.0158,
+      "minClearanceCM": -0.0021,
+      "grip": 0.52,
+      "marks": 11.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 34.0,
+      "vehicle": 0.0,
+      "surface": 4.0,
+      "roll": 180.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 60.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0,
+      "travelM": 0.0469,
+      "minClearanceCM": -0.2334,
+      "grip": 0.52,
+      "marks": 13.0,
+      "depthM": 0.0,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 35.0,
+      "vehicle": 0.0,
+      "surface": 5.0,
+      "roll": 90.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 60.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0008,
+      "travelM": 0.048,
+      "minClearanceCM": -0.5726,
+      "grip": 0.66,
+      "marks": 15.0,
+      "depthM": 0.05511,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 36.0,
+      "vehicle": 0.0,
+      "surface": 5.0,
+      "roll": 180.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 60.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0278,
+      "travelM": 0.2664,
+      "minClearanceCM": -0.2096,
+      "grip": 0.66,
+      "marks": 7.0,
+      "depthM": 0.05441,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 37.0,
+      "vehicle": 0.0,
+      "surface": 6.0,
+      "roll": 90.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 59.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0049,
+      "travelM": 0.0692,
+      "minClearanceCM": -0.1385,
+      "grip": 0.32,
+      "marks": 10.0,
+      "depthM": 0.08094,
+      "recoveredWheels": 0.0
+    },
+    {
+      "trial": 38.0,
+      "vehicle": 0.0,
+      "surface": 6.0,
+      "roll": 180.0,
+      "coast": 0.0,
+      "legacy": 0.0,
+      "frames": 59.0,
+      "finalMPS": 0.0,
+      "speedAt2MPS": 0.0061,
+      "travelM": 0.0901,
+      "minClearanceCM": 0.0616,
+      "grip": 0.32,
+      "marks": 14.0,
+      "depthM": 0.05831,
+      "recoveredWheels": 0.0
+    }
+  ],
+  "oldFrictionComparison": [
+    {
+      "vehicle": 0,
+      "rollDegrees": 90.0,
+      "oldTravelFeet": 61.96358267691751,
+      "newTravelFeet": 21.232939632461,
+      "oldSpeedAtTwoSecondsMPH": 12.547870436905738,
+      "newSpeedAtTwoSecondsMPH": 0.0,
+      "newFinalSpeedMPH": 0.0
+    },
+    {
+      "vehicle": 0,
+      "rollDegrees": 180.0,
+      "oldTravelFeet": 78.23753280808602,
+      "newTravelFeet": 19.2253937007105,
+      "oldSpeedAtTwoSecondsMPH": 12.500447387513217,
+      "newSpeedAtTwoSecondsMPH": 0.0,
+      "newFinalSpeedMPH": 0.0
+    },
+    {
+      "vehicle": 3,
+      "rollDegrees": 90.0,
+      "oldTravelFeet": 50.34940944861751,
+      "newTravelFeet": 17.091863516992,
+      "oldSpeedAtTwoSecondsMPH": 6.883500358050119,
+      "newSpeedAtTwoSecondsMPH": 0.0,
+      "newFinalSpeedMPH": 0.0
+    },
+    {
+      "vehicle": 3,
+      "rollDegrees": 180.0,
+      "oldTravelFeet": 69.398950130956,
+      "newTravelFeet": 17.022309711218,
+      "oldSpeedAtTwoSecondsMPH": 12.47606478192933,
+      "newSpeedAtTwoSecondsMPH": 1.5658554044699997,
+      "newFinalSpeedMPH": 0.0
+    },
+    {
+      "vehicle": 7,
+      "rollDegrees": 90.0,
+      "oldTravelFeet": 85.14041994716601,
+      "newTravelFeet": 21.496391076029504,
+      "oldSpeedAtTwoSecondsMPH": 12.47002505394066,
+      "newSpeedAtTwoSecondsMPH": 0.0,
+      "newFinalSpeedMPH": 0.0
+    },
+    {
+      "vehicle": 7,
+      "rollDegrees": 180.0,
+      "oldTravelFeet": 68.6066272963135,
+      "newTravelFeet": 20.089566929053504,
+      "oldSpeedAtTwoSecondsMPH": 12.300465282999479,
+      "newSpeedAtTwoSecondsMPH": 0.0,
+      "newFinalSpeedMPH": 0.0
+    }
+  ],
+  "preservation": {
+    "browserFilesUnchanged": 1214,
+    "sourceAssetFilesUnchanged": 275,
+    "nativeDataFilesUnchanged": 7,
+    "playerFiles": [
+      {
+        "path": "Build/Windows/TerraDrive/Saved/garage-builds.json",
+        "sha256": "32b447d985ada225c709e08aaf7748c87843e8d22d6983913d87681e5a45a470",
+        "bytes": 1181
+      },
+      {
+        "path": "Build/Windows/TerraDrive/Saved/graphics-settings.json",
+        "sha256": "7fc551251542fe476e18f213de4614fe4669231df4fb29ab6a87a938c0fd19e0",
+        "bytes": 25
+      }
     ],
-    "unchangedOtherMeshes": 269,
-    "unchangedMasks": 2,
-    "frozenSourceFiles": 131,
     "rawEpicFabAssetsPublished": false,
-    "privatePlayerFilesPublished": false,
-    "privateReferencePhotosPublished": false
+    "referencePhotosOrPlayerFilesPublished": false
   },
-  "reviewNotes": {
-    "models": "Original procedural photo-based reconstructions. Wider Wrangler bonnet and visible lettering; sampled straight G-Class door gaps, thin bonnet returns, closed front-wing webs and distinct EV/AMG front treatments. Simplified optics, interiors and front-corner transitions remain below OEM CAD/Forza fidelity.",
-    "wheelMotion": "44 trials per Turning run cover nine vehicles in both directions and both full-lock directions, plus eight locked Wrangler/G63 cases. One initial rolling speed is seeded; the actual solver then coasts. Actual wheel/rim pose and loaded rolling contact are checked.",
-    "brakeHolding": "Slope-gravity compensation follows the tires actually carrying load, rather than nominal four-wheel shares. Original friction and brake-torque bounds remain, with 34 additional portable incline/grip/support checks.",
-    "removedDestination": "Winter Expedition travel/UI, runtime support, original authored destination maps, generated map/collision and explicit cook entries are removed. Proving-ground snow and shared acquired winter textures/meshes remain. The ordinary proving-ground out-of-world recovery boundary is retained.",
-    "performance": "The previous pass15 real-time quarry diagnostic measured about 3.33 FPS with unresolved CPU physics cost. This pass did not repeat that profile or demonstrate a performance/crash fix. Fixed-clock functional runs do not establish real-time gameplay throughput.",
-    "damageAndSoil": "Damage remains visual/gameplay deformation with original collision hulls; no wheel detachment or structural soft-body claim. Physical proving-ground ruts are bounded; material transitions and soil renderer configuration were not changed in this pass.",
-    "supersededEvidence": "RejectedVisualCandidate1, PreBoundaryRecovery, the original cook5 Full failure and earlier verifier-driver diagnostics retain separate observations. None contributes to final native counts. Historical pass15 Transitions, graphics presets and profiling remain separate."
+  "limitations": {
+    "performance": "Prior pass15 real-time quarry profile about3.33FPS/CPU physics remains unresolved. No performance or PC-crash fix established. Fixed simulation clocks do not establish real-time throughput.",
+    "soil": "Bounded session-local height-field compaction and1024body patches. No volumetric soil or persistent map-saving claim.",
+    "damage": "Existing localized damage and original solid collision hulls; no structural soft-body destruction or detached wheels.",
+    "models": "Original procedural vehicle approximations; no coachwork geometry change in this pass.",
+    "superseded": "Original code4 QuickDefault73 passed structurally but all12captures were visually rejected for black comb-like marks. Its old-friction control had6incorrect final-time expectations. Candidate2 quick pavement appearance was accepted, but its dirt closeup was rejected for artificial parallel lines; its full body suite passed465/469 with4observation failures caused by resetting pose/grip history after two legitimate early recoveries. Candidate3 observes the settling drop too, retains the original stopping/travel/clearance limits, and requires physically rendered compacted soil with zero painted overlays on soft ground. Candidate2 old-friction control72/73 is preserved separately. The final old-friction diagnostic and its raw failures, if any, remain outside release totals. First material commandlet rejected its RGB pin; the unnamed default pin was verified in engine source and checked successfully. None of these rejected or diagnostic runs contributes to final acceptance totals."
   },
-  "privateEvidenceRoot": "Saved/Pass16-2026-10-28T22-03-23-284Z/FinalCode6"
+  "privateEvidenceRoot": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3",
+  "diagnosticOldFriction": {
+    "releaseGate": false,
+    "pass": true,
+    "observationsUsable": true,
+    "checksPassed": 73,
+    "checksTotal": 73,
+    "freshCapturesActuallyReviewed": 12,
+    "failedChecks": [],
+    "diagnostic": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/LegacyControl/diagnostic.json",
+      "sha256": "2e176c99ffae225f473dec486c1c019d66e3f9b183fd3076fac4e01f538585a6",
+      "bytes": 754
+    },
+    "receipt": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/LegacyControl/receipt.json",
+      "sha256": "54963c98a609cf75c5ba79c5bf43ba3bba269d3a2a619b29cdf1827081a5a8a4",
+      "bytes": 1694
+    },
+    "result": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/LegacyControl/result.json",
+      "sha256": "3655f0aca7f34f81fffa94d9767fc4d8e1e3c443be4b58f0d5ff0410db569f3f",
+      "bytes": 9369
+    },
+    "imageReview": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Review/LegacyControl/observed.json",
+      "sha256": "5157b163b372b28641ac2a6e81e0c3a9e71c70503e04024a47a96123fbc4d0cc",
+      "bytes": 3073
+    },
+    "description": "Old low-friction comparison only. All raw results and any failed explicit speed/travel expectations remain unchanged. All contact, clearance, coefficient and geometry checks pass. Excluded from final acceptance totals."
+  },
+  "diagnosticRolloverRealTime": {
+    "releaseGate": false,
+    "pass": false,
+    "checksPassed": 456,
+    "checksTotal": 465,
+    "failedChecks": [
+      {
+        "case": "rollover vehicle 3 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": -0.031,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 3 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": -0.6044,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 3 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": 0.064,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 4 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": -0.0295,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 4 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": 0.0197,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 6 Pine Ridge -90 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": 0.035,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 6 Pine Ridge 90 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": -0.0298,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 6 Pine Ridge 180 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": 0.0549,
+        "pass": false
+      },
+      {
+        "case": "rollover vehicle 3 Pine Ridge 110 degrees sampled visible body stays within 1.6 inches of ground",
+        "value": -0.3703,
+        "pass": false
+      }
+    ],
+    "capturedPoses": 58,
+    "allCapturesActuallyReviewed": false,
+    "diagnosis": "All58recorded clearances meet the original -4cm limit; nine short real-time windows collected only4-7samples instead of the required8. Failed receipt/results preserved. Final regression uses10Hz fixed simulation and retains the eight-sample minimum, all58poses and every physical threshold. BodyGround39trials remain real-time.",
+    "receipt": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/RolloverRealTimeInsufficientSamples/receipt.json",
+      "sha256": "380fe55f3c89e5aa3cbf33c81ff146f95f237375cf4b61e94e6a3f5942c78016",
+      "bytes": 3368
+    },
+    "result": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/RolloverRealTimeInsufficientSamples/result.json",
+      "sha256": "582310124b831554c56bca6b45005e905c29e4f9793539aa4804848478d9c443",
+      "bytes": 58493
+    },
+    "log": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/RolloverRealTimeInsufficientSamples/game.log",
+      "sha256": "2844f5175b1a921fa58c033072cb0311775d42008e7c8049762a845b7c4f641d",
+      "bytes": 446113
+    },
+    "finalMinimumSamplesPerPose": 14
+  },
+  "diagnosticFullThermalCutoff": {
+    "releaseGate": false,
+    "pass": false,
+    "completedNativeReport": false,
+    "captures": 103,
+    "allCapturesActuallyReviewed": false,
+    "maximumSampledGpuTemperatureC": 77,
+    "receipt": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/FullThermalCutoff/receipt.json",
+      "sha256": "42a6898b4f9fc068a8dbe72725429acb535ea10a68a0a563618e230428f30939",
+      "bytes": 1596
+    },
+    "gpuSamples": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/FullThermalCutoff/gpu.json",
+      "sha256": "985fb4c7bea74d7bb975d09718d8f4b510b124cebd496c6c3fb699a2bb81a27e",
+      "bytes": 29806
+    },
+    "log": {
+      "path": "Saved/Pass17-2026-10-29T23-28-17-741257Z/Candidate3/Validation/FullThermalCutoff/game.log",
+      "sha256": "8bedd36dbdc44acb6170c9471d30acd701268b45a25dddb2f8c390df053d9331",
+      "bytes": 262130
+    },
+    "description": "The77Cwatchdog closed the unpaced fixed-timestep Full attempt before completion. That failed attempt is excluded. Final Full uses the same executable, fixed0.05sdelta and allchecks, with engine paced bUseFixedFrameRate20 verified at runtime and1280x720 capture resolution. No driver/hardware/player graphics setting is changed."
+  }
 }

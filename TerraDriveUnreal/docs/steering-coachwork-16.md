@@ -1,6 +1,6 @@
 # Steering and front coachwork pass 16
 
-This pass addresses wheels apparently stopping at full steering lock, the G580/G63 hood/front proportions and crooked door shut lines, the pinched Wrangler bonnet, and removal of Winter Expedition. The final staged Windows package passes 3,331 native and 1,643 portable checks, with 434 fresh captures actually reviewed; [current validation](validation-native.md) binds that evidence to the exact package.
+This pass addresses wheels apparently stopping at full steering lock, the G580/G63 hood/front proportions and crooked door shut lines, the pinched Wrangler bonnet, and removal of Winter Expedition. Its historical pass16 package passed 3,331 native and 1,643 portable checks, with 434 captures actually reviewed. Those historical counts describe that package; [current validation](validation-native.md) records the later rollover-contact pass17 executable.
 
 ## Tire contact and steering
 

@@ -1,4 +1,5 @@
 #include "TerraWorld.h"
+#include "TerraBodyGround.h"
 #include "TerraSimCore.h"
 #include "TerraSoilVariation.h"
 #include "TerraSoilMeshComponent.h"
@@ -30,10 +31,12 @@ constexpr int Div = 64;
 constexpr float TileCM = 400, CellCM = 6.25f;
 constexpr float CellArea = .0625f*.0625f;
 uint16 StoreSoilHeading(FVector2D Direction){
-  return uint16(FMath::Clamp(FMath::RoundToInt((FMath::Atan2(Direction.Y,Direction.X)+PI)*(65535.f/(2*PI))),0,65535));
+  if(Direction.IsNearlyZero())return 65535; // Body compaction has no tire tread direction.
+  return uint16(FMath::Clamp(FMath::RoundToInt((FMath::Atan2(Direction.Y,Direction.X)+PI)*(65534.f/(2*PI))),0,65534));
 }
 FVector2D ReadSoilHeading(uint16 Heading){
-  const float Angle=Heading*((2*PI)/65535.f)-PI;
+  if(Heading==65535)return FVector2D::ZeroVector;
+  const float Angle=Heading*((2*PI)/65534.f)-PI;
   return FVector2D(FMath::Cos(Angle),FMath::Sin(Angle));
 }
 float Smooth(float A, float B, float X) {
@@ -616,7 +619,7 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
 }
 void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
                          float Width, float Length, float Slip, float Speed,
-                         float Dt) {
+                         float Dt,bool BodyContact) {
   auto S = Sample(P);
   if (S.MaxSink <= 0 || Load < 50)
     return;
@@ -631,8 +634,9 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   const auto CenterForm=TerraSoil::Variation(P.X,P.Y,S.Surface,1,Slip,S.Churn);
   const float Ordinary=TerraSim::SoilTarget(1,Load,Width,Length,Slip,0),
               Churned=TerraSim::SoilTarget(1,Load,Width,Length,Slip,1);
-  const float Target=FMath::Min(S.MaxSink,S.MaxSink*FMath::Lerp(Ordinary,Churned,S.Churn)*CenterForm.Strength);
-  const float GrooveOuter=TerraSim::GrooveOuterHalfWidth(HalfW*.01f,Target)*100;
+  const float Target=BodyContact?TerraSim::BodyImpressionDepth(S.Surface,S.MaxSink,Load,Width,Length):
+      FMath::Min(S.MaxSink,S.MaxSink*FMath::Lerp(Ordinary,Churned,S.Churn)*CenterForm.Strength);
+  const float GrooveOuter=BodyContact?HalfW+9.f:TerraSim::GrooveOuterHalfWidth(HalfW*.01f,Target)*100;
   auto Bank=TerraSim::SoilBankShape(S.Surface,Width,Target,LooseDirt(P.X,P.Y),Slip);
   FVector2D Heading(F.X,F.Y);
   // A tire's imprint has the same tangent when the vehicle reverses. Select
@@ -699,14 +703,16 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
             T->Churn[A]=TerraSim::SoilChurnDose(T->Churn[A],Slip,Speed,Dt,Along*Across);
             MaximumDose=FMath::Max(MaximumDose,T->Churn[A]);
             const float NodeLimit=T->SinkLimit[A];
-            const float NodeTarget=FMath::Min(NodeLimit,NodeLimit*FMath::Lerp(Ordinary,Churned,T->Churn[A])*Form.Strength);
+            const float NodeTarget=BodyContact?FMath::Min(TerraSim::BodyImpressionDepth(S.Surface,NodeLimit,Load,Width,Length)*Form.Strength,
+                FMath::Min(NodeLimit,S.Surface==0?.025f:.14f)):
+                FMath::Min(NodeLimit,NodeLimit*FMath::Lerp(Ordinary,Churned,T->Churn[A])*Form.Strength);
             const float Delta=TerraSim::SoilCutDepth(T->Delta[A]*.01f,NodeTarget,Edge,Response)*100;
             T->Delta[A] -= Delta;
             Removed += Delta * .01 * CellArea;
             T->Packing[A] =
                 FMath::Clamp(T->Packing[A]+(1-T->Packing[A])*Response*Edge,0.f,1.f);
             const float Influence=FMath::Clamp(Response*Edge*2,0.f,1.f);
-            T->UV[A]=(T->UV[A]*(1-Influence)+Heading*Influence).GetSafeNormal();
+            T->UV[A]=BodyContact?FVector2D::ZeroVector:(T->UV[A]*(1-Influence)+Heading*Influence).GetSafeNormal();
             T->Dirty = true;
           } else {
             const float NodeWidth=Bank.width*Form.BankWidth;
@@ -746,7 +752,7 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
       if(Capacity<=.0001f)continue;
       const float Add=FMath::Min(float(Available*C.W/Sum/CellArea*100),Capacity);
       C.T->Delta[C.I]+=Add;
-      C.T->UV[C.I]=Heading;
+      C.T->UV[C.I]=BodyContact?FVector2D::ZeroVector:Heading;
       C.T->Churn[C.I]=FMath::Max(C.T->Churn[C.I],MaximumDose*.60f);
       C.T->Dirty=true;
       ThisPass+=Add*.01*CellArea;
@@ -756,6 +762,11 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   DepressedVolume += Removed;
   DisplacedVolume += Placed;
   CompactedVolume += Removed - Placed;
+  // Existing body scuffs follow subsequent tire/body excavation instead of
+  // remaining suspended above a newly lowered ground patch.
+  for(int I=0;I<BodyMarks.Num();++I)if(FVector::DistSquared2D(BodyMarks[I].Point,P)<FMath::Square(Radius+BodyMarks[I].Length)){
+    DirtyBodyMarkChunks.Add(I/32);BodyMarksDirty=true;
+  }
   if(S.Surface==0||S.Surface==3)CrushPlants(P,F,HalfW,HalfL,FMath::Clamp(Load/3500.f,0.f,1.f));
   for(int X=FMath::FloorToInt((P.X-Radius)/TileCM)-1;X<=FMath::FloorToInt((P.X+Radius)/TileCM);++X)
     for(int Y=FMath::FloorToInt((P.Y-Radius)/TileCM)-1;Y<=FMath::FloorToInt((P.Y+Radius)/TileCM);++Y){
@@ -1085,6 +1096,7 @@ void ATerraWorld::Tick(float Dt) {
   if (VisualTimer > .08f) {
     VisualTimer = 0;
     if(MarksDirty||(!TireMarks.IsEmpty()&&ThrottleMarkRefresh++%4==0))RebuildTireMarks();
+    if(BodyMarksDirty)RebuildBodyMarks();
     int Count = 0;
     for (auto &Pair : Detail)
       if (Pair.Value.Dirty && Count++ < 8)
@@ -1147,6 +1159,10 @@ void ATerraWorld::ResetSoil() {
   SoilCache.Empty();
   TireMarks.Empty();NextMark=0;SkidMarkCount=SoftMarkCount=0;BreakTireMarks();
   if(TireMarkMesh)TireMarkMesh->ClearAllMeshSections();
+  BodyMarks.Empty();BodyMarkSequence=0;NextBodyMark=0;BodyMarksDirty=false;
+  DirtyBodyMarkChunks.Empty();
+  BodyScrapeCount=BodyImpressionCount=0;
+  if(BodyMarkMesh)BodyMarkMesh->ClearAllMeshSections();
   for (auto &P : Ground)
     RebuildGround(P.Key);
   DepressedVolume = DisplacedVolume = CompactedVolume = 0;

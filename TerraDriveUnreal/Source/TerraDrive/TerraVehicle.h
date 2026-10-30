@@ -18,6 +18,10 @@ class UMaterialInstanceDynamic;
 class UPhysicalMaterial;
 class UProceduralMeshComponent;
 struct FTerraDamageVisualCache;
+struct FTerraBodyGroundContact {
+  FVector Point=FVector::ZeroVector,Normal=FVector::UpVector,Tangent=FVector::ForwardVector;
+  float ImpulseNS=0,Speed=0,Alignment=0;
+};
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35;
@@ -106,6 +110,8 @@ public:
   int ContactCount = 0, RouteIndex = -1, GateIndex = 0;
   int TerrainBodyHits=0,ObjectBodyHits=0;
   float TerrainImpactMPS=0,ObjectImpactMPS=0;
+  float BodyGroundSlidingFriction=.10f,BodyGroundStaticFriction=.12f;
+  int BodyGroundContactCount=0;
   float RouteTime = 0, LastTireForceN = 0;
   FString RouteStatus;
   int SprayEmitted = 0, SprayExpired = 0;
@@ -179,7 +185,7 @@ public:
   FVector GarageViewState() const { return FVector(GarageYaw,GaragePitch,GarageDistance); }
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
   float BumpTravel(bool Front) const;
-  void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0; }
+  void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0;BodyGroundContactCount=0;PendingBodyGroundContacts.Reset(); }
   static constexpr int VehicleCount=9;
   TerraSim::UpgradeSetup Builds[VehicleCount];
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> BrakeLamps;
@@ -194,6 +200,10 @@ private:
   bool PrepareDamageMesh();
   void ConfigureCoachworkCollision();
   float NextBodyDiagnosticTime=0;
+  TArray<FTerraBodyGroundContact> PendingBodyGroundContacts;
+  void UpdateBodyGroundGrip();
+  void QueueBodyGroundContact(FVector Impulse,const FHitResult& Hit);
+  void ProcessBodyGroundContacts(float Dt);
   TSharedPtr<FJsonObject> Spec;
   TArray<FTerraParcel> Parcels;
   FVector Anchor;

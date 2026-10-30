@@ -222,6 +222,7 @@ for name, color in [('mud',[.19,.12,.07]), ('water',[.40,.60,.68]), ('snow',[.90
 material('M_Sky', [.38,.58,.78], sky=True)
 exec(compile(open(os.path.join(root,'Tools','sky-material.py'),encoding='utf8').read(),'sky-material.py','exec'),globals())
 exec(compile(open(os.path.join(root,'Tools','tire-mark-materials.py'),encoding='utf8').read(),'tire-mark-materials.py','exec'),globals())
+exec(compile(open(os.path.join(root,'Tools','body-ground-material.py'),encoding='utf8').read(),'body-ground-material.py','exec'),globals())
 material('Native_SuspensionSteel',[.035,.05,.055],.48,.72)
 material('Native_RunningGearRubber',[.012,.016,.018],.86,.02)
 material('Native_Chrome',[.45,.53,.57],.25,.88)
