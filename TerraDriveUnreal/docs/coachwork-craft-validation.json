@@ -1,0 +1,293 @@
+{
+  "revision": 18,
+  "kind": "source-geometry",
+  "nativeAcceptance": false,
+  "displayUnits": "imperial",
+  "checksPassed": 24,
+  "checksTotal": 24,
+  "sourceFiles": [
+    {
+      "path": "Tools/coachwork-craft.mjs",
+      "sha256": "3e69589d465f920810558d42b0fce68902dfdb5d81f0c74fb8120e4ad6b4d16b"
+    },
+    {
+      "path": "Tools/vehicle-cabin.mjs",
+      "sha256": "91a158e482bceb6a6b3622d9381284b993386fd6c3e9994fd6df699cc5f279b6"
+    },
+    {
+      "path": "Tools/vehicle-fidelity.mjs",
+      "sha256": "a96666739a36d1b0559fe78cc3a7ba0d694d1d7552d1d761afe5a3aa7f1c8d9a"
+    },
+    {
+      "path": "Tools/vehicle-realism.mjs",
+      "sha256": "847d943a5ec1458768aad2c1c34e7105e0f641345b6d9a18b1a17aa7506ecb55"
+    },
+    {
+      "path": "Tools/suv-body.mjs",
+      "sha256": "8927ddb56aee6ffe66433ac1560ddada6268665b8c6b21e4135a17c874ba18ae"
+    },
+    {
+      "path": "Tools/civic-body.mjs",
+      "sha256": "190c3cab3cb74d1b498cb7c9d205a805740c17417cafdacaa701d6d224ca4b1b"
+    },
+    {
+      "path": "Tools/urus-body.mjs",
+      "sha256": "8b32eccacfdce21bee28503f4955caa183a8f02d88fe1b1f333dac4e2935e5f9"
+    },
+    {
+      "path": "Tools/urus-cabin.mjs",
+      "sha256": "c03fa3c3eea6f8be09411b3786141802bd58d474d54ccca5d4e92ac535553cc8"
+    },
+    {
+      "path": "Tools/hummer-body.mjs",
+      "sha256": "447aab3ed6984ec6fa006810b2205b5b151a0ddbbb97b971e04fae6a55850cd9"
+    },
+    {
+      "path": "Tools/sprinter-body.mjs",
+      "sha256": "15841680a62c25b25ed20c31045892e1b911aaa41f94cf64b9e5c96d65f3cc39"
+    },
+    {
+      "path": "Tools/mercedes-gclass.mjs",
+      "sha256": "b9d648d2a6f3244310da5eed226edba9d73c27384ffc5862d00156468979be13"
+    },
+    {
+      "path": "Tools/earthcruiser-exp.mjs",
+      "sha256": "3c7434e5d4d228c7c11ef8e156cfcd0906fd3f9f8c0dddc197de1b6721c2f2cf"
+    }
+  ],
+  "observed": [
+    {
+      "vehicle": "urus-performante",
+      "checks": 12
+    },
+    {
+      "vehicle": "mercedes-g580-ev",
+      "checks": 6
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "checks": 6
+    }
+  ],
+  "checks": [
+    {
+      "vehicle": "urus-performante",
+      "name": "entire bonnet crown edge shares the actual shoulder boundary -1",
+      "pass": true,
+      "value": {
+        "maximumGapIn": 0.000005378252018357113,
+        "edgeSamples": 11
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "whole front crown edge meets the actual fascia sheet -1",
+      "pass": true,
+      "value": {
+        "samples": 37,
+        "maximumGapIn": 0.012869290780786247,
+        "misses": []
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "formed lamp cover has a visible painted rim around its whole perimeter -1",
+      "pass": true,
+      "value": {
+        "rimEdges": 13,
+        "misses": []
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "clear lamp cover precedes actual recessed optics -1",
+      "pass": true,
+      "value": {
+        "depthIn": 0.7423687967956721,
+        "firstSolid": "urus-recessed-projector-reflector"
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "rear molded lens covers the live red light guide -1",
+      "pass": true,
+      "value": {
+        "hitLayers": 7
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "entire bonnet crown edge shares the actual shoulder boundary 1",
+      "pass": true,
+      "value": {
+        "maximumGapIn": 0.000005378252018357113,
+        "edgeSamples": 11
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "whole front crown edge meets the actual fascia sheet 1",
+      "pass": true,
+      "value": {
+        "samples": 37,
+        "maximumGapIn": 0.012807381583931566,
+        "misses": []
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "formed lamp cover has a visible painted rim around its whole perimeter 1",
+      "pass": true,
+      "value": {
+        "rimEdges": 13,
+        "misses": []
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "clear lamp cover precedes actual recessed optics 1",
+      "pass": true,
+      "value": {
+        "depthIn": 0.7423687971423065,
+        "firstSolid": "urus-recessed-projector-reflector"
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "rear molded lens covers the live red light guide 1",
+      "pass": true,
+      "value": {
+        "hitLayers": 7
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "both open headlamp pods have no painted backing in their optical chambers",
+      "pass": true,
+      "value": {
+        "paintOverlap": []
+      }
+    },
+    {
+      "vehicle": "urus-performante",
+      "name": "four dashboard vents contain real open hexagonal rims",
+      "pass": true,
+      "value": {
+        "vents": 4
+      }
+    },
+    {
+      "vehicle": "mercedes-g580-ev",
+      "name": "formed headlamp surround is wider than the round lens -1",
+      "pass": true,
+      "value": {
+        "widthIn": 12.204725676634181,
+        "heightIn": 10.551181365185835
+      }
+    },
+    {
+      "vehicle": "mercedes-g580-ev",
+      "name": "mirror optical face points toward the rear -1",
+      "pass": true,
+      "value": {
+        "minimumRearwardNormal": 0.9984304308891296,
+        "probeHits": 1
+      }
+    },
+    {
+      "vehicle": "mercedes-g580-ev",
+      "name": "formed headlamp surround is wider than the round lens 1",
+      "pass": true,
+      "value": {
+        "widthIn": 12.204725676634181,
+        "heightIn": 10.551181365185835
+      }
+    },
+    {
+      "vehicle": "mercedes-g580-ev",
+      "name": "mirror optical face points toward the rear 1",
+      "pass": true,
+      "value": {
+        "minimumRearwardNormal": 0.9984304308891296,
+        "probeHits": 1
+      }
+    },
+    {
+      "vehicle": "mercedes-g580-ev",
+      "name": "three lower intakes contain open radiator cells with physical walls",
+      "pass": true,
+      "value": {
+        "cells": [
+          83,
+          18,
+          18
+        ]
+      }
+    },
+    {
+      "vehicle": "mercedes-g580-ev",
+      "name": "new detail retains the existing 450000-triangle exterior/cabin budget",
+      "pass": true,
+      "value": {
+        "triangles": 434424
+      }
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "name": "formed headlamp surround is wider than the round lens -1",
+      "pass": true,
+      "value": {
+        "widthIn": 12.204725676634181,
+        "heightIn": 10.551181365185835
+      }
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "name": "mirror optical face points toward the rear -1",
+      "pass": true,
+      "value": {
+        "minimumRearwardNormal": 0.9984304308891296,
+        "probeHits": 1
+      }
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "name": "formed headlamp surround is wider than the round lens 1",
+      "pass": true,
+      "value": {
+        "widthIn": 12.204725676634181,
+        "heightIn": 10.551181365185835
+      }
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "name": "mirror optical face points toward the rear 1",
+      "pass": true,
+      "value": {
+        "minimumRearwardNormal": 0.9984304308891296,
+        "probeHits": 1
+      }
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "name": "three lower intakes contain open radiator cells with physical walls",
+      "pass": true,
+      "value": {
+        "cells": [
+          128,
+          59,
+          59
+        ]
+      }
+    },
+    {
+      "vehicle": "mercedes-amg-g63",
+      "name": "new detail retains the existing 450000-triangle exterior/cabin budget",
+      "pass": true,
+      "value": {
+        "triangles": 448763
+      }
+    }
+  ],
+  "pass": true
+}

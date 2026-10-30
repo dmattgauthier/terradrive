@@ -71,7 +71,8 @@ export function buildSprinter(view, geometry) {
       const t=clamp((z-2.170)/(nose-2.170),0,1),w=interpolate(bodyStations,z,1)-.055;
       const edge=.821-.225*THREE.MathUtils.smoothstep(t,0,1),fade=Math.sin(t*Math.PI)**2;
       const center=1-THREE.MathUtils.smoothstep(Math.abs(x),edge-.040,edge+.062);
-      return (.026*center+.017*(1-(x/w)**2)**2)*fade;
+      const pressedEdge=.0055*Math.exp(-(((Math.abs(x)-edge+.038)/.030)**2));
+      return (.024*center+.016*(1-(x/w)**2)**2+pressedEdge)*fade;
     };
     const vanSkin=lowerShell(g,m.paint,bodyStations,wb,.426,.442,.394,.024,.015,.055,{cabin:{rear:tail+.042,front:2.170,half:.875}});
     // The bonnet's stamped center and shoulder rolls belong to its continuous

@@ -26,8 +26,26 @@ const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeDa
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
 globalThis.document={createElement(){return {width:0,height:0,getContext:()=>({fillRect(){},fillText(){},putImageData(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})})}}};
 const mats=[],matIds=new Map(),assets=[],tints=new Map();
+// Retain existing material IDs when geometry changes. Otherwise adding one
+// seat fabric renumbers every scenery OBJ and forces unrelated bulk imports.
+const materialKeys=['color','roughness','metallic','opacity','vertexColors','diffuse','alpha','alphaTest','clearcoat','coatRoughness','emissive','role','automotive','automotiveOwner','normal','roughMap'];
+const materialKey=d=>JSON.stringify(materialKeys.map(k=>d[k]??null)),previousMaterials=new Map();
+let nextMaterial=0;
+if(fs.existsSync(path.join(out,'import.json'))){
+ for(const m of JSON.parse(fs.readFileSync(path.join(out,'import.json'),'utf8')).materials){
+  const key=materialKey(m);if(!previousMaterials.has(key))previousMaterials.set(key,[]);
+  previousMaterials.get(key).push(m.id);nextMaterial=Math.max(nextMaterial,Number(m.id.slice(2))+1);
+ }
+}
 const automotiveRoles=new Set(['paint','carbon','black','rubber','metal','satinMetal','plastic','alcantara','wheel','rotor','brakeSteel']);
-function matId(m){if(m.userData.automotive&&!automotiveRoles.has(m.userData.automotive))throw new Error('Unmapped automotive finish: '+m.userData.automotive);if(matIds.has(m.uuid))return matIds.get(m.uuid);const id='M_'+String(mats.length).padStart(3,'0');matIds.set(m.uuid,id);mats.push({id,color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors,diffuse:m.map?.userData?.source||null,alpha:m.alphaMap?.userData?.source||null,alphaTest:m.alphaTest||0,clearcoat:m.clearcoat||0,coatRoughness:m.clearcoatRoughness??.15,emissive:m.emissive?.toArray().map(v=>v*(m.emissiveIntensity??1))||[0,0,0],role:m.userData.nativeRole||'',automotive:m.userData.automotive||'',automotiveOwner:m.userData.automotiveOwner||'',normal:m.normalMap?.userData?.source||null,roughMap:m.roughnessMap?.userData?.source||null});return id;}
+function matId(m){
+ if(m.userData.automotive&&!automotiveRoles.has(m.userData.automotive))throw new Error('Unmapped automotive finish: '+m.userData.automotive);
+ if(matIds.has(m.uuid))return matIds.get(m.uuid);
+ const record={color:m.color?.toArray()||[1,1,1],roughness:m.roughness??.85,metallic:m.metalness??0,opacity:m.transparent?m.opacity:1,vertexColors:!!m.vertexColors,diffuse:m.map?.userData?.source||null,alpha:m.alphaMap?.userData?.source||null,alphaTest:m.alphaTest||0,clearcoat:m.clearcoat||0,coatRoughness:m.clearcoatRoughness??.15,emissive:m.emissive?.toArray().map(v=>v*(m.emissiveIntensity??1))||[0,0,0],role:m.userData.nativeRole||'',automotive:m.userData.automotive||'',automotiveOwner:m.userData.automotiveOwner||'',normal:m.normalMap?.userData?.source||null,roughMap:m.roughnessMap?.userData?.source||null};
+ const available=previousMaterials.get(materialKey(record));
+ const id=available?.length?available.shift():'M_'+String(nextMaterial++).padStart(3,'0');
+ matIds.set(m.uuid,id);mats.push({id,...record});return id;
+}
 function exportObj(name,group,excludeCanvas=false){
  group.updateMatrixWorld(true);let lines=['# Converted directly from Terra Drive 1.15 source. Metres baked to Unreal centimetres.'],offset=1,slots=[];
  group.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;const n=obj.isInstancedMesh?obj.count:1;
@@ -140,7 +158,7 @@ for(const g of [...placements,...environment.placements])if(g.instances.some(i=>
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
 for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);m.instanceTint=tinted.has(m.id);}
 const manifest={version:'1.15.0',nativeRevision:'body-circle-fab-2',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base,fabScenery:fabScenery(root,terrain,routes,quarry.base),loopFrames:Array.from({length:25},(_,i)=>{const f=challengeLoopFrame(i*Math.PI*2/24),p=f.point,n=f.normal,t=f.tangent;return {p:[p.z*100,-p.x*100,p.y*100],n:[n.z,-n.x,n.y],t:[t.z,-t.x,t.y]};})};
-manifest.nativeRevision='steering-coachwork-proving-ground-16';
+manifest.nativeRevision='reference-coachwork-18';
 manifest.terrainGrade=terrain.gradeVersion;
 manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,assetCounts:trail.assetCounts,routeIndex:8};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));

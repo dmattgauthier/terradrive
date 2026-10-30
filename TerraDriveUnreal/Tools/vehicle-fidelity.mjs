@@ -19,10 +19,12 @@ function spoke(g,material,side,face,r,angle,branch,kind,polished=false){
   const vertices=[],indices=[],steps=16,wide=kind==='hummer'?.135:kind==='jeep'?.085:kind==='bronco'?.060:.040;
   for(let row=0;row<=steps;row++){
     const t=row/steps,rad=r*(.27+t*.685),spread=branch*r*(kind==='hummer'?.095:.22)*Math.pow(t,1.35);
-    const w=r*wide*(.72+.38*Math.sin(t*Math.PI))*(polished?.45:1);
+    const w=r*wide*(.72+.38*Math.sin(t*Math.PI))*(polished?.67:1);
     const dish=side*(.016+.023*Math.sin(t*Math.PI*.85));
     for(const [across,thickness] of [[-1,0],[1,0],[1,-1],[-1,-1]]){
-      const tangent=spread+across*w,depth=polished?.024:thickness*.033;
+      // A machined face is a thin surface on the casting, not a second spoke
+      // floating almost an inch ahead of the alloy. Give it real thickness.
+      const tangent=spread+across*w,depth=polished?.0018+thickness*.0015:thickness*.033;
       vertices.push(face+dish+side*depth,Math.cos(angle)*rad-Math.sin(angle)*tangent,Math.sin(angle)*rad+Math.cos(angle)*tangent);
     }
   }

@@ -1,10 +1,10 @@
 {
-  "revision": "steering-coachwork-proving-ground-16",
+  "revision": "reference-coachwork-18",
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 493882,
-      "normalizedFraction": 0.9999817770236615,
+      "vertices": 535734,
+      "normalizedFraction": 0.9999869338141689,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -22,8 +22,8 @@
     },
     {
       "vehicle": "Ford Bronco Badlands",
-      "vertices": 465047,
-      "normalizedFraction": 0.9999784967970979,
+      "vertices": 508883,
+      "normalizedFraction": 0.9999921396470308,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -45,8 +45,8 @@
     },
     {
       "vehicle": "Honda Civic Sport",
-      "vertices": 310942,
-      "normalizedFraction": 0.999881006747239,
+      "vertices": 321780,
+      "normalizedFraction": 0.9998850146062527,
       "visibility": [
         {
           "pane": "open lower mesh",
@@ -64,8 +64,8 @@
     },
     {
       "vehicle": "Mercedes-Benz Sprinter 2500",
-      "vertices": 594015,
-      "normalizedFraction": 0.9999882157857967,
+      "vertices": 612122,
+      "normalizedFraction": 0.9999885643711548,
       "visibility": [
         {
           "pane": "waist swage",
@@ -82,8 +82,8 @@
     },
     {
       "vehicle": "GMC HUMMER EV SUV",
-      "vertices": 382196,
-      "normalizedFraction": 0.9998456289443113,
+      "vertices": 404004,
+      "normalizedFraction": 0.9998242591657508,
       "visibility": [
         {
           "pane": "recessed bonnet vent",
@@ -104,8 +104,8 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 789687,
-      "normalizedFraction": 0.9996302332443108,
+      "vertices": 804216,
+      "normalizedFraction": 0.999636913466034,
       "visibility": [
         {
           "pane": "windshield",
@@ -154,8 +154,8 @@
     },
     {
       "vehicle": "EarthCruiser EXP",
-      "vertices": 219678,
-      "normalizedFraction": 1,
+      "vertices": 225124,
+      "normalizedFraction": 0.9999822320143565,
       "visibility": [],
       "tire": {
         "revision": 3,
@@ -171,8 +171,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 219678,
-          "triangles": 329064,
+          "vertices": 225124,
+          "triangles": 339032,
           "materialObjects": 26,
           "bounds": [
             [
@@ -198,7 +198,7 @@
           },
           {
             "pane": "cab windscreen",
-            "firstDistanceM": 0.13153384362208786
+            "firstDistanceM": 0.13152336170012902
           }
         ],
         "tests": [
@@ -210,13 +210,13 @@
           {
             "case": "unit source shading normals",
             "pass": true,
-            "normalizedFraction": 1
+            "normalizedFraction": 0.9999822320143565
           },
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 329064,
-            "vertices": 219678,
+            "triangles": 339032,
+            "vertices": 225124,
             "materialObjects": 26
           },
           {
@@ -341,7 +341,7 @@
             "case": "cab windscreen has a genuine first-hit glass opening",
             "pass": true,
             "firstMaterialRole": "glass",
-            "firstDistanceM": 0.13153384362208786
+            "firstDistanceM": 0.13152336170012902
           },
           {
             "case": "cab-over pass-through is not filled by an opaque cab wall",
@@ -377,7 +377,7 @@
             "case": "cab-over front has formed depth rather than a single box face",
             "pass": true,
             "cabUpperZM": 2.1851617033497193,
-            "cabLowerZM": 2.41845758709912
+            "cabLowerZM": 2.420128478422117
           }
         ],
         "limitations": [
@@ -389,8 +389,8 @@
     },
     {
       "vehicle": "Mercedes-Benz G 580 with EQ Technology",
-      "vertices": 284868,
-      "normalizedFraction": 1,
+      "vertices": 317516,
+      "normalizedFraction": 0.9999874022096524,
       "visibility": [],
       "tire": {
         "revision": 15,
@@ -406,17 +406,17 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 284868,
-          "triangles": 405008,
-          "materialObjects": 24,
+          "vertices": 317516,
+          "triangles": 434424,
+          "materialObjects": 25,
           "bounds": [
             [
-              -1.096000000094995,
+              -1.091744303703308,
               0.2505000013113022,
               -2.4064909040192304
             ],
             [
-              1.096000000094995,
+              1.091744303703308,
               1.9870000005364419,
               2.3350000000474975
             ]
@@ -469,14 +469,14 @@
           {
             "case": "unit source shading normals",
             "pass": true,
-            "normalizedFraction": 1
+            "normalizedFraction": 0.9999874022096524
           },
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 405008,
-            "vertices": 284868,
-            "materialObjects": 24
+            "triangles": 434424,
+            "vertices": 317516,
+            "materialObjects": 25
           },
           {
             "case": "body datum agrees with the mechanical CG and axle midpoint",
@@ -548,7 +548,7 @@
           {
             "case": "mirror and external trim span stays within the selected envelope",
             "pass": true,
-            "sourceWidthWithMirrorsM": 2.19200000018999,
+            "sourceWidthWithMirrorsM": 2.183488607406616,
             "referenceM": 2.187,
             "toleranceM": 0.06,
             "referenceStatus": "manufacturer mirror width"
@@ -641,7 +641,7 @@
           {
             "case": "bonnet has restrained physical transverse crown",
             "pass": true,
-            "crownM": 0.04265906954735588
+            "crownM": 0.04493706281488219
           },
           {
             "case": "drawn door sheet has physical shoulder relief",
@@ -695,8 +695,8 @@
     },
     {
       "vehicle": "Mercedes-AMG G 63",
-      "vertices": 296187,
-      "normalizedFraction": 1,
+      "vertices": 334931,
+      "normalizedFraction": 0.9999880572416409,
       "visibility": [],
       "tire": {
         "revision": 15,
@@ -712,9 +712,9 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 296187,
-          "triangles": 416299,
-          "materialObjects": 23,
+          "vertices": 334931,
+          "triangles": 448763,
+          "materialObjects": 24,
           "bounds": [
             [
               -1.098000000026077,
@@ -775,14 +775,14 @@
           {
             "case": "unit source shading normals",
             "pass": true,
-            "normalizedFraction": 1
+            "normalizedFraction": 0.9999880572416409
           },
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 416299,
-            "vertices": 296187,
-            "materialObjects": 23
+            "triangles": 448763,
+            "vertices": 334931,
+            "materialObjects": 24
           },
           {
             "case": "body datum agrees with the mechanical CG and axle midpoint",
@@ -947,7 +947,7 @@
           {
             "case": "bonnet has restrained physical transverse crown",
             "pass": true,
-            "crownM": 0.04184931231983424
+            "crownM": 0.03833667198064039
           },
           {
             "case": "drawn door sheet has physical shoulder relief",

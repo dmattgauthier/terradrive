@@ -1,4 +1,5 @@
 // Native-only coachwork fork; browser source remains immutable.
+import {panelJoint,roundSUVLamp,cellularGrille} from './coachwork-craft.mjs';
 export function buildSUV(view, geometry, bronco) {
   const { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText } = geometry;
 
@@ -96,8 +97,8 @@ export function buildSUV(view, geometry, bronco) {
       mesh.geometry.dispose();mesh.geometry=skin;mesh.name=(bronco?'bronco':'wrangler')+'-sculpted-door-sheet-'+(side>0?'left':'right');
     }
     const sideSeam=(side,points,radius=.0021)=>{
-      const curve=new THREE.CatmullRomCurve3(points.map(([z,y])=>v3(z,y,0)),false,'centripetal');
-      const sampled=Array.from({length:101},(_,i)=>{const point=curve.getPoint(i/100);return [side*(skinX(point.y,point.x)+.0013),point.y,point.x];});
+      const curve=panelJoint(points,.025);
+      const sampled=Array.from({length:181},(_,i)=>{const point=curve.getPoint(i/180);return [side*(skinX(point.y,point.x)+.0016),point.y,point.x];});
       curvedLine(g,m.dark,sampled,radius);
     };
     // JL bonnet and matching side sheets stay broad through the cowl and
@@ -548,11 +549,7 @@ export function buildSUV(view, geometry, bronco) {
         const rim=roundedOutline([[x-.063,.901,0],[x+.063,.901,0],[x+.063,1.184,0],[x-.063,1.184,0]],.025).map(([x,y])=>[x,y]);
         perforatedFace(g,m.wranglerGrilleBezel,rim,[slot],(x,y)=>{const p=grillePoint(x,y);p[2]+=.0015;return p;},.024);
         recessedOpening(g,m.wranglerGrilleBezel,m.black,slot,grillePoint,.036,.13);
-        for(let row=0;row<5;row++) {
-          const yy=.935+row*.049;
-          const cell=[[-.038,-.010],[-.023,-.020],[.023,-.020],[.038,-.010],[.038,.010],[.023,.020],[-.023,.020],[-.038,.010],[-.038,-.010]];
-          curvedLine(g,m.black,cell.map(([a,b])=>[x+a,yy+b,grillePoint(x+a,yy+b)[2]-.022]),.0030);
-        }
+        cellularGrille(g,m.grille,slot,(a,b)=>{const p=grillePoint(a,b);p[2]-=.018;return p;},{pitch:.024,web:.0017,depth:.009,name:'wrangler-my24-recessed-radiator-mesh-'+i});
       }
       for(const side of [-1,1])holes.push(Array.from({length:64},(_,i)=>[side*.636+Math.cos(i*Math.PI/32)*.137,1.029+Math.sin(i*Math.PI/32)*.137]));
       const surround=perforatedFace(g,m.paint,outline,[insert],grillePoint);surround.name='wrangler-my24-painted-grille-surround';
@@ -578,8 +575,8 @@ export function buildSUV(view, geometry, bronco) {
     }
     for (const side of [-1, 1]) {
       const lampX = side * (bronco ? 0.638 : 0.636);
-      view._roundHeadlamp(lampX, 1.029, nose + (bronco ? 0.007 : 0.015), bronco ? 0.131 : 0.124, bronco);
-      if (bronco) roundedBox(g, m.white, lampX - side * 0.095, 1.029, nose + 0.076, 0.238, 0.019, 0.011, 0.003);
+      roundSUVLamp(g,m,lampX,1.029,nose+(bronco?.007:.015),bronco?.131:.124,bronco);
+      if (bronco) roundedBox(g, m.white, lampX - side * 0.095, 1.029, nose + 0.065, 0.238, 0.014, 0.008, 0.003);
       {
         const lampFirstChild=g.children.length;
         const x=side*(half-.091),y=bronco?1.034:1.053,w=bronco?.180:.230,h=bronco?.371:.250;

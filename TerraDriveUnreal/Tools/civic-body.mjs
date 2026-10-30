@@ -1,4 +1,5 @@
 // Native-only coachwork fork; browser source remains immutable.
+import {panelJoint} from './coachwork-craft.mjs';
 export function buildCivic(view, geometry) {
   const { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText } = geometry;
 
@@ -147,7 +148,7 @@ export function buildCivic(view, geometry) {
       return [side*(x-sculpt(y,z)+offset),y,z];
     };
     const sideSeam=(side,points,width=.0019,closed=false)=>{
-      const curve=new THREE.CatmullRomCurve3(points.map(([y,z])=>v3(0,y,z)),closed),count=Math.ceil(curve.getLength()/.012);
+      const curve=panelJoint(points.map(([y,z])=>[0,y,z]),.020,closed),count=Math.ceil(curve.getLength()/.009);
       return surface(g,m.black,2,count,(u,v)=>{
         const p=curve.getPoint(v),t=curve.getTangent(v),d=(u*2-1)*width;
         return sidePoint(side,p.y-t.z*d,p.z+t.y*d,.0018);
@@ -227,8 +228,13 @@ export function buildCivic(view, geometry) {
     };
     // Honda's pre-facelift 11th-generation sedan: pulled-back A pillars,
     // a lightly crowned roof and a separate upswept boot, not a hatchback.
-    const roofStations=[[-.805,.639,1.343],[-.57,.668,1.365],[-.19,.678,1.376],[.14,.671,1.364],[.405,.642,1.337]];
-    surface(g,m.paint,32,30,(u,v)=>{const z=THREE.MathUtils.lerp(-.805,.405,v),x=u*2-1;return [x*interpolate(roofStations,z,1),interpolate(roofStations,z,2)+.030*(1-x*x),z];},true);
+    const roofStations=[[-.805,.639,1.343],[-.57,.668,1.366],[-.19,.678,1.379],[.14,.671,1.362],[.405,.642,1.337]];
+    surface(g,m.paint,48,48,(u,v)=>{
+      const z=THREE.MathUtils.lerp(-.805,.405,v),x=u*2-1;
+      // The brazed shoulder rolls into the roof; a narrow circular transverse
+      // crown avoids the former nearly flat slab above the side glazing.
+      return [x*interpolate(roofStations,z,1),interpolate(roofStations,z,2)+.027*(1-x*x)+.006*(1-x*x)**3,z];
+    },true).name='civic-compound-roof-crown';
     const ribbon=(material,outer,inner,bulge=.006)=>{
       const path=points=>points.length===2?new THREE.LineCurve3(v3(...points[0]),v3(...points[1])):new THREE.CatmullRomCurve3(points.map(p=>v3(...p)));
       const a=path(outer),b=path(inner);
@@ -245,9 +251,9 @@ export function buildCivic(view, geometry) {
     for (const side of [-1, 1]) {
       const xb=side*.807,xt=side*.691,mirror=p=>[p[0]*side,p[1],p[2]];
       const frontSealIndex=g.children.length;
-      windowPanel(g,m,[[xb,.976,1.010],[xb,.975,-.269],[xt,1.354,-.255],[side*.681,1.334,.327]],.033,.050);
+      windowPanel(g,m,[[xb,.976,1.010],[xb,.975,-.269],[xt,1.354,-.255],[side*.694,1.365,-.035],[side*.681,1.334,.327]],.033,.050);
       g.children[frontSealIndex].name='civic-front-side-seal-'+(side>0?'left':'right');
-      windowPanel(g,m,[[xb,.976,-.330],[side*.806,.987,-1.148],[side*.697,1.321,-.859],[xt,1.355,-.332]],.031,.057);
+      windowPanel(g,m,[[xb,.976,-.330],[side*.806,.987,-1.148],[side*.697,1.321,-.859],[side*.699,1.351,-.579],[xt,1.355,-.332]],.031,.057);
       windowPanel(g,m,[[side*.803,.988,-1.177],[side*.799,1.001,-1.495],[side*.697,1.309,-.899]],.034,.050);
       surface(g,m.paint,6,94,(u,v)=>beltPoint(side,THREE.MathUtils.lerp(-1.583,1.02,v),u),side<0);
       // The principal A-pillar edges are straight from cowl to roof in side

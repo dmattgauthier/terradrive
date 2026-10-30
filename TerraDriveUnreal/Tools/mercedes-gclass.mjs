@@ -5,6 +5,7 @@ import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {T,mesh,box,surface,mappedPolygon,line,lerp,smooth,clamp,station} from './body-surface.mjs';
 import {nativeInterior} from './vehicle-cabin.mjs';
 import {geometryText,refineFactoryWheel} from './vehicle-fidelity.mjs';
+import {cellularGrille} from './coachwork-craft.mjs';
 
 export const GCLASS_LANDMARKS=Object.freeze({
   wheelbase:2.890,frontAxleZ:1.445,rearAxleZ:-1.445,
@@ -141,12 +142,20 @@ function headlight(g,m,x,y,z){
   disc(group,m.black,[0,0,-.017],.151,.035);
   ring(group,m.satinMetal,[0,0,-.003],.145,.004);
   ring(group,m.drl,[0,0,.003],.130,.0065);
-  disc(group,m.chrome,[0,.010,-.001],.058,.014);
-  disc(group,m.optic,[0,.011,.009],.048,.010);
-  // MULTIBEAM optics sit within the circular daytime signature.
-  for(const sx of [-1,1])box(group,m.optic,[sx*.081,-.014,.001],[.024,.033,.015],.005);
-  box(group,m.chrome,[0,-.074,0],[.087,.012,.014],.003);
-  disc(group,m.lens,[0,0,.018],.139,.003);
+  surface(group,m.chrome,48,10,(u,v)=>{
+    const a=u*Math.PI*2,r=.025+.098*v;
+    return[Math.cos(a)*r,Math.sin(a)*r,-.018+.021*(r/.123)**2];
+  },true);
+  disc(group,m.gTrim,[0,0,.002],.116,.003);
+  // The real MULTIBEAM module is a broad rounded rectangular optical unit
+  // across the ring. A small round pupil made the previous G face generic.
+  box(group,m.chrome,[0,.015,.004],[.202,.086,.014],.025);
+  box(group,m.optic,[0,.015,.013],[.175,.061,.010],.020);
+  box(group,m.gTrim,[0,.015,.019],[.150,.042,.003],.013);
+  box(group,m.drl,[0,.015,.022],[.130,.026,.003],.009);
+  for(const sx of [-1,1])box(group,m.optic,[sx*.090,-.048,.006],[.030,.026,.013],.005);
+  for(const y of [-.083,-.072])box(group,m.chrome,[0,y,.008],[.112,.006,.008],.002);
+  surface(group,m.lens,48,10,(u,v)=>{const a=u*Math.PI*2,r=.139*v;return[Math.cos(a)*r,Math.sin(a)*r,.023+.007*(1-v*v)];},true);
   group.name='gclass-round-multibeam-headlight';
 }
 
@@ -289,9 +298,16 @@ export function buildGClass(view,spec=view.spec){
     // Mirror stalks, rounded housings and actual reflective faces.
     const mirrorStart=g.children.length;
     tube(g,trim,[side*.906,1.373,.579],[side*1.016,1.407,.529],.023,12);
-    box(g,paint,[side*1.032,1.426,.498],[.123,.133,.230],.034);
-    box(g,m.chrome,[side*1.094,1.426,.503],[.004,.096,.167],.022);
-    box(g,m.drl,[side*1.038,1.408,.615],[.107,.009,.009],.003);
+    const mirrorContour=rounded([[-.060,-.045],[-.061,.031],[-.033,.060],[.037,.052],[.060,.024],[.058,-.044]],.015,7);
+    const mirrorLoop=new T.CatmullRomCurve3(mirrorContour.map(([x,y])=>new T.Vector3(x,y,0)),true,'centripetal');
+    surface(g,paint,64,18,(u,v)=>{
+      const p=mirrorLoop.getPoint(u),r=Math.cos(v*Math.PI/2);
+      return[side*(1.032+p.x*r),1.426+p.y*r,.397+.216*Math.sin(v*Math.PI/2)];
+    },side<0).name='gclass-sculpted-mirror-shell-'+side;
+    mappedPolygon(g,trim,mirrorContour,(x,y)=>[side*(1.032+x),1.426+y,.396],[],side>0,3);
+    const mirrorGlass=inset(mirrorContour,.83);
+    named(mappedPolygon(g,m.chrome,mirrorGlass,(x,y)=>[side*(1.032+x),1.426+y,.394-.002*(1-(x/.06)**2)],[],side>0,5),'gclass-rear-facing-mirror-glass-'+side);
+    box(g,m.drl,[side*1.038,1.408,.614],[.091,.006,.006],.002);
     rigidRange(g,mirrorStart,[side*1.032,1.426,.498],'gclass-rigid-mirror');
     // Wing-top indicators retain the G's recognizable separate raised pods.
     const indicatorStart=g.children.length,indicatorY=coachworkSourceY(wingJointY(1.969)+.024,1.969);
@@ -352,8 +368,10 @@ export function buildGClass(view,spec=view.spec){
   };
   const hoodY=(x,z)=>{
     const ax=Math.abs(x),across=ax/.758,edge=wingJointY(z)+(ev?.045:.027);
-    const rib=(ev?.0045:.010)*Math.exp(-(((ax-.397)/(ev?.125:.055))**2))*smooth(z,.80,1.06)*(1-smooth(z,1.94,2.14));
-    const crown=hoodCentre(z)+(ev?.032:0)+.006*(1-across*across)+rib;
+    const fade=smooth(z,.80,1.06)*(1-smooth(z,1.94,2.14));
+    const rib=(ev?.007:.017)*Math.exp(-(((ax-.397)/(ev?.145:.073))**2))*fade;
+    const drawn=ev?0:-.006*Math.exp(-((ax/.28)**4))*fade;
+    const crown=hoodCentre(z)+(ev?.032:0)+.009*(1-across*across)+rib+drawn;
     // Roll only the outer shoulder. A broad crown keeps the EV hood smooth
     // without dropping the flank into a deep gutter alongside the centre.
     return coachworkSourceY(lerp(crown,edge,smooth(across,ev?.77:.76,1)),z);
@@ -453,6 +471,18 @@ export function buildGClass(view,spec=view.spec){
   }
   frontSheet.geometry.setIndex(usableTriangles);
   frontSheet.userData.gClassReferenceSpace=true;
+  // Separate softly tooled black headlamp buckets are conspicuous on both
+  // variants. Keep the measured round lens, but restore its larger rectangular
+  // housing and the rolled return around it instead of a circle cut in paint.
+  for(const cx of lampCenters){
+    const cy=GCLASS_LANDMARKS.headlampCenterY;
+    const housing=rect(cx-.155,cx+.155,cy-.133,cy+.135,.043);
+    const aperture=circle(cx,cy,GCLASS_LANDMARKS.headlampDiameter/2+.0017,96);
+    const bucket=named(mappedPolygon(g,black,housing,(x,y)=>{
+      const p=frontDepth(x,y);p[2]+=.003+.006*(1-((x-cx)/.155)**2);return p;
+    },[aperture],false,2),'gclass-formed-black-headlamp-bucket-'+Math.sign(cx));
+    bucket.userData.gClassReferenceSpace=true;
+  }
   for(const x of lampCenters)headlight(g,m,x,lampSourceY,2.151);
   box(g,black,[0,1.190,2.100],[.874,.344,.040],.029);
   if(ev){
@@ -477,15 +507,16 @@ export function buildGClass(view,spec=view.spec){
     return[side*(.936+.023*Math.sin(a)),y,front[2]-.220*(1-Math.cos(a))];
   },side<0),'gclass-formed-bumper-corner-'+side);
   box(g,black,[0,.940,2.130],[1.788,.036,.096],.006);
-  for(const opening of lowerHoles){
+  for(const [openingIndex,opening] of lowerHoles.entries()){
     const inner=inset(opening,.88);mappedPolygon(g,trim,inner,(x,y)=>{const p=bumperMap(x,y);p[2]-=.080;return p;},[],false,3);
     for(let i=0;i<opening.length;i++){
       const a=opening[i],b=opening[(i+1)%opening.length];surface(g,black,1,3,(u,v)=>{const p=bumperMap(lerp(a[0],b[0],u),lerp(a[1],b[1],u));p[2]-=.080*v;return p;});
     }
     perimeter(g,black,opening,bumperMap,.005);
+    cellularGrille(g,m.gGrille,inner,(x,y)=>{const p=bumperMap(x,y);p[2]-=.043;return p;},
+      {pitch:ev?.035:.032,web:.0017,depth:.009,name:'gclass-recessed-lower-radiator-mesh-'+openingIndex});
   }
   for(const x of [-.740,.740])for(let i=0;i<(ev?2:3);i++)box(g,black,[x+(i-(ev?.5:1))*.075,.689,2.207],[.012,.194,.035],.003);
-  for(let i=0;i<4;i++)box(g,trim,[0,.585+i*.042,2.191],[.91,.009,.023],.002);
   box(g,metal,[0,.504,2.183],[1.20,.065,.104],.012);box(g,trim,[0,.832,2.227],[.47,.103,.022],.010);
   const plate=geometryText(g,ev?'G 580':'AMG G 63',.317,.034,metal);plate.position.set(0,.817,2.241);
   for(const x of [-.606,0,.606])disc(g,trim,[x,.521,bumperMap(x,.521)[2]+.002],.009,.002,16);

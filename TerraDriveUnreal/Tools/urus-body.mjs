@@ -4,6 +4,7 @@ import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {T,mesh,box,surface,polygon,mappedPolygon,line,curve,station,lerp,clamp,smooth} from './body-surface.mjs';
 import {urusCabin} from './urus-cabin.mjs';
 import {geometryText} from './vehicle-fidelity.mjs';
+import {panelJoint} from './coachwork-craft.mjs';
 export const URUS_BODY_LANDMARKS={length:5.137,width:2.026,widthWithMirrors:2.181,height:1.618,wheelbase:3.006,
  roofFrontZ:-.06,roofRearZ:-1.12,cowlZ:.72,frontZ:2.5685,rearZ:-2.5685,beltFrontY:1.102,beltRearY:1.248,archRadius:.448};
 export function urusView(spec){
@@ -76,10 +77,10 @@ export function urusView(spec){
   const noseZ=frontSurface(x,y),tailZ=rearSurface(x,y);
   return[s*(x+offset),y,z+f*(noseZ-2.48)+r*(tailZ+2.48)];
  };
- const seam=(s,points)=>{const path=new T.CatmullRomCurve3(points.map(([z,y])=>new T.Vector3(z,y,0)));line(g,dark,Array.from({length:181},(_,i)=>{const p=path.getPoint(i/180);return sidePoint(s,p.x,p.y,.002);}),.0016);};
+ const seam=(s,points)=>{const path=panelJoint(points,.025);line(g,dark,Array.from({length:241},(_,i)=>{const p=path.getPoint(i/240);return sidePoint(s,p.x,p.y,.002);}),.0013);};
  const quad=(mat,a,b,c,d,nu=20,nv=12,flip=false)=>surface(g,mat,nu,nv,(u,v)=>a.map((n,k)=>lerp(lerp(n,b[k],u),lerp(d[k],c[k],u),v)),flip);
  function inset(points,scale){const center=points.reduce((a,p)=>a.map((v,k)=>v+p[k]/points.length),[0,0]);return points.map(p=>p.map((v,k)=>lerp(center[k],v,scale)));}
- function opening(contour,map,depth,lip=.005){
+ function opening(contour,map,depth,lip=.005,kind='intake'){
   const inner=inset(contour,.935);
   const reverseReturn=contour.reduce((area,p,i)=>{const q=contour[(i+1)%contour.length];return area+p[0]*q[1]-q[0]*p[1];},0)<0;
   const apertureCentre=contour.reduce((a,p)=>a.map((n,k)=>n+p[k]/contour.length),[0,0]);
@@ -88,7 +89,7 @@ export function urusView(spec){
   for(let j=0;j<contour.length;j++){
    const a=contour[j],b=contour[(j+1)%contour.length],c=inner[j],d=inner[(j+1)%inner.length];
    const wall=surface(g,carbon,12,5,(u,v)=>{const p=map(lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v));p[2]-=depth*(v*.32+v*v*.68);return p;},reverseReturn);
-   wall.name='urus-intake-return';wall.userData.apertureCentre=apertureCentre;
+   wall.name='urus-'+kind+'-return';wall.userData.apertureCentre=apertureCentre;
    for(let k=0;k<24;k++)lipPoints.push(map(lerp(a[0],b[0],k/24),lerp(a[1],b[1],k/24)));
   }
   line(g,black,[...lipPoints,lipPoints[0]],lip);
@@ -242,7 +243,7 @@ export function urusView(spec){
   },true).name='urus-bonnet-painted-end';
  }
  for(const s of [-1,1]){
-  surface(g,m.paint,110,12,(u,v)=>{const z=lerp(.72,2.48,u),a=hood(s*station(hoodRows,z,2),z),b=sidePoint(s,z,belt(z));return a.map((n,k)=>lerp(n,b[k],v));},s<0);
+  surface(g,m.paint,110,12,(u,v)=>{const z=lerp(.72,2.48,u),a=hood(s*station(hoodRows,z,2),z),b=sidePoint(s,z,belt(z));return a.map((n,k)=>lerp(n,b[k],v));},s<0).name='urus-bonnet-shoulder-sheet-'+s;
   curve(g,dark,Array.from({length:65},(_,i)=>{const z=lerp(.74,2.34,i/64);return hood(s*(station(hoodRows,z,2)-.014),z,.002);}),.0014);
   const outline=ventOutline,inner=inset(outline,.88),vent=outline.map(([x,z])=>hood(s*x,z,.0015));
   mappedPolygon(g,carbon,outline,(x,z)=>hood(s*x,z,.001),[inner],s>0,12).name='urus-bonnet-vent-lip';
@@ -254,13 +255,21 @@ export function urusView(spec){
  // Wrapped front fascia. Real apertures, a broad splitter and boxed air
  // curtains replace the old flat hexagons and tubular bumper guard.
  const face=(x,y,d=0)=>[x,y,frontSurface(x,y)+d];
- const outline=[[-.977,.44],[-.955,.883],[-.843,1.016],[-.46,1.026],[0,.977],[.46,1.026],[.843,1.016],[.955,.883],[.977,.44],[.89,.261],[.53,.258],[.42,.309],[-.42,.309],[-.53,.258],[-.89,.261]];
+ // The nose closes on the same shoulder boundary as sidePoint(). Raising
+ // only the fascia to accommodate an oversized lamp contour left proud ears
+ // and a gap at the bonnet corners in the native overhead close-up.
+ const crestStations=[[0,.977],[.46,1.026],[.843,1.016]];
+ const fasciaCrest=x=>{const a=Math.abs(x);for(let i=1;i<crestStations.length;i++)if(a<=crestStations[i][0]){const p=crestStations[i-1],q=crestStations[i];return lerp(p[1],q[1],clamp((a-p[0])/(q[0]-p[0]),0,1));}return crestStations.at(-1)[1];};
+ const outline=[[-.977,.44],[-.955,.883],...crestStations.slice(1).reverse().map(([x,y])=>[-x,y]),crestStations[0],...crestStations.slice(1),[.955,.883],[.977,.44],[.89,.261],[.53,.258],[.42,.309],[-.42,.309],[-.53,.258],[-.89,.261]];
  const openings=[[[-.443,.850],[-.354,.883],[.354,.883],[.443,.850],[.402,.736],[-.402,.736]],
   [[-.438,.616],[-.337,.694],[.337,.694],[.438,.616],[.614,.347],[-.614,.347]],
   [[-.918,.798],[-.562,.812],[-.479,.669],[-.739,.378],[-.896,.346],[-.951,.486]],
   [[.918,.798],[.562,.812],[.479,.669],[.739,.378],[.896,.346],[.951,.486]]];
- mappedPolygon(g,m.paint,outline,face,openings,false,16).name='urus-perforated-front-fascia';
+ const lampContour=[[.434,.959],[.488,1.005],[.835,1.005],[.894,.943],[.856,.918],[.511,.922]];
+ const lampHoles=[-1,1].map(s=>lampContour.map(([x,y])=>[s*x,y]));
+ mappedPolygon(g,m.paint,outline,face,[...openings,...lampHoles],false,12).name='urus-perforated-front-fascia';
  for(const contour of openings)opening(contour,face,.105,.004);
+ for(const contour of lampHoles)opening(contour,face,.042,.002,'headlamp');
  // Thin real horizontal bars over a recessed cellular radiator.
  for(let j=0;j<4;j++)quad(grille,face(-.36,.407+j*.065,-.060),face(.36,.407+j*.065,-.060),face(.36,.416+j*.065,-.062),face(-.36,.416+j*.065,-.062),30,2);
  for(const s of [-1,1])for(let j=0;j<4;j++)quad(black,face(s*.60,.465+j*.074,-.045),face(s*.883,.485+j*.070,-.045),face(s*.883,.498+j*.070,-.046),face(s*.60,.478+j*.074,-.046),20,2);
@@ -273,24 +282,31 @@ export function urusView(spec){
  line(g,grille,[...radar,radar[0]].map(([x,y])=>face(x,y,-.006)),.0023);
  const radarLens=mesh(g,new T.CircleGeometry(.029,32),black,face(0,.746,.001));radarLens.name='urus-radar-aperture';
  surface(g,carbon,90,8,(u,v)=>{const x=(u*2-1)*.965,y=.246+.025*Math.abs(x)/.965;const a=face(x,y,.028),b=face(x,y+.012,-.18);return a.map((n,k)=>lerp(n,b[k],v));},true);
- surface(g,m.paint,72,8,(u,v)=>{const x=(u*2-1)*lerp(.64,.843,v),a=hood((u*2-1)*.64,2.48),b=face(x,station([[0,.977],[.46,1.026],[.843,1.016]],Math.abs(x),1));return a.map((n,k)=>lerp(n,b[k],v));},true);
+ // Keep the endpoint fixed while interpolating. Varying it with v made the
+ // strip's outer edge bow away from the straight shoulder edge between two
+ // matching corners, leaving a visible gap despite correct endpoints.
+ // Include every fascia station in this boundary's sampling grid. Smooth
+ // station interpolation or a grid that omits a corner cannot close against
+ // the actual polygon boundary of the adjoining fascia sheet.
+ const crownX=u=>{const t=(u*2-1),a=Math.abs(t);return Math.sign(t)*(a<=.5?lerp(0,.46,a*2):lerp(.46,.843,(a-.5)*2));};
+ surface(g,m.paint,72,10,(u,v)=>{const x=crownX(u),a=hood((u*2-1)*.64,2.48),b=face(x,fasciaCrest(x));return a.map((n,k)=>lerp(n,b[k],v));},true).name='urus-bonnet-to-fascia-crown';
  for(const s of [-1,1]){
-  const outline=[[.434,.967],[.488,1.028],[.857,1.027],[.956,.958],[.882,.914],[.511,.921]];
-  mappedPolygon(g,black,outline,(x,y)=>face(s*x,y,.009),[],s<0,12);
-  const light=([x,y])=>face(s*x,y,.017);
+  const outline=lampContour;
+  mappedPolygon(g,black,outline,(x,y)=>face(s*x,y,-.034),[],s<0,8).name='urus-recessed-headlamp-bucket';
+  const light=([x,y])=>face(s*x,y,-.003);
   // Lamborghini Y light guide, individual projector lenses and dark surround.
-  line(g,drl,[[.515,.943],[.806,.945],[.892,.978]].map(light),.0045);
-  line(g,drl,[[.806,.945],[.914,.939]].map(light),.0045);
+  line(g,drl,[[.515,.943],[.806,.945],[.868,.967]].map(light),.0045);
+  line(g,drl,[[.806,.945],[.862,.932]].map(light),.0045);
   for(let j=0;j<3;j++){
-   const cx=s*(.644+j*.076),cy=.981,p=face(cx,cy,.007);
+   const cx=s*(.644+j*.076),cy=.981,p=face(cx,cy,-.022);
    box(g,black,p,[.050,.026,.012],.004);
    // A recessed optical bowl, raised rim and convex projector replace the
    // flat bright rectangle. Everything stays behind the outer lamp cover.
-   surface(g,m.headlampReflector,32,10,(u,v)=>{const a=u*Math.PI*2,r=.24+.76*v;return face(cx+.020*Math.cos(a)*r,cy+.0098*Math.sin(a)*r,.009+.010*r*r);},true).name='urus-recessed-projector-reflector';
-   surface(g,m.headlampCore,24,8,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.009*Math.cos(a)*r,cy+.0058*Math.sin(a)*r,.011+.0035*(1-r*r));},true);
-   surface(g,m.lens,32,10,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.0178*Math.cos(a)*r,cy+.0085*Math.sin(a)*r,.018+.0035*(1-r*r));},true).name='urus-convex-projector-lens';
+   surface(g,m.headlampReflector,32,10,(u,v)=>{const a=u*Math.PI*2,r=.24+.76*v;return face(cx+.020*Math.cos(a)*r,cy+.0098*Math.sin(a)*r,-.024+.012*r*r);},true).name='urus-recessed-projector-reflector';
+   surface(g,m.headlampCore,24,8,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.009*Math.cos(a)*r,cy+.0058*Math.sin(a)*r,-.018+.0035*(1-r*r));},true);
+   surface(g,m.lens,32,10,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.0178*Math.cos(a)*r,cy+.0085*Math.sin(a)*r,-.009+.0035*(1-r*r));},true).name='urus-convex-projector-lens';
   }
-  mappedPolygon(g,m.lens,inset(outline,.94),(x,y)=>face(s*x,y,.027+.003*(1-((x-.70)/.27)**2)),[],s<0,16);
+  mappedPolygon(g,m.lens,inset(outline,.98),(x,y)=>face(s*x,y,.004+.003*(1-((x-.70)/.27)**2)),[],s<0,12).name='urus-formed-clear-headlamp-cover';
   // Long air curtain wraps around the outside of each side intake.
   mappedPolygon(g,carbon,[[.941,.818],[.987,.764],[.994,.441],[.921,.315],[.902,.374],[.953,.504]],(x,y)=>face(s*x,y,.006),[],s<0,12);
  }
@@ -323,6 +339,7 @@ export function urusView(spec){
   line(g,m.red,[[.420,1.082],[.780,1.080],[.908,1.113]].map(light),.006);
   line(g,m.red,[[.780,1.080],[.908,1.050]].map(light),.005);
   box(g,m.reverse,tail(s*.814,1.045,-.021),[.107,.012,.009],.002);
+  mappedPolygon(g,m.lens,outline,(x,y)=>tail(s*x,y,-.027-.003*(1-((x-.70)/.27)**2)),[],s>0,8).name='urus-moulded-tail-lamp-cover';
   // Reflectors and parking sensors belong to the bumper, not the tail lamps.
   box(g,m.red,tail(s*.792,.577,-.011),[.175,.019,.009],.003);
   for(const x of [.45,.87]){const sensor=mesh(g,new T.CircleGeometry(.007,20),black,tail(s*x,.648,-.006));sensor.rotation.y=Math.PI;}

@@ -222,7 +222,13 @@ for name, color in [('mud',[.19,.12,.07]), ('water',[.40,.60,.68]), ('snow',[.90
 material('M_Sky', [.38,.58,.78], sky=True)
 exec(compile(open(os.path.join(root,'Tools','sky-material.py'),encoding='utf8').read(),'sky-material.py','exec'),globals())
 exec(compile(open(os.path.join(root,'Tools','tire-mark-materials.py'),encoding='utf8').read(),'tire-mark-materials.py','exec'),globals())
-exec(compile(open(os.path.join(root,'Tools','body-ground-material.py'),encoding='utf8').read(),'body-ground-material.py','exec'),globals())
+body_ground_script = os.path.join(root, 'Tools', 'body-ground-material.py')
+# This self-contained script uses a local variable named material. Keep its
+# globals isolated from this importer's material() factory and asset tables.
+exec(compile(open(body_ground_script, encoding='utf8').read(), body_ground_script, 'exec'),
+     {'__name__': '__terra_body_ground__', '__file__': body_ground_script})
+if not callable(material):
+    raise RuntimeError('A material helper replaced the importer material factory')
 material('Native_SuspensionSteel',[.035,.05,.055],.48,.72)
 material('Native_RunningGearRubber',[.012,.016,.018],.86,.02)
 material('Native_Chrome',[.45,.53,.57],.25,.88)
@@ -267,7 +273,9 @@ for i, asset in enumerate(data['assets']):
     # Impact dents copy the selected vehicle's render mesh once, on the first
     # damaging contact. Keep CPU vertex data for bodies only, not scenery.
     if asset['name'].endswith('_body'):
-        mesh.set_editor_property('allow_cpu_access', True)
+        # Setting an already-true editor property can rebuild unchanged bodies.
+        if not mesh.get_editor_property('allow_cpu_access'):
+            mesh.set_editor_property('allow_cpu_access', True)
         if not mesh.get_editor_property('allow_cpu_access'):
             raise RuntimeError('Damage mesh CPU data unavailable: ' + asset['name'])
     body = mesh.get_editor_property('body_setup')

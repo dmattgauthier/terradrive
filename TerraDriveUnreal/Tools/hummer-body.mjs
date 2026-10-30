@@ -1,4 +1,5 @@
 // Native refinement fork; preserved browser source is unchanged.
+import {panelJoint} from './coachwork-craft.mjs';
 /**
  * Original MY24 GMC HUMMER EV SUV exterior, constructed from GMC's dimensioned
  * side elevation and published photographs. This is not imported OEM CAD.
@@ -47,8 +48,9 @@ export function buildNativeHummer(view, geometry) {
     const rearHaunch = .021 * Math.exp(-(((z - rearEdge + .070) / .165) ** 2)) * panel;
     const frontHaunch = .016 * Math.exp(-(((z - 1.078) / .165) ** 2)) * panel;
     const waist = -.005 * Math.exp(-(((y - .752) / .078) ** 2)) * door;
+    const pullCups=[.008,-.909].reduce((sum,centre)=>sum+.009*Math.exp(-(((z-centre)/.115)**4+((y-1.273)/.034)**4)),0);
     return bodyWidth - .034 * (1 - t) + .020 * Math.sin(t * Math.PI) - .019 * Math.exp(-(((t - .22) / .085) ** 2))
-      - .012 * door * panel + rearHaunch + frontHaunch + waist;
+      - .012 * door * panel + rearHaunch + frontHaunch + waist-pullCups;
   };
   const sideColumns=220, sideRows=64;
   let sideSkin;
@@ -163,6 +165,8 @@ export function buildNativeHummer(view, geometry) {
     const x = (i - 2.5) * .252, z = face(x, 1.266)[2];
     roundedBox(g, m.chrome, x, 1.266, z - .006, .237, .049, .012, .004);
     roundedBox(g, m.white, x, 1.266, z + .001, .220, .033, .007, .002);
+    const optic=roundedXY([[x-.115,1.242],[x+.115,1.242],[x+.115,1.291],[x-.115,1.291]],.005);
+    perforatedFace(g,m.lens,optic,[],(xx,yy)=>{const p=face(xx,yy);p[2]+=.010+.002*(1-((xx-x)/.115)**2);return p;},.020).name='hummer-separate-signature-lens-'+i;
     // Dark narrow dividers separate the illuminated cell from the black
     // segmented lower grille; the letters remain legible with lamps off.
     curvedLine(g, m.grille, [[x - .117, 1.233, z - .003], [x - .113, 1.157, z - .009]], .0016);
@@ -290,7 +294,7 @@ export function buildNativeHummer(view, geometry) {
     curvedLine(g,m.dark,[[0,roofY(0)+.001,roofFront-.064],[0,roofY(0)+.001,roofRear+.064]],.0030);
     // Two shallow door shells share the body's crease and its inset handle cups.
     const seam=(points,r=.0023)=>{
-      const outline=roundedOutline(points.map(([z,y])=>[z,y,0]),.026,5),curve=new THREE.CatmullRomCurve3(outline.map(p=>v3(...p)),false,'centripetal');
+      const curve=panelJoint(points,.026);
       surface(g,m.dark,110,1,(u,v)=>{
         const p=curve.getPointAt(u),t=curve.getTangentAt(u),d=(v-.5)*r*1.5,z=p.x-t.y*d,y=p.y+t.x*d;
         return [side*(sheetX(y,z)+.0018),y,z];
@@ -300,9 +304,15 @@ export function buildNativeHummer(view, geometry) {
     seam([[-.224,belt-.007],[-.219,.576],[-.303,.524],[-.839,.523],[-.964,.687],[-1.101,.918],[-1.135,1.225],[-1.069,belt+.018]]);
     for(const z of [.008,-.909]){
       const y=1.280,x=side*(sideX(y,z)+.003);
-      const cup=new THREE.Mesh(new THREE.SphereGeometry(1,24,12),m.dark);cup.scale.set(.007,.029,.110);finish(cup,g,x,y-.007,z);
-      roundedBox(g,m.paint,x+side*.022,y,z,.051,.031,.169,.012);
-      roundedBox(g,m.chrome,x+side*.049,y+.006,z+.008,.008,.009,.128,.003);
+      surface(g,m.dark,48,6,(u,v)=>{
+        const a=u*Math.PI*2,zz=z+Math.cos(a)*.099*v,yy=y-.007+Math.sin(a)*.024*v;
+        return[side*(sideX(yy,zz)+.0015),yy,zz];
+      },side>0);
+      surface(g,m.paint,56,16,(u,v)=>{
+        const a=u*Math.PI*2,t=v*2-1,cap=Math.sqrt(Math.max(0,1-Math.max(0,(Math.abs(t)-.78)/.22)**2)),zz=z+t*.088;
+        return[x+side*(.011+.019*Math.sin(v*Math.PI)+.012*Math.cos(a)*cap),y+.013*Math.sin(a)*cap,zz];
+      },side<0).name='hummer-formed-pull-handle-'+side+'-'+z;
+      roundedBox(g,m.chrome,x+side*.043,y+.006,z+.008,.004,.005,.118,.002);
     }
     // Angular arch trim has a matching inner reveal, flared outer shoulder and
     // actual open dark wheelhouse. Its outer face defines the published width.

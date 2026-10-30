@@ -7,15 +7,18 @@ import {Terrain} from './native-terrain.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const b=fs.readFileSync(path.join(root,'Content/NativeData/terrain.bin'));
 const data=JSON.parse(fs.readFileSync(path.join(root,'SourceAssets/import.json')));
+assert.equal(data.nativeRevision,'reference-coachwork-18');
+assert.ok(data.vehicles.every(v=>v.nativeModel.referenceCraftRevision===18));
+assert.equal(new Set(data.materials.map(m=>m.id)).size,data.materials.length,'stable material IDs stay unique');
 // Circularity is tested against a fixed centre/radius, independently of the
 // course generator. Both axial extrema and intermediate profile points matter.
 assert.equal(data.loopFrames.length,25);
 for(const f of data.loopFrames){assert.ok(Math.abs(Math.hypot(f.p[0]-5800,f.p[2]-2472)-2000)<1e-6);assert.ok(Math.abs(Math.hypot(...f.n)-1)<1e-6);}
 assert.ok(Math.abs(data.loopFrames[6].p[0]-7800)<1e-6);
 assert.ok(Math.abs(data.loopFrames[18].p[0]-3800)<1e-6);
-assert.equal(data.vehicles[5].nativeModel.bodyShape.version,11);
+assert.equal(data.vehicles[5].nativeModel.bodyShape.version,12);
 assert.ok(data.vehicles[5].nativeModel.bodyShape.sculptedBonnetRidges&&data.vehicles[5].nativeModel.bodyShape.foldedRearHatch);
-assert.equal(data.vehicles[2].nativeModel.construction.bodySurfaceRevision,11);
+assert.equal(data.vehicles[2].nativeModel.construction.bodySurfaceRevision,12);
 assert.ok(data.vehicles[2].nativeModel.construction.straightAPillarEdges&&data.vehicles[2].nativeModel.construction.formedBonnetAndTrunk);
 assert.ok(data.vehicles[5].nativeModel.bodyShape.physicalHeightDoorGrid&&data.vehicles[5].nativeModel.bodyShape.continuousDoorSections);
 assert.ok(data.vehicles[5].nativeModel.bodyShape.camberedClosedSpoiler&&data.vehicles[5].nativeModel.bodyShape.crownedGreenhouse);
@@ -35,7 +38,7 @@ for(let i=0;i<1000;i++){
  assert.equal(data.surfaces[b[offset+8]],s.surface);
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
-assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,6);assert.equal(data.zones.length,9);
+assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,9);assert.equal(data.zones.length,9);
 assert.equal(data.routes.length,9);assert.equal(data.constructed.length,2);
 assert.ok(data.quarryTrail.lengthM>280&&data.quarryTrail.lengthM<420);
 assert.equal(data.quarryTrail.routeIndex,8);assert.equal(data.routes[8].gates.length,20);

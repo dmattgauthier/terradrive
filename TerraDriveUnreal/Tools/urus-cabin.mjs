@@ -1,5 +1,5 @@
 // Authored cabin surfaces using the original Performante brochure interior.
-import {T,mesh,box,surface,curve,lerp,station} from './body-surface.mjs';
+import {T,mesh,box,surface,mappedPolygon,curve,lerp,station} from './body-surface.mjs';
 export function urusCabin(g,m,carbon,{sidePoint,belt}){
  const stitch=new T.MeshStandardMaterial({color:'#b7a334',roughness:.86}),metal=new T.MeshStandardMaterial({color:'#687176',metalness:.8,roughness:.3});
  const screen=new T.MeshStandardMaterial({color:'#101e27',roughness:.23,emissive:'#163544',emissiveIntensity:.10});
@@ -11,9 +11,15 @@ export function urusCabin(g,m,carbon,{sidePoint,belt}){
  // Rounded instrument panel and hexagonal vent surrounds.
  surface(g,m.interior,64,24,(u,v)=>{const x=(u*2-1)*.76;return[x,.925+.15*Math.sin(v*Math.PI/2)-.035*(x/.76)**2,lerp(.24,.62,v)];},true);
  for(const x of [-.66,-.15,.15,.66]){
-  const vent=box(g,metal,[x,1.025,.285],[.16,.084,.053],.014);vent.rotation.x=.12;
-  box(g,m.interior,[x,1.027,.252],[.142,.058,.018],.009);
-  for(let k=0;k<4;k++)box(g,metal,[x,1.010+k*.011,.240],[.125,.003,.006],.001);
+  const outer=[[-.095,-.026],[-.070,-.048],[.067,-.048],[.095,-.024],[.095,.026],[.068,.048],[-.070,.048],[-.095,.024]];
+  const inner=outer.map(([a,b])=>[a*.84,b*.77]),map=(a,b)=>[x+a,1.025+b,.244-b*.12];
+  mappedPolygon(g,carbon,outer,map,[inner],true,3).name='urus-hexagonal-dashboard-vent-'+x;
+  for(let j=0;j<inner.length;j++)surface(g,metal,3,3,(u,v)=>{
+   const a=inner[j],b=inner[(j+1)%inner.length],p=map(lerp(a[0],b[0],u),lerp(a[1],b[1],u));p[2]+=.032*v;return p;
+  },true);
+  mappedPolygon(g,m.interior,inner,(a,b)=>[x+a,1.025+b,.280],[],true,3);
+  for(let k=0;k<4;k++)box(g,metal,[x,1.006+k*.013,.260],[.142,.003,.015],.001);
+  box(g,metal,[x,1.025,.247],[.014,.013,.009],.002);
  }
  box(g,m.interior,[.40,1.065,.41],[.43,.15,.26],.035);
  const cluster=box(g,screen,[.40,1.045,.264],[.35,.105,.012],.013);cluster.rotation.x=-.18;
@@ -24,7 +30,7 @@ export function urusCabin(g,m,carbon,{sidePoint,belt}){
   for(let k=0;k<4;k++)box(g,metal,[-w*.35+k*w*.23,y-.04,z-.012],[.027,.003,.002],.001);
  }
  const console=box(g,carbon,[0,.726,-.11],[.30,.18,.75],.024);console.rotation.x=-.07;
- const cover=box(g,m.red,[0,.820,.04],[.045,.018,.048],.005);cover.rotation.x=-.30;
+ const cover=box(g,m.redPaint||m.interior,[0,.820,.04],[.045,.018,.048],.005);cover.rotation.x=-.30;
  for(const s of [-1,1])for(let k=0;k<4;k++)box(g,metal,[s*.095,.803,-.02-k*.047],[.044,.009,.026],.004);
  box(g,m.upholstery,[0,.837,-.43],[.25,.08,.34],.029);
  // Flat-bottom steering rim, spokes, separate hub and column.
@@ -47,6 +53,17 @@ export function urusCabin(g,m,carbon,{sidePoint,belt}){
   for(const dx of [-.065,.065])box(g,metal,[sx+dx,1.280,z-.30],[.009,.068,.009],.003);
   for(const side of [-1,1])curve(g,stitch,[[sx+side*.19,.80,z-.177],[sx+side*.20,1.00,z-.22],[sx+side*.165,1.21,z-.275]],.0009);
   for(let k=0;k<6;k++)curve(g,m.interior,[[sx-.10,.89+k*.044,z-.19-(.135+k*.044)*.22+.037],[sx+.10,.89+k*.044,z-.19-(.135+k*.044)*.22+.037]],.0011);
+ }
+ // A full rear bench includes its narrow centre position and head restraint.
+ // Four isolated front-seat shapes left a conspicuous hole through the hatch.
+ box(g,m.upholstery,[0,.700,-1.30],[.40,.099,.455],.032);
+ surface(g,m.upholstery,28,28,(u,v)=>{
+  const x=(u*2-1)*.207,h=v*.49;return[x,.755+h,-1.49-h*.22+.028*(1-(x/.207)**2)];
+ },true).name='urus-rear-centre-seat';
+ box(g,m.upholstery,[0,1.325,-1.60],[.203,.140,.109],.031);
+ for(const s of [-1,1]){
+  const a=new T.Vector3(s*.74,1.30,-.56),b=new T.Vector3(s*.63,.77,-.24),across=new T.Vector3(0,b.z-a.z,a.y-b.y).normalize();
+  surface(g,m.interior,2,28,(u,v)=>a.clone().lerp(b,v).addScaledVector(across,(u-.5)*.045).toArray(),s>0).name='urus-flat-seatbelt-'+s;
  }
  // Inset door cards avoid the former solid black plate behind the glazing.
  for(const s of [-1,1]){

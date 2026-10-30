@@ -9,7 +9,7 @@
       "vehicle": "mercedes-g580-ev",
       "checks": 46,
       "pass": true,
-      "bonnetPeakYM": 1.3279999494552612,
+      "bonnetPeakYM": 1.3313010931015015,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
@@ -466,12 +466,12 @@
         {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.23799991607666016
+          "heightReliefM": 0.2413010597229004
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
           "pass": true,
-          "heightM": 1.29199345380679,
+          "heightM": 1.2949971702756011,
           "amgReferenceM": 1.246,
           "evRaisedHood": true
         },
@@ -614,7 +614,7 @@
       "vehicle": "mercedes-amg-g63",
       "checks": 45,
       "pass": true,
-      "bonnetPeakYM": 1.2996225357055664,
+      "bonnetPeakYM": 1.3084464073181152,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
@@ -1047,18 +1047,18 @@
         {
           "name": "bonnet nose is a thin rolled return across the entire width",
           "pass": true,
-          "minimumM": 0.023999810218811035,
-          "maximumM": 0.024000048637390137
+          "minimumM": 0.023999929428100586,
+          "maximumM": 0.024000167846679688
         },
         {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.22762250900268555
+          "heightReliefM": 0.23644638061523438
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
           "pass": true,
-          "heightM": 1.259993372834084,
+          "heightM": 1.2569933518532488,
           "amgReferenceM": 1.246,
           "evRaisedHood": true
         },

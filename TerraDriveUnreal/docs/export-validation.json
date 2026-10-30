@@ -1,7 +1,7 @@
 {
   "terrainSamples": 1000,
   "maximumHeightExportErrorM": 0.0000019073486328125,
-  "vehicles": 6,
+  "vehicles": 9,
   "zones": 9,
   "zoneSamples": [
     {
@@ -68,7 +68,7 @@
       "heightM": 12.272045612335205
     }
   ],
-  "meshSources": 238,
+  "meshSources": 272,
   "constructedGroups": 2,
   "challengeRoutes": 9,
   "quarryDeckHeightM": 26.172911834716796,

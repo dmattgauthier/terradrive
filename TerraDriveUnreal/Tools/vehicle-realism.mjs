@@ -56,5 +56,7 @@ export function prepareNativeVehicle(spec){
  if(spec.bodyStyle==='earthcruiser')parts=refineEarthCruiser(view,spec);
  else if(['g580','g63'].includes(spec.bodyStyle))parts=refineGClass(view,spec);
  else {bodyRefinement(view,spec);vehicleFinishes(view,spec);parts=refineVehicle(view,spec);}
- if(['earthcruiser','g580','g63'].includes(spec.bodyStyle))vehicleFinishes(view,spec);return {view,parts};
+ if(['earthcruiser','g580','g63'].includes(spec.bodyStyle))vehicleFinishes(view,spec);
+ view.root.userData.nativeFidelity={...view.root.userData.nativeFidelity,referenceCraftRevision:18};
+ return {view,parts};
 }

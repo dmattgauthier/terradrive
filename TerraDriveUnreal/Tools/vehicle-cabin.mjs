@@ -16,6 +16,10 @@ function surfaceNormals(geometry,map){
 export function nativeInterior({ frontZ, rearZ, floor, dashY, dashZ, width, seatY, roofY, rearSeatY=seatY, rearBackHeight=.48, rearHeadrest={}, doorCards=true, dashboard=true, centerConsole=true }) {
     const g=this.body,m=this.materials,style=this.spec.bodyStyle,van=style==='van',sedan=style==='sedan';
     const cloth=m.upholstery||m.interior;
+    const sharedFabric=['g580','g63'].includes(style),insert=sharedFabric?cloth:cloth.clone();
+    if(!sharedFabric)insert.color.multiplyScalar(.83);insert.userData.automotive='alcantara';insert.userData.automotiveOwner=style;m.nativeSeatInsert=insert;
+    const stitch=sharedFabric?m.headliner:new THREE.MeshStandardMaterial({color:{jeep:'#943c39',bronco:'#a27d4c',sedan:'#535961',van:'#56616b',hummer:'#8a8070'}[style]||'#677077',roughness:.88});
+    stitch.userData.automotive='alcantara';stitch.userData.automotiveOwner=style;m.nativeSeatStitch=stitch;
     const signedPower=(v,p)=>Math.sign(v)*Math.abs(v)**p;
     const seatShell=(x,z,seatWidth,low,height,bench=false)=>{
       const shapeY=.64,shapeX=.57,shapeZ=.67;
@@ -36,9 +40,12 @@ export function nativeInterior({ frontZ, rearZ, floor, dashY, dashZ, width, seat
         const p=point(u*span,qy,Math.sqrt(Math.max(0,1-u*u))*span);p[2]+=offset;return p;
       };
       if(!bench){
-        surface(g,m.interior,22,22,(u,v)=>front((u*2-1)*.50,THREE.MathUtils.lerp(.105,.87,v)));
-        for(const side of [-1,1])curvedLine(g,m.interior,Array.from({length:25},(_,i)=>front(side*.58,.105+i/24*.770,.004)),.0015);
-        for(const y of [.36,.64])curvedLine(g,cloth,Array.from({length:19},(_,i)=>front((i/9-1)*.49,y,.004)),.0011);
+        surface(g,insert,22,22,(u,v)=>front((u*2-1)*.50,THREE.MathUtils.lerp(.105,.87,v)));
+        for(const side of [-1,1])curvedLine(g,stitch,Array.from({length:25},(_,i)=>front(side*.58,.105+i/24*.770,.004)),.00075);
+        // Narrow stitched channels sit on the actual crowned upholstery,
+        // rather than a dark plastic rectangle over the backrest.
+        for(const x of [-.30,0,.30])curvedLine(g,cloth,Array.from({length:25},(_,i)=>front(x,.20+i/24*.57,.004)),.0009);
+        for(const y of [.36,.64])curvedLine(g,stitch,Array.from({length:19},(_,i)=>front((i/9-1)*.49,y,.004)),.00060);
       }else{
         for(const side of [-1,1])curvedLine(g,m.interior,Array.from({length:25},(_,i)=>front(side*.38,.09+i/24*.81,.002)),.0017);
         curvedLine(g,m.interior,Array.from({length:41},(_,i)=>front((i/20-1)*.89,.42,.002)),.0013);
@@ -102,7 +109,12 @@ export function nativeInterior({ frontZ, rearZ, floor, dashY, dashZ, width, seat
         roundedBox(g,m.interior,side*width*.493,seatY+.038,frontZ,.095,.050,.47,.015);
         line(g,m.chrome,[side*width*.485,seatY+.108,frontZ+.06],[side*width*.485,seatY+.108,frontZ+.205],.006);
       }
-      line(g,m.black,[side*width*.495,seatY+.39,frontZ-.28],[side*width*.481,seatY-.07,frontZ-.04],.016);
+      const beltA=new THREE.Vector3(side*width*.495,seatY+.39,frontZ-.28),beltB=new THREE.Vector3(side*width*.481,seatY-.07,frontZ-.04);
+      const beltAxis=beltB.clone().sub(beltA),across=new THREE.Vector3(0,beltAxis.z,-beltAxis.y).normalize();
+      surface(g,m.interior,2,24,(u,v)=>{
+        const p=beltA.clone().lerp(beltB,v).addScaledVector(across,(u-.5)*.046);p.x-=side*.004*Math.sin(v*Math.PI);return p.toArray();
+      },side>0).name='formed-flat-seatbelt-'+side;
+      roundedBox(g,m.black,beltA.x,beltA.y+.025,beltA.z,.023,.060,.063,.008);
     }
     if(dashboard){
     roundedBox(g,m.black,0,dashY,dashZ,width,.169,.29,.039);

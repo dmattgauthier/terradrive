@@ -131,7 +131,7 @@ for(const spec of VEHICLES){
  results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:view.wheels[0].root.userData.factoryWheelRevision,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},...(expedition?{expedition}:{}),pass:true});view.dispose();
 }
 assert.equal(results.length,9,'complete expedition roster');
-const report={revision:'steering-coachwork-proving-ground-16',vehicles:results,newExpeditionChecks:results.reduce((n,r)=>n+(r.expedition?.checks||0),0),pass:true};
+const report={revision:'reference-coachwork-18',vehicles:results,newExpeditionChecks:results.reduce((n,r)=>n+(r.expedition?.checks||0),0),pass:true};
 assert.equal(report.newExpeditionChecks,88,'meaningful original geometry checks for the new three');
 fs.writeFileSync(new URL('../docs/model-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

@@ -102,7 +102,8 @@ export function earthCruiserRim(spec=EARTHCRUISER_EXP_SPEC){
 
 function cab(view){
   const g=view.body,m=view.materials,L=EARTHCRUISER_EXP_LANDMARKS,half=L.cabHalfWidth,frontAxle=L.frontAxleZ,wy=view.spec.tireRadius;
-  const frontZ=(x,y)=>station([[.70,2.47],[1.02,2.50],[1.40,2.47],[1.58,2.44],[2.43,2.18],[2.53,2.14]],y,1)-.055*(Math.abs(x)/half)**4;
+  const frontZ=(x,y)=>station([[.70,2.47],[1.02,2.50],[1.40,2.47],[1.58,2.44],[2.43,2.18],[2.53,2.14]],y,1)-.055*(Math.abs(x)/half)**4
+    +.015*(1-(x/half)**2)*Math.exp(-(((y-1.43)/.13)**2));
   const face=(x,y,off=0)=>[x,y,frontZ(x,y)+off];
   const frontEdge=round([[-.98,.73],[-.995,1.40],[-.965,2.42],[-.86,2.52],[.86,2.52],[.965,2.42],[.995,1.40],[.98,.73]],.065,7);
   const windshield=round([[-.88,1.59],[-.85,2.40],[-.78,2.46],[.78,2.46],[.85,2.40],[.88,1.59],[.78,1.54],[-.78,1.54]],.035,6);
@@ -132,12 +133,20 @@ function cab(view){
   // Cab side sheets have a real open front arch and the NPR's downward
   // sweeping window sill. Their door seams run into the separate front cowl.
   for(const side of [-1,1]){
-    const sx=(z,y)=>side*(half-.025*clamp((y-1.55)/.98,0,1)-.018*clamp((z-2.1)/.4,0,1));
+    const sx=(z,y)=>side*(half-.025*clamp((y-1.55)/.98,0,1)-.018*clamp((z-2.1)/.4,0,1)
+      +.010*Math.exp(-(((y-1.39)/.27)**2))*Math.sin(clamp((z-.96)/1.52,0,1)*Math.PI));
     const sideMap=(z,y,off=0)=>[sx(z,y)+side*off,y,z];
     const lower=Array.from({length:65},(_,i)=>{const z=lerp(.96,2.46,i/64),d=z-frontAxle;return[z,Math.max(.70,Math.abs(d)<.555?wy+Math.sqrt(Math.max(0,.555**2-d*d)):.70)];});
     const outline=[...lower,[2.48,1.40],[2.43,1.58],[2.16,2.49],[1.03,2.52],[.96,2.43]];
     const window=round([[1.075,1.820],[1.075,2.393],[1.16,2.436],[2.05,2.407],[2.265,1.690],[1.57,1.738]],.022,5);
     mappedPolygon(g,m.paint,outline,(z,y)=>sideMap(z,y),[window],side>0,5).name='exp98-open-arch-cab-side';
+    // Turn the NPR's steel cheeks into the side skin. A front plate and a
+    // separate side plate previously left a sharp, open seam at this corner.
+    surface(g,m.paint,14,56,(u,v)=>{
+      const y=lerp(.74,2.42,v),z=station([[.74,2.46],[1.40,2.48],[1.58,2.43],[2.42,2.183]],y,1);
+      const fx=station([[.74,.981],[1.40,.995],[2.42,.965]],y,1),a=face(side*fx,y),b=sideMap(z,y),control=[b[0],y,a[2]];
+      return a.map((value,k)=>(1-u)**2*value+2*u*(1-u)*control[k]+u*u*b[k]);
+    },side>0).name='exp98-formed-cab-corner-'+side;
     aperture(g,m,window,(z,y)=>sideMap(z,y,.002),{flip:side>0,glass:m.glass,frame:.07});
     const seam=round([[1.020,1.175],[1.020,2.450],[2.10,2.465],[2.395,1.585],[2.37,1.115],[2.20,1.07],[1.88,1.13],[1.52,1.18]],.035,5);
     line(g,m.dark,[...seam,seam[0]].map(([z,y])=>sideMap(z,y,.002)),.0021);
@@ -195,13 +204,24 @@ function cab(view){
   box(g,m.screen,[0,1.553,2.024],[.228,.071,.009],.005);
   for(const x of [-.70,-.50,.49,.70])box(g,m.black,[x,1.553,2.025],[.125,.057,.012],.006);
   for(const s of [-1,1]){
-    box(g,m.upholstery,[s*.507,1.145,1.480],[.449,.132,.50],.055);
-    const back=box(g,m.upholstery,[s*.507,1.515,1.177],[.449,.641,.139],.055);back.rotation.x=-.10;
-    box(g,m.upholstery,[s*.507,1.926,1.127],[.310,.208,.125],.046);
+    box(g,m.upholstery,[s*.507,1.135,1.480],[.449,.110,.50],.045);
+    surface(g,m.upholstery,32,28,(u,v)=>{
+      const x=(u*2-1)*.222,bolster=.034*Math.exp(-(((Math.abs(x)-.178)/.043)**2));
+      return[s*.507+x,1.187+.017*Math.sin(v*Math.PI)+bolster,lerp(1.25,1.73,v)];
+    },true).name='exp98-contoured-seat-cushion-'+s;
+    const seat=mesh(g,new T.SphereGeometry(1,44,32),m.upholstery),p=seat.geometry.attributes.position;
+    const signed=(x,p)=>Math.sign(x)*Math.abs(x)**p;
+    for(let i=0;i<p.count;i++){
+      const qx=p.getX(i),qy=p.getY(i),qz=p.getZ(i),t=(signed(qy,.64)+1)*.5,x=signed(qx,.60)*(.224-.030*t),front=qz>0?.040*Math.exp(-(((Math.abs(x)-.165)/.046)**2))*Math.sin(t*Math.PI):0;
+      p.setXYZ(i,s*.507+x,1.195+t*.645,1.187-.070*t+signed(qz,.67)*.071+front);
+    }
+    seat.geometry.computeVertexNormals();seat.name='exp98-formed-scheel-mann-seat-'+s;
+    box(g,m.upholstery,[s*.507,1.928,1.115],[.268,.190,.136],.044);
+    for(const dx of [-.073,.073])cylinder(g,m.satinMetal,[s*.507+dx,1.833,1.119],.005,.085,'y',12);
     box(g,m.dark,[s*.507,.942,1.45],[.32,.30,.39],.030);
     box(g,m.interior,[s*.926,1.455,1.58],[.049,.299,.77],.020);
     box(g,m.dark,[s*.873,1.570,1.44],[.07,.055,.30],.018);
-    for(const y of [1.36,1.48,1.60])line(g,m.interior,[[s*.507-.177,y,1.090],[s*.507+.177,y,1.090]],.0012);
+    for(const y of [1.36,1.48,1.60])line(g,m.interior,[[s*.507-.135,y,1.258-(y-1.195)*.11],[s*.507+.135,y,1.258-(y-1.195)*.11]],.0008);
   }
   box(g,m.interior,[0,1.230,1.382],[.358,.29,.79],.045);
   box(g,m.dark,[0,1.410,1.372],[.258,.021,.42],.023);
@@ -358,5 +378,6 @@ export function refineEarthCruiser(view,spec=view.spec){
   // its generic rim with the EarthCruiser's separately authored truck rim.
   for(const wheel of view.wheels){refineFactoryWheel(wheel,{...spec,bodyStyle:'jeep'},view.materials);const old=new Set();wheel.rimSpin.traverse(o=>{if(o.geometry)old.add(o.geometry);});wheel.rimSpin.clear();old.forEach(x=>x.dispose());wheel.rimSpin.add(earthCruiserRim(spec));}
   for(const [key,mat]of Object.entries(view.materials)){if(!mat?.isMaterial)continue;mat.userData.nativeRole=key==='red'?'brake':key==='reverse'?'reverse':mat.userData.vehicleGlass?'glass':mat.userData.vehicleLampLens?'lens':['paint','whiteShell'].includes(key)?'paint':['rubber','tread'].includes(key)?'rubber':mat.userData.nativeRole||'';}
-  view.root.userData.nativeFidelity.upgradeTireBeads=true;return{tire:view.wheels[0].tireShape,rim:view.wheels[0].rimSpin};
+  Object.assign(view.root.userData.nativeFidelity,{upgradeTireBeads:true,formedCarcass:true,beveledTread:true});
+  return{tire:view.wheels[0].tireShape,rim:view.wheels[0].rimSpin};
 }
