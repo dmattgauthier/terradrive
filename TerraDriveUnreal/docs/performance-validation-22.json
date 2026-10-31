@@ -1,0 +1,541 @@
+{
+  "pass": true,
+  "verifiedAt": "2026-10-31T22:37:07.335801+00:00",
+  "executableSha256": "df16e6efeebc7ece5a068365a915be88c62f4e0f4ed2b5214c9115994d03a849",
+  "sourceFreeze": {
+    "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/source-frozen.json",
+    "sha256": "65917690c35f9997e2d5a733ea095a39aeeb0548ef6279a2c0dc8502d0551955"
+  },
+  "assetCodeStageReceipt": {
+    "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/asset-cook.json",
+    "sha256": "4853cd028055d5cabdbbbc210296947f1e6759e0e1b2985b31e4c8dcb00f590d"
+  },
+  "assetCookReused": true,
+  "device": "NVIDIA RTX 4060 Laptop GPU / 16 GB system memory",
+  "engine": "Unreal Engine 5.8.3 / Windows Development",
+  "nativeChecks": 904,
+  "legacyControlChecks": 28,
+  "productionPathChecks": 876,
+  "portableColliderChecks": 219,
+  "capturesActuallyReviewed": 124,
+  "runs": [
+    {
+      "name": "candidate3-optimized-q0",
+      "checks": 14,
+      "captures": 2,
+      "clock": "real time",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q0/receipt.json",
+        "sha256": "1372681588d416d5510dcdc780096366e95917e4b2ec7c2e5a0c6c43aea4d9e4"
+      }
+    },
+    {
+      "name": "candidate3-legacy-q0",
+      "checks": 14,
+      "captures": 2,
+      "clock": "real time",
+      "control": true,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q0/receipt.json",
+        "sha256": "b7f5aefeb3e531992ac09bdec5d8f1b2d5a04d08f6476547f218176c0f05c8d7"
+      }
+    },
+    {
+      "name": "candidate3-optimized-q2",
+      "checks": 14,
+      "captures": 2,
+      "clock": "real time",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2/receipt.json",
+        "sha256": "3ecc537e2d17d101e878d0628d9ccbfc0327acd25da89d3a6c8b195911283a36"
+      }
+    },
+    {
+      "name": "candidate3-legacy-q2-45",
+      "checks": 14,
+      "captures": 2,
+      "clock": "real time",
+      "control": true,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q2-45/receipt.json",
+        "sha256": "0f0d371d64b1e7fddbeaeaed841c495d88d05168ed1c715e13870467280ef800"
+      }
+    },
+    {
+      "name": "candidate3-optimized-q2-45",
+      "checks": 14,
+      "captures": 2,
+      "clock": "real time",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2-45/receipt.json",
+        "sha256": "f8098be4f36bf9649b94fef88b30c6d859775f640e1b8b92315c8e94ca3eb88c"
+      }
+    },
+    {
+      "name": "public-runner3-q2-45",
+      "checks": 14,
+      "captures": 2,
+      "clock": "real time",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/public-runner3-q2-45/receipt.json",
+        "sha256": "e06a3de261127f141318204c09098ab8391f942a43efb39cbf12f8f01bd42a79"
+      }
+    },
+    {
+      "name": "Complete quarry trail",
+      "checks": 16,
+      "captures": 8,
+      "clock": "real time",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-full-trail-q2/receipt.json",
+        "sha256": "68ea830a49255dd4ec33eb76deb3e2e6e6951924481b9cb7911eadc946a1040c"
+      }
+    },
+    {
+      "name": "RutsRealTime",
+      "checks": 117,
+      "captures": 16,
+      "clock": "realTime",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/Validation/RutsRealTime/receipt.json",
+        "sha256": "e3675b4746327f7f35c9495a9733736833ee80b6e69de16e5ba82f6bb9c90f7a"
+      }
+    },
+    {
+      "name": "RolloverRealTime",
+      "checks": 523,
+      "captures": 58,
+      "clock": "realTime",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/Validation/RolloverRealTime/receipt.json",
+        "sha256": "3100ce9db4729c21f2107bfb3369c64a70882e1ad1e7935e9f3d81474b0c1f84"
+      }
+    },
+    {
+      "name": "TransitionsRealTime",
+      "checks": 53,
+      "captures": 14,
+      "clock": "realTime",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/Validation/TransitionsRealTime/receipt.json",
+        "sha256": "7e66671e5df54889600467c3b58f05f4dcb7090f99acbab709618bfe9f5bfbea"
+      }
+    },
+    {
+      "name": "Movement",
+      "checks": 111,
+      "captures": 16,
+      "clock": "pacedFixed20Hz",
+      "control": false,
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/Validation/Movement/receipt.json",
+        "sha256": "4dd232d0691de96562ddeb5d3261221d65d279149132f7ea8b196a83e4184735"
+      }
+    }
+  ],
+  "benchmarks": {
+    "candidate3-optimized-q0": {
+      "fixedClock": false,
+      "elapsedSeconds": 30.010889299213886,
+      "frames": 783,
+      "meanFrameMS": 38.328083396186315,
+      "p95FrameMS": 46.14559933543205,
+      "maximumFrameMS": 84.02049914002419,
+      "averageFPS": 26.090529747164478,
+      "distanceFt": 253.78067920535418,
+      "gates": 4,
+      "maximumLineErrorFt": 4.453921380631254,
+      "activeSoilTiles": 49,
+      "renderVertices": 207025,
+      "collisionVertices": 54768,
+      "renderSections": 49,
+      "coarseSections": 676,
+      "renderTriangles": 401408,
+      "collisionTriangles": 96894,
+      "maximumCollisionErrorIn": 0.19615154097399373,
+      "physicalCollisionSamples": 1225,
+      "physicalCollisionErrorIn": 0.07319234487578624,
+      "sharedSections": true,
+      "startPosition": "X=8993.503 Y=-32496.674 Z=2196.438",
+      "endPosition": "X=16509.192 Y=-34326.506 Z=2866.336",
+      "terrainResetMS": 19.84020322561264,
+      "terrainResetChunks": 5,
+      "legacySoilReset": false,
+      "name": "candidate3-optimized-q0",
+      "cap": 30,
+      "quality": 0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "maximumSampledGpuTemperatureC": 54.0,
+      "peakProcessPrivateMiB": 4135.91015625,
+      "metrics": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q0/quarry-performance.json",
+        "sha256": "88b18fc6658e4446a3f4de0dc5bf9fa5d1bc108e691351613973829d9c1bec98"
+      },
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q0/receipt.json",
+        "sha256": "1372681588d416d5510dcdc780096366e95917e4b2ec7c2e5a0c6c43aea4d9e4"
+      },
+      "telemetry": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q0/telemetry.json",
+        "sha256": "88de97cdd84202a5d8a3b7184f4ee36715ed496afb93f64ba2d5a67cb2f351e6"
+      }
+    },
+    "candidate3-legacy-q0": {
+      "fixedClock": false,
+      "elapsedSeconds": 30.015928599983454,
+      "frames": 280,
+      "meanFrameMS": 107.1997449999409,
+      "p95FrameMS": 205.2743025124073,
+      "maximumFrameMS": 300.27519911527634,
+      "averageFPS": 9.328380398671202,
+      "distanceFt": 170.3125717341096,
+      "gates": 3,
+      "maximumLineErrorFt": 4.428911083952335,
+      "activeSoilTiles": 35,
+      "renderVertices": 147875,
+      "collisionVertices": 147875,
+      "renderSections": 35,
+      "coarseSections": 781,
+      "renderTriangles": 286720,
+      "collisionTriangles": 115488,
+      "maximumCollisionErrorIn": 0.19451795131202756,
+      "physicalCollisionSamples": 875,
+      "physicalCollisionErrorIn": 0.07021941068604236,
+      "sharedSections": false,
+      "startPosition": "X=8992.452 Y=-32496.136 Z=2196.182",
+      "endPosition": "X=13816.037 Y=-34414.686 Z=2998.451",
+      "terrainResetMS": 3043.74910145998,
+      "terrainResetChunks": 676,
+      "legacySoilReset": true,
+      "name": "candidate3-legacy-q0",
+      "cap": 30,
+      "quality": 0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "maximumSampledGpuTemperatureC": 54.0,
+      "peakProcessPrivateMiB": 5277.98828125,
+      "metrics": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q0/quarry-performance.json",
+        "sha256": "16a9de9550857ed871562461b672e3ad189908436c767319421d24f7865cd32a"
+      },
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q0/receipt.json",
+        "sha256": "b7f5aefeb3e531992ac09bdec5d8f1b2d5a04d08f6476547f218176c0f05c8d7"
+      },
+      "telemetry": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q0/telemetry.json",
+        "sha256": "2fba63e02bce77fb60b47be7c27f50687b1458595a05b0bebd9d6bcc79439716"
+      }
+    },
+    "candidate3-optimized-q2": {
+      "fixedClock": false,
+      "elapsedSeconds": 30.000175401568413,
+      "frames": 780,
+      "meanFrameMS": 38.461763335344116,
+      "p95FrameMS": 45.701202005147934,
+      "maximumFrameMS": 93.03329885005951,
+      "averageFPS": 25.99984798619616,
+      "distanceFt": 254.72996276884288,
+      "gates": 4,
+      "maximumLineErrorFt": 4.429880277378352,
+      "activeSoilTiles": 49,
+      "renderVertices": 207025,
+      "collisionVertices": 54825,
+      "renderSections": 49,
+      "coarseSections": 676,
+      "renderTriangles": 401408,
+      "collisionTriangles": 97008,
+      "maximumCollisionErrorIn": 0.19669839012341234,
+      "physicalCollisionSamples": 1225,
+      "physicalCollisionErrorIn": 0.06886253676076573,
+      "sharedSections": true,
+      "startPosition": "X=8991.935 Y=-32495.892 Z=2196.041",
+      "endPosition": "X=16538.790 Y=-34319.982 Z=2871.524",
+      "terrainResetMS": 22.940799593925476,
+      "terrainResetChunks": 5,
+      "legacySoilReset": false,
+      "name": "candidate3-optimized-q2",
+      "cap": 30,
+      "quality": 2,
+      "resolution": [
+        1600,
+        900
+      ],
+      "maximumSampledGpuTemperatureC": 58.0,
+      "peakProcessPrivateMiB": 4300.56640625,
+      "metrics": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2/quarry-performance.json",
+        "sha256": "0c53bc635a98bf4132f45081df83c137507e525415283b29acb60b88d6bbc409"
+      },
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2/receipt.json",
+        "sha256": "3ecc537e2d17d101e878d0628d9ccbfc0327acd25da89d3a6c8b195911283a36"
+      },
+      "telemetry": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2/telemetry.json",
+        "sha256": "fe1153450d02515dc787eb1bacf57421eed4e7877c52a09b6f59a6f7e1992509"
+      }
+    },
+    "candidate3-legacy-q2-45": {
+      "fixedClock": false,
+      "elapsedSeconds": 30.008696399629116,
+      "frames": 386,
+      "meanFrameMS": 77.74273678660393,
+      "p95FrameMS": 180.86419999599457,
+      "maximumFrameMS": 290.8901982009411,
+      "averageFPS": 12.862937958370317,
+      "distanceFt": 197.84016255953952,
+      "gates": 3,
+      "maximumLineErrorFt": 4.421416355243192,
+      "activeSoilTiles": 41,
+      "renderVertices": 173225,
+      "collisionVertices": 173225,
+      "renderSections": 41,
+      "coarseSections": 781,
+      "renderTriangles": 335872,
+      "collisionTriangles": 131632,
+      "maximumCollisionErrorIn": 0.19110963335187414,
+      "physicalCollisionSamples": 1025,
+      "physicalCollisionErrorIn": 0.06952370245625653,
+      "sharedSections": false,
+      "startPosition": "X=8993.504 Y=-32496.687 Z=2196.455",
+      "endPosition": "X=14681.576 Y=-34498.875 Z=2840.323",
+      "terrainResetMS": 3040.989600121975,
+      "terrainResetChunks": 676,
+      "legacySoilReset": true,
+      "name": "candidate3-legacy-q2-45",
+      "cap": 45,
+      "quality": 2,
+      "resolution": [
+        1600,
+        900
+      ],
+      "maximumSampledGpuTemperatureC": 59.0,
+      "peakProcessPrivateMiB": 5542.0390625,
+      "metrics": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q2-45/quarry-performance.json",
+        "sha256": "311b9ab780947f62b07dee107970c0e20ac366bc712e0e3b5f20fe0b13e232c8"
+      },
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q2-45/receipt.json",
+        "sha256": "0f0d371d64b1e7fddbeaeaed841c495d88d05168ed1c715e13870467280ef800"
+      },
+      "telemetry": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-legacy-q2-45/telemetry.json",
+        "sha256": "ebba4499f55fb6deeefb196915c080ee90ca4edf3d7e524484d7daed1590147d"
+      }
+    },
+    "candidate3-optimized-q2-45": {
+      "fixedClock": false,
+      "elapsedSeconds": 30.0291965007782,
+      "frames": 1042,
+      "meanFrameMS": 28.81880662262783,
+      "p95FrameMS": 41.50480031967163,
+      "maximumFrameMS": 84.24989879131317,
+      "averageFPS": 34.69956313926005,
+      "distanceFt": 254.16955054352118,
+      "gates": 4,
+      "maximumLineErrorFt": 4.442890297396602,
+      "activeSoilTiles": 49,
+      "renderVertices": 207025,
+      "collisionVertices": 54777,
+      "renderSections": 49,
+      "coarseSections": 676,
+      "renderTriangles": 401408,
+      "collisionTriangles": 96912,
+      "maximumCollisionErrorIn": 0.19576394651818463,
+      "physicalCollisionSamples": 1225,
+      "physicalCollisionErrorIn": 0.06545490519268306,
+      "sharedSections": true,
+      "startPosition": "X=8994.125 Y=-32496.978 Z=2196.620",
+      "endPosition": "X=16523.286 Y=-34321.561 Z=2868.852",
+      "terrainResetMS": 21.12250030040741,
+      "terrainResetChunks": 5,
+      "legacySoilReset": false,
+      "name": "candidate3-optimized-q2-45",
+      "cap": 45,
+      "quality": 2,
+      "resolution": [
+        1600,
+        900
+      ],
+      "maximumSampledGpuTemperatureC": 63.0,
+      "peakProcessPrivateMiB": 4289.50390625,
+      "metrics": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2-45/quarry-performance.json",
+        "sha256": "b8c2d57ad003f83d3765c6f823fa628528f9dbaf0a2fa18577d688f2d4df4409"
+      },
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2-45/receipt.json",
+        "sha256": "f8098be4f36bf9649b94fef88b30c6d859775f640e1b8b92315c8e94ca3eb88c"
+      },
+      "telemetry": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-optimized-q2-45/telemetry.json",
+        "sha256": "2088b34d0e6c0e4ee727e27fb07b4d62a9037e4d443ce7343a99535dd52c88a5"
+      }
+    },
+    "public-runner3-q2-45": {
+      "fixedClock": false,
+      "elapsedSeconds": 30.010925002396107,
+      "frames": 1043,
+      "meanFrameMS": 28.77365772041813,
+      "p95FrameMS": 41.75109788775444,
+      "maximumFrameMS": 86.33309975266457,
+      "averageFPS": 34.754010411765904,
+      "distanceFt": 254.0274150514704,
+      "gates": 4,
+      "maximumLineErrorFt": 4.463322456740332,
+      "activeSoilTiles": 49,
+      "renderVertices": 207025,
+      "collisionVertices": 54755,
+      "renderSections": 49,
+      "coarseSections": 676,
+      "renderTriangles": 401408,
+      "collisionTriangles": 96868,
+      "maximumCollisionErrorIn": 0.19632828986550876,
+      "physicalCollisionSamples": 1225,
+      "physicalCollisionErrorIn": 0.0661702137293778,
+      "sharedSections": true,
+      "startPosition": "X=8994.282 Y=-32497.070 Z=2196.652",
+      "endPosition": "X=16518.693 Y=-34322.859 Z=2867.980",
+      "terrainResetMS": 21.022502332925797,
+      "terrainResetChunks": 5,
+      "legacySoilReset": false,
+      "name": "public-runner3-q2-45",
+      "cap": 45,
+      "quality": 2,
+      "resolution": [
+        1600,
+        900
+      ],
+      "maximumSampledGpuTemperatureC": 63.0,
+      "peakProcessPrivateMiB": 4303.1484375,
+      "metrics": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/public-runner3-q2-45/quarry-performance.json",
+        "sha256": "fc5c24b7fd8d650e65a0fe391a0ba68f22f0ba9d2a7817199640853ac35de150"
+      },
+      "receipt": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/public-runner3-q2-45/receipt.json",
+        "sha256": "e06a3de261127f141318204c09098ab8391f942a43efb39cbf12f8f01bd42a79"
+      },
+      "telemetry": {
+        "path": "Saved/Pass22-2026-10-31T21-04-51Z/public-runner3-q2-45/telemetry.json",
+        "sha256": "7dc4a462bdaa410d3861691eac1f94deb0e5a5e6039e607f1e712257b9cef769"
+      }
+    }
+  },
+  "fullTrailFrameCounter": {
+    "pass": true,
+    "basis": "Unwrapped native GFrameCounter%1000 between the existing once-per-second trail progress log entries. These are coarse intervals, not individual frame-time or percentile measurements.",
+    "progressSamples": 99,
+    "elapsedWindowSeconds": 98.523,
+    "engineFrames": 2458,
+    "weightedAverageFPS": 24.948489185266386,
+    "minimumIntervalFPS": 10.498687664041995,
+    "maximumIntervalFPS": 28.21011673151751,
+    "requestedCap": 30,
+    "clock": "real time",
+    "all20GatesPassed": true,
+    "log": {
+      "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-full-trail-q2/game.log",
+      "sha256": "3ed7ca967217968e527c07606a77559b3a48139e3090c88e84f9b1b2929bcbcb"
+    }
+  },
+  "preservation": {
+    "pass": true,
+    "verifiedAt": "2026-10-31T22:37:07.080498+00:00",
+    "executableSha256": "df16e6efeebc7ece5a068365a915be88c62f4e0f4ed2b5214c9115994d03a849",
+    "sourceFreeze": {
+      "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/source-frozen.json",
+      "sha256": "65917690c35f9997e2d5a733ea095a39aeeb0548ef6279a2c0dc8502d0551955"
+    },
+    "producerFilesUnchanged": 166,
+    "browserFilesUnchanged": 1214,
+    "currentGameSettingsUnchanged": 3,
+    "sourceAssetFilesUnchanged": 300,
+    "nativeDataFilesUnchanged": 7,
+    "packageContainersUnchanged": 5,
+    "mainUnchanged": "fdf66f39331f85d262729b645797087ec44313fd",
+    "branch": "codex/performance-22"
+  },
+  "imageReview": {
+    "path": "Saved/Pass22-2026-10-31T21-04-51Z/Candidate3/Review/observed.json",
+    "sha256": "e2ce545b71cc1d3f0094a3e4740f591737199896c0f5944397864b0cbb5a17c4"
+  },
+  "editorBuild": {
+    "path": "Saved/Pass22-2026-10-31T21-04-51Z/candidate3-editor-build.log",
+    "sha256": "a07002b39243c17cbec7222a81692939bcfb7acd89adda9a00cb6ee2347ae1ef"
+  },
+  "interpretation": "Matched final-build results are listed per run. Host memory pressure and warm-up cause variation; earlier warm controls also reached their caps. Repair stalls, duplicate terrain buffers and collision geometry work are reduced. No universal FPS multiplier is claimed. Failed and earlier-executable evidence is excluded from acceptance.",
+  "diagnosticEvidenceExcluded": {
+    "candidate2FullRollover": {
+      "checks": 523,
+      "failedPerformanceCases": 2,
+      "executableSha256": "aa88aa7ebc4b4ae56ba6afcddde2e71caa6ac3157dadcf10847fa475ccf37b42",
+      "accepted": false
+    },
+    "candidate2FocusedRollover": {
+      "checks": 91,
+      "failedPerformanceCases": 2,
+      "accepted": false
+    },
+    "candidate2OldLayoutRollover": {
+      "checks": 91,
+      "failedPerformanceCases": 1,
+      "accepted": false
+    },
+    "candidate3FocusedNewAndOldEdges": {
+      "checksEach": 91,
+      "purpose": "Short diagnostic controls; not part of acceptance total"
+    },
+    "otherExcluded": "All Candidate1/Candidate2 quarry runs, misplaced initial fixture and CSV forced-exit trace remain in Saved, outside final acceptance."
+  },
+  "limits": [
+    "Capped offscreen native verification and actual screenshot review; no manual controller session.",
+    "Short matched trials do not establish uncapped performance, 60 FPS everywhere, long-session thermal stability or PC-crash stability.",
+    "Full-trail frame-counter measurements are roughly one-second intervals, not individual-frame or percentile measurements.",
+    "Large acquired assets and generated native builds remain local dependencies and are excluded from the PR."
+  ],
+  "rolloverSummary": {
+    "poseCount": 58,
+    "cap": 20,
+    "clock": "real time",
+    "measurement": "Original short per-pose windows after settling, roughly 1.3 seconds. Drops are unconstrained; vehicles can naturally roll upright before a window ends. These are not endurance measurements.",
+    "minimumPoseAverageFPS": 11.387,
+    "maximumPoseAverageFPS": 19.478,
+    "sprinterRequestedNearRoof": [
+      {
+        "vehicle": 3,
+        "zone": 0,
+        "roll": -110,
+        "frames": 22,
+        "meanMS": 60.883,
+        "p95MS": 63.32,
+        "averageFPS": 16.425
+      },
+      {
+        "vehicle": 3,
+        "zone": 0,
+        "roll": 110,
+        "frames": 19,
+        "meanMS": 64.509,
+        "p95MS": 95.681,
+        "averageFPS": 15.502
+      }
+    ],
+    "allOriginalPhysicalAndPerformanceChecksPassed": true
+  }
+}
