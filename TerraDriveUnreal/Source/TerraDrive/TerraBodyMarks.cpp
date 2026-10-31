@@ -1,8 +1,10 @@
 #include "TerraWorld.h"
 #include "ProceduralMeshComponent.h"
 #include "Materials/MaterialInterface.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 
 void ATerraWorld::BodyGroundContact(FVector P,FVector F,float Load,float Width,float Length,float Speed,float Dt){
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraBodyImpression);
   if(!Ready||P.ContainsNaN()||Load<50||Dt<=0)return;
   const auto S=Sample(P);
   if(FMath::Abs(P.Z-S.Height)>18.f)return;
@@ -32,6 +34,7 @@ void ATerraWorld::BodyGroundContact(FVector P,FVector F,float Load,float Width,f
   BodyMarksDirty=true;
 }
 void ATerraWorld::RebuildBodyMarks(){
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraBodyMarks);
   if(!BodyMarkMesh){
     BodyMarkMesh=NewObject<UProceduralMeshComponent>(this,TEXT("BodyScrapesAndCompactedGround"));
     BodyMarkMesh->SetupAttachment(RootComponent);BodyMarkMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);

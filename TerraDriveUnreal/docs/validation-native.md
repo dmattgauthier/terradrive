@@ -1,44 +1,39 @@
-# Native validation — driving interface and center differential update
+# Native validation — bounded-error rollover collision
 
-The updated Windows executable passes **2,057/2,057 native checks** across seven modes. **245 fresh captures were actually reviewed**, including the interface at 1600×900 and 1280×720. All accepted runs bind the same executable and immutable code-stage receipt. Final evidence was assembled **2026-10-31T02:15:02.322550+00:00**; [native-validation.json](native-validation.json) records the individual report, review and preservation hashes.
+The final Windows executable passes **1,962/1,962 fresh native checks**: **1,916 functional checks** plus **46 real-time performance/collider checks**. **136 new portable collider checks** also pass. **345 fresh captures were actually viewed**. All accepted native processes exit 0 and bind the same executable and immutable code-stage receipt. Evidence was assembled **2026-10-31T04:54:29.177563+00:00**; [native-validation.json](native-validation.json) records exact hashes. The [rollover performance guide](rollover-performance-20.md) explains the root cause, adaptive representation, measurements and limitations.
 
-| Native mode | Passed | Captures reviewed | Simulation clock | Highest sampled GPU temperature |
+| Native mode | Passed | Captures reviewed | Clock | Highest sampled GPU temperature |
 | --- | ---: | ---: | --- | ---: |
-| Interface | 124/124 | 23 | realTime | 50°C |
-| Interface720 | 124/124 | 23 | realTime | 51°C |
-| Mechanical | 502/502 | 18 | realTime | 54°C |
-| ElectricPressure | 280/280 | 36 | realTime | 54°C |
-| Turning | 572/572 | 20 | fixed20Hz | 60°C |
-| Movement | 111/111 | 16 | fixed20Hz | 60°C |
-| Full | 344/344 | 109 | pacedFixed20Hz | 55°C |
+| Rollover | 523/523 | 58 | realTime | 58°C |
+| BodyGround | 469/469 | 78 | realTime | 60°C |
+| Damage | 228/228 | 45 | realTime | 60°C |
+| Ruts | 117/117 | 16 | realTime | 61°C |
+| Movement | 111/111 | 16 | fixed20Hz | 70°C |
+| Interface | 124/124 | 23 | realTime | 64°C |
+| Full | 344/344 | 109 | pacedFixed20Hz | 61°C |
+| Saved-build rollover/collider benchmark | 46/46 | 0 | realTime | 57°C |
 
-## What was verified
+## Coverage
 
-The [interface and controls guide](interface-controls-19.md) explains the top status cards, actual key labels, pause menu, 33 editable primary controls, graphics settings and center-lock upgrade. Native interface fixtures inspect all nine stock vehicles, a converted Civic with front/center/rear lockers, independent-motor EV compatibility, and the G63's existing factory center lock. They exercise actual Slate key capture, cancellation, conflicts, saved-layout round trips, invalid-data rejection, graphics settings and the separate compatible/incompatible upgrade rows. The rows are scrolled into view and their real stage-button availability is checked.
+The complete rollover matrix measures actual frame intervals in 58 side/roof/oblique poses across all nine vehicles on dirt and tarmac. The recorded averages are **18.87–20.02 FPS** at a 20 FPS cap. It retains all 465 original physical checks, including clearance within the existing 1.6-inch penetration allowance, 12 welded body hulls per vehicle, mass/center of mass, finite motion, disabled tire power while overturned and normal recovery. The matched prior dense-collision run has 8 frame-budget failures; the final adaptive run has 0.
 
-Pause checks preserve the vehicle's physical state rather than replacing its physics body or resetting its velocity. They compare every sample over a fully paused interval: maximum position drift stays within 0.01 cm and velocity drift within 0.01 cm/s, with strict rotation, world-time and challenge-time checks. The request-frame and first-fully-paused-frame values are logged separately. Resume, garage entry and the explicit exit action are exercised without allowing the automated exit check to terminate evidence collection.
+The upgraded EarthCruiser benchmark independently measures freely settled upright, side and roof poses at three locations, averaging **19.64–20.00 FPS**. Mean and 95th-percentile frames remain below 100 ms. Actual installed terrain collision triangle counts are lower than the retained fine display meshes, and the conservative height-error bound remains below 0.197 inch. The portable test separately checks watertight geometry and the accuracy of interpolation/refinement, including nonplanar saddle cases.
 
-The center differential uses the existing tire/axle solver to couple front and rear shaft motion within the fitted hardware's torque limit. Open and locked cases, engagement restrictions, factory equipment, conversion compatibility and older garage saves are tested. Mechanical, ElectricPressure, Turning, Movement and Full provide the drivetrain, pressure, full-lock wheel motion, braking/momentum, garage, lamps and challenge regressions on this executable.
+BodyGround covers body friction and impressions across surfaces; Damage covers visible/mechanical damage and free run; Ruts covers terrain displacement and response; Movement covers braking, momentum, transitions and recovery. Interface covers the status cards, current controls, pause/graphics/controls menus and center-differential rows. Full covers the complete vehicle/challenge fixture. Movement and Full use the clocks listed above; their functional results do not establish real-time throughput.
 
-**1,127 portable checks** pass: **179 center drivetrain**, **648 core**, and **300 electric/pressure** checks. Body-ground portable tests were not rerun in this update. Geometry/packaging validation from the preceding vehicle pass is retained as historical evidence for the unchanged asset set; those validators were not rerun and their counts are not added to this update. Historical native or visual counts are also excluded. The [previous model craft pass](reference-coachwork-18.md) remains the reference for the preserved nine-vehicle geometry.
+## Exact stage and preservation
 
-## Executable stage and preserved assets
+- Executable SHA-256: `ad06fb0cb70dd30825481fd01517aa163554e5e4775c87cbdc9c56020849eee4`.
+- Immutable code-stage receipt SHA-256: `9606c701e3925ae3e3aed999e33ad07c37b7cd8a5dcaf820b32a90ff87465880`.
+- Parent full asset-cook receipt SHA-256: `f0218b91bd3f24644ca18c442a85a7715b0292145459ced5639206b17cc3ef9b`. Native code is newly compiled and staged over the accepted existing cooked assets; no fresh asset import/full cook is claimed.
+- **158** frozen Source/Tools/Config/project files match the tested candidate. All **five** package containers, **seven** NativeData files, **275** SourceAssets files and **1,214** local browser files remain byte-identical to the checkpoint.
+- **147** current named player settings/existing engine INI files remain unchanged. Fixtures use separate paths and a read-only checkpoint copy of the garage.
+- ProvingGround, **272 meshes**, **108 vehicle body hulls** and the original fine terrain/tire data are retained. Runtime terrain collision triangulation is new and uses a 0.197-inch vertical budget. Retired Winter Expedition remains absent.
 
-- Executable SHA-256: `32c7303abc1991456190cb8b2e2571f8f2cbbf9b95251d071518716089b1a98a`.
-- Immutable code-stage receipt SHA-256: `2527db56626aedea96deab77e7bfae8d2726395eb538bb62d2ad3db03c26d278`.
-- Parent full asset-cook receipt SHA-256: `f0218b91bd3f24644ca18c442a85a7715b0292145459ced5639206b17cc3ef9b`. This update compiles and stages native code over the existing accepted cooked assets; it does not claim a fresh asset import or full cook.
-- All **153** frozen Source/Tools/Config/project producers match the tested candidate. The **five** cooked package containers and **seven** NativeData files are byte-identical to the checkpoint.
-- All **275** SourceAssets files and **1,214** local browser files remain unchanged. All nine vehicle models and acquired terrain/scenery assets are retained. The current garage and graphics files are preserved; fixtures use isolated settings paths.
-- The retained package includes ProvingGround, **272 meshes**, **108 coachwork hulls** and the existing body-scrape material. Retired Winter Expedition remains absent.
+Previous 1,127 portable checks, vehicle geometry/import checks and earlier native counts remain historical and are excluded. Two partial performance candidates each retained 8 new frame-budget failures and were rejected; their raw evidence remains unchanged. Other diagnostic counts are excluded, including trace-shutdown failures and the preliminary focused run with a stale receipt binding.
 
-An initial interface candidate retained two failed pause assertions because its baseline was taken inside an already-started unpaused physics frame. Unreal completes that frame before entering its paused tick path. The corrected fixture logs that boundary and retains the strict drift criteria across the subsequent fully paused interval; it does not hide movement by resetting the vehicle. A later numerical pass was visually rejected because the center-upgrade row had not actually scrolled into view. A subsequent explicit viewport assertion exposed the dynamic-layout timing problem too. The corrected garage defers its bounded scroll until layout is available; final fixtures verify the actual viewport position and review the corresponding rows at both resolutions. Rejected results and images are excluded from acceptance totals.
-
-The next candidate exposed a real G63 single-motor conversion bug: inherited factory AWD forced the front axle on despite selecting rear drive. The conversion now supports rear drive and selectable four-wheel drive while retaining its compatible center lock. The topology assertion checks both selections. The two cooked trail hints that named default crawl/throttle and descent-assist keys now resolve the current bindings without changing the terrain data, with two additional native interface assertions at each resolution.
-
-Exact private evidence is under `Saved/Pass19-2026-10-31T00-24-11Z/Candidate6`. Generated builds, Content, SourceAssets, Saved evidence, raw Epic/Fab content, reference photographs and player settings are excluded from the source upload. Launch `Build/Windows/TerraDrive.exe` with its complete Windows folder.
+Private evidence: `Saved/Pass20-2026-10-31T02-30-08Z/Final3`. Source publication excludes generated builds, Content, Saved, SourceAssets, acquired Epic/Fab packs, reference photos and player files. Launch `Build/Windows/TerraDrive.exe` with its complete Windows folder.
 
 ## Practical limits
 
-These are controlled offscreen native fixtures with actual static-image review. Fixed-clock checks establish behavior under their recorded conditions, not real-time throughput. The runs requested a 20 FPS rendering cap and used a 77°C sampled GPU cutoff; the highest sampled acceptance temperature was **60°C**.
-
-The prior real-time quarry CPU-physics bottleneck of about **3.33 FPS** remains unresolved and was not reprofiled here. This update makes no manual/controller-session, full-rate endurance, PC-crash-fix or hardware-temperature guarantee. No driver or saved player graphics setting was changed during verification. Models remain procedural reference approximations, and terrain deformation retains its existing bounded session-local implementation.
+Tests are controlled offscreen fixtures with actual static-image review; no desktop input or manual/controller session was used. The requested render cap was 20 FPS, with a 77°C sampled cutoff; the highest sampled accepted GPU temperature was **70°C**. No uncapped endurance or PC-crash/hardware-temperature guarantee is claimed. The previous real-time quarry profile around 3.33 FPS was not repeated. Source-only publication requires a separate complete remote tree/ref readback and preservation audit.

@@ -15,6 +15,10 @@ struct FTerraSample {
   FVector Normal = FVector::UpVector;
 };
 struct FTerraSurfaceBlend { float Weight[7]={0,0,0,0,0,0,0}; };
+struct FTerraSoilCollisionStats {
+  int FullTriangles=0,LiveTriangles=0,SparseTiles=0;
+  double MaximumHeightErrorCM=0;
+};
 struct FTerraSupport {
   FVector Point = FVector::ZeroVector, Normal = FVector::UpVector;
   float Distance = 0;
@@ -123,6 +127,7 @@ public:
   double DepressedVolume = 0, DisplacedVolume = 0, CompactedVolume = 0;
   bool Rain = false, Ready = false;
   int32 DetailCount() const { return Detail.Num(); }
+  FTerraSoilCollisionStats SoilCollisionStats() const;
   int32 CachedSoilCount() const { return SoilCache.Num(); }
   int ActiveTileLimit=768;
   FVector FindAnchor(FVector P, float MaxDistance = 4500) const;

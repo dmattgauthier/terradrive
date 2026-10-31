@@ -24,6 +24,7 @@
 #include "ProceduralMeshComponent.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/MemoryReader.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 
 namespace {
 constexpr int Div = 64;
@@ -440,6 +441,7 @@ void ATerraWorld::BeginPlay() {
          Spawns.Num());
 }
 void ATerraWorld::RebuildGround(FIntPoint Key) {
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraRebuildGround);
   UProceduralMeshComponent *&Mesh = Ground.FindOrAdd(Key);
   if (!Mesh) {
     Mesh = NewObject<UProceduralMeshComponent>(this);
@@ -572,6 +574,7 @@ void ATerraWorld::ActivateSoil(FVector P,float RadiusCM){
       if(SoilCache.Contains({X,Y}))EnsureTile({X,Y});
 }
 void ATerraWorld::UpdateTile(FTerraTile &T) {
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraUpdateTile);
   TArray<FVector> V = T.Vertices;
   TArray<TArray<int32>> Idx;
   const bool Create=T.Mesh->GetNumSections()==0;
@@ -609,12 +612,13 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
     // Topology is fixed. Update both render and collision vertices in place;
     // repeatedly cooking new bodies for every rut wastes memory and CPU.
     if (Section)
-      T.Mesh->UpdateMeshSection_LinearColor(S,V,T.Normals,T.UV,T.Colors,{},false);
+      CastChecked<UTerraSoilMeshComponent>(T.Mesh)->UpdateSoilSurface(S,V,T.Normals,T.UV,T.Colors);
     else{
       T.Mesh->CreateMeshSection_LinearColor(S,V,Idx[S],T.Normals,T.UV,T.Colors,{},true);
       T.Mesh->SetMaterial(S, GroundBlendMaterial?GroundBlendMaterial.Get():Materials[S].Get());
     }
   }
+  CastChecked<UTerraSoilMeshComponent>(T.Mesh)->CommitSoilCollision();
   T.Dirty = false;
 }
 void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
@@ -1073,6 +1077,7 @@ void ATerraWorld::HitTree(UPrimitiveComponent *C, FVector Impulse,
     }
 }
 void ATerraWorld::Tick(float Dt) {
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraWorldTick);
   Super::Tick(Dt);
   if (!Ready)
     return;
@@ -1145,6 +1150,16 @@ void ATerraWorld::Tick(float Dt) {
     }
 }
 void ATerraWorld::SetRain(bool Enabled) { Rain = Enabled; }
+FTerraSoilCollisionStats ATerraWorld::SoilCollisionStats() const {
+  FTerraSoilCollisionStats Stats;
+  for(const auto& Pair:Detail)if(auto* Mesh=Cast<UTerraSoilMeshComponent>(Pair.Value.Mesh)){
+    int Full=0;for(int S=0;S<Mesh->GetNumSections();++S)if(const auto* P=Mesh->GetProcMeshSection(S);P&&P->bEnableCollision)Full+=P->ProcIndexBuffer.Num()/3;
+    const int Live=Mesh->LiveCollisionTriangles();
+    if(Live>0){Stats.FullTriangles+=Full;Stats.LiveTriangles+=Live;Stats.SparseTiles+=Live<Full;
+      Stats.MaximumHeightErrorCM=FMath::Max(Stats.MaximumHeightErrorCM,Mesh->CollisionHeightErrorCM());}
+  }
+  return Stats;
+}
 void ATerraWorld::ResetSoil() {
   for(auto &Plant:Crushable)if(Plant.Flattened>0){
     Plant.Mesh->UpdateInstanceTransform(Plant.Index,Plant.Original,true,true,true);Plant.Flattened=0;

@@ -7,8 +7,10 @@
 #include "Engine/World.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 
 void ATerraVehicle::UpdateBodyGroundGrip(){
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraBodyGroundGrip);
   if(!Terrain||!UndertrayMaterial)return;
   auto Ground=Terrain->Sample(GetActorLocation());
   FVector SupportNormal=Ground.Normal,ConstructedNormal=FVector::ZeroVector;
@@ -35,6 +37,7 @@ void ATerraVehicle::UpdateBodyGroundGrip(){
   CoachworkCollision->BodyInstance.UpdatePhysicalMaterials();
 }
 void ATerraVehicle::QueueBodyGroundContact(FVector Impulse,const FHitResult& Hit){
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraBodyGroundQueue);
   if(!Terrain||Garage||Hit.ImpactPoint.ContainsNaN()||Hit.ImpactNormal.ContainsNaN())return;
   const FVector Normal=Hit.ImpactNormal.GetSafeNormal();
   const float Alignment=FVector::DotProduct(GetActorUpVector(),Normal);
@@ -59,6 +62,7 @@ void ATerraVehicle::QueueBodyGroundContact(FVector Impulse,const FHitResult& Hit
   }
 }
 void ATerraVehicle::ProcessBodyGroundContacts(float Dt){
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraBodyGroundContacts);
   if(!Terrain||Garage){PendingBodyGroundContacts.Reset();return;}
   const float Exposure=FMath::Clamp(Dt,.008f,.12f),ForceTime=FMath::Clamp(Dt,.008f,.5f);
   PendingBodyGroundContacts.Sort([](const FTerraBodyGroundContact& A,const FTerraBodyGroundContact& B){return A.ImpulseNS>B.ImpulseNS;});

@@ -5,6 +5,8 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
+#include "Engine/Engine.h"
+#include "Misc/App.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/HUD.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,6 +27,7 @@ struct FState {
   TArray<FVector> Probes[ATerraVehicle::VehicleCount];TArray<FCase> Cases;
   int Trial=0,Phase=0,Samples=0;float Time=0,MinimumClearance=10000;
   bool Ready=false,Finite=true,RequestedPoseSeen=false,OverturnedSeen=false,PoweredWhileOverturned=false;
+  double PreviousMeasuredFrame=0;TArray<float> FrameMS;
 };
 FState State;
 FString Label(const FCase& C){return FString::Printf(TEXT("rollover vehicle %d %s %.0f degrees"),C.Vehicle,C.Zone==0?TEXT("Pine Ridge"):TEXT("tarmac"),C.Roll);}
@@ -47,11 +50,16 @@ bool Load(){
     for(const auto& Value:*Probes){const auto& A=Value->AsArray();if(A.Num()!=3)return false;const FVector P(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber());if(P.ContainsNaN())return false;State.Probes[I].Add(P);}
   }
   const bool Quick=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverQuick"));
-  for(int Zone:{1,0})for(int I=0;I<ATerraVehicle::VehicleCount;I++)if(!Quick||I==3)for(float Roll:{-90.f,90.f,180.f})State.Cases.Add({I,Zone,Roll});
-  for(float Roll:{-55.f,55.f,-110.f,110.f})State.Cases.Add({3,0,Roll});
+  int QuickVehicle=3;FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverQuickVehicle="),QuickVehicle);
+  if(QuickVehicle<0||QuickVehicle>=ATerraVehicle::VehicleCount)return false;
+  for(int Zone:{1,0})for(int I=0;I<ATerraVehicle::VehicleCount;I++)if(!Quick||I==QuickVehicle)for(float Roll:{-90.f,90.f,180.f})State.Cases.Add({I,Zone,Roll});
+  for(float Roll:{-55.f,55.f,-110.f,110.f})State.Cases.Add({Quick?QuickVehicle:3,0,Roll});
   auto Plan=MakeShared<FJsonObject>();Plan->SetNumberField(TEXT("version"),1);Plan->SetNumberField(TEXT("vehicleCount"),ATerraVehicle::VehicleCount);Plan->SetBoolField(TEXT("quick"),Quick);
   const bool Coachwork=FParse::Param(FCommandLine::Get(),TEXT("TerraExpectCoachworkCollision"));
-  const int ChecksPerPose=Coachwork?8:6;
+  const bool Measure=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverMeasurePerformance"));
+  const int ChecksPerPose=(Coachwork?8:6)+(Measure?1:0);
+  Plan->SetBoolField(TEXT("performanceMeasured"),Measure);
+  Plan->SetNumberField(TEXT("quickVehicle"),QuickVehicle);
   Plan->SetBoolField(TEXT("coachworkCollisionRequired"),Coachwork);Plan->SetNumberField(TEXT("checksPerPose"),ChecksPerPose);
   TArray<TSharedPtr<FJsonValue>> Cases;
   for(const auto& C:State.Cases){auto Item=MakeShared<FJsonObject>();Item->SetNumberField(TEXT("vehicle"),C.Vehicle);Item->SetNumberField(TEXT("zone"),C.Zone);Item->SetNumberField(TEXT("roll"),C.Roll);Cases.Add(MakeShared<FJsonValueObject>(Item));}
@@ -75,6 +83,7 @@ void Place(ATerraVehicle* V,const FCase& C){
   V->SetActorLocationAndRotation(Center,Rotation,false,nullptr,ETeleportType::TeleportPhysics);
   V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);V->ResetContactTelemetry();
   State.Time=0;State.Samples=0;State.MinimumClearance=10000;State.Finite=true;State.RequestedPoseSeen=State.OverturnedSeen=State.PoweredWhileOverturned=false;State.Phase=1;
+  State.PreviousMeasuredFrame=0;State.FrameMS.Reset();
 }
 }
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
@@ -92,12 +101,21 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     }
     if(State.Time>=.15f&&State.Time-Dt<.15f)UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLOVER_DROP vehicle=%d zone=%d requestedRoll=%.0f actualRoll=%.2f up=%.3f"),C.Vehicle,C.Zone,C.Roll,V->GetActorRotation().Roll,V->GetActorUpVector().Z);
     if(State.Time>2.5f){
+      const double Now=FPlatformTime::Seconds();
+      if(State.PreviousMeasuredFrame>0)State.FrameMS.Add(float((Now-State.PreviousMeasuredFrame)*1000));
+      State.PreviousMeasuredFrame=Now;
       for(const FVector& Local:State.Probes[C.Vehicle]){const FVector P=V->Body->GetComponentTransform().TransformPosition(Local);State.MinimumClearance=FMath::Min(State.MinimumClearance,float(P.Z-V->Terrain->Height(P.X,P.Y)));}
       State.Samples++;
     }
     if(State.Time>3.2f){V->TestThrottle=1;V->TestSteer=1;V->TestBrake=0;}
     if(State.Time>3.35f&&V->Overturned){State.OverturnedSeen=true;State.PoweredWhileOverturned|=V->Throttle>.001f||V->LastTireForceN>100;}
     if(State.Time>3.8f){
+      if(FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverMeasurePerformance"))){
+        float Mean=0;for(float MS:State.FrameMS)Mean+=MS;Mean/=FMath::Max(1,State.FrameMS.Num());
+        auto Sorted=State.FrameMS;Sorted.Sort();const float P95=Sorted.IsEmpty()?0:Sorted[FMath::Min(Sorted.Num()-1,FMath::FloorToInt(Sorted.Num()*.95f))];
+        Check(Name+TEXT(" real-time rollover stays above sustained single-digit FPS"),!FApp::UseFixedTimeStep()&&GEngine&&!GEngine->bUseFixedFrameRate&&State.FrameMS.Num()>=8&&Mean>0&&Mean<100,Mean);
+        UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLOVER_FRAME_BUDGET vehicle=%d zone=%d roll=%.0f frames=%d meanMS=%.3f p95MS=%.3f fps=%.3f"),C.Vehicle,C.Zone,C.Roll,State.FrameMS.Num(),Mean,P95,Mean>0?1000/Mean:0);
+      }
       if(FParse::Param(FCommandLine::Get(),TEXT("TerraExpectCoachworkCollision"))){
         Check(Name+TEXT(" uses twelve mesh-matched physical body sections"),V->CoachworkCollisionReady&&V->CoachworkCollision->BodyInstance.WeldParent!=nullptr&&V->CoachworkHullCount==12&&V->CoachworkCollisionSource.Len()==64,V->CoachworkHullCount);
         const float ActualMass=V->Chassis->GetMass();

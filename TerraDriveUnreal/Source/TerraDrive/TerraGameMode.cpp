@@ -14,6 +14,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "HAL/PlatformMisc.h"
 #include "HAL/IConsoleManager.h"
+#include "PhysicsEngine/PhysicsSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
@@ -21,6 +22,7 @@
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
 #include "TerraRolloverValidation.h"
+#include "TerraRolloverPerformanceValidation.h"
 #include "TerraBodyGroundValidation.h"
 #include "TerraMechanicalValidation.h"
 #include "TerraTurningValidation.h"
@@ -46,6 +48,31 @@ ATerraGameMode::ATerraGameMode() {
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
+  // The default convex/triangle path repeatedly builds expensive manifolds
+  // when the mesh-matched body lies across the fine soil grid. Closest-feature
+  // generation preserves the shapes and contacts without that rollover cost.
+  // Keep the old path available only for controlled native A/B measurements.
+  const bool LegacyContacts=FParse::Param(FCommandLine::Get(),TEXT("TerraValidate"))&&
+    FParse::Param(FCommandLine::Get(),TEXT("TerraLegacyRolloverContacts"));
+  if(auto* ContactMode=IConsoleManager::Get().FindConsoleVariable(TEXT("p.Chaos.Collision.ConvexTriMeshMode"))){
+    ContactMode->Set(LegacyContacts?1:2,ECVF_SetByCode);
+    UE_LOG(LogTemp,Display,TEXT("TERRA_CONTACT_GENERATOR mode=%d legacyControl=%d"),ContactMode->GetInt(),LegacyContacts);
+  }else UE_LOG(LogTemp,Error,TEXT("TERRA_CONTACT_GENERATOR missing required Chaos setting"));
+  // Restore the engine's 60 Hz / six-step rigid-body budget. The former
+  // 120 Hz / twelve-step override caused a feedback loop: broad body/soil
+  // contacts slowed a frame, which scheduled more expensive collision solves.
+  // Both schedules cover the same 0.1 s maximum interval; tire integration,
+  // shapes, CCD and solver iterations are unchanged. Set this in memory too
+  // so code-only stages over an older cooked config use the same schedule.
+  const bool LegacySteps=FParse::Param(FCommandLine::Get(),TEXT("TerraValidate"))&&
+    FParse::Param(FCommandLine::Get(),TEXT("TerraLegacyRolloverSteps"));
+  auto* Physics=UPhysicsSettings::Get();
+  Physics->bSubstepping=true;
+  Physics->MaxSubstepDeltaTime=1.f/(LegacySteps?120.f:60.f);
+  Physics->MaxSubsteps=LegacySteps?12:6;
+  UE_LOG(LogTemp,Display,TEXT("TERRA_PHYSICS_SCHEDULE hz=%.1f maxSubsteps=%d coverageMS=%.1f legacyControl=%d"),
+    1.f/Physics->MaxSubstepDeltaTime,Physics->MaxSubsteps,
+    Physics->MaxSubstepDeltaTime*Physics->MaxSubsteps*1000,LegacySteps);
   TerraGraphics::Initialize();
   // Create visible vehicle proxies while their PSOs warm; delaying proxies
   // can otherwise show only wheels on the first cold vehicle selection.
@@ -106,6 +133,10 @@ void ATerraGameMode::Tick(float Dt) {
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverOnly"))){
     if(TerraRolloverValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverPerformanceOnly"))){
+    if(TerraRolloverPerformanceValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraElectricPressureOnly"))){

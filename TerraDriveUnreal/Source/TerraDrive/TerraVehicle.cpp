@@ -20,6 +20,7 @@
 #include "Misc/Parse.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 
 float ATerraVehicle::Number(const TCHAR *Name, float Default) const {
   double N = Default;
@@ -819,6 +820,7 @@ void ATerraVehicle::Simulate(float Dt) {
     TeleportZone(Zone);
 }
 void ATerraVehicle::Tick(float Dt) {
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraVehicleTick);
   Super::Tick(Dt);
   if (!Terrain) {
     for (TActorIterator<ATerraWorld> I(GetWorld()); I; ++I) {

@@ -1,4 +1,4 @@
-param([switch]$Quick,[switch]$AllowLegacyProxy,[string]$FixtureFile='',[string]$Name='rollover',[int]$TimeoutSeconds=900)
+param([switch]$Quick,[ValidateRange(0,8)][int]$QuickVehicle=3,[switch]$AllowLegacyProxy,[switch]$MeasurePerformance,[string]$FixtureFile='',[string]$Name='rollover',[int]$TimeoutSeconds=900)
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(@(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue).Count){throw 'Close engine processes before the isolated rollover check'}
@@ -6,7 +6,8 @@ if($Name -notmatch '^[a-z0-9-]+$'){throw 'Use a simple report name'}
 $taskOut=Join-Path $taskRoot 'Saved/Validation';New-Item -ItemType Directory -Path $taskOut -Force | Out-Null
 $taskReport=Join-Path $taskOut ($Name+'.json');$taskLog=Join-Path $taskOut ($Name+'.log');$taskStart=Get-Date
 $taskArgs=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-TerraValidate','-TerraCapture','-TerraRolloverOnly','-TerraTestFPS=20','-TerraGraphicsMode=2',('-TerraReport="'+$taskReport+'"'),('-TerraGarage="'+(Join-Path $taskOut 'rollover-test-garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOut 'rollover-test-graphics.json')+'"'),('-abslog="'+$taskLog+'"'))
-if($Quick){$taskArgs+='-TerraRolloverQuick'}
+if($Quick){$taskArgs+=@('-TerraRolloverQuick',('-TerraRolloverQuickVehicle='+$QuickVehicle))}
+if($MeasurePerformance){$taskArgs+='-TerraRolloverMeasurePerformance'}
 if(!$AllowLegacyProxy){$taskArgs+='-TerraExpectCoachworkCollision'}
 if($FixtureFile){$taskFixture=(Resolve-Path -LiteralPath $FixtureFile).ProviderPath;$taskArgs+=('-TerraCoachworkData="'+$taskFixture+'"')}
 $taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=Join-Path $taskRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe';$taskInfo.Arguments=$taskArgs -join ' ';$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
@@ -25,13 +26,13 @@ $taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw | ConvertFrom-Json
 $taskRoster=Get-Content -LiteralPath (Join-Path $taskRoot 'Content/NativeData/vehicle-collision.json') -Raw | ConvertFrom-Json
 $taskVehicleCount=@($taskRoster.vehicles).Count
 $taskPoseCount=if($Quick){10}else{$taskVehicleCount*6+4}
-$taskChecksPerPose=if($AllowLegacyProxy){6}else{8}
+$taskChecksPerPose=$(if($AllowLegacyProxy){6}else{8})+$(if($MeasurePerformance){1}else{0})
 $taskExpected=1+$taskPoseCount*$taskChecksPerPose
 $taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 0 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and $taskPlan.quick -eq [bool]$Quick -and $taskPlan.coachworkCollisionRequired -eq (!$AllowLegacyProxy) -and $taskPlan.checksPerPose -eq $taskChecksPerPose -and @($taskPlan.cases).Count -eq $taskPoseCount
 $taskCoverage=[Collections.Generic.HashSet[string]]::new()
 foreach($taskCase in $taskPlan.cases){
  $taskPlanValid=$taskPlanValid -and $taskCase.vehicle -ge 0 -and $taskCase.vehicle -lt $taskVehicleCount -and $taskCase.zone -in @(0,1) -and $taskCase.roll -in @(-110,-90,-55,55,90,110,180)
- if($Quick){$taskPlanValid=$taskPlanValid -and $taskCase.vehicle -eq 3}
+ if($Quick){$taskPlanValid=$taskPlanValid -and $taskCase.vehicle -eq $QuickVehicle -and $taskPlan.quickVehicle -eq $QuickVehicle}
  [void]$taskCoverage.Add(('{0}:{1}:{2}' -f $taskCase.vehicle,$taskCase.zone,$taskCase.roll))
 }
 if(!$taskPlanValid -or $taskCoverage.Count -ne $taskPoseCount -or $taskPlan.expectedChecks -ne $taskExpected){throw 'Rollover fixture plan does not match the complete requested pose matrix'}
