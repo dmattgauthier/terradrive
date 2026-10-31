@@ -182,6 +182,43 @@ class ChallengeCourse {
     }
     // Low speed slalom: physical marker blocks, with a clear bypass on each side.
     for (let i = 0; i < 5; i++) this._box(`slalom-${i}`, v(-181 + (i % 2 ? -2.8 : 2.8), 5.02, 67 + i * 13), v(.70, .84, .70), 'orange');
+    // Extra loop-side rhythm lane: progressive curvature, real unsupported
+    // gaps and broad descending landings. No launch impulses or hidden decks.
+    for(const [i,z] of [-118,-58,5].entries()){
+      const h=[1.6,2.1,2.5][i],samples=[];
+      for(let j=0;j<=12;j++){
+        const t=j/12;samples.push([z-22+22*t,4.60+h*t*t]);
+      }
+      this._lane(`rhythm-launch-${i}`,'Progressive rhythm take-off',-202,samples,6.6,{materialKey:'concrete',thickness:.28});
+      const landing=[];
+      for(let j=0;j<=12;j++){
+        // Drop the receiving lip below a long truck's departing front end;
+        // the broad slope then catches the tires instead of the bumper.
+        const t=j/12;landing.push([z+8+21*t,4.60+(h*.35)*(1-t)*(1-t)]);
+      }
+      this._lane(`rhythm-landing-${i}`,'Broad rhythm landing',-202,landing,8.0,{materialKey:'concrete',thickness:.28});
+    }
+    // Two staggered wheel lines require diagonal articulation rather than
+    // repeating the existing single alternating wedge exercise.
+    for(const side of [-1,1]){
+      const samples=[[-44,4.60]];
+      for(let i=0;i<6;i++){
+        const z=-32+i*11+(side>0?4:0),h=.24+i*.045;
+        // Keep the valleys clear of the coplanar terrain surface. Entry and
+        // exit grade smoothly back to ground without a visible raised seam.
+        samples.push([z-3.5,4.64],[z-.9,4.64+h],[z+1.1,4.64+h],[z+4.0,4.64]);
+      }
+      samples.push([43,4.60]);
+      this._lane(`crossaxle-${side}`,'Cross-axle staircase',-170+side*1.05,samples,1.85,{materialKey:'concrete',thickness:.24});
+    }
+    this._lane('hairpin-entry','Banked hairpin approach',-202,[[112,4.60],[126,4.72],[135,4.72]],6.6,{materialKey:'concrete'});
+    const hairpin=Array.from({length:97},(_,i)=>{
+      const a=i/96*Math.PI,bank=.30*Math.sin(a),tangent=unit(v(17*Math.sin(a),0,26*Math.cos(a)));
+      const horizontal=unit(cross(v(0,1,0),tangent)),across=add(mul(horizontal,Math.cos(bank)),v(0,-Math.sin(bank),0));
+      return {point:v(-185-17*Math.cos(a),4.72+.95*Math.sin(a),135+26*Math.sin(a)),tangent,across,normal:unit(cross(tangent,across))};
+    });
+    this._addFeature('banked-hairpin','Raised banked hairpin',hairpin,6.6,{materialKey:'concrete',thickness:.30});
+    this._lane('hairpin-exit','Hairpin return',-168,[[118,4.60],[126,4.72],[135,4.72]],6.6,{materialKey:'concrete'});
     // The loop shifts 14 m sideways. A post beside one elevated section can
     // therefore pierce a different, lower section or the approach/exit. Put
     // the complete portal bents on fixed outboard planes instead, including

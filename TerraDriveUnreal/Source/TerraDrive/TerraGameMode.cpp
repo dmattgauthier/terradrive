@@ -23,6 +23,7 @@
 #include "TerraVehicle.h"
 #include "TerraRolloverValidation.h"
 #include "TerraRolloverPerformanceValidation.h"
+#include "TerraFieldValidation.h"
 #include "TerraBodyGroundValidation.h"
 #include "TerraMechanicalValidation.h"
 #include "TerraTurningValidation.h"
@@ -117,6 +118,10 @@ void ATerraGameMode::Tick(float Dt) {
   };
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraFieldOnly"))){
+    if(TerraFieldValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraBodyGroundOnly"))){
@@ -281,7 +286,7 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("tire tread rejects rigid support outside its width"),!Narrow.Hit&&Wide.Hit&&Wide.Constructed);
       Edge->DestroyComponent();
     }
-    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==9,V->Terrain->ConstructedMeshCount);
+    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==13,V->Terrain->ConstructedMeshCount);
     const auto LoopFrames=V->Terrain->Data->GetArrayField(TEXT("loopFrames"));
     for(int I=0;I<5;++I){
       const auto Frame=LoopFrames[I*6]->AsObject();
@@ -774,15 +779,34 @@ void ATerraGameMode::Tick(float Dt) {
       for(int I=0;I<100;++I)V->Terrain->Deform(Seam,FVector::ForwardVector,5500,16,.7f,.7f,.8f,1,.025f);
       const float Left=V->Terrain->Sample(Seam-FVector(.5,0,0)).RutDepth,Right=V->Terrain->Sample(Seam+FVector(.5,0,0)).RutDepth;
       Check(TEXT("rut deformation remains continuous across tile seams"),Left>.005f&&Right>.005f&&FMath::Abs(Left-Right)<.005f,FMath::Abs(Left-Right));
-      const auto Groups=V->Terrain->Data->GetArrayField(TEXT("nativeDetails"));
-      const auto Position=Groups[0]->AsObject()->GetArrayField(TEXT("instances"))[0]->AsObject()->GetArrayField(TEXT("p"));
-      const FVector Rock(Position[0]->AsNumber(),Position[1]->AsNumber(),Position[2]->AsNumber());
-      const auto Support=V->Terrain->CastTireSupport(Rock+FVector(0,0,220),FVector::UpVector,FVector::ForwardVector,42,28,-30,260,V);
-      Check(TEXT("modeled boulder provides physical tire support"),Support.Hit&&Support.Constructed&&Support.Surface==4,Support.Distance);
-      const auto LogPosition=Groups[4]->AsObject()->GetArrayField(TEXT("instances"))[0]->AsObject()->GetArrayField(TEXT("p"));
-      const FVector LogPoint(LogPosition[0]->AsNumber(),LogPosition[1]->AsNumber(),LogPosition[2]->AsNumber());
-      const auto LogSupport=V->Terrain->CastTireSupport(LogPoint+FVector(0,0,220),FVector::UpVector,FVector::ForwardVector,42,28,-30,260,V);
-      Check(TEXT("modeled deadwood provides physical tire support"),LogSupport.Hit&&LogSupport.Constructed,LogSupport.Distance);
+      // Resolve an actual live placement. The former fixed array slots refer
+      // to retired, empty placeholder groups; boulders are also grounded and
+      // rotated after loading, so their manifest origins are not top surfaces.
+      auto DetailSupport=[&](bool Boulder,FTerraSupport& Support){
+        TArray<UInstancedStaticMeshComponent*> Parts;V->Terrain->GetComponents(Parts);
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraDetailFixture),true,V);
+        for(auto* Part:Parts){
+          if(!Part->GetStaticMesh())continue;
+          const FString Mesh=Part->GetStaticMesh()->GetName();
+          if(Boulder?!Mesh.StartsWith(TEXT("scan_native_boulder_")):Mesh!=TEXT("native_deadwood"))continue;
+          const FBox Local=Part->GetStaticMesh()->GetBoundingBox();
+          for(int I=0;I<Part->GetInstanceCount();++I){
+            FTransform Placement;if(!Part->GetInstanceTransform(I,Placement,true))continue;
+            const FBox Bounds=Local.TransformBy(Placement);const FVector Center=Bounds.GetCenter();
+            FHitResult Hit;
+            if(!GetWorld()->LineTraceSingleByChannel(Hit,FVector(Center.X,Center.Y,Bounds.Max.Z+300),
+                FVector(Center.X,Center.Y,Bounds.Min.Z-50),ECC_Visibility,Query)||Hit.GetComponent()!=Part||Hit.Item!=I)continue;
+            const auto Candidate=V->Terrain->CastTireSupport(Hit.ImpactPoint+FVector(0,0,220),
+                FVector::UpVector,FVector::ForwardVector,42,28,-30,260,V);
+            if(Candidate.Hit&&Candidate.Constructed&&(!Boulder||Candidate.Surface==4)){Support=Candidate;return true;}
+          }
+        }
+        return false;
+      };
+      FTerraSupport Support,LogSupport;
+      const bool BoulderSupported=DetailSupport(true,Support),DeadwoodSupported=DetailSupport(false,LogSupport);
+      Check(TEXT("modeled boulder provides physical tire support"),BoulderSupported,Support.Distance);
+      Check(TEXT("modeled deadwood provides physical tire support"),DeadwoodSupported,LogSupport.Distance);
       Check(TEXT("visible suspension follows live wheel travel"),FVector::Dist(V->SuspensionParts[0]->GetComponentLocation(),V->Wheels[0]->GetComponentLocation())<90&&V->SuspensionParts[2]->GetComponentScale().Z>.1f);
       Capture(TEXT("native-tire-ruts.png"));
       V->Pressure=37;V->TestDriverInput=true;V->TestForward=V->TestReverse=V->TestStop=false;
@@ -1083,17 +1107,22 @@ void ATerraGameMode::Tick(float Dt) {
       TrailClosestSample=0;TrailMaximumError=0;Captured=true;
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
-      Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==9&&V->Terrain->Routes[8].Gates.Num()==20);
+      Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==13&&V->Terrain->Routes[8].Gates.Num()==20);
       Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==12);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
         const FString Name=C->GetStaticMesh()->GetName();
         if(Name.StartsWith(TEXT("scan_grass_medium_01")))GrassCount+=C->GetInstanceCount();
-        if((Name.StartsWith(TEXT("scan_mountainside"))||Name.StartsWith(TEXT("scan_boulder_01")))&&C->GetInstanceCount()>0){
-          FTransform T;C->GetInstanceTransform(0,T,true);const FVector P=T.TransformPosition(C->GetStaticMesh()->GetBoundingBox().GetCenter());
-          FHitResult Hit;FCollisionQueryParams Q(SCENE_QUERY_STAT(TerraTrailRock),true,V);
-          if(GetWorld()->LineTraceSingleByChannel(Hit,P+FVector(0,0,2000),P-FVector(0,0,2000),ECC_Visibility,Q)&&Hit.GetComponent()==C)++ScanRockHits;
+        if(Name.StartsWith(TEXT("scan_native_boulder_"))&&C->GetInstanceCount()>0&&ScanRockHits<2){
+          // Require physical hits on two distinct live replacement variants.
+          // Retired scan groups deliberately have no placed instances.
+          for(int I=0;I<C->GetInstanceCount();++I){
+            FTransform T;if(!C->GetInstanceTransform(I,T,true))continue;
+            const FVector P=T.TransformPosition(C->GetStaticMesh()->GetBoundingBox().GetCenter());
+            FHitResult Hit;FCollisionQueryParams Q(SCENE_QUERY_STAT(TerraTrailRock),true,V);
+            if(GetWorld()->LineTraceSingleByChannel(Hit,P+FVector(0,0,2000),P-FVector(0,0,2000),ECC_Visibility,Q)&&Hit.GetComponent()==C){++ScanRockHits;break;}
+          }
         }
       }
       Check(TEXT("new scanned quarry rocks supply native collision"),ScanRockHits==2,ScanRockHits);

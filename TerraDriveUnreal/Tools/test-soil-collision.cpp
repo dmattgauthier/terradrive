@@ -57,5 +57,24 @@ int main(){try{
  Check(!RefineSoilCollisionCells(C,H),"unchanged geometry preserves topology");const auto Count=C.size();Rut=false;Check(!RefineSoilCollisionCells(C,H)&&C.size()==Count,"refinement is monotonic; compaction cannot cause recook churn");
  auto Saddle=[](int X,int Y){return 50.*X*Y;};auto S=BuildSoilCollisionCells(2,Saddle);auto ST=SoilCollisionTriangles(S,3);Topology(ST,2);
  Check(S.size()==4,"saddle requires original fine diagonals");Check(std::abs(Fine(.25,.25,2,Saddle)-Sparse(.25,.25,ST,3,Saddle))<1e-9,"saddle diagonal does not silently change");
+ auto Uploaded=[](int X,int Y){return 300.+.17*X-.08*Y+.9*std::sin(X*.19)*std::cos(Y*.23);};
+ auto ProxyCells=BuildSoilCollisionCells(D,Uploaded,SoilCollisionBuildErrorCM);
+ const auto Proxy=SoilCollisionTriangles(ProxyCells,D+1);
+ const double UploadedError=SoilCollisionErrorBound(ProxyCells,Uploaded);
+ for(int Dose=1;Dose<=6;++Dose){
+  auto Live=[&](int X,int Y){return Uploaded(X,Y)+Dose*.03*std::sin(X*.37+Y*.13);};
+  const double Bound=SoilCollisionUploadedErrorBound(D,UploadedError,Uploaded,Live);
+  Check(Bound<=SoilCollisionErrorCM,"small live impressions can retain the actual uploaded collider within the original accuracy budget");
+  double Error=0;for(int N=0;N<512;++N){const double X=Q(Random),Y=Q(Random);Error=std::max(Error,std::abs(Fine(X,Y,D,Live)-Sparse(X,Y,Proxy,D+1,Uploaded)));}
+  Check(Error<=Bound+1e-7,"retained geometry is bounded against the live surface between vertices, not a newly imagined collider");
+ }
+ auto LargeEdit=[&](int X,int Y){return Uploaded(X,Y)+1.2*std::sin(X*.37+Y*.13);};
+ Check(SoilCollisionUploadedErrorBound(D,UploadedError,Uploaded,LargeEdit)>SoilCollisionErrorCM,"larger excavation requires a physical collider refresh");
+ RefineSoilCollisionCells(ProxyCells,LargeEdit,SoilCollisionBuildErrorCM);
+ const double RefreshedError=SoilCollisionErrorBound(ProxyCells,LargeEdit);
+ Check(RefreshedError<=SoilCollisionBuildErrorCM+1e-8,"refresh restores the reserved accuracy margin without changing the public error limit");
+ Check(std::abs(SoilCollisionUploadedErrorBound(D,RefreshedError,LargeEdit,LargeEdit)-RefreshedError)<1e-9,"unchanged height and packing-only edits do not require geometry replacement");
+ auto HiddenNode=[&](int X,int Y){return Uploaded(X,Y)+(X==17&&Y==29?1.:0.);};
+ Check(SoilCollisionUploadedErrorBound(D,UploadedError,Uploaded,HiddenNode)>SoilCollisionErrorCM,"a live fine-grid change is detected even when it is not a sparse collider vertex");
  std::cout<<"PASS "<<Checks<<" soil collision checks\n";return 0;
  }catch(const std::exception& E){std::cerr<<"FAIL after "<<Checks<<": "<<E.what()<<'\n';return 1;}}

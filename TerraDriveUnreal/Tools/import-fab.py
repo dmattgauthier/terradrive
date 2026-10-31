@@ -3,7 +3,6 @@ recipe=json.load(open(os.path.join(root,'Tools','fab-scenery.json'),encoding='ut
 cache=os.environ.get('TERRA_FAB_CACHE',os.path.join(os.environ.get('ProgramData','C:/ProgramData'),
     'Epic/EpicGamesLauncher/VaultCache/FabLibrary',recipe['cacheFolder']))
 fab_report=[]
-exec(compile(open(os.path.join(root,'Tools','close-rocks.py'),encoding='utf8').read(),'close-rocks.py','exec'))
 if data.get('fabScenery',{}).get('enabled'):
     if not os.path.isdir(cache):
         raise RuntimeError('Acquired Fab pack is enabled but missing. Set TERRA_FAB_CACHE to the extracted African Slate Quarry directory.')

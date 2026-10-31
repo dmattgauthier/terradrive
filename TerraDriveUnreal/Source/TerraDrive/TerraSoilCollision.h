@@ -11,6 +11,21 @@ namespace TerraSim {
 // sizes differ. Thus neighbouring leaves/tiles share edges without T-junctions.
 struct SoilCollisionCell { int X,Y,Size; };
 constexpr double SoilCollisionErrorCM=.5; // 0.197 inch maximum vertical error.
+// Reserve half the error budget for small live edits. Replacing the Chaos
+// geometry for every fractional-millimetre edit deep-copies the triangle mesh
+// and discards its resting contacts, even when its topology is unchanged.
+constexpr double SoilCollisionBuildErrorCM=SoilCollisionErrorCM*.5;
+
+template<class Uploaded,class Current>
+double SoilCollisionUploadedErrorBound(int Div,double UploadedTopologyError,Uploaded Before,Current After) {
+  double Movement=0;
+  for(int Y=0;Y<=Div;++Y)for(int X=0;X<=Div;++X)
+    Movement=std::max(Movement,std::abs(Before(X,Y)-After(X,Y)));
+  // Both fine surfaces share the original diagonals. Their difference is a
+  // linear interpolation of vertex differences, so this bound holds between
+  // vertices too. Add the existing sparse-to-uploaded interpolation bound.
+  return UploadedTopologyError+Movement;
+}
 
 template<class Height>
 double SoilCollisionPlaneError(const SoilCollisionCell& C,Height H) {

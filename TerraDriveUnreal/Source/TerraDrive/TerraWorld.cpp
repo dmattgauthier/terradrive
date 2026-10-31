@@ -85,6 +85,12 @@ float ATerraWorld::SnowDrift(float X,float Y) const {
   const float Ripple=3.f*(1+FMath::Sin(X*.016f+Y*.007f));
   return Snow*Snow*(8.f+30.f*Wind*Wind*Wind+18.f*FMath::Pow(Shelf,6)+Ripple);
 }
+float ATerraWorld::DeepMudWeight(float X,float Y) const {
+  if(!DeepMudEnabled)return 0;
+  const FVector2D Local=(FVector2D(X,Y)-DeepMudCenter)/DeepMudRadii;
+  const float Radius=Local.Size()+.045f*FMath::Sin(X*.0037f+Y*.0021f)*FMath::Sin(Y*.0043f-X*.0016f);
+  return 1-Smooth(.62f,1.12f,Radius);
+}
 float ATerraWorld::BaseHeight(float X, float Y) const {
   if (N < 2)
     return 0;
@@ -165,6 +171,7 @@ float ATerraWorld::SoilSinkLimit(float X,float Y,const FTerraSurfaceBlend &Blend
     Limit+=(FMath::Min(Sink[6],SnowLayer*.70f)-Sink[6])*Blend.Weight[6];
   }
   if(Blend.Weight[0]>0)Limit+=LooseDirt(X,Y)*Blend.Weight[0]*.24f;
+  Limit=FMath::Lerp(Limit,DeepMudMaximumSink,DeepMudWeight(X,Y));
   return FMath::Max(0.f,Limit);
 }
 FTerraSample ATerraWorld::Sample(FVector P) const {
@@ -186,6 +193,8 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
   S.Mu*=Rain?.76f:1.f;
   if(Blend.Weight[0]>0){const float Loose=LooseDirt(P.X,P.Y)*Blend.Weight[0];
     S.Softness+=Loose*.65f;S.Rolling*=1+Loose*2.f;}
+  const float Bog=DeepMudWeight(P.X,P.Y);
+  if(Bog>0){S.Mu=FMath::Lerp(S.Mu,.38f,Bog);S.Rolling=FMath::Lerp(S.Rolling,.14f,Bog);S.Softness=FMath::Lerp(S.Softness,.98f,Bog);}
   // Thin soil at a rock/pavement edge cannot excavate the rigid substrate.
   if(S.Surface==1||S.Surface==4){S.Softness=0;S.MaxSink=0;}
   if (N) {
@@ -794,6 +803,13 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
 }
 void ATerraWorld::LoadScenery() {
   QuarryTrailPolyline.Empty();
+  const TSharedPtr<FJsonObject>* Bog=nullptr;
+  if(Data->TryGetObjectField(TEXT("deepMud"),Bog)){
+    const auto Center=(*Bog)->GetArrayField(TEXT("center")),Radii=(*Bog)->GetArrayField(TEXT("radii"));
+    DeepMudCenter=FVector2D(Center[0]->AsNumber()*100,Center[1]->AsNumber()*100);
+    DeepMudRadii=FVector2D(Radii[0]->AsNumber()*100,Radii[1]->AsNumber()*100);
+    DeepMudMaximumSink=(*Bog)->GetNumberField(TEXT("maxSinkM"));DeepMudEnabled=true;
+  }
   const TSharedPtr<FJsonObject>* Trail=nullptr;
   if(Data->TryGetObjectField(TEXT("quarryTrail"),Trail)){
     const auto Samples=(*Trail)->GetArrayField(TEXT("samples"));
@@ -986,9 +1002,28 @@ void ATerraWorld::LoadScenery() {
       const FVector Position=Vec(A->GetArrayField(TEXT("p")));
       FVector Scale=Vec(A->GetArrayField(TEXT("s")));
       if(!Solid&&SurfaceBlend(Position.X,Position.Y).Weight[6]>.65f)Scale=FVector::ZeroVector;
-      const int Index=C->AddInstance(FTransform(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Position,Scale));
+      FTransform Placement(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Position,Scale);
+      bool SnapBoulder=false;O->TryGetBoolField(TEXT("snapBoulder"),SnapBoulder);
+      if(SnapBoulder&&C->GetStaticMesh()){
+        C->ComponentTags.AddUnique(TEXT("TerraNativeBoulder"));
+        const FBox Bounds=C->GetStaticMesh()->GetBoundingBox();
+        FVector Anchor=Position;const auto GroundSample=Sample(Anchor);float GroundZ=GroundSample.Height;FVector Normal=GroundSample.Normal;
+        FHitResult Hit;FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraBoulderGround),true);
+        for(auto Ignore:Scenery)Query.AddIgnoredComponent(Ignore.Get());
+        for(const auto& Tree:Trees)Query.AddIgnoredComponent(Tree.Collider);
+        if(GetWorld()->LineTraceSingleByChannel(Hit,Anchor+FVector(0,0,10000),Anchor-FVector(0,0,10000),ECC_Visibility,Query)){
+          GroundZ=Hit.ImpactPoint.Z;Normal=Hit.ImpactNormal;
+        }
+        const FVector Forward=FVector::VectorPlaneProject(Placement.GetRotation().GetForwardVector(),Normal).GetSafeNormal();
+        if(!Forward.IsNearlyZero())Placement.SetRotation(FRotationMatrix::MakeFromXZ(Forward,Normal).ToQuat());
+        Anchor.Z=GroundZ-FMath::Max(3.f,float(Bounds.GetSize().Z*Scale.Z)*.18f);
+        Placement.SetLocation(Anchor);
+        Placement.AddToTranslation(-Placement.TransformVector(FVector(Bounds.GetCenter().X,Bounds.GetCenter().Y,Bounds.Min.Z)));
+      }
+      const int Index=C->AddInstance(Placement);
       const auto Color=A->GetArrayField(TEXT("color"));
-      if(!Solid)RegisterCrushable(C,Index);
+      bool CanCrush=!Solid;O->TryGetBoolField(TEXT("crushable"),CanCrush);
+      if(CanCrush)RegisterCrushable(C,Index);
       for(int Channel=0;Channel<3;++Channel)C->SetCustomDataValue(Index,Channel,Color[Channel]->AsNumber());
       ++DetailInstanceCount;if(Solid)++SolidDetailCount;
     }

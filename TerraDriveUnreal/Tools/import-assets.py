@@ -15,7 +15,7 @@ lib = unreal.EditorAssetLibrary
 material_usage_readback = {}
 
 def verify_scan_usage(m, role):
-    if role != 'scan':
+    if role not in ['scan','snowrock']:
         return
     edit.set_base_material_usage(m, unreal.MaterialUsage.MATUSAGE_NANITE, True)
     flags = {'nanite': edit.has_material_usage(m, unreal.MaterialUsage.MATUSAGE_NANITE),
@@ -54,7 +54,7 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         5 if instance_tint else 4, color, roughness, metallic, opacity, sky,
         texture.get_path_name() if texture else None,
         alpha.get_path_name() if alpha else None, clip,
-        clearcoat, coat_roughness, emissive, role, 11 if role == 'scan' else 10, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
+        clearcoat, coat_roughness, emissive, role, 12 if role in ['scan','snowrock'] else 10, normal.get_path_name() if normal else None, rough_map.get_path_name() if rough_map else None
     ]).encode()).hexdigest()
     if lib.does_asset_exist(dest):
         m = lib.load_asset(dest)
@@ -117,6 +117,24 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
         interpolator=edit.create_material_expression(m,unreal.MaterialExpressionVertexInterpolator,-600,100)
         if not edit.connect_material_expressions(position,'',interpolator,'VS') or not edit.connect_material_expressions(interpolator,'',weave,'Local'):raise RuntimeError('Carbon local-space interpolation failed')
         output=weave
+    if role == 'snowrock':
+        # Opaque snow cover follows rock orientation, with broken wind-scoured
+        # edges. The original photographic atlas/normal detail remains below it.
+        normal_ws=edit.create_material_expression(m,unreal.MaterialExpressionVertexNormalWS,-800,-300)
+        position=edit.create_material_expression(m,unreal.MaterialExpressionWorldPosition,-800,-420)
+        mask=edit.create_material_expression(m,unreal.MaterialExpressionCustom,-450,-300)
+        mask.set_editor_property('code','float wind=sin(P.x*.023+P.y*.011)*sin(P.y*.037-P.z*.029);return saturate(smoothstep(.28,.76,N.z)+wind*.17-.08);')
+        mask.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+        inputs=[]
+        for pin in ['P','N']:
+            item=unreal.CustomInput();item.set_editor_property('input_name',pin);inputs.append(item)
+        mask.set_editor_property('inputs',inputs)
+        edit.connect_material_expressions(position,'',mask,'P');edit.connect_material_expressions(normal_ws,'',mask,'N')
+        white=edit.create_material_expression(m,unreal.MaterialExpressionConstant3Vector,-200,-300)
+        white.set_editor_property('constant',unreal.LinearColor(.77,.83,.87,1))
+        mix=edit.create_material_expression(m,unreal.MaterialExpressionLinearInterpolate,20,30)
+        edit.connect_material_expressions(output,'',mix,'A');edit.connect_material_expressions(white,'',mix,'B');edit.connect_material_expressions(mask,'',mix,'Alpha')
+        output=mix
     connect(output, unreal.MaterialProperty.MP_EMISSIVE_COLOR if sky else unreal.MaterialProperty.MP_BASE_COLOR, 'EmissiveColor' if sky else 'BaseColor')
     for prop, value, pin in [(unreal.MaterialProperty.MP_ROUGHNESS, roughness, 'Roughness'), (unreal.MaterialProperty.MP_METALLIC, metallic, 'Metallic')]:
         node = edit.create_material_expression(m, unreal.MaterialExpressionConstant, -180, 280)
@@ -178,7 +196,7 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
             unreal.log('TERRA_SCAN_GRASS_OPACITY_READY material='+name+' texture='+alpha.get_path_name()+' channel=R clip='+str(clip))
     elif opacity < .95:
         m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
-        if role in ('glass','lens'):
+        if role in ('glass','lens','mudwater'):
             m.set_editor_property('translucency_lighting_mode',unreal.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
             m.set_editor_property('screen_space_reflections',True)
         node = edit.create_material_expression(m, unreal.MaterialExpressionConstant, -180, 400)
@@ -193,6 +211,16 @@ def material(name, color, roughness=.8, metallic=0, opacity=1,
             result=edit.create_material_expression(m,unreal.MaterialExpressionAdd,-60,500)
             edit.connect_material_expressions(node,'',result,'A')
             edit.connect_material_expressions(rim,'',result,'B')
+            edit.connect_material_property(result,'',unreal.MaterialProperty.MP_OPACITY)
+        elif role == 'mudwater':
+            uv=edit.create_material_expression(m,unreal.MaterialExpressionTextureCoordinate,-700,500)
+            fade=edit.create_material_expression(m,unreal.MaterialExpressionCustom,-460,500)
+            fade.set_editor_property('code','return smoothstep(0.0,1.0,UV.x);')
+            fade.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+            pin=unreal.CustomInput();pin.set_editor_property('input_name','UV');fade.set_editor_property('inputs',[pin])
+            edit.connect_material_expressions(uv,'',fade,'UV')
+            result=edit.create_material_expression(m,unreal.MaterialExpressionMultiply,-80,500)
+            edit.connect_material_expressions(node,'',result,'A');edit.connect_material_expressions(fade,'',result,'B')
             edit.connect_material_property(result,'',unreal.MaterialProperty.MP_OPACITY)
         else:
             edit.connect_material_property(node, '', unreal.MaterialProperty.MP_OPACITY)
@@ -234,11 +262,13 @@ material('Native_RunningGearRubber',[.012,.016,.018],.86,.02)
 material('Native_Chrome',[.45,.53,.57],.25,.88)
 exec(compile(open(os.path.join(root,'Tools','automotive-materials.py'),encoding='utf8').read(),'automotive-materials.py','exec'),globals())
 
+exec(compile(open(os.path.join(root,'Tools','close-rocks.py'),encoding='utf8').read(),'close-rocks.py','exec'))
 for i, asset in enumerate(data['assets']):
     dest = '/Game/Meshes/' + asset['name']
     mesh = lib.load_asset(dest) if lib.does_asset_exist(dest) else None
     if mesh and (lib.get_metadata_tag(mesh, 'TerraMeshSchema') != str(data['meshSchema']) or
-                 lib.get_metadata_tag(mesh, 'TerraMeshHash') != asset.get('sha256','')):
+                 lib.get_metadata_tag(mesh, 'TerraMeshHash') != asset.get('sha256','') or
+                 (asset['name'].startswith('scan_native_') and lib.get_metadata_tag(mesh,'TerraRockClosure')!='closed-scan-v3:'+asset['sha256'])):
         mesh = None
     if mesh is None:
         task = unreal.AssetImportTask()
@@ -279,7 +309,7 @@ for i, asset in enumerate(data['assets']):
         if not mesh.get_editor_property('allow_cpu_access'):
             raise RuntimeError('Damage mesh CPU data unavailable: ' + asset['name'])
     body = mesh.get_editor_property('body_setup')
-    if asset['name'] in ['scan_mountainside_0','scan_boulder_01_0'] and lib.get_metadata_tag(mesh,'TerraNaniteRevision')!='1':
+    if (asset['name'] in ['scan_mountainside_0','scan_boulder_01_0'] or asset['name'].startswith('scan_native_')) and lib.get_metadata_tag(mesh,'TerraNaniteRevision')!='1':
         # The editor subsystem is not instantiated in Python commandlets.
         # Editor property writes run the mesh's property-change/build path.
         nanite=mesh.get_editor_property('nanite_settings')
@@ -294,6 +324,12 @@ for i, asset in enumerate(data['assets']):
     lib.set_metadata_tag(mesh, 'TerraMeshSchema', str(data['meshSchema']))
     lib.set_metadata_tag(mesh, 'TerraMeshHash', asset.get('sha256',''))
     lib.save_loaded_asset(mesh)
+    if asset['name'].startswith('scan_native_'):
+        close_rock_mesh(mesh,asset['sha256'])
+        configure_boulder_collision(mesh,asset['sha256'])
+        for slot in mesh.get_editor_property('static_materials'):
+            if slot.material_interface.get_editor_property('blend_mode') != unreal.BlendMode.BLEND_OPAQUE:
+                raise RuntimeError('A boulder material is not opaque: '+asset['name'])
     unreal.log('TERRA_IMPORT %d/%d %s' % (i+1, len(data['assets']), asset['name']))
     if i%8==7:
         unreal.SystemLibrary.collect_garbage()

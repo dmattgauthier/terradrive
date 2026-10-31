@@ -3,6 +3,7 @@
 import {Terrain as BrowserTerrain} from '../../TerraDrive-v1.13/dist/src/terrain.js';
 import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {QUARRY_TRAIL_POINTS} from './quarry-trail.mjs';
+import {deepMudWeight,deepMudHeight,DEEP_MUD} from './deep-mud.mjs';
 export class Terrain extends BrowserTerrain {
  constructor(){
   super();
@@ -23,7 +24,8 @@ export class Terrain extends BrowserTerrain {
   this.gradeVersion='slate-rim-heightfield-1';
  }
  heightAt(x,z){
-  const original=super.heightAt(x,z),px=z,py=-x;
+  let original=super.heightAt(x,z);const px=z,py=-x;
+  if(px> -149&&px< -65&&py> -77&&py< -25)original=deepMudHeight(px,py,original);
   if(!this.gradeLine||px<70||px>300||py< -375||py> -140)return original;
   let best=Infinity,grade=original,along=0,index=0;
   for(let i=1;i<this.gradeLine.length;i++){
@@ -42,6 +44,11 @@ export class Terrain extends BrowserTerrain {
  }
  sample(x,z){
   const sample=super.sample(x,z);
+  const wet=deepMudWeight(z,-x);
+  if(wet>0){
+   sample.height=this.heightAt(x,z);sample.surface='mud';
+   sample.waterDepth=Math.max(sample.waterDepth||0,(DEEP_MUD.waterLevel-sample.height)*wet);
+  }
   if(!this.gradeLine||z<70||z>300||x<140||x>375)return sample;
   sample.height=this.heightAt(x,z);
   const e=.20,dx=(this.heightAt(x+e,z)-this.heightAt(x-e,z))/(2*e),dz=(this.heightAt(x,z+e)-this.heightAt(x,z-e))/(2*e),length=Math.hypot(dx,1,dz);

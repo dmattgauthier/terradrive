@@ -712,13 +712,16 @@ void ATerraVehicle::Simulate(float Dt) {
   }
   SolveAxles(LastCenterCouplingNm);
   float BrakeSupportLoad=0;
+  // Match the scene exactly; nominal 9.81 versus UE's 9.80 leaves a tiny
+  // permanent cross-slope bias in an otherwise stationary tire constraint.
+  const float GravityDownMS2=-GetWorld()->GetGravityZ()*.01f;
   for(const auto &Wheel:WheelState)if(Wheel.ContactValid&&Wheel.Load>50)BrakeSupportLoad+=Wheel.Load;
   for (int I=0;I<4;++I) {
     auto &W=WheelState[I];
     const float C=Stiffness[I];
     const auto Combined=TerraSim::CombinedTireForces(C*(W.Omega*R-W.LongSpeed),Lateral[I],LongLimit[I],W.SideGrip*W.Load);
     float FX=Combined.Longitudinal,FY=Combined.Lateral;
-    if(EffectiveBrake>.05f&&FMath::Abs(W.LongSpeed)<1.f&&W.ContactValid&&W.Load>50){
+    if(FMath::Abs(W.LongSpeed)<1.f&&W.ContactValid&&W.Load>50){
       // Static friction opposes the remaining contact velocity and the gravity
       // component along the slope. This is still bounded by brake torque and
       // the same combined tire grip; it never freezes an airborne chassis.
@@ -734,8 +737,15 @@ void ATerraVehicle::Simulate(float Dt) {
       // Brake impulses share the actual translational/rotational body inertia.
       // Using a quarter of total mass at every tire overcorrected roll on
       // taller vehicles, leaving an alternating residual contact velocity.
-      FX=FMath::Clamp(-ContactMass(W.ForceForward)*W.LongSpeed/FMath::Max(Dt,.008f)+Share*9.81f*W.ForceForward.Z,-HoldLimit,HoldLimit);
-      FY=FMath::Clamp(-ContactMass(W.ForceSide)*W.LateralSpeed/FMath::Max(Dt,.008f)+Share*9.81f*W.ForceSide.Z,-W.SideGrip*W.Load,W.SideGrip*W.Load);
+      // Lateral static grip exists without the service brake. A slip-only
+      // curve has zero force at zero slip, so even a stationary tire drifted
+      // sideways until enough artificial slip built up to oppose gravity.
+      // Unbraked wheels may still roll down a grade in their rolling direction.
+      if(EffectiveBrake>.05f)
+        FX=FMath::Clamp(-ContactMass(W.ForceForward)*W.LongSpeed/FMath::Max(Dt,.008f)+Share*GravityDownMS2*W.ForceForward.Z,-HoldLimit,HoldLimit);
+      const float StaticSide=FMath::Clamp(-ContactMass(W.ForceSide)*W.LateralSpeed/FMath::Max(Dt,.008f)+Share*GravityDownMS2*W.ForceSide.Z,-W.SideGrip*W.Load,W.SideGrip*W.Load);
+      const float Blend=1-FMath::SmoothStep(.55f,1.f,FMath::Abs(W.LongSpeed));
+      FY=FMath::Lerp(FY,StaticSide,Blend);
     }
     const float Ellipse=FMath::Sqrt(FMath::Square(FX/FMath::Max(1.f,W.Grip*W.Load))+FMath::Square(FY/FMath::Max(1.f,W.SideGrip*W.Load)));
     const float Scale=Ellipse>1?1/Ellipse:1;

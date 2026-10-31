@@ -13,6 +13,8 @@ import {bodyRefinement} from './body-refinement.mjs';
 import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
 import {quarryTrail} from './quarry-trail.mjs';
+import {refineRockPlacements} from './rock-fidelity.mjs';
+import {DEEP_MUD,deepMudWaterAsset,adventureRoutes} from './deep-mud.mjs';
 import {OffroadWorld} from '../../TerraDrive-v1.13/dist/src/world.js';
 import {createTrackModule} from '../../TerraDrive-v1.13/dist/src/track-view.js';
 import {SURFACE_RESPONSE_PROFILES} from '../../TerraDrive-v1.13/dist/src/surface-response.js';
@@ -109,6 +111,12 @@ for(let row=940;row<=1400;row++)for(let col=50;col<=520;col++){
  field.writeFloatLE(terrain.heightAt(-uy,ux),16+(row*n+col)*9);
 }
 fs.writeFileSync(path.join(data,'terrain.bin'),field);
+// Update the new mud basin only; preserve all other reference samples.
+for(let row=502;row<=670;row++)for(let col=646;col<=750;col++){
+ const ux=-400+row*.5,uy=-400+col*.5,s=terrain.sample(-uy,ux),offset=16+(row*n+col)*9;
+ field.writeFloatLE(s.height,offset);field.writeFloatLE(s.waterDepth,offset+4);field[offset+8]=surfaces.indexOf(s.surface);
+}
+fs.writeFileSync(path.join(data,'terrain.bin'),field);
 const vehicles=[];for(const spec of VEHICLES){const {view,parts}=prepareNativeVehicle(spec);
  if(spec.bodyStyle==='earthcruiser')view.root.userData.nativeFidelity.roofDamageTopology=refineExpRoof(view.body);
  const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix,lamps:assets.find(a=>a.name===prefix+'_body').slots.filter(id=>['brake','reverse'].includes(mats.find(m=>m.id===id).role)).map(id=>({material:id,role:mats.find(m=>m.id===id).role})),nativeModel:{...view.root.userData.nativeFidelity,construction:view.root.userData.nativeConstruction,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?{...view.root.userData.visualModel,refinement:view.root.userData.bodyRefinement}:view.root.userData.bodyRefinement}});view.dispose();console.log('Vehicle exported',spec.name);}
@@ -145,7 +153,11 @@ exportObj('detail_brake_rotor',brakeRotorModel());
 exportObj('detail_brake_rotor_ceramic',brakeRotorModel(true));
 exportObj('detail_brake_rotor_solid',brakeRotorModel(false,true));
 const clod=new THREE.Group();clod.add(new THREE.Mesh(new THREE.IcosahedronGeometry(.5,1),new THREE.MeshStandardMaterial({color:'#766858',roughness:.96})));exportObj('detail_soil_clod',clod);
-const environment=environmentModels(terrain,routes,terrain.zones),scans=scannedEnvironment(root,terrain,routes),trail=quarryTrail(terrain,scans,quarry.base);routes.push(trail.route);environment.assets.push(...scans.assets);environment.placements.push(...scans.placements);for(const a of environment.assets)exportObj(a.name,a.group);
+const environment=environmentModels(terrain,routes,terrain.zones),scans=scannedEnvironment(root,terrain,routes),trail=quarryTrail(terrain,scans,quarry.base);routes.push(trail.route);
+routes.push(...adventureRoutes(terrain));
+const fab=fabScenery(root,terrain,routes,quarry.base),rockFidelity=refineRockPlacements(terrain,scans,environment,fab);
+const mudWater=deepMudWaterAsset(terrain);environment.assets.push(mudWater);environment.placements.push(mudWater.placement);
+environment.assets.push(...scans.assets);environment.placements.push(...scans.placements);for(const a of environment.assets)exportObj(a.name,a.group);
 const trailDistance=p=>Math.min(...trail.samples.map(s=>Math.hypot(s.x*100-p[0],s.y*100-p[1])));
 for(let i=trees.length-1;i>=0;--i)if(trailDistance(trees[i].p)<340+trees[i].radius){
  for(const part of trees[i].parts)placements[part.group].instances=placements[part.group].instances.filter(p=>p.index!==part.index);
@@ -157,10 +169,12 @@ const tinted=new Set();
 for(const g of [...placements,...environment.placements])if(g.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
 for(const m of mats){const t=tints.get(m.id);if(t?.[3])m.vertexTint=t.slice(0,3).map(v=>v/t[3]);m.instanceTint=tinted.has(m.id);}
-const manifest={version:'1.15.0',nativeRevision:'body-circle-fab-2',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base,fabScenery:fabScenery(root,terrain,routes,quarry.base),loopFrames:Array.from({length:25},(_,i)=>{const f=challengeLoopFrame(i*Math.PI*2/24),p=f.point,n=f.normal,t=f.tangent;return {p:[p.z*100,-p.x*100,p.y*100],n:[n.z,-n.x,n.y],t:[t.z,-t.x,t.y]};})};
-manifest.nativeRevision='reference-coachwork-18';
+const manifest={version:'1.15.0',nativeRevision:'body-circle-fab-2',displayUnits:'imperial',meshSchema:2,coordinates:'Unreal cm: X=source Z, Y=-source X, Z=source Y; terrain rows are Unreal X',assets,materials:mats,vehicles,surfaces,profiles:SURFACE_RESPONSE_PROFILES,zones:[...terrain.zones,quarry.zone],placements,nativeDetails:environment.placements,trees,obstacles:terrain.obstacles,constructed,routes,challengeFeatures:course.features.map(f=>({id:f.id,triangles:f.triangles.length})),quarryBaseM:quarry.base,fabScenery:fab,rockFidelity,loopFrames:Array.from({length:25},(_,i)=>{const f=challengeLoopFrame(i*Math.PI*2/24),p=f.point,n=f.normal,t=f.tangent;return {p:[p.z*100,-p.x*100,p.y*100],n:[n.z,-n.x,n.y],t:[t.z,-t.x,t.y]};})};
+manifest.nativeRevision='boulders-mud-park-21';manifest.deepMud=DEEP_MUD;
 manifest.terrainGrade=terrain.gradeVersion;
-manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,assetCounts:trail.assetCounts,routeIndex:8};
+manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,
+ assetCounts:{cliffs:0,boulders:environment.placements.filter(g=>g.snapBoulder).flatMap(g=>g.instances).filter(p=>trailDistance(p.p)<3000).length,grass:trail.assetCounts.grass},
+ retiredOpenCliffPlacements:trail.assetCounts.cliffs,routeIndex:8};
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));

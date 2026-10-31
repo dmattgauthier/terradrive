@@ -20,6 +20,7 @@ public:
 private:
   std::vector<TerraSim::SoilCollisionCell> CollisionCells;
   TArray<float> UploadedHeights;
+  double UploadedTopologyErrorCM=0;
   int32 FineSection=-1;
   bool AdaptiveDataReady=false;
   bool LegacyDense() const;

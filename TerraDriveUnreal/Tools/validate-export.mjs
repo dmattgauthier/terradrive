@@ -7,7 +7,7 @@ import {Terrain} from './native-terrain.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const b=fs.readFileSync(path.join(root,'Content/NativeData/terrain.bin'));
 const data=JSON.parse(fs.readFileSync(path.join(root,'SourceAssets/import.json')));
-assert.equal(data.nativeRevision,'reference-coachwork-18');
+assert.equal(data.nativeRevision,'boulders-mud-park-21');
 assert.ok(data.vehicles.every(v=>v.nativeModel.referenceCraftRevision===18));
 assert.equal(new Set(data.materials.map(m=>m.id)).size,data.materials.length,'stable material IDs stay unique');
 // Circularity is tested against a fixed centre/radius, independently of the
@@ -39,10 +39,17 @@ for(let i=0;i<1000;i++){
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
 assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,9);assert.equal(data.zones.length,9);
-assert.equal(data.routes.length,9);assert.equal(data.constructed.length,2);
+assert.equal(data.routes.length,13);assert.equal(data.constructed.length,2);
 assert.ok(data.quarryTrail.lengthM>280&&data.quarryTrail.lengthM<420);
 assert.equal(data.quarryTrail.routeIndex,8);assert.equal(data.routes[8].gates.length,20);
-assert.ok(data.quarryTrail.assetCounts.cliffs>=20&&data.quarryTrail.assetCounts.boulders>=400&&data.quarryTrail.assetCounts.grass>2000);
+assert.ok(data.quarryTrail.assetCounts.grass>2000);
+assert.equal(data.rockFidelity.dryVariants,18);assert.equal(data.rockFidelity.snowVariants,6);
+assert.ok(data.rockFidelity.replacedBoulders>1000);
+for(const g of data.nativeDetails.filter(g=>/^native_boulder_|^scan_mountainside_/.test(g.asset)))assert.equal(g.instances.length,0,'retired crude/free cliff placements');
+for(const g of data.fabScenery.groups.filter(g=>g.asset.includes('Ice')||g.asset.startsWith('Winter_')||['outcrop','ledge'].includes(g.kind)))assert.equal(g.instances.length,0,'no freestanding partial cliffs');
+assert.equal(data.nativeDetails.filter(g=>g.snapBoulder&&g.instances.length).length,24);
+assert.ok(data.deepMud.maxSinkM>.5&&data.deepMud.maxSinkM<.7);
+for(const prefix of ['rhythm-launch','rhythm-landing','crossaxle','banked-hairpin'])assert.ok(data.challengeFeatures.some(f=>f.id.startsWith(prefix)&&f.triangles>0));
 const trailReference=new Terrain();
 for(const p of data.quarryTrail.samples){assert.ok([p.x,p.y,p.z,p.tx,p.ty,p.d].every(Number.isFinite));assert.ok(Math.abs(p.z-trailReference.heightAt(-p.y,p.x))<1e-5);}
 // Cover the narrow graded corridor explicitly: the broad random sample can

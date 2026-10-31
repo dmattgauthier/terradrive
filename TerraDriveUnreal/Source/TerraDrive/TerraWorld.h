@@ -96,6 +96,7 @@ public:
       float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const;
   float Height(float X, float Y) const;
   float SnowDrift(float X,float Y) const;
+  float DeepMudWeight(float X,float Y) const;
   void Deform(FVector P, FVector Forward, float Load, float Pressure,
               float Width, float Length, float Slip, float Speed, float Dt,bool BodyContact=false);
   void BodyGroundContact(FVector Point,FVector Forward,float Load,float Width,float Length,float Speed,float Dt);
@@ -142,6 +143,9 @@ private:
   TArray<FVector2D> QuarryTrailPolyline;
   int32 N = 0;
   float Step = .5f, Origin = -400, VisualTimer = 0;
+  bool DeepMudEnabled=false;
+  FVector2D DeepMudCenter=FVector2D::ZeroVector,DeepMudRadii=FVector2D(1,1);
+  float DeepMudMaximumSink=.60f;
   TMap<FIntPoint, FTerraTile> Detail;
   TMap<FIntPoint, FTerraSoilState> SoilCache;
   TMap<FIntPoint, UProceduralMeshComponent *> Ground;
