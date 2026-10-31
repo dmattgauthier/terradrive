@@ -7,8 +7,8 @@
 namespace TerraSim {
 // Collision follows the same height samples as the rendered soil. Planar
 // regions need far fewer triangles; curved ruts refine back to the fine grid.
-// Every leaf retains EVERY fine-grid boundary vertex, including where leaf
-// sizes differ. Thus neighbouring leaves/tiles share edges without T-junctions.
+// Leaves share the corners of their neighbours. Tile borders retain every
+// fine-grid segment, so independently refined adjacent tiles cannot crack.
 struct SoilCollisionCell { int X,Y,Size; };
 constexpr double SoilCollisionErrorCM=.5; // 0.197 inch maximum vertical error.
 // Reserve half the error budget for small live edits. Replacing the Chaos
@@ -71,19 +71,51 @@ double SoilCollisionErrorBound(const std::vector<SoilCollisionCell>& Cells,Heigh
   double Bound=0;for(const auto& C:Cells)if(C.Size>1)Bound=std::max(Bound,2*SoilCollisionPlaneError(C,H));
   return Bound;
 }
-inline std::vector<std::array<int,3>> SoilCollisionTriangles(const std::vector<SoilCollisionCell>& Cells,int Width) {
+inline std::vector<std::array<int,3>> SoilCollisionTriangles(const std::vector<SoilCollisionCell>& Cells,int Width,bool AllLeafEdges=false) {
   std::vector<std::array<int,3>> Out;
   auto Index=[&](int X,int Y){return Y*Width+X;};
+  // Collinear points inside a leaf edge add long thin collision triangles
+  // without changing its surface. Keep only shared leaf corners there. Both
+  // sides use the same mask, including fine neighbours, avoiding T-junctions.
+  std::vector<bool> Corner(Width*Width,false);
+  for(const auto& C:Cells)for(int Y:{C.Y,C.Y+C.Size})for(int X:{C.X,C.X+C.Size})Corner[Index(X,Y)]=true;
+  for(int I=0;I<Width;++I){Corner[Index(0,I)]=Corner[Index(Width-1,I)]=true;Corner[Index(I,0)]=Corner[Index(I,Width-1)]=true;}
   for(const auto& C:Cells){
     const int X=C.X,Y=C.Y,S=C.Size;
     if(S==1){const int A=Index(X,Y);Out.push_back({A,A+Width,A+1});Out.push_back({A+1,A+Width,A+Width+1});continue;}
     const int Center=Index(X+S/2,Y+S/2);
-    for(int I=0;I<S;++I){
-      Out.push_back({Center,Index(X,Y+I),Index(X,Y+I+1)});
-      Out.push_back({Center,Index(X+I,Y+S),Index(X+I+1,Y+S)});
-      Out.push_back({Center,Index(X+S,Y+S-I),Index(X+S,Y+S-I-1)});
-      Out.push_back({Center,Index(X+S-I,Y),Index(X+S-I-1,Y)});
+    auto Edge=[&](int AX,int AY,int DX,int DY){
+      int Previous=Index(AX,AY);
+      for(int I=1;I<=S;++I){const int Next=Index(AX+DX*I,AY+DY*I);
+        if(AllLeafEdges||Corner[Next]){Out.push_back({Center,Previous,Next});Previous=Next;}
+      }
+    };
+    Edge(X,Y,0,1);Edge(X,Y+S,1,0);Edge(X+S,Y+S,0,-1);Edge(X+S,Y,-1,0);
+  }
+  return Out;
+}
+
+// Chaos only needs vertices referenced by the adaptive triangles. Keep the
+// reverse map so a later height upload preserves exactly the cooked ordering.
+// This changes neither triangle winding nor any collision surface position.
+struct SoilCollisionCompactMesh {
+  std::vector<int> FineNodes;
+  std::vector<std::array<int,3>> Triangles;
+};
+inline SoilCollisionCompactMesh CompactSoilCollisionMesh(
+    const std::vector<std::array<int,3>>& Triangles,int FineVertexCount) {
+  SoilCollisionCompactMesh Out;
+  std::vector<int> Remap(FineVertexCount,-1);
+  Out.Triangles.reserve(Triangles.size());
+  for(const auto& Triangle:Triangles){
+    std::array<int,3> Mapped;
+    for(int I=0;I<3;++I){
+      const int Node=Triangle[I];
+      if(Node<0||Node>=FineVertexCount)return {};
+      if(Remap[Node]<0){Remap[Node]=int(Out.FineNodes.size());Out.FineNodes.push_back(Node);}
+      Mapped[I]=Remap[Node];
     }
+    Out.Triangles.push_back(Mapped);
   }
   return Out;
 }

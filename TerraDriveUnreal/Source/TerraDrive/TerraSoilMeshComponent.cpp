@@ -10,6 +10,10 @@ bool UTerraSoilMeshComponent::LegacyDense() const {
   return FParse::Param(FCommandLine::Get(),TEXT("TerraValidate"))&&
     FParse::Param(FCommandLine::Get(),TEXT("TerraLegacyDenseSoilCollision"));
 }
+bool UTerraSoilMeshComponent::LegacyLayout() const {
+  return FParse::Param(FCommandLine::Get(),TEXT("TerraValidate"))&&
+    FParse::Param(FCommandLine::Get(),TEXT("TerraLegacySoilMeshLayout"));
+}
 bool UTerraSoilMeshComponent::GetPhysicsTriMeshData(FTriMeshCollisionData* Data,bool All){
   if(!Super::GetPhysicsTriMeshData(Data,All))return false;
   if(LegacyDense())return true;
@@ -29,12 +33,29 @@ bool UTerraSoilMeshComponent::GetPhysicsTriMeshData(FTriMeshCollisionData* Data,
   auto H=[&](int X,int Y){return double(Section->ProcVertexBuffer[Y*Width+X].Position.Z);};
   if(CollisionCells.empty())CollisionCells=TerraSim::BuildSoilCollisionCells(64,H,TerraSim::SoilCollisionBuildErrorCM);
   else TerraSim::RefineSoilCollisionCells(CollisionCells,H,TerraSim::SoilCollisionBuildErrorCM);
-  const auto Triangles=TerraSim::SoilCollisionTriangles(CollisionCells,Width);
+  const bool LegacyEdges=FParse::Param(FCommandLine::Get(),TEXT("TerraValidate"))&&
+    FParse::Param(FCommandLine::Get(),TEXT("TerraLegacySoilLeafEdges"));
+  const auto Triangles=TerraSim::SoilCollisionTriangles(CollisionCells,Width,LegacyEdges);
   const uint16 PhysicalMaterial=Data->MaterialIndices.IsEmpty()?0:Data->MaterialIndices[0];
-  Data->Indices.Reset(Triangles.size());Data->MaterialIndices.Reset(Triangles.size());
-  for(const auto& T:Triangles){FTriIndices I;I.v0=T[0]+FirstOffset;I.v1=T[1]+FirstOffset;I.v2=T[2]+FirstOffset;Data->Indices.Add(I);Data->MaterialIndices.Add(PhysicalMaterial);}
-  // Preserve stock vertex ordering/count: UpdateTriMeshVertices can then
-  // refit this smaller topology in place without a new shape or BVH cook.
+  CollisionVertexToFine.Reset();
+  auto Indices=Triangles;
+  int VertexOffset=FirstOffset;
+  if(!LegacyLayout()){
+    auto Compact=TerraSim::CompactSoilCollisionMesh(Triangles,Vertices);
+    for(int Node:Compact.FineNodes)CollisionVertexToFine.Add(Node);
+    auto Original=MoveTemp(Data->Vertices);
+    Data->Vertices.Reserve(CollisionVertexToFine.Num());
+    for(int Node:CollisionVertexToFine)Data->Vertices.Add(Original[FirstOffset+Node]);
+    for(auto& Channel:Data->UVs){
+      auto OriginalUV=MoveTemp(Channel);Channel.Reserve(CollisionVertexToFine.Num());
+      for(int Node:CollisionVertexToFine)Channel.Add(OriginalUV[FirstOffset+Node]);
+    }
+    Indices=std::move(Compact.Triangles);VertexOffset=0;
+  }
+  Data->Indices.Reset(Indices.size());Data->MaterialIndices.Reset(Indices.size());
+  for(const auto& T:Indices){FTriIndices I;I.v0=T[0]+VertexOffset;I.v1=T[1]+VertexOffset;I.v2=T[2]+VertexOffset;Data->Indices.Add(I);Data->MaterialIndices.Add(PhysicalMaterial);}
+  // Full fine heights still bound the actual uploaded sparse surface. Only
+  // the physics payload omits unused vertices; render/tire buffers stay fine.
   UploadedHeights.SetNum(Vertices);for(int I=0;I<Vertices;++I)UploadedHeights[I]=Section->ProcVertexBuffer[I].Position.Z;
   UploadedTopologyErrorCM=TerraSim::SoilCollisionErrorBound(CollisionCells,[&](int X,int Y){return double(UploadedHeights[Y*Width+X]);});
   AdaptiveDataReady=true;
@@ -70,7 +91,10 @@ void UTerraSoilMeshComponent::CommitSoilCollision(){
   }
   if(!BodyInstance.IsValidBodyInstance())return; // Initial cook still installing.
   TArray<FVector> Positions;
-  for(int S=0;S<GetNumSections();++S)if(const auto* P=GetProcMeshSection(S);P&&P->bEnableCollision)
+  if(!CollisionVertexToFine.IsEmpty()){
+    Positions.Reserve(CollisionVertexToFine.Num());
+    for(int Node:CollisionVertexToFine)Positions.Add(Section->ProcVertexBuffer[Node].Position);
+  }else for(int S=0;S<GetNumSections();++S)if(const auto* P=GetProcMeshSection(S);P&&P->bEnableCollision)
     for(const auto& V:P->ProcVertexBuffer)Positions.Add(V.Position);
   BodyInstance.UpdateTriMeshVertices(Positions);
   UploadedHeights.SetNum(65*65);for(int I=0;I<UploadedHeights.Num();++I)UploadedHeights[I]=Section->ProcVertexBuffer[I].Position.Z;
@@ -78,6 +102,9 @@ void UTerraSoilMeshComponent::CommitSoilCollision(){
 }
 int32 UTerraSoilMeshComponent::LiveCollisionTriangles() const {
   int32 Count=0;if(ProcMeshBodySetup&&BodyInstance.IsValidBodyInstance())for(const auto& M:ProcMeshBodySetup->TriMeshGeometries)if(M)Count+=M->Elements().GetNumTriangles();return Count;
+}
+int32 UTerraSoilMeshComponent::LiveCollisionVertices() const {
+  int32 Count=0;if(ProcMeshBodySetup&&BodyInstance.IsValidBodyInstance())for(const auto& M:ProcMeshBodySetup->TriMeshGeometries)if(M)Count+=M->Particles().Size();return Count;
 }
 double UTerraSoilMeshComponent::CollisionHeightErrorCM() const {
   if(LegacyDense()||CollisionCells.empty())return 0;

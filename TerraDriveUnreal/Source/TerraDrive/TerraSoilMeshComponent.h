@@ -16,12 +16,15 @@ public:
     const TArray<FVector2D>& UV,const TArray<FLinearColor>& Colors);
   void CommitSoilCollision();
   int32 LiveCollisionTriangles() const;
+  int32 LiveCollisionVertices() const;
   double CollisionHeightErrorCM() const;
 private:
   std::vector<TerraSim::SoilCollisionCell> CollisionCells;
   TArray<float> UploadedHeights;
+  TArray<int32> CollisionVertexToFine;
   double UploadedTopologyErrorCM=0;
   int32 FineSection=-1;
   bool AdaptiveDataReady=false;
   bool LegacyDense() const;
+  bool LegacyLayout() const;
 };

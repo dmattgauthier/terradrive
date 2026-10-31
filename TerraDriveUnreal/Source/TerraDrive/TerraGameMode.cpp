@@ -24,6 +24,7 @@
 #include "TerraRolloverValidation.h"
 #include "TerraRolloverPerformanceValidation.h"
 #include "TerraFieldValidation.h"
+#include "TerraQuarryPerformanceValidation.h"
 #include "TerraBodyGroundValidation.h"
 #include "TerraMechanicalValidation.h"
 #include "TerraTurningValidation.h"
@@ -118,6 +119,10 @@ void ATerraGameMode::Tick(float Dt) {
   };
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarryPerformanceOnly"))){
+    if(TerraQuarryPerformanceValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraFieldOnly"))){
