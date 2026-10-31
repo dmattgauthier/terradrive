@@ -38,6 +38,9 @@ int main(){try{
  constexpr int D=64;
  auto Plane=[](int X,int Y){return 100000.+.37*X-.21*Y;};auto Cells=BuildSoilCollisionCells(D,Plane);auto Ts=SoilCollisionTriangles(Cells,D+1);
  Check(Cells.size()==1,"a planar tile requires one leaf");Check(Ts.size()==256,"planar collider reduces8192triangles to256");Topology(Ts,D);
+ const auto PlanarCompact=CompactSoilCollisionMesh(Ts,(D+1)*(D+1));
+ Check(PlanarCompact.FineNodes.size()==257,"planar physics payload omits unused interior vertices without changing boundary segments");
+ Check(CompactSoilCollisionMesh({{{-1,0,1}}},4).Triangles.empty(),"invalid remapping input is rejected");
  Check(BuildSoilCollisionCells(0,Plane).empty()&&BuildSoilCollisionCells(3,Plane).empty(),"invalid grid sizes rejected");
  std::mt19937 Random(20261031);std::uniform_real_distribution<double> Q(.001,D-.001);
  for(int Shape=0;Shape<16;++Shape){
@@ -48,8 +51,19 @@ int main(){try{
    default:return ((X*71+Y*113+Shape*37)%23)*(.01+Shape*.03);
   }};
   auto C=BuildSoilCollisionCells(D,H);const auto T=SoilCollisionTriangles(C,D+1);Topology(T,D);
+  const auto OldEdges=SoilCollisionTriangles(C,D+1,true);
+  Check(T.size()<=OldEdges.size(),"shared-corner edges never add collision triangles");
+  const auto Compact=CompactSoilCollisionMesh(T,(D+1)*(D+1));bool Exact=Compact.Triangles.size()==T.size();
+  std::vector<int> Used(Compact.FineNodes.size(),0);
+  for(size_t I=0;I<Compact.Triangles.size();++I)for(int K=0;K<3;++K){
+    const int V=Compact.Triangles[I][K];Exact&=V>=0&&size_t(V)<Compact.FineNodes.size();
+    if(V>=0&&size_t(V)<Compact.FineNodes.size()){Exact&=Compact.FineNodes[V]==T[I][K];++Used[V];}
+  }
+  Check(Exact,"compact indices reconstruct every original collision triangle and its winding exactly");
+  Check(!Used.empty()&&std::all_of(Used.begin(),Used.end(),[](int N){return N>0;}),"every cooked compact vertex is referenced");
   Check(SoilCollisionErrorBound(C,H)<=SoilCollisionErrorCM+1e-8,"conservative plane bound holds");
-  double Error=0;for(int N=0;N<512;++N){double X=Q(Random),Y=Q(Random);Error=std::max(Error,std::abs(Fine(X,Y,D,H)-Sparse(X,Y,T,D+1,H)));}
+  double Error=0,EdgeChange=0;for(int N=0;N<512;++N){double X=Q(Random),Y=Q(Random);const double New=Sparse(X,Y,T,D+1,H);Error=std::max(Error,std::abs(Fine(X,Y,D,H)-New));EdgeChange=std::max(EdgeChange,std::abs(Sparse(X,Y,OldEdges,D+1,H)-New));}
+  Check(EdgeChange<=SoilCollisionErrorCM+1e-7,"removing internal collinear samples respects the same surface bound");
   Check(Error<=SoilCollisionErrorCM+1e-7,"actual interpolated surface stays within the bound, not merely grid vertices");
  }
  bool Rut=false;auto H=[&](int X,int Y){return Plane(X,Y)+(Rut&&X==32&&Y==32?20.:0.);};auto C=BuildSoilCollisionCells(D,H);
@@ -69,6 +83,10 @@ int main(){try{
   Check(Error<=Bound+1e-7,"retained geometry is bounded against the live surface between vertices, not a newly imagined collider");
  }
  auto LargeEdit=[&](int X,int Y){return Uploaded(X,Y)+1.2*std::sin(X*.37+Y*.13);};
+ const auto Refit=CompactSoilCollisionMesh(Proxy,(D+1)*(D+1));bool ExactRefit=true;
+ for(size_t I=0;I<Proxy.size();++I)for(int K=0;K<3;++K){const int A=Refit.FineNodes[Refit.Triangles[I][K]],B=Proxy[I][K];
+  ExactRefit&=LargeEdit(A%(D+1),A/(D+1))==LargeEdit(B%(D+1),B/(D+1));}
+ Check(ExactRefit,"a new height upload uses the original compact cook ordering after deformation");
  Check(SoilCollisionUploadedErrorBound(D,UploadedError,Uploaded,LargeEdit)>SoilCollisionErrorCM,"larger excavation requires a physical collider refresh");
  RefineSoilCollisionCells(ProxyCells,LargeEdit,SoilCollisionBuildErrorCM);
  const double RefreshedError=SoilCollisionErrorBound(ProxyCells,LargeEdit);

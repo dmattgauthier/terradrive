@@ -16,3 +16,20 @@ TerraDriveUnreal/.vs/
 .openai/
 TerraDrive-v1.13/.sites-local/
 TerraDrive-v1.13/.openai/
+# Local recovery notes, app state and launch shortcuts are not public source.
+.codex/
+.agents/
+.aws/
+/Saved/
+/CODEX-HANDOFF.md
+/RECOVERY-HANDOFF.md
+/START-HERE.md
+/Start-Terra-Drive.cmd
+/TerraDrive-v1.13-CHECKSUMS.txt
+TerraDriveUnreal/*.tps
+# Retain the complete historical browser folder locally. Publish only the
+# already-established browser reference, regression tests and package file.
+TerraDrive-v1.13/*
+!TerraDrive-v1.13/dist/
+!TerraDrive-v1.13/tests/
+!TerraDrive-v1.13/package.json

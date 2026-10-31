@@ -17,6 +17,7 @@ struct FTerraSample {
 struct FTerraSurfaceBlend { float Weight[7]={0,0,0,0,0,0,0}; };
 struct FTerraSoilCollisionStats {
   int FullTriangles=0,LiveTriangles=0,SparseTiles=0;
+  int RenderVertices=0,CollisionVertices=0,RenderSections=0,CoarseSections=0;
   double MaximumHeightErrorCM=0;
 };
 struct FTerraSupport {
@@ -129,6 +130,10 @@ public:
   bool Rain = false, Ready = false;
   int32 DetailCount() const { return Detail.Num(); }
   FTerraSoilCollisionStats SoilCollisionStats() const;
+  bool UsesSharedGroundSections() const { return GroundBlendMaterial&&MergeGroundSections; }
+  bool ProbeSoilCollision(int& Samples,float& MaximumErrorCM) const;
+  int CoarseChunkCount() const { return Ground.Num(); }
+  int LastSoilResetRebuiltChunks=0;
   int32 CachedSoilCount() const { return SoilCache.Num(); }
   int ActiveTileLimit=768;
   FVector FindAnchor(FVector P, float MaxDistance = 4500) const;
@@ -144,6 +149,8 @@ private:
   int32 N = 0;
   float Step = .5f, Origin = -400, VisualTimer = 0;
   bool DeepMudEnabled=false;
+  bool MergeGroundSections=true;
+  bool LegacySoilReset=false;
   FVector2D DeepMudCenter=FVector2D::ZeroVector,DeepMudRadii=FVector2D(1,1);
   float DeepMudMaximumSink=.60f;
   TMap<FIntPoint, FTerraTile> Detail;

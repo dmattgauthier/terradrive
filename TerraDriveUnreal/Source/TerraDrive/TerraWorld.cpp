@@ -21,6 +21,8 @@
 #include "Materials/MaterialInterface.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "ProceduralMeshComponent.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/MemoryReader.h"
@@ -347,6 +349,10 @@ FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forw
 }
 void ATerraWorld::BeginPlay() {
   Super::BeginPlay();
+  MergeGroundSections=!(FParse::Param(FCommandLine::Get(),TEXT("TerraValidate"))&&
+    FParse::Param(FCommandLine::Get(),TEXT("TerraLegacySoilMeshLayout")));
+  LegacySoilReset=FParse::Param(FCommandLine::Get(),TEXT("TerraValidate"))&&
+    FParse::Param(FCommandLine::Get(),TEXT("TerraLegacySoilReset"));
   FString Text;
   FFileHelper::LoadFileToString(
       Text, *(FPaths::ProjectContentDir() / TEXT("NativeData/world.json")));
@@ -466,7 +472,8 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
   TArray<FVector2D> UV;
   TArray<FLinearColor> C;
   TArray<TArray<int32>> Indices;
-  Indices.SetNum(7);
+  const bool Shared=UsesSharedGroundSections();
+  Indices.SetNum(Shared?1:7);
   for (int J = 0; J <= D; J++)
     for (int I = 0; I <= D; I++) {
       float X = X0 + I * 100, Y = Y0 + J * 100;
@@ -488,10 +495,10 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
       if (Fine&&Fine->CoarseReplaced)
         continue;
       int A = J * (D + 1) + I;
-      auto &T = Indices[SurfaceAt(X, Y)];
+      auto &T = Indices[Shared?0:SurfaceAt(X, Y)];
       T.Append({A, A + D + 1, A + 1, A + 1, A + D + 1, A + D + 2});
     }
-  for (int S = 0; S < 7; S++) {
+  for (int S = 0; S < Indices.Num(); S++) {
     Mesh->CreateMeshSection_LinearColor(S, V, Indices[S], Nr, UV, C, {}, true);
     if (Materials.IsValidIndex(S))
       Mesh->SetMaterial(S, GroundBlendMaterial?GroundBlendMaterial.Get():Materials[S].Get());
@@ -587,7 +594,8 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
   TArray<FVector> V = T.Vertices;
   TArray<TArray<int32>> Idx;
   const bool Create=T.Mesh->GetNumSections()==0;
-  if(Create)Idx.SetNum(7);
+  const bool Shared=UsesSharedGroundSections();
+  if(Create)Idx.SetNum(Shared?1:7);
   for(int A=0;A<V.Num();++A)V[A].Z+=T.Delta[A];
   for (int J = 0; J <= Div; J++)
     for (int I = 0; I <= Div; I++) {
@@ -611,10 +619,10 @@ void ATerraWorld::UpdateTile(FTerraTile &T) {
   if(Create)for (int J = 0; J < Div; J++)
     for (int I = 0; I < Div; I++) {
       int A = J * (Div + 1) + I;
-      uint8 S = SurfaceAt(V[A].X + 6, V[A].Y + 6);
+      uint8 S = Shared?0:SurfaceAt(V[A].X + 6, V[A].Y + 6);
       Idx[S].Append({A, A + Div + 1, A + 1, A + 1, A + Div + 1, A + Div + 2});
     }
-  for (int S = 0; S < 7; S++) {
+  for (int S = 0; S < (Shared?1:7); S++) {
     auto *Section=T.Mesh->GetProcMeshSection(S);
     if(Section&&Section->ProcVertexBuffer.IsEmpty())Section=nullptr;
     if (!Section&&(!Create||Idx[S].IsEmpty())) continue;
@@ -1188,14 +1196,24 @@ void ATerraWorld::SetRain(bool Enabled) { Rain = Enabled; }
 FTerraSoilCollisionStats ATerraWorld::SoilCollisionStats() const {
   FTerraSoilCollisionStats Stats;
   for(const auto& Pair:Detail)if(auto* Mesh=Cast<UTerraSoilMeshComponent>(Pair.Value.Mesh)){
-    int Full=0;for(int S=0;S<Mesh->GetNumSections();++S)if(const auto* P=Mesh->GetProcMeshSection(S);P&&P->bEnableCollision)Full+=P->ProcIndexBuffer.Num()/3;
+    int Full=0;for(int S=0;S<Mesh->GetNumSections();++S)if(const auto* P=Mesh->GetProcMeshSection(S);P&&P->bEnableCollision){
+      Full+=P->ProcIndexBuffer.Num()/3;Stats.RenderVertices+=P->ProcVertexBuffer.Num();++Stats.RenderSections;}
+    Stats.CollisionVertices+=Mesh->LiveCollisionVertices();
     const int Live=Mesh->LiveCollisionTriangles();
     if(Live>0){Stats.FullTriangles+=Full;Stats.LiveTriangles+=Live;Stats.SparseTiles+=Live<Full;
       Stats.MaximumHeightErrorCM=FMath::Max(Stats.MaximumHeightErrorCM,Mesh->CollisionHeightErrorCM());}
   }
+  for(const auto& Pair:Ground)if(IsValid(Pair.Value))for(int S=0;S<Pair.Value->GetNumSections();++S)
+    if(const auto* P=Pair.Value->GetProcMeshSection(S);P&&!P->ProcIndexBuffer.IsEmpty())++Stats.CoarseSections;
   return Stats;
 }
 void ATerraWorld::ResetSoil() {
+  // Only chunks with fine-surface cutouts need restoring. Recreating every
+  // untouched chunk launches thousands of redundant collision cooks.
+  TSet<FIntPoint> Restore;
+  for(const auto& P:Detail)if(P.Value.CoarseReplaced)
+    Restore.Add({FMath::FloorToInt(P.Key.X/8.f),FMath::FloorToInt(P.Key.Y/8.f)});
+  for(const auto& Old:RetiredSoilMeshes)Restore.Add(Old.Coarse);
   for(auto &Plant:Crushable)if(Plant.Flattened>0){
     Plant.Mesh->UpdateInstanceTransform(Plant.Index,Plant.Original,true,true,true);Plant.Flattened=0;
   }
@@ -1213,9 +1231,33 @@ void ATerraWorld::ResetSoil() {
   DirtyBodyMarkChunks.Empty();
   BodyScrapeCount=BodyImpressionCount=0;
   if(BodyMarkMesh)BodyMarkMesh->ClearAllMeshSections();
-  for (auto &P : Ground)
-    RebuildGround(P.Key);
+  LastSoilResetRebuiltChunks=0;
+  if(LegacySoilReset){
+    for(auto& P:Ground){RebuildGround(P.Key);++LastSoilResetRebuiltChunks;}
+  }else for(const auto& Key:Restore)if(Ground.Contains(Key)){
+    RebuildGround(Key);++LastSoilResetRebuiltChunks;
+  }
   DepressedVolume = DisplacedVolume = CompactedVolume = 0;
+}
+bool ATerraWorld::ProbeSoilCollision(int& Samples,float& MaximumErrorCM) const {
+  Samples=0;MaximumErrorCM=0;bool Complete=true;
+  FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraSoilAccuracy),false);
+  for(const auto& Pair:Detail){
+    auto* Mesh=Cast<UTerraSoilMeshComponent>(Pair.Value.Mesh);
+    if(!Mesh||Mesh->LiveCollisionTriangles()==0)continue;
+    for(int S=0;S<Mesh->GetNumSections();++S){
+      const auto* Section=Mesh->GetProcMeshSection(S);
+      if(!Section||!Section->bEnableCollision||Section->ProcVertexBuffer.Num()!=65*65)continue;
+      for(int Y:{1,16,31,46,61})for(int X:{1,16,31,46,61}){
+        const FVector P=Mesh->GetComponentTransform().TransformPosition(Section->ProcVertexBuffer[Y*65+X].Position);
+        FHitResult Hit;
+        if(!Mesh->LineTraceComponent(Hit,P+FVector(0,0,100),P-FVector(0,0,100),Query)){Complete=false;continue;}
+        ++Samples;MaximumErrorCM=FMath::Max(MaximumErrorCM,float(FMath::Abs(Hit.ImpactPoint.Z-P.Z)));
+      }
+      break; // Material sections share the same complete fine height grid.
+    }
+  }
+  return Complete&&Samples>0;
 }
 FVector ATerraWorld::FindAnchor(FVector P, float MaxDistance) const {
   FVector Best = FVector::ZeroVector;
