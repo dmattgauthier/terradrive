@@ -4,7 +4,7 @@
 
 namespace TerraSim {
 // The original seven indices are persistent save data; append new hardware.
-enum UpgradePart { Suspension, Engine, Tires, Wheels, Frame, Body, Electrical, Drivetrain, Differentials, Portals, EVSwap, TireAir, PartCount };
+enum UpgradePart { Suspension, Engine, Tires, Wheels, Frame, Body, Electrical, Drivetrain, Differentials, Portals, EVSwap, TireAir, CenterDifferential, PartCount };
 struct UpgradeSetup {
     int Stage[PartCount] = {};
     void Sanitize(bool electrical) {
@@ -13,7 +13,7 @@ struct UpgradeSetup {
     }
 };
 inline int UpgradeStageCountForVersion(int version) {
-    return version==1||version==2?7:version==3?10:version==4||version==5?PartCount:0;
+    return version==1||version==2?7:version==3?10:version==4||version==5?12:version==6?PartCount:0;
 }
 inline bool DecodeUpgradeStages(const double* values,int count,int version,bool electrical,UpgradeSetup& result,bool factoryElectric=false) {
     if(!values||count!=UpgradeStageCountForVersion(version)||count==0)return false;
@@ -31,10 +31,12 @@ inline bool DecodeUpgradeStages(const double* values,int count,int version,bool 
 struct FactoryDrivetrain {
     bool FourDrive=false,Permanent=false,FrontPrimary=false,FrontLocker=false,RearLocker=false;
     float LowRatio=1;
+    bool CenterLocker=false;
 };
 struct DriveCapabilities {
     bool FourDrive=false,Permanent=false,FrontPrimary=false,FrontLocker=false,RearLocker=false;
     float LowRatio=1,HardwareMass=0;
+    bool CenterLocker=false,RigidTransfer=false;
 };
 inline DriveCapabilities ResolveDriveCapabilities(UpgradeSetup setup,FactoryDrivetrain factory) {
     setup.Sanitize(true);
@@ -52,6 +54,13 @@ inline DriveCapabilities ResolveDriveCapabilities(UpgradeSetup setup,FactoryDriv
     if(!factory.FrontLocker&&c.FrontLocker)c.HardwareMass+=12;
     if(!factory.RearLocker&&c.RearLocker)c.HardwareMass+=12;
     if(diff>=3)c.HardwareMass+=10;
+    c.CenterLocker=factory.CenterLocker||(setup.Stage[CenterDifferential]>0&&c.FourDrive);
+    // The retrofit replaces a part-time coupling with a full-time open center
+    // and selectable lock. Without it, 4H/4L is intrinsically coupled.
+    if(setup.Stage[CenterDifferential]>0&&c.FourDrive)c.Permanent=true;
+    c.RigidTransfer=c.FourDrive&&!c.Permanent;
+    const float centerMass[]={0,35,48,64};
+    if(c.FourDrive&&!factory.CenterLocker)c.HardwareMass+=centerMass[setup.Stage[CenterDifferential]];
     return c;
 }
 inline bool DrivenAxle(const DriveCapabilities& c,bool fourSelected,bool front) {

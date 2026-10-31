@@ -12,7 +12,9 @@ public:
   virtual bool SupportsKeyboardFocus() const override { return true; }
   virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent &Event) override;
   virtual FReply OnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent &Event) override;
+  virtual void Tick(const FGeometry&,const double,const float) override;
   void ShowUpgradePart(int Part);
+  static TSharedRef<SWidget> GraphicsPage();
   TSharedPtr<SWidget> UpgradePartWidget(int Part) const { return UpgradeRows.IsValidIndex(Part)?UpgradeRows[Part]:nullptr; }
   TSharedPtr<SScrollBox> UpgradePartScrollBox() const { return UpgradeScroll; }
 private:
@@ -21,9 +23,9 @@ private:
   TSharedPtr<SScrollBox> UpgradeScroll;
   TArray<TSharedPtr<SWidget>> UpgradeRows;
   int Page = 0;
+  int PendingUpgradePart=-1,UpgradeScrollAttempts=0;
   TSharedRef<SWidget> VehiclePage();
   TSharedRef<SWidget> UpgradePage();
-  TSharedRef<SWidget> GraphicsPage();
   TSharedRef<SWidget> UpgradeRow(int Part);
   TSharedRef<SWidget> Metric(const FString &Name, TAttribute<FText> Value);
 };

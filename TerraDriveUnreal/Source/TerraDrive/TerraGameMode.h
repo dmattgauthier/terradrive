@@ -10,6 +10,12 @@ class TERRADRIVE_API ATerraHUD : public AHUD {
   GENERATED_BODY()
 public:
   virtual void DrawHUD() override;
+  // Recorded by the actual draw pass for native viewport/layout acceptance.
+  TArray<FString> VisibleStatusIds;
+  float LastStatusBottom=0;
+private:
+  FString LastNotice;
+  double NoticeChangedAt=0;
 };
 UCLASS()
 class TERRADRIVE_API ATerraGameMode : public AGameModeBase {

@@ -2,6 +2,7 @@
 #include "ProceduralMeshComponent.h"
 #include "TerraSimCore.h"
 #include "TerraContact.h"
+#include "TerraCenter.h"
 #include "TerraDriving.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
@@ -118,6 +119,7 @@ void ATerraVehicle::BeginPlay() {
   RearCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
   CoachworkCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
   AutoTest = FParse::Param(FCommandLine::Get(), TEXT("TerraValidate"));
+  LoadControls(ControlsPath());
   // Tires supply terrain grip. A grounded metal/plastic undertray should
   // slide over a crest rather than behaving like a second high-friction tire.
   // Normal collision impulses remain active against terrain and solid props.
@@ -218,7 +220,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   ReverseReleaseRequired=false;ReverseHold=0;
   Steer = 0;
   Tracks = false;
-  FrontLocked = RearLocked = DescentAssist = LowRange = false;
+  FrontLocked = RearLocked = CenterLocked = DescentAssist = LowRange = false;
   FourDrive = VehicleIndex != 2 && VehicleIndex != 3;
   for (auto W : Wheels)
     W->SetStaticMesh(LoadObject<UStaticMesh>(
@@ -294,7 +296,10 @@ void ATerraVehicle::TeleportRoute(int Index) {
   SetActorLocationAndRotation(Route.Spawn + FVector(0,0,CG*100+16+Tuning.Lift*100+(Radius-Number(TEXT("tireRadius"),.42f))*100),
       FRotator(0,Route.Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
   PreviousRoutePosition = GetActorLocation();
-  Notice = Route.Hint;
+  // Older cooked route data contains default key names. Resolve those legacy
+  // phrases at display time so preserved terrain data follows custom controls.
+  Notice = Route.Hint.Replace(TEXT("Shift+W"),*(ControlLabel(TerraControls::Action::Crawl)+TEXT("+")+ControlLabel(TerraControls::Action::Forward)))
+      .Replace(TEXT("K descent assist"),*(ControlLabel(TerraControls::Action::DescentAssist)+TEXT(" descent assist")));
 }
 void ATerraVehicle::ToggleLocker(bool Front) {
   bool &Locked = Front ? FrontLocked : RearLocked;
@@ -342,6 +347,7 @@ void ATerraVehicle::Input(float Dt) {
   auto *PC = Cast<APlayerController>(GetController());
   if (!PC)
     return;
+  if(PauseMenuOpen){Throttle=Brake=Steer=0;Reeling=false;return;}
   if (AutoTest) {
     if(TestDriverInput){
       const auto Demand=TerraSim::DriverControls(Direction,TestForward,TestReverse,0,0,TestStop,Speed,Dt,ReverseHold,ReverseReleaseRequired);
@@ -350,83 +356,91 @@ void ATerraVehicle::Input(float Dt) {
     Steer = FMath::FInterpTo(Steer, TestSteer, Dt, 5*TirePressureHandling().SteeringResponse);
     return;
   }
-  auto Down = [&](FKey Key) { return PC->IsInputKeyDown(Key); };
-  auto Press = [&](FKey Key) { return PC->WasInputKeyJustPressed(Key); };
-  if (Press(EKeys::Escape)) {
-    PC->ConsoleCommand(TEXT("quit"));
-    return;
+  using A=TerraControls::Action;
+  auto DownKey = [&](FKey Key) { return PC->IsInputKeyDown(Key); };
+  auto PressKey = [&](FKey Key) { return PC->WasInputKeyJustPressed(Key); };
+  auto Down = [&](A Action) { return ControlDown(Action); };
+  auto Press = [&](A Action) { return ControlPressed(Action); };
+  if(PressKey(EKeys::Escape)||PressKey(EKeys::Tab)||Press(A::Garage)){
+    const FKey Key=PressKey(EKeys::Escape)?EKeys::Escape:PressKey(EKeys::Tab)?EKeys::Tab:ControlKey(A::Garage);
+    Throttle=Brake=Steer=0;Reeling=false;HandleMenuKey(Key);return;
   }
-  if (Press(EKeys::Tab)) { SetGarage(!Garage); return; }
   if (Garage) { Throttle=Steer=0; Brake=1; return; }
-  if (Press(EKeys::V)) { SetGarage(true); return; }
-  if (Press(EKeys::R))
+  if(RequireControlRelease){
+    Throttle=Brake=Steer=0;Reeling=false;
+    const bool Held=Down(A::Forward)||Down(A::Reverse)||Down(A::SteerLeft)||Down(A::SteerRight)||Down(A::HoldBrake)||Down(A::WinchReel)||
+      DownKey(EKeys::Up)||DownKey(EKeys::Down)||DownKey(EKeys::Left)||DownKey(EKeys::Right)||DownKey(EKeys::Gamepad_FaceButton_Bottom)||
+      FMath::Abs(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX))>.1f||PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis)>.05f||PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis)>.05f;
+    if(Held)return;
+    RequireControlRelease=false;
+  }
+  if (Press(A::Recover))
     { if (RouteIndex >= 0) TeleportRoute(RouteIndex); else TeleportZone(Zone); }
-  if (Press(EKeys::J)) TeleportRoute(RouteIndex + 1);
-  if (Press(EKeys::Z)) ToggleLocker(false);
-  if (Press(EKeys::U)) ToggleLocker(true);
-  if (Press(EKeys::K) && VehicleIndex != 2 && VehicleIndex != 3) {
+  if (Press(A::NextChallenge)) TeleportRoute(RouteIndex + 1);
+  if (Press(A::RearLock)) ToggleLocker(false);
+  if (Press(A::FrontLock)) ToggleLocker(true);
+  if (Press(A::CenterLock)) ToggleCenterLocker();
+  if (Press(A::DescentAssist) && VehicleIndex != 2 && VehicleIndex != 3) {
     DescentAssist = !DescentAssist;
     Notice = DescentAssist ? TEXT("Descent assist: brake-controlled 4.5 mph target") : TEXT("Descent assist off");
   }
-  FKey Keys[] = {EKeys::One,  EKeys::Two, EKeys::Three, EKeys::Four,
-                 EKeys::Five, EKeys::Six, EKeys::Seven, EKeys::Eight, EKeys::Nine};
   for (int I = 0; I < 9; I++)
-    if (Press(Keys[I]))
+    if (Press(A(int(A::Region1)+I)))
       { if (I==6) TeleportRoute(0); else if (I==8) TeleportRoute(4); else TeleportZone(I); }
-  if (Press(EKeys::T))
+  if (Press(A::Tracks))
     SetTracks(!Tracks);
-  if (Press(EKeys::F)) {
+  if (Press(A::FourDrive)) {
     if(!HasFourDrive())Notice=TEXT("Fit the drivetrain upgrade for four-wheel drive");
     else if(DriveCapabilities().Permanent)Notice=TEXT("Permanent all-wheel drive remains engaged");
     else if(FMath::Abs(Speed)>.5f)Notice=TEXT("Stop before changing driven axles");
     else{
       FourDrive = !FourDrive;
-      if (!FourDrive) FrontLocked = RearLocked = LowRange = false;
+      if (!FourDrive) FrontLocked = RearLocked = LowRange = CenterLocked = false;
       Notice = DriveDescription();
     }
   }
-  if (Press(EKeys::L)) {
+  if (Press(A::LowRange)) {
     if(!HasLowRange())Notice=TEXT("Fit the drivetrain low-range upgrade in the garage");
     else if (FMath::Abs(Speed) < .5f){
       LowRange = !LowRange;if (LowRange) FourDrive = true;else FrontLocked = RearLocked = false;
       Notice=DriveDescription();
     }else Notice = TEXT("Stop to shift low range");
   }
-  if (Press(EKeys::Equals) || Press(EKeys::Add)) {
+  if (Press(A::PressureUp) || PressKey(EKeys::Add)) {
     RequestTirePressure(PressureTarget+2);
     SaveSetup();
   }
-  if (Press(EKeys::Hyphen) || Press(EKeys::Subtract)) {
+  if (Press(A::PressureDown) || PressKey(EKeys::Subtract)) {
     RequestTirePressure(PressureTarget-2);
     SaveSetup();
   }
-  if (Press(EKeys::P))
+  if (Press(A::Rain))
     Terrain->SetRain(!Terrain->Rain);
-  if (Press(EKeys::BackSpace)) {
+  if (Press(A::ResetTerrain)) {
     Terrain->ResetSoil();
     RepairDamage();
     Parcels.Empty();
   }
 
-  if (Press(EKeys::X)) {
+  if (Press(A::WinchAttach)) {
     if (WinchAttached)
       WinchAttached = false;
     else {
       Anchor = Terrain->FindAnchor(GetActorLocation());
       WinchAttached = !Anchor.IsNearlyZero();
       WinchLength = FVector::Dist(Anchor, GetActorLocation()) / 100;
-      Notice = WinchAttached ? TEXT("Winch attached — hold Q to reel")
+      Notice = WinchAttached ? FString::Printf(TEXT("Winch attached — hold %s to reel"),*ControlLabel(A::WinchReel))
                              : TEXT("No standing anchor within 148 ft");
     }
   }
-  Reeling = Down(EKeys::Q);
+  Reeling = Down(A::WinchReel);
   float AX = PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX),
         RT = PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis),
         LT = PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis);
-  bool W = Down(EKeys::W) || Down(EKeys::Up),
-       S = Down(EKeys::S) || Down(EKeys::Down);
-  float Target = (Down(EKeys::D) || Down(EKeys::Right) ? 1.f : 0.f) -
-                 (Down(EKeys::A) || Down(EKeys::Left) ? 1.f : 0.f);
+  bool W = Down(A::Forward) || DownKey(EKeys::Up),
+       S = Down(A::Reverse) || DownKey(EKeys::Down);
+  float Target = (Down(A::SteerRight) || DownKey(EKeys::Right) ? 1.f : 0.f) -
+                 (Down(A::SteerLeft) || DownKey(EKeys::Left) ? 1.f : 0.f);
   if (FMath::Abs(AX) > .1f)
     Target = AX;
   Steer = FMath::FInterpConstantTo(Steer, Target, Dt, (Target == 0 ? 3.5f : 2.f)*TirePressureHandling().SteeringResponse);
@@ -437,17 +451,17 @@ void ATerraVehicle::Input(float Dt) {
     return;
   }
   const auto Demand=TerraSim::DriverControls(Direction,W,S,RT,LT,
-      Down(EKeys::SpaceBar)||Down(EKeys::Gamepad_FaceButton_Bottom),Speed,Dt,ReverseHold,ReverseReleaseRequired);
+      Down(A::HoldBrake)||DownKey(EKeys::Gamepad_FaceButton_Bottom),Speed,Dt,ReverseHold,ReverseReleaseRequired);
   Throttle=Demand.Throttle;Brake=Demand.Brake;
   float MX = 0, MY = 0;
   PC->GetInputMouseDelta(MX, MY);
-  if (Down(EKeys::RightMouseButton)) {
+  if (Down(A::CameraOrbit)) {
     CameraYaw += MX * .22f;
     CameraPitch = FMath::Clamp(CameraPitch + MY * .2f, -50.f, 5.f);
   }
-  if (Press(EKeys::C))
+  if (Press(A::CameraNear))
     NearCamera = !NearCamera;
-  if (Down(EKeys::LeftShift)) Throttle *= .28f;
+  if (Down(A::Crawl)) Throttle *= .28f;
 }
 void ATerraVehicle::Simulate(float Dt) {
   FVector Velocity = Chassis->GetPhysicsLinearVelocity() / 100,
@@ -589,13 +603,21 @@ void ATerraVehicle::Simulate(float Dt) {
   
   const auto MotorDrive=TerraSim::ElectricDriveTorque(EV,Omega,ElectricThrottle,Direction,Low,PortalReduction(),Environment,FourDrive);
   if(Electric){RPM=0;for(float MotorRPM:MotorDrive.MotorRPM)RPM=FMath::Max(RPM,MotorRPM);}
+  const bool BothAxlesDriven=DrivenWheel(0)&&DrivenWheel(2);
+  const bool CenterCoupled=BothAxlesDriven&&(CenterLockActive()||HasRigidTransfer());
+  const bool OpenCenter=BothAxlesDriven&&HasCenterLocker()&&!CenterCoupled;
+  const float CenterInput=Electric?MotorDrive.Axle[0]+MotorDrive.Axle[1]:TotalTorque;
+  const auto CenterSplit=TerraSim::OpenCenterTorque(CenterInput,
+      TerraSim::CenterAxleCapacity(Capacities[0],Capacities[1],FrontLocked,UpgradeStage(TerraSim::Differentials)>=3),
+      TerraSim::CenterAxleCapacity(Capacities[2],Capacities[3],RearLocked,UpgradeStage(TerraSim::Differentials)>=3),
+      Electric?EV.FrontShare:Number(TEXT("frontTorqueFraction"),.5f));
   for (int Axle=0;Axle<2;++Axle) {
     if (!DrivenWheel(Axle*2)) continue;
     const int A=Axle*2;
     if(Electric&&IndependentWheel(A)){Drives[A]=MotorDrive.Wheel[A];Drives[A+1]=MotorDrive.Wheel[A+1];continue;}
     const bool BothDriven=DrivenWheel(0)&&DrivenWheel(2);
     const float FrontShare=Number(TEXT("frontTorqueFraction"),.5f);
-    const float Demand=Electric?MotorDrive.Axle[Axle]:TotalTorque*(BothDriven?(Axle==0?FrontShare:1-FrontShare):1.f);
+    const float Demand=OpenCenter?(Axle==0?CenterSplit.Front:CenterSplit.Rear):Electric?MotorDrive.Axle[Axle]:TotalTorque*(BothDriven?(Axle==0?FrontShare:1-FrontShare):1.f);
     const bool Locked=Axle==0?FrontLocked:RearLocked;
     auto Split=TerraSim::SplitAxleTorque(Demand,Capacities[A],Capacities[A+1],Locked);
     if(!Locked&&UpgradeStage(TerraSim::Differentials)>=3){
@@ -637,9 +659,15 @@ void ATerraVehicle::Simulate(float Dt) {
     Lateral[I]=FMath::Clamp(-W.Load*FMath::Atan2(W.LateralSpeed,FMath::Max(2.f,FMath::Abs(W.LongSpeed)))*5.5f*W.CorneringResponse/LateralResponse,-SideLimit,SideLimit);
     LongLimit[I]=Limit;
   }
-  for(int Axle=0;Axle<2;++Axle){
+  bool IndependentMotor[4],DrivenContact[4];
+  for(int I=0;I<4;++I){IndependentMotor[I]=IndependentWheel(I);DrivenContact[I]=DrivenWheel(I);}
+  const bool TractionControl=Spec->GetObjectField(TEXT("features"))->GetBoolField(TEXT("tractionControl"));
+  auto SolveAxles=[&](float CenterTorque){
+    for(int I=0;I<4;++I)WheelState[I].Omega=Omega[I];
+    for(int Axle=0;Axle<2;++Axle){
+    const float Coupling=(Axle==0?CenterTorque:-CenterTorque);
     const int A=Axle*2,B=A+1;
-    const bool Locked=(Axle==0?FrontLocked:RearLocked)&&!IndependentWheel(A);
+    const bool Locked=(Axle==0?FrontLocked:RearLocked)&&!IndependentMotor[A];
     if(Locked){
       // A locked axle shares shaft speed as well as torque. Solve both tire
       // contact constraints together, including both wheels' inertia, so an
@@ -652,6 +680,7 @@ void ATerraVehicle::Simulate(float Dt) {
             FMath::Clamp(Stiffness[B]*(Direction*WheelRevLimit*R-WheelState[B].LongSpeed),-LongLimit[B],LongLimit[B]));
         Drive=TerraSim::RevLimitedTorque(Drive,Previous,Inertia*2,Dt,WheelRevLimit,Reaction,DragTorque);
       }
+      Drive+=Coupling;
       LastWheelDriveNm[A]=LastWheelDriveNm[B]=Drive*.5f;
       const float Free=Previous+Drive*Dt/(Inertia*2);
       WheelState[A].Omega=WheelState[B].Omega=TerraSim::CombinedAxleOmega(Free,Stiffness[A],Stiffness[B],
@@ -663,15 +692,24 @@ void ATerraVehicle::Simulate(float Dt) {
       const float DragTorque=FMath::Sign(W.Omega)*Drag[I];
       const float Reaction=R*FMath::Clamp(Stiffness[I]*(Direction*WheelRevLimit*R-W.LongSpeed),-LongLimit[I],LongLimit[I]);
       float Demand=Drives[I];
-      if(DrivenWheel(I)&&Throttle>.02f&&(IndependentWheel(I)||Spec->GetObjectField(TEXT("features"))->GetBoolField(TEXT("tractionControl"))))
+      if(DrivenContact[I]&&Throttle>.02f&&(IndependentMotor[I]||TractionControl))
         Demand=TerraSim::TractionControlledTorque(Demand,W.Omega,W.LongSpeed,R,Inertia,Dt,Stiffness[I],LongLimit[I],Drag[I],Direction);
-      const float Drive=Electric?Demand:TerraSim::RevLimitedTorque(Demand,W.Omega,Inertia,Dt,WheelRevLimit,Reaction,DragTorque);
+      const float Drive=(Electric?Demand:TerraSim::RevLimitedTorque(Demand,W.Omega,Inertia,Dt,WheelRevLimit,Reaction,DragTorque))+Coupling*.5f;
       LastWheelDriveNm[I]=Drive;
       const float Free=W.Omega+Drive*Dt/Inertia;
       W.Omega=TerraSim::CombinedWheelOmega(Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I],
           Lateral[I]/FMath::Max(1.f,W.SideGrip*W.Load),Drag[I]);
     }
   }
+    return (WheelState[0].Omega+WheelState[1].Omega-WheelState[2].Omega-WheelState[3].Omega)*.5f;
+  };
+  LastCenterCouplingNm=0;
+  if(CenterCoupled){
+    const float Rating=HasRigidTransfer()?Mass*9.81f*Radius*6.f:
+        TerraSim::CenterRatedTorque(UpgradeStage(TerraSim::CenterDifferential),VehicleIndex==8,Mass,Radius);
+    LastCenterCouplingNm=TerraSim::SolveCenterCoupling(Rating,SolveAxles);
+  }
+  SolveAxles(LastCenterCouplingNm);
   float BrakeSupportLoad=0;
   for(const auto &Wheel:WheelState)if(Wheel.ContactValid&&Wheel.Load>50)BrakeSupportLoad+=Wheel.Load;
   for (int I=0;I<4;++I) {
@@ -749,7 +787,7 @@ void ATerraVehicle::Simulate(float Dt) {
     W.Rotation+=W.Omega*Dt; W.Pressure=WheelPressure(I);
   }
   LastRegenPowerW=0;
-  if(Electric){float Consumed=0;for(int I=0;I<4;++I){Consumed+=FMath::Max(0.f,LastWheelDriveNm[I]*WheelState[I].Omega);LastRegenPowerW+=LastWheelRegenNm[I]*FMath::Abs(WheelState[I].Omega)*.82f;}
+  if(Electric){float Consumed=0;for(int I=0;I<4;++I){Consumed+=FMath::Max(0.f,(LastWheelDriveNm[I]-(I<2?LastCenterCouplingNm:-LastCenterCouplingNm)*.5f)*WheelState[I].Omega);LastRegenPowerW+=LastWheelRegenNm[I]*FMath::Abs(WheelState[I].Omega)*.82f;}
     LastRegenPowerW=FMath::Min(LastRegenPowerW,Regeneration.RecoveredPowerW);
     BatterySOC=FMath::Clamp(BatterySOC+(LastRegenPowerW-Consumed/FMath::Max(.5f,EV.Efficiency)-350.f)*Dt/FMath::Max(1.f,EV.BatteryKWh*3600000.f),0.f,1.f);
   }
@@ -799,6 +837,7 @@ void ATerraVehicle::Tick(float Dt) {
   const float BodyContactDt=Dt;
   Dt = FMath::Min(Dt, .1f);
   Input(Dt);
+  if(PauseMenuOpen)return;
   UpdateLamps();
   if(!Garage){
     Terrain->ActivateSoil(GetActorLocation());

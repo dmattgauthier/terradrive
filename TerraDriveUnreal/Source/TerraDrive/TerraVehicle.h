@@ -6,6 +6,7 @@
 #include "TerraElectric.h"
 #include "TerraPressure.h"
 #include "TerraDamage.h"
+#include "TerraControls.h"
 #include "TerraVehicle.generated.h"
 class UBoxComponent;
 class UStaticMeshComponent;
@@ -13,6 +14,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInstancedStaticMeshComponent;
 class STerraGarage;
+class STerraPauseMenu;
 class URectLightComponent;
 class UMaterialInstanceDynamic;
 class UPhysicalMaterial;
@@ -107,6 +109,13 @@ public:
        WinchAttached = false, Reeling = false, Garage = false;
   bool FrontLocked = false, RearLocked = false, Overturned = false,
        DescentAssist = false;
+  bool CenterLocked=false;
+  bool HasCenterLocker() const;
+  bool CenterLockActive() const;
+  bool CenterLockUpgradeAvailable() const;
+  bool HasRigidTransfer() const;
+  void ToggleCenterLocker();
+  float LastCenterCouplingNm=0;
   int ContactCount = 0, RouteIndex = -1, GateIndex = 0;
   int TerrainBodyHits=0,ObjectBodyHits=0;
   float TerrainImpactMPS=0,ObjectImpactMPS=0;
@@ -128,6 +137,19 @@ public:
   bool TestMarkCamera=false;
   void SetTracks(bool Enabled);
   void SetGarage(bool Open);
+  bool PauseMenuOpen=false;
+  void SetPauseMenu(bool Open);
+  bool HandleMenuKey(FKey Key);
+  TSharedPtr<STerraPauseMenu> GetPauseMenuWidget()const{return PauseMenuWidget;}
+  FKey ControlKey(TerraControls::Action Action)const{return Controls.Key(Action);}
+  FString ControlLabel(TerraControls::Action Action)const{return TerraControls::KeyLabel(ControlKey(Action));}
+  bool ControlDown(TerraControls::Action Action)const;
+  bool ControlPressed(TerraControls::Action Action)const;
+  bool RebindControl(TerraControls::Action Action,FKey Key,FString& Error,bool Persist=true);
+  bool ResetControls(bool Persist=true);
+  bool LoadControls(const FString& Path);
+  bool SaveControls(const FString& Path)const;
+  FString ControlsPath()const;
   void SetUpgrade(int Part, int Stage, bool Persist = true);
   void ResetUpgrades(bool Persist = true);
   void ApplyUpgrades();
@@ -196,6 +218,9 @@ public:
   TerraSim::UpgradeTuning Tuning;
 
 private:
+  TerraControls::Bindings Controls;
+  TSharedPtr<STerraPauseMenu> PauseMenuWidget;
+  bool RequireControlRelease=false;
   TSharedPtr<FTerraDamageVisualCache> DamageVisualCache;
   bool PrepareDamageMesh();
   void ConfigureCoachworkCollision();

@@ -14,7 +14,7 @@
 namespace TerraMechanicalValidation {
 namespace {
 constexpr int PortalStages=4;
-constexpr int MigrationChecks=3,PersistenceChecks=2,CapabilityChecksPerVehicle=8,
+constexpr int MigrationChecks=5,PersistenceChecks=2,CapabilityChecksPerVehicle=8,
   StationaryChecksPerTrial=10,GrowthChecksPerVehicle=PortalStages-1,SpinChecksPerVehicle=4;
 struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
@@ -60,11 +60,11 @@ bool WriteFixture(int Version,int Cars,int Parts,bool Invalid=false){
 }
 void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
   const bool PlanWritten=WriteFixturePlan();
-  for(int Version:{1,2,3}){
-    const int Cars=Version==1?5:6,Parts=Version<3?7:10;
+  for(int Version:{1,2,3,4,5}){
+    const int Cars=Version==1?5:Version<4?6:ATerraVehicle::VehicleCount,Parts=Version<3?7:Version==3?10:12;
     bool Valid=PlanWritten&&WriteFixture(Version,Cars,Parts)&&V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
     for(int I=0;I<ATerraVehicle::VehicleCount;I++)for(int P=0;P<TerraSim::PartCount;P++){
-      const int Expected=I>=Cars||P>=Parts?0:I==2&&P==TerraSim::Electrical?0:(P+I)%4;
+      const int Expected=I>=Cars||P>=Parts?0:I==2&&P==TerraSim::Electrical?0:Version<=4&&(I==4||I==7)&&P==TerraSim::EVSwap?0:(P+I)%4;
       Valid&=V->Builds[I].Stage[P]==Expected;
     }
     Check(FString::Printf(TEXT("v%d garage migration retains old stages and defaults new hardware to stock"),Version),Valid,Version);
@@ -77,17 +77,17 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
     for(int P=0;P<TerraSim::PartCount;++P)V->Builds[I].Stage[P]=I==2&&P==TerraSim::Electrical?0:(P+I)%4;
     Loaded[I]=V->Builds[I];
   }
-  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v5.json")));
+  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v6.json")));
   FString Json;TSharedPtr<FJsonObject> Root;
-  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v5.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
+  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v6.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
   if(Shape){
     double Version=0;const TArray<TSharedPtr<FJsonValue>>* Cars=nullptr;
-    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==5&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
+    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==6&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
     if(Shape)for(const auto& Car:*Cars){const TArray<TSharedPtr<FJsonValue>>* Parts=nullptr;Shape&=Car->TryGetArray(Parts)&&Parts->Num()==TerraSim::PartCount;}
   }
   for(auto& B:V->Builds)B={};
-  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v5.json")))&&SameBuilds(V,Loaded);
-  Check(TEXT("v5 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
+  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v6.json")))&&SameBuilds(V,Loaded);
+  Check(TEXT("v6 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
   for(int I=0;I<ATerraVehicle::VehicleCount;I++)V->Builds[I]=State.Before[I];
 }
 void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){

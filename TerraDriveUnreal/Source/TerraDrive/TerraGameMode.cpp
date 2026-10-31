@@ -34,6 +34,7 @@
 #include "TerraContact.h"
 #include "TerraGraphics.h"
 #include "TerraMomentumValidation.h"
+#include "TerraInterfaceValidation.h"
 #include "TerraRutValidation.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
@@ -41,6 +42,7 @@ ATerraGameMode::ATerraGameMode() {
   DefaultPawnClass = ATerraVehicle::StaticClass();
   HUDClass = ATerraHUD::StaticClass();
   PrimaryActorTick.bCanEverTick = true;
+  PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"));
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
@@ -50,48 +52,11 @@ void ATerraGameMode::BeginPlay() {
   if(auto *Strategy=IConsoleManager::Get().FindConsoleVariable(TEXT("r.PSOPrecache.ProxyCreationStrategy")))Strategy->Set(0,ECVF_SetByCode);
   GetWorld()->SpawnActor<ATerraWorld>();
 }
-void ATerraHUD::DrawHUD() {
-  Super::DrawHUD();
-  if(!bShowHUD)return;
-  auto *V = Cast<ATerraVehicle>(GetOwningPawn());
-  if (!V || !Canvas || V->Garage)
-    return;
-  float W = Canvas->SizeX, H = Canvas->SizeY;
-  DrawRect(FLinearColor(.015, .025, .028, .88), 18, 18, 740, 222);
-  DrawText(TEXT("TERRA DRIVE  /  NATIVE PREVIEW"), FLinearColor(.82, .9, .76),
-           34, 28, nullptr, 1.25f);
-  DrawText(V->VehicleName, FLinearColor::White, 34, 56, nullptr, 1.1f);
-  DrawText(FString::Printf(TEXT("%3.0f mph    %s%d    %4.0f rpm"),
-                           TerraUnits::MPH(FMath::Abs(V->Speed)),
-                           V->Direction < 0 ? TEXT("R") : TEXT("D"),
-                           V->Gear + 1, V->RPM),
-           FLinearColor::White, 34, 82, nullptr, 1.3f);
-  DrawText(FString::Printf(TEXT("%s   %.0f PSI   %s"),*V->SurfaceName,V->Pressure,*V->DriveDescription()),FLinearColor(.72,.83,.88),34,116);
-  DrawText(FString::Printf(TEXT("AXLES  Front: %s   Rear: %s   %s"),
-      V->IndependentWheel(0)?TEXT("motor control"):V->FrontLocked?TEXT("LOCKED"):TEXT("open"),V->IndependentWheel(2)?TEXT("motor control"):V->RearLocked?TEXT("LOCKED"):TEXT("open"),
-      V->DescentAssist?TEXT("DESCENT ON"):TEXT("")),FLinearColor(.95,.8,.4),34,145);
-  DrawText(V->TireAirDescription()+ ((V->IsElectric()||V->IsICEConversion())?TEXT(" / ")+V->PowertrainDescription():TEXT("")),FLinearColor(.72,.83,.88),34,173);
-  DrawText(V->DamageDescription(),FLinearColor(.82,.84,.78),34,200);
-  DrawText(V->Overturned?TEXT("ROLLED OVER - no tire grip. R to recover."):V->Notice,
-      FLinearColor(.93,.82,.54),24,254);
-  if (!V->RouteStatus.IsEmpty()) DrawText(V->RouteStatus,FLinearColor::White,24,282);
-  DrawRect(FLinearColor(.015, .025, .028, .83), 18, H - 112, W - 36, 94);
-  DrawText(TEXT("W/S  Drive / brake; hold opposite input through a stop to reverse     A/D  "
-                "Steer     Space  Brake     RMB + mouse  Camera"),
-           FLinearColor(.85, .88, .88), 30, H - 80);
-  DrawText(TEXT("1-9 Regions    J Next challenge    V Garage    T Tracks    F 4WD    L Low    Z Rear lock    U Front lock"),
-           FLinearColor(.85, .88, .88), 30, H - 54);
-  DrawText(TEXT("+/- Tire PSI target    Shift+W Crawl    K Descent assist    R Recover    Tab Garage    Esc Quit"),
-           FLinearColor(.85,.88,.88),30,H-30);
-  if (V->WinchAttached)
-    DrawText(FString::Printf(TEXT("WINCH %.0f lbf"), TerraUnits::PoundsForce(V->WinchTension)),
-             FLinearColor(.74, .9, 1), W - 240, 32);
-}
 void ATerraGameMode::Tick(float Dt) {
   Super::Tick(Dt);
   auto *GraphicsVehicle=Cast<ATerraVehicle>(UGameplayStatics::GetPlayerPawn(this,0));
   const bool Automated=FParse::Param(FCommandLine::Get(),TEXT("unattended"));
-  TerraGraphics::Tick(GraphicsVehicle&&GraphicsVehicle->Garage,!Automated&&!FApp::HasFocus());
+  TerraGraphics::Tick(GraphicsVehicle&&(GraphicsVehicle->Garage||GraphicsVehicle->PauseMenuOpen),!Automated&&!FApp::HasFocus());
   if (!FParse::Param(FCommandLine::Get(), TEXT("TerraValidate")))
     return;
   TestTime += Dt;
@@ -123,6 +88,10 @@ void ATerraGameMode::Tick(float Dt) {
       FScreenshotRequest::RequestScreenshot(Directory/Name,true,false);
     }
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
+    if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraBodyGroundOnly"))){
     if(TerraBodyGroundValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;

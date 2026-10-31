@@ -168,7 +168,7 @@ int main(){
     build.Stage[TerraSim::Engine]=999;build.Stage[TerraSim::Tires]=-8;
     auto sanitized=TerraSim::Tune(build,false,true);
     check(sanitized.Power==engine.Power&&sanitized.Grip==1,"out of range saved stages are clamped safely");
-    check(TerraSim::Electrical==6&&TerraSim::Drivetrain==7&&TerraSim::Differentials==8&&TerraSim::Portals==9&&TerraSim::EVSwap==10&&TerraSim::TireAir==11&&TerraSim::PartCount==12,"persistent original upgrade indices remain unchanged while electric and tire air append at ten and eleven");
+    check(TerraSim::Electrical==6&&TerraSim::Drivetrain==7&&TerraSim::Differentials==8&&TerraSim::Portals==9&&TerraSim::EVSwap==10&&TerraSim::TireAir==11&&TerraSim::CenterDifferential==12&&TerraSim::PartCount==13,"persistent original upgrade indices remain unchanged while electric, tire air and center append at ten through twelve");
     const TerraSim::FactoryDrivetrain factories[]={
         {true,false,false,true,true,4}, {true,false,false,true,true,3.06f},
         {false,false,true,false,false,1}, {false,false,false,false,false,1},

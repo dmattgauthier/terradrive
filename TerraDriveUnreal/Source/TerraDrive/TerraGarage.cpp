@@ -161,7 +161,7 @@ void STerraGarage::Construct(const FArguments &Args) {
             +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center)
             [SNew(SVerticalBox)
               +SVerticalBox::Slot().AutoHeight()[Label(TEXT("YOUR GARAGE. YOUR SETUP."),12,Mint,true)]
-              +SVerticalBox::Slot().AutoHeight().Padding(0,4)[Label(TEXT("All stages available  /  Saved per vehicle  /  Tab or Esc to drive"),11,Muted)]]
+              +SVerticalBox::Slot().AutoHeight().Padding(0,4)[SNew(STextBlock).Text_Lambda([this]{return FText::FromString(TEXT("Saved per vehicle  /  ")+(Vehicle.IsValid()?Vehicle->ControlLabel(TerraControls::Action::Garage):TEXT("V"))+TEXT(" or Tab to drive  /  Esc menu"));}).Font(Font(11)).ColorAndOpacity(Muted)]]
             +SHorizontalBox::Slot().AutoWidth().Padding(12,0)
             [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(16,12)).VAlign(VAlign_Center).ButtonColorAndOpacity(FLinearColor(.14,.20,.19))
               .OnClicked_Lambda([this]{if(Vehicle.IsValid())Vehicle->ResetUpgrades();return FReply::Handled();})
@@ -201,7 +201,11 @@ FReply STerraGarage::OnPreviewKeyDown(const FGeometry& Geometry,const FKeyEvent 
   return OnKeyDown(Geometry,Event);
 }
 FReply STerraGarage::OnKeyDown(const FGeometry&,const FKeyEvent &Event) {
-  if(Event.GetKey()==EKeys::Tab||Event.GetKey()==EKeys::Escape){
+  if(Event.GetKey()==EKeys::Escape){
+    if(Vehicle.IsValid())Vehicle->SetPauseMenu(true);
+    return FReply::Handled();
+  }
+  if(Event.GetKey()==EKeys::Tab||(Vehicle.IsValid()&&Event.GetKey()==Vehicle->ControlKey(TerraControls::Action::Garage))){
     if(Vehicle.IsValid())Vehicle->SetGarage(false);
     return FReply::Handled();
   }
@@ -266,9 +270,9 @@ TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
   auto Stages=SNew(SHorizontalBox);
   for(int S=0;S<4;++S){
     Stages->AddSlot().AutoWidth().Padding(3,0)
-    [SNew(SBox).WidthOverride(S==0?64:Part>=TerraSim::Drivetrain?59:46).HeightOverride(34)
+    [SNew(SBox).WidthOverride(S==0?64:Part==TerraSim::CenterDifferential?96:Part>=TerraSim::Drivetrain?59:46).HeightOverride(34)
       [SNew(SButton).ButtonStyle(&ButtonStyle()).HAlign(HAlign_Center).VAlign(VAlign_Center)
-        .IsEnabled_Lambda([this,Part]{return Vehicle.IsValid()&&(Part!=TerraSim::Electrical||Vehicle->HasElectrical());})
+        .IsEnabled_Lambda([this,Part,S]{return Vehicle.IsValid()&&(Part!=TerraSim::Electrical||Vehicle->HasElectrical())&&(Part!=TerraSim::CenterDifferential||S==0||Vehicle->CenterLockUpgradeAvailable());})
         .ButtonColorAndOpacity_Lambda([this,Part,S]{return Vehicle.IsValid()&&Vehicle->UpgradeStage(Part)==S?FLinearColor(.28,.49,.34):FLinearColor(.07,.10,.11);})
         .OnClicked_Lambda([this,Part,S]{if(Vehicle.IsValid())Vehicle->SetUpgrade(Part,S);return FReply::Handled();})
         [SNew(STextBlock).Text_Lambda([this,Part,S]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeStageName(Part,S):TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(White)]]];
@@ -282,7 +286,7 @@ TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
         +SVerticalBox::Slot().AutoHeight().Padding(0,2)
         [SNew(STextBlock).Text_Lambda([this,Part]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeDescription(Part):TEXT(""));}).Font(Font(10)).ColorAndOpacity(Muted).AutoWrapText(true)]
         +SVerticalBox::Slot().AutoHeight()
-        [SNew(STextBlock).Text_Lambda([this,Part]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeEffect(Part):TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(Mint)]]
+        [SNew(STextBlock).Text_Lambda([this,Part]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeEffect(Part):TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(Mint).AutoWrapText(true)]]
       +SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12,0)[Stages]];
 }
 TSharedRef<SWidget> STerraGarage::UpgradePage() {
@@ -322,5 +326,22 @@ TSharedRef<SWidget> STerraGarage::UpgradePage() {
 void STerraGarage::ShowUpgradePart(int Part){
   if(!Pages.IsValid()||!UpgradeScroll.IsValid()||!UpgradeRows.IsValidIndex(Part))return;
   Page=1;Pages->SetActiveWidgetIndex(1);
-  UpgradeScroll->ScrollDescendantIntoView(UpgradeRows[Part],false,EDescendantScrollDestination::Center);
+  PendingUpgradePart=Part;UpgradeScrollAttempts=8;
+  // The final row can grow after a vehicle change. Resolve the end offset
+  // after Slate lays out the new descriptions, rather than using old geometry.
+  if(Part==TerraSim::PartCount-1)UpgradeScroll->ScrollToEnd();
+  else UpgradeScroll->ScrollDescendantIntoView(UpgradeRows[Part],false,EDescendantScrollDestination::Center);
+}
+void STerraGarage::Tick(const FGeometry& Geometry,const double Time,const float Dt){
+  SCompoundWidget::Tick(Geometry,Time,Dt);
+  if(Page!=1||!UpgradeScroll.IsValid()||!UpgradeRows.IsValidIndex(PendingUpgradePart))return;
+  const auto& R=UpgradeRows[PendingUpgradePart]->GetCachedGeometry();const auto& S=UpgradeScroll->GetCachedGeometry();
+  const auto RT=R.LocalToAbsolute(FVector2D::ZeroVector),RB=R.LocalToAbsolute(R.GetLocalSize());
+  const auto ST=S.LocalToAbsolute(FVector2D::ZeroVector),SB=S.LocalToAbsolute(S.GetLocalSize());
+  if(Vehicle.IsValid()&&Vehicle->AutoTest)UE_LOG(LogTemp,Display,TEXT("TERRA_UPGRADE_SCROLL part=%d remaining=%d rowHeight=%.3f rowTop=%.3f rowBottom=%.3f viewportTop=%.3f viewportBottom=%.3f"),PendingUpgradePart,UpgradeScrollAttempts,R.GetLocalSize().Y,RT.Y,RB.Y,ST.Y,SB.Y);
+  if(UpgradeScrollAttempts--<=0){PendingUpgradePart=-1;return;}
+  // Auto-wrapped descriptions acquire their final height after the first
+  // visible layout. Keep the requested row in view through that short change.
+  if(PendingUpgradePart==TerraSim::PartCount-1)UpgradeScroll->ScrollToEnd();
+  else UpgradeScroll->ScrollDescendantIntoView(UpgradeRows[PendingUpgradePart],false,EDescendantScrollDestination::Center);
 }
