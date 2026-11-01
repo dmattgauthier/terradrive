@@ -15,6 +15,7 @@ public:
   virtual void Tick(const FGeometry&,const double,const float) override;
   void ShowUpgradePart(int Part);
   static TSharedRef<SWidget> GraphicsPage();
+  static TSharedRef<SWidget> EnergyControls(ATerraVehicle* Vehicle);
   TSharedPtr<SWidget> UpgradePartWidget(int Part) const { return UpgradeRows.IsValidIndex(Part)?UpgradeRows[Part]:nullptr; }
   TSharedPtr<SScrollBox> UpgradePartScrollBox() const { return UpgradeScroll; }
 private:

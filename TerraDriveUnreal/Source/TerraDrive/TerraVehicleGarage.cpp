@@ -32,8 +32,9 @@ void ATerraVehicle::SetGarageView(int View){
   if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
 }
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
-  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),6);
+  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),7);
   Root->SetBoolField(TEXT("damageEnabled"),DamageEnabled);
+  Root->SetBoolField(TEXT("energyUsageEnabled"),EnergyUsageEnabled);
   Root->SetNumberField(TEXT("vehicle"),VehicleIndex);
   TArray<TSharedPtr<FJsonValue>> Cars;
   for(const auto &Build:Builds){
@@ -42,9 +43,10 @@ bool ATerraVehicle::SaveGarage(const FString &Path) const {
     Cars.Add(MakeShared<FJsonValueArray>(Stages));
   }
   Root->SetArrayField(TEXT("builds"),Cars);
-  TArray<TSharedPtr<FJsonValue>> Air,Charge;
-  for(int I=0;I<VehicleCount;++I){Air.Add(MakeShared<FJsonValueNumber>(I==VehicleIndex?PressureTarget:PressureProfiles[I]));Charge.Add(MakeShared<FJsonValueNumber>(I==VehicleIndex?BatterySOC:BatteryProfiles[I]));}
+  TArray<TSharedPtr<FJsonValue>> Air,Charge,Fuel;
+  for(int I=0;I<VehicleCount;++I){Air.Add(MakeShared<FJsonValueNumber>(I==VehicleIndex?PressureTarget:PressureProfiles[I]));Charge.Add(MakeShared<FJsonValueNumber>(I==VehicleIndex?BatterySOC:BatteryProfiles[I]));Fuel.Add(MakeShared<FJsonValueNumber>(I==VehicleIndex?FuelFraction:FuelProfiles[I]));}
   Root->SetArrayField(TEXT("pressureTargets"),Air);Root->SetArrayField(TEXT("batteryCharge"),Charge);
+  Root->SetArrayField(TEXT("fuelLevels"),Fuel);
   FString Text; auto Writer=TJsonWriterFactory<>::Create(&Text);
   if(!FJsonSerializer::Serialize(Root,Writer))return false;
   IFileManager::Get().MakeDirectory(*FPaths::GetPath(Path),true);
@@ -57,7 +59,7 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())return false;
   double Version=0,Selected=0;
   const TArray<TSharedPtr<FJsonValue>> *Cars=nullptr;
-  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3&&Version!=4&&Version!=5&&Version!=6)||
+  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3&&Version!=4&&Version!=5&&Version!=6&&Version!=7)||
       !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=(Version==1?5:Version<4?6:VehicleCount))return false;
   TerraSim::UpgradeSetup Loaded[VehicleCount];
   for(int I=0;I<Cars->Num();++I){
@@ -68,22 +70,23 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
     if(!TerraSim::DecodeUpgradeStages(Values,Stages->Num(),int(Version),I!=2||(Version>=4&&Values[TerraSim::EVSwap]>0),Loaded[I],I==4||I==7))return false;
   }
   if(Root->HasField(TEXT("vehicle"))&&(!Root->TryGetNumberField(TEXT("vehicle"),Selected)||!FMath::IsFinite(Selected)||Selected<0||Selected>=Cars->Num()||std::floor(Selected)!=Selected))return false;
-  float Air[VehicleCount]={},Charge[VehicleCount];for(float &C:Charge)C=.75f;
-  bool LoadedDamageEnabled=true;
+  float Air[VehicleCount]={},Charge[VehicleCount],Fuel[VehicleCount];for(int I=0;I<VehicleCount;++I)Charge[I]=Fuel[I]=.75f;
+  bool LoadedDamageEnabled=true,LoadedEnergyUsage=true;
   if(Root->HasField(TEXT("damageEnabled"))&&!Root->TryGetBoolField(TEXT("damageEnabled"),LoadedDamageEnabled))return false;
+  if(Version>=7&&(!Root->HasTypedField<EJson::Boolean>(TEXT("energyUsageEnabled"))||!Root->TryGetBoolField(TEXT("energyUsageEnabled"),LoadedEnergyUsage)))return false;
   if(Version>=4){
-    for(int Field=0;Field<2;++Field){const TCHAR *Key=Field?TEXT("batteryCharge"):TEXT("pressureTargets");
-      if(!Root->HasField(Key))continue;
+    for(int Field=0;Field<(Version>=7?3:2);++Field){const TCHAR *Key=Field==2?TEXT("fuelLevels"):Field?TEXT("batteryCharge"):TEXT("pressureTargets");
+      if(!Root->HasField(Key)){if(Version>=7)return false;continue;}
       const TArray<TSharedPtr<FJsonValue>> *Values=nullptr;
       if(!Root->TryGetArrayField(Key,Values)||Values->Num()!=VehicleCount)return false;
       for(int I=0;I<VehicleCount;++I){double N;
-        if(!(*Values)[I].IsValid()||!(*Values)[I]->TryGetNumber(N)||!FMath::IsFinite(N)||N<0||N>(Field?1:65)||(Field==0&&N>0&&N<8))return false;
-        (Field?Charge[I]:Air[I])=N;
+        if(!(*Values)[I].IsValid()||(Version>=7&&(*Values)[I]->Type!=EJson::Number)||!(*Values)[I]->TryGetNumber(N)||!FMath::IsFinite(N)||N<0||N>(Field?1:65)||(Field==0&&N>0&&N<8))return false;
+        (Field==2?Fuel[I]:Field?Charge[I]:Air[I])=N;
       }
     }
   }
-  for(int I=0;I<VehicleCount;++I){Builds[I]=Loaded[I];PressureProfiles[I]=Air[I];BatteryProfiles[I]=Charge[I];}
-  LastVehicle=int(Selected);DamageEnabled=LoadedDamageEnabled;
+  for(int I=0;I<VehicleCount;++I){Builds[I]=Loaded[I];PressureProfiles[I]=Air[I];BatteryProfiles[I]=Charge[I];FuelProfiles[I]=Fuel[I];}
+  LastVehicle=int(Selected);DamageEnabled=LoadedDamageEnabled;EnergyUsageEnabled=LoadedEnergyUsage;
   return true;
 }
 TerraSim::DriveCapabilities ATerraVehicle::DriveCapabilities() const {
@@ -114,8 +117,10 @@ TerraSim::DriveCapabilities ATerraVehicle::DriveCapabilities() const {
     if(!Factory.CenterLocker&&C.CenterLocker)C.HardwareMass-=TerraSim::CenterHardwareMass(UpgradeStage(TerraSim::CenterDifferential));
     C.CenterLocker=false;C.RigidTransfer=false;
   }
-  // Independent motors use wheel torque control; a selectable virtual lock is
-  // a control mode, never a rigid shaft constraint between their wheel speeds.
+  // Independent wheel motors provide selectable virtual axle locks. When
+  // selected they obey the same left/right speed constraint as a shaft locker.
+  if(IndependentWheel(0))C.FrontLocker=true;
+  if(IndependentWheel(2))C.RearLocker=true;
 
   return C;
 }
@@ -204,7 +209,7 @@ void ATerraVehicle::SetUpgrade(int Part,int Stage,bool Persist){
   if(Part==TerraSim::Drivetrain&&Stage>0)FourDrive=HasFourDrive();
   if(Part==TerraSim::EVSwap){
     FourDrive=IsFactoryElectric()||Stage!=1;Gear=0;
-    if(!IsFactoryElectric())BatterySOC=.75f;
+    // Changing motor layout must not refill either stored energy profile.
     BatteryProfiles[VehicleIndex]=BatterySOC;
   }
   ApplyUpgrades();

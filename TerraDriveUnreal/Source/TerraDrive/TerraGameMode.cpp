@@ -29,6 +29,7 @@
 #include "TerraMechanicalValidation.h"
 #include "TerraTurningValidation.h"
 #include "TerraElectricPressureValidation.h"
+#include "TerraEnergyLockValidation.h"
 #include "TerraDamageValidation.h"
 #include "TerraSprayValidation.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -46,7 +47,7 @@ ATerraGameMode::ATerraGameMode() {
   DefaultPawnClass = ATerraVehicle::StaticClass();
   HUDClass = ATerraHUD::StaticClass();
   PrimaryActorTick.bCanEverTick = true;
-  PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"));
+  PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"));
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
@@ -119,6 +120,10 @@ void ATerraGameMode::Tick(float Dt) {
   };
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"))){
+    if(TerraEnergyLockValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarryPerformanceOnly"))){

@@ -1,0 +1,96 @@
+{
+  "completedUtc": "2026-11-01T02:04:06.164150+00:00",
+  "engine": "5.8.3",
+  "baseCommit": "f2cc60b6e8c2dbfe9f64297536c75f0bb94ff260",
+  "branch": "codex/ev-lockers-energy",
+  "executableSha256": "e58224805564a3f3cd93737b9f21fe532e593697cfe917f808d7f41565d55eba",
+  "sourceProducerCount": 173,
+  "sourceManifestSha256": "075dfd20cdc059415a8d6694cc49d4ce0b7a69ee6e52194ae97ba6a6ae884b72",
+  "assetCookManifestSha256": "4853cd028055d5cabdbbbc210296947f1e6759e0e1b2985b31e4c8dcb00f590d",
+  "assetCookReused": true,
+  "assetCounts": {
+    "sourceAssets": 300,
+    "nativeData": 7,
+    "containers": 5
+  },
+  "gameBuild": "passed",
+  "editorBuild": "passed",
+  "native": {
+    "checks": 1050,
+    "modes": [
+      {
+        "mode": "EnergyLock",
+        "checks": 135,
+        "elapsedSeconds": 107.033,
+        "peakGPUC": 52.0,
+        "captures": 17,
+        "resultSha256": "86905a0209b095ccb891cea27e210381c190604c8dfa153fec4e4a603bb27a37",
+        "pass": true
+      },
+      {
+        "mode": "Interface",
+        "checks": 133,
+        "elapsedSeconds": 43.54,
+        "peakGPUC": 53.0,
+        "captures": 23,
+        "resultSha256": "7b6d97e1d6acb48f8926c939dfe7f0fcdf3bcbd6d20960568d275fa1436fd347",
+        "pass": true
+      },
+      {
+        "mode": "Mechanical",
+        "checks": 502,
+        "elapsedSeconds": 146.145,
+        "peakGPUC": 55.0,
+        "captures": 18,
+        "resultSha256": "64ee26757742da2d65737a0eb00dbfc25bbcea81c367422391ffb7594ab34633",
+        "pass": true
+      },
+      {
+        "mode": "ElectricPressure",
+        "checks": 280,
+        "elapsedSeconds": 275.203,
+        "peakGPUC": 54.0,
+        "captures": 36,
+        "resultSha256": "39444575f2fa4a308bc68ff45afdedec701e7855fa8dba9b733c0abcd887b50c",
+        "pass": true
+      }
+    ],
+    "resolution": [
+      1280,
+      720
+    ],
+    "simulationClock": "paced fixed 20 Hz; functional acceptance, not real-time throughput",
+    "frameCapFPS": 20,
+    "graphics": "Cool at startup; Interface exercises graphics presets",
+    "temperatureCutoffC": 77,
+    "peakGPUC": 55.0,
+    "reviewedCaptures": 94,
+    "maximumRecordedLockedAxleSpeedDifferenceRadPerSecond": 0.0,
+    "pass": true
+  },
+  "portable": {
+    "checks": 1158,
+    "commands": {
+      "test-energy.cmd": 31,
+      "test-electric-pressure.cmd": 300,
+      "test-core.cmd": 648,
+      "test-center.cmd": 179
+    },
+    "testedBeforeFinalBuild": true,
+    "allInputsMatchFinalSource": true,
+    "inputFileCount": 17,
+    "inputDigestSha256": "7cbbfa77a530d6d2032e82967b0e01bbd00170672e50b7032967fdf0c0eedb26"
+  },
+  "preserved": {
+    "browserFiles": 1214,
+    "protectedAssetBrowserAndRollbackFiles": 3862,
+    "playerPaths": 8,
+    "playerFilesByteIdentical": true,
+    "assetVerification": "source assets, browser, runtime containers and rollback hashed; acquired Content size and modification times unchanged"
+  },
+  "limits": [
+    "Charging and refueling are instant menu service, not physical stations.",
+    "Fuel capacities and consumption are gameplay estimates, not certified economy/range figures.",
+    "Capped fixed-clock checks establish function, not uncapped FPS or endurance stability."
+  ]
+}

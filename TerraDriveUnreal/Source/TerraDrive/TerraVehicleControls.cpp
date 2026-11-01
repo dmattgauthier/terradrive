@@ -48,6 +48,7 @@ void ATerraVehicle::SetPauseMenu(bool Open){
     PauseMenuWidget=SNew(STerraPauseMenu).Vehicle(this);
     GEngine->GameViewport->AddViewportWidgetContent(PauseMenuWidget.ToSharedRef(),100);
     PauseMenuOpen=true;PC->bShowMouseCursor=true;
+    if(!AutoTest)SaveGarage(GaragePath());
     TerraGraphics::Tick(true,false);
     FInputModeUIOnly Mode;Mode.SetWidgetToFocus(PauseMenuWidget).SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);PC->SetInputMode(Mode);
     FSlateApplication::Get().SetKeyboardFocus(PauseMenuWidget);

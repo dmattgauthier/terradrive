@@ -24,11 +24,14 @@ void ATerraHUD::DrawHUD() {
   const FString Mode=Front&&Rear?((V->CenterLockActive()||V->HasRigidTransfer()||(!Drive.Permanent&&!Drive.CenterLocker))?TEXT("4WD"):TEXT("AWD")):Front?TEXT("FWD"):TEXT("RWD");
   Add(TEXT("drive"),TEXT("DRIVE"),Mode,V->HasFourDrive()?(V->DriveCapabilities().Permanent?TEXT("FIXED"):V->ControlLabel(A::FourDrive)):TEXT("STOCK"),2,Front&&Rear,96);
   if(V->HasLowRange())Add(TEXT("range"),TEXT("RANGE"),V->LowRange?TEXT("LOW"):TEXT("HIGH"),V->ControlLabel(A::LowRange),3,V->LowRange,86);
-  if(V->HasLocker(true)&&!V->IndependentWheel(0))Add(TEXT("frontLock"),TEXT("FRONT DIFF"),V->FrontLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::FrontLock),4,V->FrontLocked,98);
+  if(V->HasLocker(true))Add(TEXT("frontLock"),V->IndependentWheel(0)?TEXT("FRONT V-LOCK"):TEXT("FRONT DIFF"),V->FrontLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::FrontLock),4,V->FrontLocked,98);
   if(V->HasCenterLocker()||V->HasRigidTransfer())Add(TEXT("centerLock"),TEXT("CENTER"),(V->CenterLockActive()||V->HasRigidTransfer())?TEXT("LOCKED"):TEXT("OPEN"),V->HasRigidTransfer()?V->ControlLabel(A::FourDrive)+TEXT(" AUTO"):V->ControlLabel(A::CenterLock),5,V->CenterLockActive()||V->HasRigidTransfer(),98);
-  if(V->HasLocker(false)&&!V->IndependentWheel(2))Add(TEXT("rearLock"),TEXT("REAR DIFF"),V->RearLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::RearLock),6,V->RearLocked,98);
+  if(V->HasLocker(false))Add(TEXT("rearLock"),V->IndependentWheel(2)?TEXT("REAR V-LOCK"):TEXT("REAR DIFF"),V->RearLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::RearLock),6,V->RearLocked,98);
   Add(TEXT("pressure"),TEXT("TIRE PRESSURE"),FString::Printf(TEXT("%.0f / %.0f PSI"),V->WheelPressure(0),V->WheelPressure(2)),V->ControlLabel(A::PressureDown)+TEXT(" / ")+V->ControlLabel(A::PressureUp),7,V->TireAirRequested,137);
-  if(V->IsElectric())Add(TEXT("battery"),TEXT("BATTERY"),FString::Printf(TEXT("%.0f%%"),V->BatterySOC*100),TEXT("CHARGE"),8,V->BatterySOC<.15f,89);
+  const float Energy=V->IsElectric()?V->BatterySOC:V->FuelFraction;
+  Add(V->IsElectric()?TEXT("battery"):TEXT("fuel"),V->IsElectric()?TEXT("BATTERY"):TEXT("FUEL"),
+      V->EnergyUsageEnabled?FString::Printf(TEXT("%.0f%%"),Energy*100):TEXT("UNLIMITED"),
+      V->ControlLabel(A::Garage)+TEXT(" SERVICE"),V->IsElectric()?8:11,V->EnergyUsageEnabled&&Energy<.15f,98);
   Add(TEXT("garage"),TEXT("GARAGE"),TEXT("BUILD"),V->ControlLabel(A::Garage),9,false,81);
   Add(TEXT("menu"),TEXT("MENU"),TEXT("PAUSE"),TEXT("Esc"),10,false,81);
   float Total=Gap*(Cards.Num()-1);for(const auto& C:Cards)Total+=C.Width;
@@ -64,6 +67,7 @@ void ATerraHUD::DrawHUD() {
       Line(-8,-12,8,-12,Accent);Line(-8,12,8,12,Accent);Line(-8,-12,-11,-6,Accent);Line(-11,-6,-11,6,Accent);Line(-11,6,-8,12,Accent);Line(8,-12,11,-6,Accent);Line(11,-6,11,6,Accent);Line(11,6,8,12,Accent);Line(-4,-7,-4,7,Muted);Line(4,-7,4,7,Muted);
     }else if(C.Icon==8){Box(-12,-7,23,14,Muted*.35f);Box(-10,-5,19*V->BatterySOC,10,Accent);Box(11,-3,3,6,Accent);
     }else if(C.Icon==9){Line(-12,-2,0,-12,Accent);Line(0,-12,12,-2,Accent);Line(-9,-3,-9,11,Accent);Line(9,-3,9,11,Accent);Line(-9,11,9,11,Accent);for(int J=0;J<3;++J)Line(-5,2+J*3,5,2+J*3,Muted);
+    }else if(C.Icon==11){Box(-10,-11,13,21,Muted*.35f);Box(-8,8-17*V->FuelFraction,9,17*V->FuelFraction,Accent);Line(-12,11,5,11,Accent);Line(3,-7,9,-2,Accent);Line(9,-2,9,7,Accent);Line(9,7,5,7,Accent);Line(5,7,5,1,Accent);Line(5,-11,10,-5,Accent);
     }else{Box(-7,-10,4,20,Accent);Box(3,-10,4,20,Accent);}
     Text(C.Title,Muted,X+7*Q,Y+8*Q,.73f,CW-14*Q);
     Text(C.Value,C.On?Amber:White,X+36*Q,Y+28*Q,1.12f,CW-41*Q);
@@ -80,6 +84,7 @@ void ATerraHUD::DrawHUD() {
   if(!V->RouteStatus.IsEmpty())Text(V->RouteStatus,Muted,20*S,LastStatusBottom+30*S,.8f,Canvas->SizeX-40*S);
   const double Now=GetWorld()->GetRealTimeSeconds();
   if(LastNotice!=V->Notice){LastNotice=V->Notice;NoticeChangedAt=Now;}
-  FString Notice=V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):(Now-NoticeChangedAt<5?LastNotice:FString());
+  FString Notice=V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):!V->HasPropulsionEnergy()?
+      TEXT("EMPTY  /  Stop, then charge or refuel [")+V->ControlLabel(A::Garage)+TEXT("] or Esc"):(Now-NoticeChangedAt<5?LastNotice:FString());
   if(!Notice.IsEmpty())Text(Notice,Amber,20*S,LastStatusBottom+50*S,.9f,Canvas->SizeX-40*S);
 }

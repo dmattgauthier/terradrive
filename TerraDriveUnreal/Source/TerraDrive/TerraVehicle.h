@@ -4,6 +4,7 @@
 #include "TerraWorld.h"
 #include "TerraUpgrades.h"
 #include "TerraElectric.h"
+#include "TerraEnergy.h"
 #include "TerraPressure.h"
 #include "TerraDamage.h"
 #include "TerraControls.h"
@@ -52,6 +53,7 @@ public:
   ATerraVehicle();
   virtual void BeginPlay() override;
   virtual void Tick(float Dt) override;
+  virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
   void SelectVehicle(int Index);
   void TeleportZone(int Index);
   void TeleportRoute(int Index);
@@ -179,10 +181,20 @@ public:
   float SpecValue(const TCHAR* Key,float Default=0)const{return Number(Key,Default);}
   bool TireAirRequested=false;
   float PressureTarget=35,BatterySOC=.75f,LastRegenPowerW=0;
+  bool EnergyUsageEnabled=true;
+  float FuelFraction=.75f,LastFuelGPH=0,LastElectricDrawW=0;
+  float FuelProfiles[9]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
+  bool HasPropulsionEnergy()const{return TerraSim::PropulsionEnergyAvailable(EnergyUsageEnabled,IsElectric()?BatterySOC:FuelFraction);}
+  float FuelCapacityGallons()const;
+  FString EnergyDescription()const;
+  bool CanServiceEnergy()const;
+  bool ServiceEnergy(bool Persist=true);
+  void SetEnergyUsageEnabled(bool Enabled,bool Persist=true);
+  void AdvanceEnergyForValidation(float Dt){if(AutoTest)UpdateEnergy(Dt);}
   float LastWheelDriveNm[4]={},LastWheelRegenNm[4]={};
   void RequestTirePressure(float Target,bool Persist=true);
   void AdvanceTireAirForValidation(float Dt){if(AutoTest)UpdateTireAir(Dt);}
-  bool TireAirPowered()const{return Damage<.99f&&(!IsElectric()||BatterySOC>.005f);}
+  bool TireAirPowered()const{return Damage<.99f&&(!IsElectric()||HasPropulsionEnergy());}
   float WheelPressure(int Index) const;
   TerraSim::TirePressureBounds TireAirBounds() const;
   TerraSim::PressureEffects TirePressureHandling(bool Front=true) const;
@@ -252,5 +264,8 @@ private:
   void UpdateVisualDetails();
   void SaveSetup();
   void UpdateTireAir(float Dt);
+  void UpdateEnergy(float Dt);
+  float EnergySaveTimer=0;
+  double BatteryEnergyRemainder=0,FuelEnergyRemainder=0;
   void UpdateRoute(float Dt);
 };
