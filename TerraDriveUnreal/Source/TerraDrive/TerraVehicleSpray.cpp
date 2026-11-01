@@ -7,7 +7,7 @@
 
 void ATerraVehicle::UpdateSpray(float Dt) {
   if(SprayMeshes.Num()!=6)return;
-  for(int I=0;I<4;++I){
+  for(int I=0;I<WheelCount();++I){
     const auto &W=WheelState[I];if(!W.ContactValid||W.Load<100||Overturned)continue;
     const bool Driven=DrivenWheel(I);
     const bool Loose=Terrain->IsLooseGround(W.Contact);

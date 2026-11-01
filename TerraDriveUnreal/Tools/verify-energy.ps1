@@ -41,7 +41,7 @@ try{
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json
  $taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{EnergyLock=135;Interface=133;ElectricPressure=280;Mechanical=502}[$Mode]
+ $taskExpected=@{EnergyLock=135;Interface=140;ElectricPressure=280;Mechanical=557}[$Mode]
  if($taskGame.ExitCode -ne 0 -or $taskResult.engine -ne '5.8.3' -or $taskFailed.Count -or $taskReceipt.checks -ne $taskExpected){throw 'Native acceptance failed; inspect the preserved report'}
  $taskReceipt.pass=$true
 }catch{$taskProblem=$_;if(!$taskGame.HasExited){$taskGame.Kill();$taskGame.WaitForExit()};$taskReceipt.problem=$_.Exception.Message}

@@ -5,7 +5,7 @@
 void ATerraWorld::BreakTireMarks(){for(bool &Connected:MarkConnected)Connected=false;}
 void ATerraWorld::TireMark(int Wheel,FVector P,FVector Forward,float Width,float Slip,
     float Speed,float Lateral,bool Grounded,bool Constructed,float Dt){
-  if(Wheel<0||Wheel>3)return;
+  if(Wheel<0||Wheel>5)return;
   const auto S=Sample(P);
   const bool Road=S.Surface==1;
   const bool Skidding=FMath::Abs(Slip)>.20f||FMath::Abs(Lateral)>1.1f;

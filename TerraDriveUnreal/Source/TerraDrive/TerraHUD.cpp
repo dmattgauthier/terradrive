@@ -21,12 +21,16 @@ void ATerraHUD::DrawHUD() {
   Add(TEXT("rpm"),V->IsElectric()?TEXT("MOTOR RPM"):TEXT("ENGINE RPM"),FString::Printf(TEXT("%.0f"),V->RPM),FString::Printf(TEXT("%s%d"),V->Direction<0?TEXT("R"):TEXT("D"),V->Gear+1),1,false,110);
   const bool Front=V->DrivenWheel(0),Rear=V->DrivenWheel(2);
   const auto Drive=V->DriveCapabilities();
-  const FString Mode=Front&&Rear?((V->CenterLockActive()||V->HasRigidTransfer()||(!Drive.Permanent&&!Drive.CenterLocker))?TEXT("4WD"):TEXT("AWD")):Front?TEXT("FWD"):TEXT("RWD");
+  const FString Mode=Front&&Rear?(V->AxleCount()==3?TEXT("6WD"):(V->CenterLockActive()||V->HasRigidTransfer()||(!Drive.Permanent&&!Drive.CenterLocker))?TEXT("4WD"):TEXT("AWD")):Front?TEXT("FWD"):TEXT("RWD");
   Add(TEXT("drive"),TEXT("DRIVE"),Mode,V->HasFourDrive()?(V->DriveCapabilities().Permanent?TEXT("FIXED"):V->ControlLabel(A::FourDrive)):TEXT("STOCK"),2,Front&&Rear,96);
   if(V->HasLowRange())Add(TEXT("range"),TEXT("RANGE"),V->LowRange?TEXT("LOW"):TEXT("HIGH"),V->ControlLabel(A::LowRange),3,V->LowRange,86);
   if(V->HasLocker(true))Add(TEXT("frontLock"),V->IndependentWheel(0)?TEXT("FRONT V-LOCK"):TEXT("FRONT DIFF"),V->FrontLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::FrontLock),4,V->FrontLocked,98);
   if(V->HasCenterLocker()||V->HasRigidTransfer())Add(TEXT("centerLock"),TEXT("CENTER"),(V->CenterLockActive()||V->HasRigidTransfer())?TEXT("LOCKED"):TEXT("OPEN"),V->HasRigidTransfer()?V->ControlLabel(A::FourDrive)+TEXT(" AUTO"):V->ControlLabel(A::CenterLock),5,V->CenterLockActive()||V->HasRigidTransfer(),98);
   if(V->HasLocker(false))Add(TEXT("rearLock"),V->IndependentWheel(2)?TEXT("REAR V-LOCK"):TEXT("REAR DIFF"),V->RearLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::RearLock),6,V->RearLocked,98);
+  if(V->AxleCount()==3){
+    Add(TEXT("rear2Lock"),TEXT("REAR 2 DIFF"),V->RearLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::RearLock),15,V->RearLocked,98);
+    Add(TEXT("tandemLock"),TEXT("TANDEM"),V->TandemLockActive()?TEXT("LOCKED"):TEXT("OPEN"),V->IsElectric()?TEXT("GEARED"):V->ControlLabel(A::CenterLock),13,V->TandemLockActive(),98);
+  }
   Add(TEXT("pressure"),TEXT("TIRE PRESSURE"),FString::Printf(TEXT("%.0f / %.0f PSI"),V->WheelPressure(0),V->WheelPressure(2)),V->ControlLabel(A::PressureDown)+TEXT(" / ")+V->ControlLabel(A::PressureUp),7,V->TireAirRequested,137);
   const float Energy=V->IsElectric()?V->BatterySOC:V->FuelFraction;
   Add(V->IsElectric()?TEXT("battery"):TEXT("fuel"),V->IsElectric()?TEXT("BATTERY"):TEXT("FUEL"),
@@ -57,10 +61,11 @@ void ATerraHUD::DrawHUD() {
       for(int I=0;I<16;++I){const float A0=PI+I*PI/16,A1=PI+(I+1)*PI/16;Line(FMath::Cos(A0)*11,FMath::Sin(A0)*11,FMath::Cos(A1)*11,FMath::Sin(A1)*11,Accent);}
       const float F=C.Icon==0?FMath::Clamp(TerraUnits::MPH(FMath::Abs(V->Speed))/100.f,0.f,1.f):FMath::Clamp(V->RPM/8000.f,0.f,1.f);
       Line(0,0,FMath::Cos(PI+F*PI)*9,FMath::Sin(PI+F*PI)*9,White);Box(-1,-1,2,2,White);
-    }else if(C.Icon>=2&&C.Icon<=6){
-      Line(-9,-9,9,-9,Muted);Line(-9,9,9,9,Muted);Line(0,-9,0,9,Muted);
-      for(int Z=0;Z<2;++Z)for(int Side=-1;Side<=1;Side+=2)Box(Side*10-2,Z?5:-13,4,8,(Z?Rear:Front)?Accent:Muted*.45f);
-      if(C.Icon>=4){const float LY=C.Icon==4?-9:C.Icon==6?9:0;
+    }else if((C.Icon>=2&&C.Icon<=6)||C.Icon==13||C.Icon==15){
+      const bool Tandem=V->AxleCount()==3;
+      Line(-9,-9,9,-9,Muted);Line(-9,9,9,9,Muted);Line(0,-9,0,9,Muted);if(Tandem)Line(-9,0,9,0,Muted);
+      for(int Z=0;Z<V->AxleCount();++Z)for(int Side=-1;Side<=1;Side+=2)Box(Side*10-2,-13+Z*(Tandem?9:18),4,8,(Z?Rear:Front)?Accent:Muted*.45f);
+      if(C.Icon>=4){const float LY=C.Icon==4?-9:C.Icon==15?9:C.Icon==13?5:C.Icon==6?(Tandem?0:9):Tandem?-5:0;
         Box(-4,LY-3,8,6,Accent);Line(-3,LY-3,-3,LY-6,Accent);Line(-3,LY-6,3,LY-6,Accent);if(C.On)Line(3,LY-6,3,LY-3,Accent);
       }else if(C.Icon==3){Line(-5,0,5,0,Accent);Line(0,-5,0,5,Accent);}
     }else if(C.Icon==7){

@@ -369,9 +369,9 @@ export function buildGClass(view,spec=view.spec){
   const hoodY=(x,z)=>{
     const ax=Math.abs(x),across=ax/.758,edge=wingJointY(z)+(ev?.045:.027);
     const fade=smooth(z,.80,1.06)*(1-smooth(z,1.94,2.14));
-    const rib=(ev?.007:.017)*Math.exp(-(((ax-.397)/(ev?.145:.073))**2))*fade;
+    const rib=(ev?.009:.021)*Math.exp(-(((ax-.397)/(ev?.160:.068))**2))*fade;
     const drawn=ev?0:-.006*Math.exp(-((ax/.28)**4))*fade;
-    const crown=hoodCentre(z)+(ev?.032:0)+.009*(1-across*across)+rib+drawn;
+    const crown=hoodCentre(z)+(ev?.039:0)+.009*(1-across*across)+rib+drawn;
     // Roll only the outer shoulder. A broad crown keeps the EV hood smooth
     // without dropping the flank into a deep gutter alongside the centre.
     return coachworkSourceY(lerp(crown,edge,smooth(across,ev?.77:.76,1)),z);
@@ -490,7 +490,7 @@ export function buildGClass(view,spec=view.spec){
     perimeter(g,m.drl,panelOutline,(x,y)=>[x,y,frontMap(x,y)[2]+.008],.0048);
     for(const y of [1.105,1.271])box(g,metal,[0,y,2.142],[.824,.019,.015],.005);
   }else{
-    for(let i=0;i<13;i++)box(g,metal,[(i-6)*.068,1.190,2.143],[.011,.294,.032],.004);
+    for(let i=0;i<13;i++)named(box(g,metal,[(i-6)*.068,1.190,2.143],[.011,.294,.032],.004),'g63-panamericana-grille-bar');
     box(g,trim,[0,1.190,2.158],[.266,.267,.012],.050);
   }
   badge(g,m.chrome,[0,1.19,2.174],.112);
@@ -587,7 +587,7 @@ export function buildGClass(view,spec=view.spec){
   // detail is bounded and remains independent of any browser canvas font.
   nativeInterior.call(view,{frontZ:.095,rearZ:-.954,floor:.513,dashY:1.177,dashZ:.545,width:1.48,seatY:.751,roofY:1.910,rearSeatY:.758,dashboard:false,centerConsole:true,doorCards:true});
   box(g,m.interior,[0,1.135,.518],[1.575,.190,.291],.027);
-  box(g,black,[.10,1.296,.451],[1.012,.239,.026],.018);
+  named(box(g,black,[.10,1.296,.451],[1.012,.239,.026],.018),'gclass-modern-widescreen-frame');
   for(const x of [-.132,.332])box(g,m.screen,[x,1.296,.432],[.427,.196,.004],.012);
   for(const x of [-.683,.672]){
     const vent=ring(g,metal,[x,1.175,.364],.060,.005);vent.rotation.x=.12;

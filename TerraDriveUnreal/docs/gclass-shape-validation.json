@@ -1,5 +1,5 @@
 {
-  "revision": 16,
+  "revision": 24,
   "sourceOnly": true,
   "pass": true,
   "checks": 93,
@@ -9,7 +9,7 @@
       "vehicle": "mercedes-g580-ev",
       "checks": 46,
       "pass": true,
-      "bonnetPeakYM": 1.3313010931015015,
+      "bonnetPeakYM": 1.3400955200195312,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
@@ -466,12 +466,12 @@
         {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.2413010597229004
+          "heightReliefM": 0.2500954866409302
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
           "pass": true,
-          "heightM": 1.2949971702756011,
+          "heightM": 1.302012382424233,
           "amgReferenceM": 1.246,
           "evRaisedHood": true
         },
@@ -614,7 +614,7 @@
       "vehicle": "mercedes-amg-g63",
       "checks": 45,
       "pass": true,
-      "bonnetPeakYM": 1.3084464073181152,
+      "bonnetPeakYM": 1.3122601509094238,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
@@ -1053,7 +1053,7 @@
         {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.23644638061523438
+          "heightReliefM": 0.24026012420654297
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
@@ -1208,6 +1208,7 @@
   ],
   "limitations": [
     "Photo-derived panel positions; not OEM CAD.",
+    "G63 row exercises the standard donor fixture shared by the portal variants; current 4x4 squared and 6x6 geometry is checked separately in gclass-variants-validation.json.",
     "Native rendered comparison remains required."
   ]
 }

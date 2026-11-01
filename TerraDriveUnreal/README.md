@@ -1,5 +1,18 @@
 # Terra Drive native port
 
+The [G-Class and vehicle fidelity update](docs/vehicle-fidelity-24.md) adds a
+separate G63 AMG 6×6 with three simulated axles, six driven tire contacts and
+five differential locks, and replaces the old G63 selection with the newer
+G63 4×4². All ten bodies receive contour or equipment changes. The
+[Granite Steps revision](docs/rock-garden-fidelity-24.md) restores bounded scan
+detail with matching rendered terrain and tire support. Garage format 8
+preserves the nine existing profiles and appends the six-wheeler.
+
+[Final native acceptance](docs/gclass-sixwheel-native-24.md) records **1,762 passing
+native checks**, the corrected garage/travel physics command, source/asset hashes,
+visual limits and the **11.5 GB cleanup**. The current game is under
+`Build/Windows/TerraDrive.exe`.
+
 The [EV locker and energy service update](docs/ev-lockers-energy.md) gives
 mechanical and virtual axle locks the same left/right wheel-speed constraint.
 The garage and Esc menu offer battery charging, refueling and a saved unlimited
@@ -93,9 +106,9 @@ From this directory:
 
 The current script expects the standard `C:\Program Files\Epic Games\UE_5.8` installation. Pass `-EngineRoot 'D:\YourEngine'` for another installation. Conversion reads the adjacent `TerraDrive-v1.13` folder. Do not substitute an older source ZIP over that updated folder.
 
-Open `TerraDrive.uproject` to edit. Packaged output is under `Build/Windows/`. Generated assets are recreated with `Tools/export-source.mjs` and `Tools/import-assets.py`; `Content/NativeData` must be staged with the game. `UBA_ROOT` is deliberately project-local so the build accelerator does not need to write to ProgramData.
+Open `TerraDrive.uproject` to edit. Packaged output is under `Build/Windows/`. Debug symbols stay in `Binaries/Win64` for local diagnosis; packaging omits a second copy. Packaging also regenerates the bounded native garden geology field before staging `NativeData`. Generated assets are recreated with `Tools/export-source.mjs` and `Tools/import-assets.py`; `Content/NativeData` must be staged with the game. `UBA_ROOT` is deliberately project-local so the build accelerator does not need to write to ProgramData.
 
-Run editor import and packaging in a normal Windows process context. A restricted process sandbox can make Unreal exit before logging, and UE 5.8 staging writes a temporary `StagedBuild_TerraDrive.ini` under the installed engine's `Intermediate/Build/BuildCookRun` directory. Automation logs stay in `Saved/AutomationLogs`; importer diagnostics are in `Saved/Logs/import-assets.log`. The importer uses forward slashes in the Python script argument and requires a fresh completion marker and saved map. Interrupted mesh imports can be resumed.
+Run editor import and packaging in a normal Windows process context. A restricted process sandbox can make Unreal exit before logging, and UE 5.8 staging writes a temporary `StagedBuild_TerraDrive.ini` under the installed engine's `Intermediate/Build/BuildCookRun` directory. Automation logs stay in `Saved/AutomationLogs`; importer diagnostics are in `Saved/Logs/import-assets-<start>.log`. The importer uses forward slashes in the Python script argument and requires a fresh completion marker and saved map. Mesh imports run in eight-asset commandlet batches by default to release working memory between batches; `-ImportBatchSize` adjusts that bound. The final batch checks and saves the map and completion marker. Unchanged assets are reused when an interrupted import is restarted.
 
 For an optional **ground-material-only iteration** after the initial asset import, `Tools/rebuild-ground.py` reuses the existing texture loader and ground recipes. It updates dirty project-owned textures/materials and leaves mesh and Fab preparation out of that run. Existing exported data and baked transition masks are required. From this project directory, with the game and editor closed:
 

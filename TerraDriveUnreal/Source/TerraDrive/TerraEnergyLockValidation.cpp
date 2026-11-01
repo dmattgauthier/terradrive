@@ -76,13 +76,13 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
   for(int I=0;I<9;++I){V->PressureProfiles[I]=30+I;V->BatteryProfiles[I]=.3f+I*.05f;V->FuelProfiles[I]=.2f+I*.06f;}
   V->PressureTarget=V->PressureProfiles[V->VehicleIndex];V->BatterySOC=V->BatteryProfiles[V->VehicleIndex];V->FuelFraction=V->FuelProfiles[V->VehicleIndex];
   V->SetEnergyUsageEnabled(false,false);V->DamageEnabled=false;
-  Check(TEXT("energy v7 record writes to isolated fixture"),V->SaveGarage(File(TEXT("energy-v7.json"))),7);
+  Check(TEXT("energy v8 record writes to isolated fixture"),V->SaveGarage(File(TEXT("energy-v8.json"))),7);
   FString Text;TSharedPtr<FJsonObject> Root;
-  bool Read=FFileHelper::LoadFileToString(Text,*File(TEXT("energy-v7.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)&&Root.IsValid();
+  bool Read=FFileHelper::LoadFileToString(Text,*File(TEXT("energy-v8.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)&&Root.IsValid();
   V->EnergyUsageEnabled=true;
-  bool Round=Read&&V->LoadGarage(File(TEXT("energy-v7.json")))&&!V->EnergyUsageEnabled&&!V->DamageEnabled;
+  bool Round=Read&&V->LoadGarage(File(TEXT("energy-v8.json")))&&!V->EnergyUsageEnabled&&!V->DamageEnabled;
   for(int I=0;I<9;++I)Round&=FMath::Abs(V->FuelProfiles[I]-(.2f+I*.06f))<.000001f&&FMath::Abs(V->BatteryProfiles[I]-(.3f+I*.05f))<.000001f;
-  Check(TEXT("v7 round trip preserves all nine independent fuel charge and unlimited settings"),Round,9);
+  Check(TEXT("v8 round trip preserves all nine independent fuel charge and unlimited settings"),Round,9);
   if(!Read){Check(TEXT("energy save fixture decoded"),false,0);return;}
   const float OriginalFuel=V->FuelProfiles[0];
   auto Fuel=Root->GetArrayField(TEXT("fuelLevels"));Fuel[0]=MakeShared<FJsonValueNumber>(1.1);Root->SetArrayField(TEXT("fuelLevels"),Fuel);
@@ -90,18 +90,19 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
   Fuel[0]=MakeShared<FJsonValueString>(TEXT("empty"));Root->SetArrayField(TEXT("fuelLevels"),Fuel);
   Check(TEXT("nonnumeric fuel rejects atomically"),Write(Root,TEXT("energy-bad-type.json"))&&!V->LoadGarage(File(TEXT("energy-bad-type.json")))&&!V->EnergyUsageEnabled&&V->FuelProfiles[0]==OriginalFuel,0);
   Fuel[0]=MakeShared<FJsonValueString>(TEXT("0.25"));Root->SetArrayField(TEXT("fuelLevels"),Fuel);
-  Check(TEXT("numeric text cannot be coerced into a v7 fuel value"),Write(Root,TEXT("energy-numeric-text.json"))&&!V->LoadGarage(File(TEXT("energy-numeric-text.json")))&&!V->EnergyUsageEnabled&&V->FuelProfiles[0]==OriginalFuel,0);
+  Check(TEXT("numeric text cannot be coerced into a v8 fuel value"),Write(Root,TEXT("energy-numeric-text.json"))&&!V->LoadGarage(File(TEXT("energy-numeric-text.json")))&&!V->EnergyUsageEnabled&&V->FuelProfiles[0]==OriginalFuel,0);
   Root->RemoveField(TEXT("fuelLevels"));
-  Check(TEXT("incomplete v7 record cannot silently reset fuel"),Write(Root,TEXT("energy-missing.json"))&&!V->LoadGarage(File(TEXT("energy-missing.json"))),0);
+  Check(TEXT("incomplete v8 record cannot silently reset fuel"),Write(Root,TEXT("energy-missing.json"))&&!V->LoadGarage(File(TEXT("energy-missing.json"))),0);
   // Restore the valid fixture before testing the setting's type separately.
   FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root);Root->SetStringField(TEXT("energyUsageEnabled"),TEXT("off"));
   Check(TEXT("invalid consumption setting rejects atomically"),Write(Root,TEXT("energy-bad-setting.json"))&&!V->LoadGarage(File(TEXT("energy-bad-setting.json")))&&!V->EnergyUsageEnabled&&V->FuelProfiles[0]==OriginalFuel,0);
   FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root);
+  for(const TCHAR* Key:{TEXT("builds"),TEXT("pressureTargets"),TEXT("batteryCharge"),TEXT("fuelLevels")}){auto A=Root->GetArrayField(Key);A.SetNum(9);Root->SetArrayField(Key,A);}
   Root->SetNumberField(TEXT("version"),6);Root->RemoveField(TEXT("energyUsageEnabled"));
   bool Legacy=Write(Root,TEXT("energy-v6.json"))&&V->LoadGarage(File(TEXT("energy-v6.json")))&&V->EnergyUsageEnabled&&!V->DamageEnabled;
   for(int I=0;I<9;++I)Legacy&=V->FuelProfiles[I]==.75f&&FMath::Abs(V->BatteryProfiles[I]-(.3f+I*.05f))<.000001f&&V->PressureProfiles[I]==30+I;
   Check(TEXT("v6 migration retains charge pressure builds and damage while adding fuel at seventy five percent"),Legacy,6);
-  V->LoadGarage(File(TEXT("energy-v7.json")));
+  V->LoadGarage(File(TEXT("energy-v8.json")));
   for(int I=0;I<9;++I){
     V->SelectVehicle(I);V->BatterySOC=.23f;V->FuelFraction=.31f;
     const bool EV=V->IsElectric();const float Other=EV?V->FuelFraction:V->BatterySOC;

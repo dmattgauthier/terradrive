@@ -13,6 +13,7 @@ TerraSim::CombustionConfiguration ATerraVehicle::CombustionConfig() const {
 }
 bool ATerraVehicle::IndependentWheel(int Index) const {return TerraSim::IndependentElectricWheel(ElectricLayout(),Index);}
 bool ATerraVehicle::DrivenWheel(int Index) const {
+  if(Index<0||Index>=WheelCount())return false;
   const auto Layout=ElectricLayout();
   if(TerraSim::ElectricAllWheelDrive(Layout))return true;
   return TerraSim::DrivenAxle(DriveCapabilities(),FourDrive,Index<2);
@@ -54,11 +55,11 @@ TerraSim::TirePressureBounds ATerraVehicle::TireAirBounds() const {
   const float StockMass=Number(TEXT("mass"),2100),Front=Number(TEXT("stockPSIFront"),Number(TEXT("stockPSI"),35));
   const float Rear=Number(TEXT("stockPSIRear"),Front),Scale=Rear/FMath::Max(20.f,Front);
   const auto F=TerraSim::PressureBounds(Front,Mass*9.81f*FrontWeight*.5f,StockMass*9.81f*FrontWeight*.5f);
-  const auto R=TerraSim::PressureBounds(Rear,Mass*9.81f*(1-FrontWeight)*.5f,StockMass*9.81f*(1-FrontWeight)*.5f);
+  const auto R=TerraSim::PressureBounds(Rear,Mass*9.81f*AxleLoadFraction(1)*.5f,StockMass*9.81f*AxleLoadFraction(1)*.5f);
   return {FMath::Max(F.MinimumPSI,R.MinimumPSI/Scale),FMath::Min(F.MaximumPSI,R.MaximumPSI/Scale),F.RoadPSI};
 }
 TerraSim::PressureEffects ATerraVehicle::TirePressureHandling(bool Front) const {
-  const float Share=(Front?FrontWeight:1-FrontWeight)*.5f,Placard=Number(Front?TEXT("stockPSIFront"):TEXT("stockPSIRear"),Number(TEXT("stockPSI"),35));
+  const float Share=AxleLoadFraction(Front?0:1)*.5f,Placard=Number(Front?TEXT("stockPSIFront"):TEXT("stockPSIRear"),Number(TEXT("stockPSI"),35));
   return TerraSim::EvaluateTirePressure(WheelPressure(Front?0:2),Placard,Mass*9.81f*Share,Number(TEXT("mass"),2100)*9.81f*Share,Speed,0,Tracks);
 }
 void ATerraVehicle::RequestTirePressure(float Target,bool Persist){
@@ -66,18 +67,18 @@ void ATerraVehicle::RequestTirePressure(float Target,bool Persist){
   TireAirRequested=true;
   PressureTarget=TerraSim::ClampTirePressure(Target,TireAirBounds());PressureProfiles[VehicleIndex]=PressureTarget;
   if(Garage)Pressure=PressureTarget; // A stationary garage service, not CTIS.
-  if(!Garage&&UpgradeStage(TerraSim::TireAir)==0&&PressureTarget>Pressure)Notice=TEXT("Fit tire air control or return to the garage to inflate");
+  if(!Garage&&TireAirHardwareStage()==0&&PressureTarget>Pressure)Notice=TEXT("Fit tire air control or return to the garage to inflate");
   if(Persist&&!AutoTest)SaveSetup();
 }
 void ATerraVehicle::UpdateTireAir(float Dt){
   if(!Spec.IsValid())return;
   if(!TireAirRequested)return;
-  const auto Hardware=TerraSim::ResolveTireAirHardware(UpgradeStage(TerraSim::TireAir));
+  const auto Hardware=TerraSim::ResolveTireAirHardware(TireAirHardwareStage());
   const float ActualSpeed=Chassis->GetPhysicsLinearVelocity().Size2D()/100;
   Pressure=TerraSim::AdvanceTirePressure(Pressure,PressureTarget,Dt,Hardware,ActualSpeed,TireAirPowered(),TireAirBounds(),TerraSim::TireAirVolumeScale(Radius,Width));
 }
 FString ATerraVehicle::TireAirDescription() const {
-  const auto H=TerraSim::ResolveTireAirHardware(UpgradeStage(TerraSim::TireAir));
+  const auto H=TerraSim::ResolveTireAirHardware(TireAirHardwareStage());
   if(FMath::Abs(PressureTarget-Pressure)<.04f)return FString::Printf(TEXT("%.0f PSI target / %s"),PressureTarget,H.Stage?TEXT("air ready"):TEXT("manual valves"));
   const bool Inflating=PressureTarget>Pressure;
   const bool Operating=TerraSim::TireAirCanOperate(H,Chassis->GetPhysicsLinearVelocity().Size2D()/100,TireAirPowered(),Inflating);

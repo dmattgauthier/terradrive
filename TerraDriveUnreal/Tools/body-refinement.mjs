@@ -26,6 +26,10 @@ export function bodyRefinement(view,spec){
    // rolled rear corner. Carry its seams and fittings with the same sheet.
    dx+=sign*side*door*(.008*gauss(y,1.10,.065)-.008*gauss(y,.57,.10));
    dz+=.020*side*gauss(z,-2.07,.17)*gauss(y,.93,.37);
+   // Draw the JL bonnet/cowl shoulder and rear tub around their flat planes;
+   // keep the principal upright window/door edges fixed.
+   dy+=.012*gauss(x,0,.50)*gauss(z,1.28,.57)*smooth(y,1.16,1.25);
+   dx+=sign*.010*side*gauss(z,-1.46,.35)*gauss(y,1.05,.16);
   }else if(style==='bronco'){
    // Wide flatter bonnet, more tucked upper cabin, gentle door crown.
    dx+=sign*sheet*(.008*Math.sin(level*Math.PI)-.005*gauss(y,.72,.12));
@@ -36,6 +40,8 @@ export function bodyRefinement(view,spec){
    // the belt has a narrow folded highlight rather than a round tube.
    dx+=sign*side*(.017*gauss(z,-1.47,.40)*gauss(y,1.10,.14)
      +.006*door*gauss(y,1.215,.041)-.008*door*gauss(y,.59,.11));
+   dy+=.014*gauss(Math.abs(x),.43,.105)*gauss(z,1.40,.53)*smooth(y,1.16,1.28);
+   dz-=.020*gauss(z,2.16,.14)*smooth(ax,.52,.89)*gauss(y,.85,.25);
   }else if(style==='sedan'){
    // Civic's low cowl, gently arched roof and integrated rear haunch.
    dx+=sign*sheet*(.016*Math.sin(level*Math.PI)-.014*gauss(y,.51-z*.025,.09));
@@ -50,6 +56,8 @@ export function bodyRefinement(view,spec){
      -.006*door*gauss(y,.54,.10));
    dz+=.025*gauss(z,-2.35,.15)*smooth(ax,.35,.83)*smooth(y,.50,.75);
    dz-=.014*gauss(z,2.29,.17)*smooth(ax,.38,.85)*(1-smooth(y,.94,1.00));
+   dy+=.012*gauss(x,0,.53)*gauss(z,-1.95,.27)*smooth(y,.87,.96);
+   dx+=sign*.011*side*gauss(z,-1.51,.31)*gauss(y,.86,.14);
   }else if(style==='van'){
    // W906 body tapers into the roof and has a broad softly drawn cargo side.
    dx-=sign*cab*side*.042*smooth(y,1.50,2.42);
@@ -61,6 +69,8 @@ export function bodyRefinement(view,spec){
    dx-=sign*side*.018*gauss(z,-2.94,.23)*smooth(y,1.35,2.39);
    dx+=sign*side*door*(.010*gauss(y,1.10,.095)-.007*gauss(y,.66,.13));
    dz+=.020*gauss(x,0,.74)*gauss(z,1.80,.44)*gauss(y,1.91,.47);
+   dx-=sign*.012*side*gauss(z,-2.91,.18)*smooth(y,1.21,2.35);
+   dy+=.015*gauss(x,0,.64)*gauss(z,2.33,.44)*gauss(y,1.16,.21);
   }else if(style==='hummer'){
    // HUMMER's bluff hood, full rear haunch and tapered upper greenhouse.
    dx-=sign*cab*side*.037*smooth(y,1.45,1.93);
@@ -71,6 +81,8 @@ export function bodyRefinement(view,spec){
    dx+=sign*side*(.012*gauss(z,-1.60,.39)*gauss(y,1.32,.16)
      -.009*door*gauss(y,.66,.11));
    dz+=.018*gauss(z,-2.32,.17)*smooth(ax,.66,1.01)*gauss(y,1.37,.46);
+   dx+=sign*.012*side*gauss(z,-1.58,.30)*gauss(y,1.31,.16);
+   dy+=.011*gauss(Math.abs(x),.48,.15)*gauss(z,1.59,.43)*smooth(y,1.27,1.43);
   }else{
    // Original V8 Performante: the shoulder flows into a full rear haunch,
    // then folds into a narrower hatch. The front doors have one shallow
@@ -103,5 +115,5 @@ export function bodyRefinement(view,spec){
   }
   geo.computeBoundingBox();geo.computeBoundingSphere();
  });
- view.root.userData.bodyRefinement={version:style==='jeep'?16:3,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true};
+ view.root.userData.bodyRefinement={version:24,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true,formedEndAndQuarterSurfaces:true};
 }

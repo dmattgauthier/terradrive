@@ -1,0 +1,235 @@
+{
+  "revision": "gclass-sixwheel-fidelity-24",
+  "engine": "5.8.3",
+  "verifiedUTC": "2026-11-01T05:40:33.719855+00:00",
+  "executableSha256": "140b976cbe874c8eb8af407e9eb62e175dcf9e1fb68d97ec0b0c1ef7f0e633a0",
+  "sourceProducers": 190,
+  "sourceManifestSha256": "ad2e7716a880e9ca1523f0a73ac002236d76337b588ec03db65c1419fceb8601",
+  "inputManifestSha256": "4f4361e728ea289bf352580e401d3812652484e4892ae1dc39bfb776185f9d03",
+  "nativeChecks": 1762,
+  "runs": [
+    {
+      "mode": "SixWheel",
+      "checks": 35,
+      "captures": 6,
+      "elapsedSeconds": 44.1737634,
+      "peakTemperatureC": 47.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    },
+    {
+      "mode": "Garden",
+      "checks": 10,
+      "captures": 5,
+      "elapsedSeconds": 14.9281619,
+      "peakTemperatureC": 49.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    },
+    {
+      "mode": "Art",
+      "checks": 110,
+      "captures": 100,
+      "elapsedSeconds": 329.8748085,
+      "peakTemperatureC": 55.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    },
+    {
+      "mode": "Interface",
+      "checks": 140,
+      "captures": 24,
+      "elapsedSeconds": 34.7464251,
+      "peakTemperatureC": 54.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    },
+    {
+      "mode": "Mechanical",
+      "checks": 557,
+      "captures": 20,
+      "elapsedSeconds": 130.0784294,
+      "peakTemperatureC": 54.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    },
+    {
+      "mode": "ElectricPressure",
+      "checks": 280,
+      "captures": 36,
+      "elapsedSeconds": 253.1900952,
+      "peakTemperatureC": 54.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    },
+    {
+      "mode": "Rollover",
+      "checks": 513,
+      "captures": 64,
+      "elapsedSeconds": 497.7422459,
+      "peakTemperatureC": 54.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    },
+    {
+      "mode": "Ruts",
+      "checks": 117,
+      "captures": 16,
+      "elapsedSeconds": 40.18478,
+      "peakTemperatureC": 54.0,
+      "simulationClock": "paced fixed20Hz functional verification"
+    }
+  ],
+  "portableChecks": {
+    "groundGrid": 15025,
+    "tandem": 798,
+    "energy": 31
+  },
+  "sourceModelEvidence": {
+    "vehicles": 10,
+    "expeditionChecks": 121,
+    "portalChecksIncluded": 65,
+    "attachmentChecks": 196,
+    "sharedGBodyDonorChecks": 93
+  },
+  "gardenGeologySha256": "fab093775cd20e9a2a5d3cc1777200454b2f944a7a7b40045dbeffb320a8a816",
+  "preservation": {
+    "passed": true,
+    "browserFiles": 1214,
+    "acquiredFiles": 715,
+    "playerPaths": 8,
+    "derivedSceneryResaved": [
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/Winter_Cliff02.uasset",
+        "size": 2133182,
+        "sha256": "0f746a4469b0053947f3de3286d01b36bcc24ad732a7071d2dc605b9d39fc9bd"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/Winter_Rock01.uasset",
+        "size": 1038108,
+        "sha256": "a657e0093c915d6731c84e04f1ee330903ccd397ae6313107840bca5295aeaf9"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/Winter_Rock02.uasset",
+        "size": 841819,
+        "sha256": "29bef38fbff10b9ccc386bc6f5e129b44f650c7adff0dc3541dbf5f189d079db"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xbkgdbu.uasset",
+        "size": 301803,
+        "sha256": "9d8e9512ea3abae2c3478bf4aeca142ac76b111a1a197fc93822dd5ffaa981ef"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xbkndhe.uasset",
+        "size": 431752,
+        "sha256": "09f6d473fea938294e5067330d47f2bfee132ef0b84f09a1d7e07d0064f33e1c"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xbrdfck.uasset",
+        "size": 358347,
+        "sha256": "0eb909c3ec78994e4d6c235cd556bc8613f1b8327260bb6300ae2453160cc499"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xbsfdip.uasset",
+        "size": 157210,
+        "sha256": "29551247235894770445ef4b6584ea387db62b69556e2e3e2c5cae5a27b0f01f"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xcghcfe.uasset",
+        "size": 398771,
+        "sha256": "6ba828578a875318738bec0065b3c4bdd8cf03f874877f19d15631f8447ea132"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xckifaf.uasset",
+        "size": 588976,
+        "sha256": "78bead7952fb2b507c4eaa9a4c081f42964e42864515f3865954473d33e8e632"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xckjagi.uasset",
+        "size": 510118,
+        "sha256": "01058107b67ff3be96423bb722e49e8cc5017bbc3722c5efd74d7a468404791a"
+      },
+      {
+        "path": "TerraDriveUnreal/Content/FabScenery/Meshes/xckjajs.uasset",
+        "size": 376602,
+        "sha256": "4f3846d9c87acd8704dec1dad3373ae31d2d389c96404f426ecd03cea0a22ba4"
+      }
+    ],
+    "derivedSceneryAudit": "Project-owned imported copies;43 present at original lengths,11 resaved by import-fab; no baseline byte hash for Content copies",
+    "originalPackAudit": "Original715 acquired UAsset files retain baseline lengths and timestamps",
+    "producers": 190,
+    "errors": []
+  },
+  "visualReview": {
+    "passed": true,
+    "artViewsCovered": 100,
+    "directlyViewedFreshArtViews": 81,
+    "byteIdenticalToPreviouslyViewedArtViews": 19,
+    "directlyViewedGardenViews": 5,
+    "coverage": {
+      "root": "Wrangler0 directly, other9 identical; Bronco10 identical; Civic10 directly",
+      "vehicleFidelityReviewer": "Urus5/G5807/squared8/six9 all10each directly",
+      "independentRuntimeReviewer": "Sprinter3/HUMMER4/EXP6 all10each directly",
+      "terrainReviewer": "Gardenall5 directly"
+    },
+    "correctedIssues": [
+      "Urus raised vent walls reduced to nested open slots",
+      "Six lower cab sheets face outward and shade consistently",
+      "Squared variant badge visible around spare",
+      "Civic badges lie on finished rear paint",
+      "Sprinter rear jamb/header daylight slit closed",
+      "EXP duplicate hatch removed",
+      "Garage description overlap resolved; right spec panel remains scrollable"
+    ],
+    "remainingLimits": [
+      "Original procedural photographic reconstructions, not OEM CAD",
+      "Broad Urus end shapes and simplified cabin/lamp detail retain inaccuracies",
+      "Broad reflection ripples, small seam/trim roughness and minor EXP mirror stub gap remain",
+      "Small retained G63 badge partly hidden behind enlarged spare",
+      "Garden broad pointed heightfield shapes and pale low-detail chips remain; local relief/shoulders improved"
+    ],
+    "gardenCollision": {
+      "rays": 125,
+      "maximumHeightErrorCM": 0.000366,
+      "visibleNewCracksOrTransparentGround": false
+    }
+  },
+  "containers": [
+    {
+      "file": "global.ucas",
+      "bytes": 3199872,
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "file": "global.utoc",
+      "bytes": 782,
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "file": "TerraDrive-Windows.pak",
+      "bytes": 56796006,
+      "sha256": "841bc87ed7e2739379e1552b08fde3a0955ae5f5aee5abefe301d65f2b811fd4"
+    },
+    {
+      "file": "TerraDrive-Windows.ucas",
+      "bytes": 908998112,
+      "sha256": "cb9983898b6334b489e35d7a804629468704e6b4caac239d8738cc3ac4b99b09"
+    },
+    {
+      "file": "TerraDrive-Windows.utoc",
+      "bytes": 766184,
+      "sha256": "979eb085af88d602465c6738e33cc2049ec728b48df78cc5edde0fb5bf325dc7"
+    }
+  ],
+  "limits": [
+    "Paced fixed 20 Hz functional runs establish behavior, not uncapped throughput or endurance stability.",
+    "Original photographic vehicle reconstructions; selected portal variant dimensions include estimates, not OEM CAD.",
+    "Rock garden remains a bounded heightfield reconstruction; improved local relief is not photogrammetric boulder parity.",
+    "Shared93-check G-body source evidence uses G580 and the explicit standard G63 donor; portal65 is included in121."
+  ],
+  "cleanup": {
+    "filesRemoved": 1645,
+    "bytesRemoved": 11512213724,
+    "freeSpaceDeltaBytes": 11516080128,
+    "rollback": "Saved/Rollback-E582",
+    "rollbackExecutableSha256": "e58224805564a3f3cd93737b9f21fe532e593697cfe917f808d7f41565d55eba",
+    "currentExecutableSha256": "140b976cbe874c8eb8af407e9eb62e175dcf9e1fb68d97ec0b0c1ef7f0e633a0",
+    "currentBuildRetained": true,
+    "currentLocalSymbolsRetained": true,
+    "currentEvidenceAndFailedRecordsRetained": true,
+    "preservedSourceArchive": "Saved/Pass24-2026-11-01T02-34-15Z/source-before.zip"
+  }
+}

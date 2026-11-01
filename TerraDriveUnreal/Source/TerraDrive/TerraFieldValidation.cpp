@@ -183,7 +183,7 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   if(S.Stage==7&&S.Time>2){S.Start=V->GetActorLocation();S.MaximumRut=S.MaximumSink=0;S.Finite=FVector::Dist2D(S.Start,S.ExpectedPlacement)<100;V->TestBrake=0;V->TestThrottle=.65f;S.Time=0;S.Stage=8;return false;}
   if(S.Stage==8){
     S.Finite&=!V->GetActorLocation().ContainsNaN();
-    for(const auto& W:V->WheelState){const auto Ground=V->Terrain->Sample(W.Contact);S.MaximumRut=FMath::Max(S.MaximumRut,Ground.RutDepth);S.MaximumSink=FMath::Max(S.MaximumSink,Ground.Water/100);}
+    for(int I=0;I<V->WheelCount();++I){const auto& W=V->WheelState[I];const auto Ground=V->Terrain->Sample(W.Contact);S.MaximumRut=FMath::Max(S.MaximumRut,Ground.RutDepth);S.MaximumSink=FMath::Max(S.MaximumSink,Ground.Water/100);}
     if(S.Time<60&&V->GetActorLocation().X< -6700)return false;
     Check(TEXT("equipped 4WD traverses the entire deep-mud basin"),S.Start.X< -14600&&V->GetActorLocation().X> -6700&&V->GetActorLocation().X-S.Start.X>7900,(V->GetActorLocation().X-S.Start.X)/30.48f);
     Check(TEXT("deep mud crossing leaves actual tire excavation"),S.MaximumRut>.025f,S.MaximumRut*39.3701f);

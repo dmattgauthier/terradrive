@@ -264,6 +264,12 @@ exec(compile(open(os.path.join(root,'Tools','automotive-materials.py'),encoding=
 
 exec(compile(open(os.path.join(root,'Tools','close-rocks.py'),encoding='utf8').read(),'close-rocks.py','exec'))
 for i, asset in enumerate(data['assets']):
+    # A fresh commandlet per small group bounds Interchange/MeshDescription
+    # working memory on 16 GB machines. Finalization runs only in the last group.
+    batch_start = int(os.environ.get('TERRA_IMPORT_START', '0'))
+    batch_end = int(os.environ.get('TERRA_IMPORT_END', str(len(data['assets']))))
+    if not batch_start <= i < batch_end:
+        continue
     dest = '/Game/Meshes/' + asset['name']
     mesh = lib.load_asset(dest) if lib.does_asset_exist(dest) else None
     if mesh and (lib.get_metadata_tag(mesh, 'TerraMeshSchema') != str(data['meshSchema']) or
@@ -331,26 +337,33 @@ for i, asset in enumerate(data['assets']):
             if slot.material_interface.get_editor_property('blend_mode') != unreal.BlendMode.BLEND_OPAQUE:
                 raise RuntimeError('A boulder material is not opaque: '+asset['name'])
     unreal.log('TERRA_IMPORT %d/%d %s' % (i+1, len(data['assets']), asset['name']))
-    if i%8==7:
-        unreal.SystemLibrary.collect_garbage()
+    mesh = None
+    task = None
+    unreal.SystemLibrary.collect_garbage()
 
-exec(compile(open(os.path.join(root,'Tools','import-fab.py'),encoding='utf8').read(),'import-fab.py','exec'),globals())
-# Release mesh/material working objects before saving the proving ground.
-materials.clear()
-unreal.SystemLibrary.collect_garbage()
-level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
-if lib.does_asset_exist('/Game/Maps/ProvingGround'):
-    ok = level.load_level('/Game/Maps/ProvingGround')
+if batch_end < len(data['assets']):
+    unreal.log('TERRA_IMPORT_BATCH_COMPLETE %d:%d' % (batch_start, batch_end))
+    with open(os.path.join(root, 'Saved', 'import-batch-%d.json' % batch_start), 'w', encoding='utf8') as stream:
+        json.dump({'start':batch_start,'end':batch_end,'complete':True},stream)
+
 else:
-    ok = level.new_level('/Game/Maps/ProvingGround')
-if not ok or not level.save_current_level():
-    raise RuntimeError('Could not create/load/save ProvingGround')
-lib.save_directory('/Game', only_if_is_dirty=True, recursive=True)
-with open(os.path.join(root, 'Saved', 'material-usage-readback.json'), 'w', encoding='utf8') as stream:
-    json.dump({'scanMaterials': material_usage_readback, 'complete': True}, stream, indent=2)
-unreal.log('TERRA_IMPORT_COMPLETE')
-os.makedirs(os.path.join(root, 'Saved'), exist_ok=True)
-with open(os.path.join(root, 'Saved', 'import-complete.json'), 'w', encoding='utf8') as stream:
-    json.dump({'meshes':len(data['assets']), 'meshSchema':data['meshSchema'],
-        'damageCpuBodies':[a['name'] for a in data['assets'] if a['name'].endswith('_body')],
-        'map':'/Game/Maps/ProvingGround', 'complete':True}, stream)
+    exec(compile(open(os.path.join(root,'Tools','import-fab.py'),encoding='utf8').read(),'import-fab.py','exec'),globals())
+    # Release mesh/material working objects before saving the proving ground.
+    materials.clear()
+    unreal.SystemLibrary.collect_garbage()
+    level = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+    if lib.does_asset_exist('/Game/Maps/ProvingGround'):
+        ok = level.load_level('/Game/Maps/ProvingGround')
+    else:
+        ok = level.new_level('/Game/Maps/ProvingGround')
+    if not ok or not level.save_current_level():
+        raise RuntimeError('Could not create/load/save ProvingGround')
+    lib.save_directory('/Game', only_if_is_dirty=True, recursive=True)
+    with open(os.path.join(root, 'Saved', 'material-usage-readback.json'), 'w', encoding='utf8') as stream:
+        json.dump({'scanMaterials': material_usage_readback, 'complete': True}, stream, indent=2)
+    unreal.log('TERRA_IMPORT_COMPLETE')
+    os.makedirs(os.path.join(root, 'Saved'), exist_ok=True)
+    with open(os.path.join(root, 'Saved', 'import-complete.json'), 'w', encoding='utf8') as stream:
+        json.dump({'meshes':len(data['assets']), 'meshSchema':data['meshSchema'],
+            'damageCpuBodies':[a['name'] for a in data['assets'] if a['name'].endswith('_body')],
+            'map':'/Game/Maps/ProvingGround', 'complete':True}, stream)

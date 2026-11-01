@@ -4,6 +4,7 @@
 #include "TerraSoilVariation.h"
 #include "TerraSoilMeshComponent.h"
 #include "TerraContact.h"
+#include "TerraGroundGrid.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -96,12 +97,20 @@ float ATerraWorld::DeepMudWeight(float X,float Y) const {
 float ATerraWorld::BaseHeight(float X, float Y) const {
   if (N < 2)
     return 0;
+  const auto Layout=TerraSim::GroundLayout(FMath::FloorToInt(X/3200.f),FMath::FloorToInt(Y/3200.f));
+  if(Layout.Divisions>=64){
+    // Recover bounded, weathered half-metre detail from the original scan
+    // field. Keep metre anchors, broad obstacles and outside terrain intact.
+    // Precisely the same stitched vertices/diagonal feed RebuildGround, so
+    // tire support and visible rock agree between the sample nodes as well.
+    auto CachedVertex=[this](float SX,float SY){return GardenHeights[TerraSim::GardenVertexIndex(SX,SY)];};
+    return TerraSim::GroundMeshHeight(Layout,X,Y,CachedVertex);
+  }
   float GX =
             FMath::Clamp((X / 100 - Origin) / Step, 0.f, float(N - 1) - .0001f),
         GY =
             FMath::Clamp((Y / 100 - Origin) / Step, 0.f, float(N - 1) - .0001f);
-  // Rendered coarse triangles use metre cells; the exported half-metre source
-  // remains available for subsequent detail work without regenerating terrain.
+  // Outside Granite Steps retain the original one-metre contact/render path.
   int IX = FMath::FloorToInt(GX / 2) * 2, IY = FMath::FloorToInt(GY / 2) * 2;
   IX = FMath::Min(IX, N - 3);
   IY = FMath::Min(IY, N - 3);
@@ -396,6 +405,32 @@ void ATerraWorld::BeginPlay() {
        (BlendWeights.IsEmpty()&&Surfaces[I]==6))
       Heights[I]+=SnowDrift((Origin+Row*Step)*100,(Origin+Col*Step)*100)/100;
   }
+  // The source garden field is immutable. Filter it once, not in the hot
+  // height/tire/normal path; this bounded cache uses 1,971,716 bytes.
+  GardenHeights.SetNumUninitialized(TerraSim::GardenRows*TerraSim::GardenColumns);
+  auto RawGardenVertex=[this](float X,float Y){
+    const int Row=FMath::Clamp(FMath::RoundToInt((X/100-Origin)/Step),0,N-1);
+    const int Col=FMath::Clamp(FMath::RoundToInt((Y/100-Origin)/Step),0,N-1);
+    return Heights[Row*N+Col]*100;
+  };
+  TArray<float> GardenSource;TArray<uint8> GardenBytes;
+  if(FFileHelper::LoadFileToArray(GardenBytes,*(FPaths::ProjectContentDir()/TEXT("NativeData/garden-geology.bin")))&&
+     GardenBytes.Num()==24+TerraSim::GardenRows*TerraSim::GardenColumns*4){
+    FMemoryReader GR(GardenBytes);uint32 GM=0;int Rows=0,Columns=0;float Cell=0,GX=0,GY=0;
+    GR<<GM;GR<<Rows;GR<<Columns;GR<<Cell;GR<<GX;GR<<GY;
+    if(GM==0x54444733&&Rows==TerraSim::GardenRows&&Columns==TerraSim::GardenColumns&&Cell==TerraSim::GardenCellCM&&GX==TerraSim::GardenOriginX&&GY==TerraSim::GardenOriginY){
+      GardenSource.SetNumUninitialized(Rows*Columns);GardenGeologyLoaded=true;
+      for(float& H:GardenSource){GR<<H;GardenGeologyLoaded&=FMath::IsFinite(H);}
+    }
+  }
+  if(!GardenGeologyLoaded)UE_LOG(LogTemp,Warning,TEXT("Native garden geology field missing/invalid; retaining previous physical surface"));
+  auto ScannedGardenVertex=[&](float X,float Y){return GardenSource[TerraSim::GardenVertexIndex(X,Y)];};
+  for(int Row=0;Row<TerraSim::GardenRows;++Row)for(int Col=0;Col<TerraSim::GardenColumns;++Col){
+    const float X=TerraSim::GardenOriginX+Row*TerraSim::GardenCellCM,Y=TerraSim::GardenOriginY+Col*TerraSim::GardenCellCM;
+    if(GardenGeologyLoaded)GardenHeights[Row*TerraSim::GardenColumns+Col]=TerraSim::RoundedRockVertex(X,Y,RawGardenVertex,ScannedGardenVertex);
+    else{const auto Previous=TerraSim::GardenBaseLayout(FMath::FloorToInt(X/3200),FMath::FloorToInt(Y/3200));
+      GardenHeights[Row*TerraSim::GardenColumns+Col]=TerraSim::GroundMeshHeight(Previous,X,Y,[&](float SX,float SY){return TerraSim::WeatheredRockVertex(SX,SY,RawGardenVertex);});}
+  }
   FString TransitionJson;
   if(FFileHelper::LoadFileToString(TransitionJson,*(FPaths::ProjectContentDir()/TEXT("NativeData/terrain-transitions.json"))))FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(TransitionJson),TransitionData);
   GroundBlendMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Materials/Terrain_GroundBlend"));
@@ -466,18 +501,23 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
     Mesh->SetCollisionProfileName(TEXT("BlockAll"));
     Mesh->ComponentTags.Add(TEXT("TerraGround"));
   }
-  const int D = 32;
-  float X0 = Key.X * 3200.f, Y0 = Key.Y * 3200.f;
+  const auto Layout=TerraSim::GroundLayout(Key.X,Key.Y);
+  const int D=Layout.Divisions;
+  const float X0=Layout.OriginX,Y0=Layout.OriginY,Spacing=Layout.CellCM;
   TArray<FVector> V, Nr;
   TArray<FVector2D> UV;
   TArray<FLinearColor> C;
   TArray<TArray<int32>> Indices;
   const bool Shared=UsesSharedGroundSections();
   Indices.SetNum(Shared?1:7);
+  const int VertexCount=(D+1)*(D+1);
+  V.Reserve(VertexCount);Nr.Reserve(VertexCount);UV.Reserve(VertexCount);C.Reserve(VertexCount);
+  for(auto& Section:Indices)Section.Reserve(Shared?D*D*6:D*D);
   for (int J = 0; J <= D; J++)
     for (int I = 0; I <= D; I++) {
-      float X = X0 + I * 100, Y = Y0 + J * 100;
-      V.Add(FVector(X, Y, BaseHeight(X, Y)));
+      float X=X0+I*Spacing,Y=Y0+J*Spacing;
+      const float H=TerraSim::GroundVertexHeight(Layout,I,J,[this](float SX,float SY){return BaseHeight(SX,SY);});
+      V.Add(FVector(X,Y,H));
       Nr.Add(FVector(BaseHeight(X - 25, Y) - BaseHeight(X + 25, Y),
                      BaseHeight(X, Y - 25) - BaseHeight(X, Y + 25), 50)
                  .GetSafeNormal());
@@ -488,7 +528,7 @@ void ATerraWorld::RebuildGround(FIntPoint Key) {
     }
   for (int J = 0; J < D; J++)
     for (int I = 0; I < D; I++) {
-      float X = X0 + (I + .5f) * 100, Y = Y0 + (J + .5f) * 100;
+      float X=X0+(I+.5f)*Spacing,Y=Y0+(J+.5f)*Spacing;
       if (FMath::Abs(X) > 40000 || FMath::Abs(Y) > 40000)
         continue;
       const auto* Fine=Detail.Find({FMath::FloorToInt(X/TileCM),FMath::FloorToInt(Y/TileCM)});

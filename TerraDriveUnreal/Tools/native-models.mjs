@@ -12,9 +12,9 @@ function rod(g,mat,a,b,r=.025,segments=12){const va=new THREE.Vector3(...a),vb=n
 
 export function vehicleAdditions(spec){
   const armor=new THREE.Group(),equipment=new THREE.Group(),half=spec.width*.50;
-  const datum=spec.cgHeight,offset=(.5-spec.frontWeightFraction)*spec.wheelbase;
-  const front=(spec.bodyStyle==='earthcruiser'?2.70:['g580','g63'].includes(spec.bodyStyle)?2.332:spec.bodyStyle==='van'?3.03:spec.bodyStyle==='hummer'?spec.length*.47:2.43)+offset;
-  const low=(spec.bodyStyle==='sedan'?.20:.33)-datum;
+  const datum=spec.cgHeight,offset=spec.bodyStyle==='g63six'?0:(.5-spec.frontWeightFraction)*spec.wheelbase;
+  const front=(spec.bodyStyle==='g63six'?2.99:spec.bodyStyle==='earthcruiser'?2.70:['g580','g63'].includes(spec.bodyStyle)?2.332:spec.bodyStyle==='van'?3.03:spec.bodyStyle==='hummer'?spec.length*.47:2.43)+offset;
+  const low=(spec.bodyStyle==='g63six'?.46:spec.bodyStyle==='sedan'?.20:.33)-datum;
   // Folded belly plate, fasteners, tubular rock sliders and three outriggers.
   box(armor,steel,[0,low,-.15+offset],[half*1.48,.045,spec.wheelbase*.72]);
   for(const side of [-1,1]){
@@ -24,8 +24,8 @@ export function vehicleAdditions(spec){
     for(const z of [a,b])add(armor,new THREE.CylinderGeometry(.018,.018,.014,6),chrome,[side*half*.55,low-.03,z]);
   }
   const bash=box(armor,chrome,[0,low+.17,front-.29],[half*1.22,.045,.38]);bash.rotation.x=-.35;
-  if(['earthcruiser','g580','g63'].includes(spec.bodyStyle)){
-    const rear=(spec.bodyStyle==='earthcruiser'?-3.30:['g580','g63'].includes(spec.bodyStyle)?-2.292:-2.37)+offset;
+  if(['earthcruiser','g580','g63','g63six'].includes(spec.bodyStyle)){
+    const rear=(spec.bodyStyle==='g63six'?-2.89:spec.bodyStyle==='earthcruiser'?-3.30:['g580','g63'].includes(spec.bodyStyle)?-2.292:-2.37)+offset;
     box(equipment,steel,[0,.34-datum,rear],[.23,.055,.09]);
     box(equipment,chrome,[0,.345-datum,rear-.05],[.065,.065,.018]);
     return {armor,equipment};

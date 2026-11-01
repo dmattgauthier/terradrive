@@ -122,16 +122,16 @@ for(const spec of VEHICLES){
   }
   const skid=firstSolid([0,.64,3],[0,0,-1]);assert.equal(skid.material,view.materials.hummerAccent);assert.ok(skid.surfaceNormal.z>.4,'HUMMER front skid faces forward');
  }
- assert.equal(view.root.userData.nativeFidelity.version,3);
+ assert.ok([3,4].includes(view.root.userData.nativeFidelity.version));
  const tireBox=new geo.THREE.Box3().setFromObject(wheelParts.tire),size=tireBox.getSize(new geo.THREE.Vector3());
  assert.ok(Math.abs(Math.max(size.y,size.z)/2-spec.tireRadius)<.004,spec.name+' tread matches mechanical radius');
  assert.ok(size.x>=spec.tireWidth*.99&&size.x<spec.tireWidth*1.10,spec.name+' tire shoulder width');
- assert.equal(view.wheels[0].root.userData.factoryWheelRevision,['g580','g63'].includes(spec.bodyStyle)?15:3);
+ assert.equal(view.wheels[0].root.userData.factoryWheelRevision,spec.bodyStyle==='g63six'||spec.gClassVariant==='squared'?24:['g580','g63'].includes(spec.bodyStyle)?15:3);
  const expedition=expeditionStyle(spec)?inspectExpeditionVehicle(view,spec,wheelParts):undefined;
  results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:view.wheels[0].root.userData.factoryWheelRevision,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},...(expedition?{expedition}:{}),pass:true});view.dispose();
 }
-assert.equal(results.length,9,'complete expedition roster');
-const report={revision:'reference-coachwork-18',vehicles:results,newExpeditionChecks:results.reduce((n,r)=>n+(r.expedition?.checks||0),0),pass:true};
-assert.equal(report.newExpeditionChecks,88,'meaningful original geometry checks for the new three');
+assert.equal(results.length,10,'complete expedition roster');
+const report={revision:'reference-coachwork-24',vehicles:results,newExpeditionChecks:results.reduce((n,r)=>n+(r.expedition?.checks||0),0),pass:true};
+assert.ok(report.newExpeditionChecks>=110,'physical envelope/glazing and portal-variant checks for all four expedition bodies');
 fs.writeFileSync(new URL('../docs/model-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

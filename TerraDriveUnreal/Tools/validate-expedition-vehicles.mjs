@@ -8,8 +8,9 @@ import {VEHICLES} from './native-vehicles.mjs';
 import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {GCLASS_LANDMARKS as G} from './mercedes-gclass.mjs';
 import {EARTHCRUISER_EXP_LANDMARKS as E} from './earthcruiser-exp.mjs';
+import {portalStyle,inspectGVariant} from './validate-gclass-variants.mjs';
 
-export const expeditionStyle=spec=>['earthcruiser','g580','g63'].includes(spec.bodyStyle);
+export const expeditionStyle=spec=>['earthcruiser','g580','g63','g63six'].includes(spec.bodyStyle);
 const materialAt=hit=>Array.isArray(hit.object.material)?hit.object.material[hit.face?.materialIndex||0]:hit.object.material;
 function ray(view,origin,direction){
   const start=view.body.localToWorld(new T.Vector3(...origin)),dir=new T.Vector3(...direction).transformDirection(view.body.matrixWorld);
@@ -33,6 +34,7 @@ function geometrySummary(view){
 
 /** Called by validate-models too; caller owns preparation and disposal. */
 export function inspectExpeditionVehicle(view,spec,parts){
+  if(portalStyle(spec))return inspectGVariant(view,spec,parts);
   assert.ok(expeditionStyle(spec),'new expedition style');view.root.updateMatrixWorld(true);
   const tests=[],check=(name,pass,observed)=>{tests.push({case:name,pass,...observed});assert.ok(pass,spec.id+': '+name);};
   const earth=spec.bodyStyle==='earthcruiser',ev=spec.bodyStyle==='g580',summary=geometrySummary(view),reference=earth?E:G;
@@ -92,7 +94,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1]
   for(const spec of VEHICLES.filter(expeditionStyle)){
     const {view,parts}=prepareNativeVehicle(spec);try{rows.push(inspectExpeditionVehicle(view,spec,parts));}finally{view.dispose();}
   }
-  assert.equal(rows.length,3,'three new expedition vehicles');const checks=rows.reduce((n,r)=>n+r.checks,0);assert.equal(checks,88);
+  assert.equal(rows.length,4,'complete four-vehicle expedition roster');const checks=rows.reduce((n,r)=>n+r.checks,0);assert.ok(checks>=110,'physical envelope, glazing and portal variant coverage');
   const report={revision:'expedition-gclass-15',pass:true,checks,vehicles:rows,acceptance:'Source-only original geometry. Native import, render, suspension and gameplay verification remain separate.'};
   fs.writeFileSync(new URL('../docs/expedition-vehicle-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({pass:true,checks,vehicles:rows.map(({id,checks,geometry})=>({id,checks,...geometry}))}));

@@ -30,6 +30,8 @@
 #include "TerraTurningValidation.h"
 #include "TerraElectricPressureValidation.h"
 #include "TerraEnergyLockValidation.h"
+#include "TerraSixWheelValidation.h"
+#include "TerraGardenValidation.h"
 #include "TerraDamageValidation.h"
 #include "TerraSprayValidation.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -124,6 +126,14 @@ void ATerraGameMode::Tick(float Dt) {
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"))){
     if(TerraEnergyLockValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraSixWheelOnly"))){
+    if(TerraSixWheelValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraGardenOnly"))){
+    if(TerraGardenValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarryPerformanceOnly"))){

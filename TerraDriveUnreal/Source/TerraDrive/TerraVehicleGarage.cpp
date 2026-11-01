@@ -4,6 +4,10 @@
 #include "TerraCenter.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Physics/PhysicsInterfaceCore.h"
+#include "PhysicsEngine/BodyInstance.h"
+#include "PhysicsProxy/SingleParticlePhysicsProxy.h"
+#include "Chaos/KinematicTargets.h"
 #include "Components/RectLightComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
@@ -32,7 +36,7 @@ void ATerraVehicle::SetGarageView(int View){
   if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
 }
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
-  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),7);
+  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),8);
   Root->SetBoolField(TEXT("damageEnabled"),DamageEnabled);
   Root->SetBoolField(TEXT("energyUsageEnabled"),EnergyUsageEnabled);
   Root->SetNumberField(TEXT("vehicle"),VehicleIndex);
@@ -59,8 +63,8 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())return false;
   double Version=0,Selected=0;
   const TArray<TSharedPtr<FJsonValue>> *Cars=nullptr;
-  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3&&Version!=4&&Version!=5&&Version!=6&&Version!=7)||
-      !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=(Version==1?5:Version<4?6:VehicleCount))return false;
+  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3&&Version!=4&&Version!=5&&Version!=6&&Version!=7&&Version!=8)||
+      !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=(Version==1?5:Version<4?6:Version<8?9:VehicleCount))return false;
   TerraSim::UpgradeSetup Loaded[VehicleCount];
   for(int I=0;I<Cars->Num();++I){
     const TArray<TSharedPtr<FJsonValue>> *Stages=nullptr;
@@ -78,8 +82,8 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
     for(int Field=0;Field<(Version>=7?3:2);++Field){const TCHAR *Key=Field==2?TEXT("fuelLevels"):Field?TEXT("batteryCharge"):TEXT("pressureTargets");
       if(!Root->HasField(Key)){if(Version>=7)return false;continue;}
       const TArray<TSharedPtr<FJsonValue>> *Values=nullptr;
-      if(!Root->TryGetArrayField(Key,Values)||Values->Num()!=VehicleCount)return false;
-      for(int I=0;I<VehicleCount;++I){double N;
+      if(!Root->TryGetArrayField(Key,Values)||Values->Num()!=(Version<8?9:VehicleCount))return false;
+      for(int I=0;I<Values->Num();++I){double N;
         if(!(*Values)[I].IsValid()||(Version>=7&&(*Values)[I]->Type!=EJson::Number)||!(*Values)[I]->TryGetNumber(N)||!FMath::IsFinite(N)||N<0||N>(Field?1:65)||(Field==0&&N>0&&N<8))return false;
         (Field==2?Fuel[I]:Field?Charge[I]:Air[I])=N;
       }
@@ -93,13 +97,13 @@ TerraSim::DriveCapabilities ATerraVehicle::DriveCapabilities() const {
   TerraSim::FactoryDrivetrain Factory;
   if(Spec.IsValid()){
     const auto& Modes=Spec->GetArrayField(TEXT("driveModes"));
-    for(const auto& Value:Modes){const FString Mode=Value->AsString();Factory.FourDrive|=Mode.Contains(TEXT("4"))||Mode.Contains(TEXT("AWD"));}
+    for(const auto& Value:Modes){const FString Mode=Value->AsString();Factory.FourDrive|=Mode.Contains(TEXT("4"))||Mode.Contains(TEXT("6"))||Mode.Contains(TEXT("AWD"));}
     Factory.Permanent=Factory.FourDrive&&Modes.Num()==1;
     Factory.FrontPrimary=Spec->GetStringField(TEXT("defaultMode"))==TEXT("FWD");
     Factory.LowRatio=Number(TEXT("lowRatio"),1);
     const auto Features=Spec->GetObjectField(TEXT("features"));
     Factory.FrontLocker=Features->GetBoolField(TEXT("frontLocker"));Factory.RearLocker=Features->GetBoolField(TEXT("rearLocker"));
-    Factory.CenterLocker=VehicleIndex==8;
+    Factory.CenterLocker=VehicleIndex==8||VehicleIndex==9;
   }
   auto C=TerraSim::ResolveDriveCapabilities(Builds[VehicleIndex],Factory);
   const auto Layout=ElectricLayout();
@@ -125,7 +129,7 @@ TerraSim::DriveCapabilities ATerraVehicle::DriveCapabilities() const {
   return C;
 }
 bool ATerraVehicle::CenterLockUpgradeAvailable() const {
-  return VehicleIndex!=8&&HasFourDrive()&&!TerraSim::ElectricAllWheelDrive(ElectricLayout());
+  return VehicleIndex!=8&&VehicleIndex!=9&&HasFourDrive()&&!TerraSim::ElectricAllWheelDrive(ElectricLayout());
 }
 bool ATerraVehicle::HasCenterLocker() const {return DriveCapabilities().CenterLocker;}
 bool ATerraVehicle::HasRigidTransfer() const {
@@ -137,16 +141,22 @@ bool ATerraVehicle::CenterLockActive() const {
 void ATerraVehicle::ToggleCenterLocker() {
   if(!Spec.IsValid())return;
   const float ActualSpeed=Chassis->GetPhysicsLinearVelocity().Size2D()/100;
-  const float Difference=(WheelState[0].Omega+WheelState[1].Omega-WheelState[2].Omega-WheelState[3].Omega)*.5f;
+  float RearMean=0;for(int I=2;I<WheelCount();++I)RearMean+=WheelState[I].Omega/(WheelCount()-2);
+  const float Difference=(WheelState[0].Omega+WheelState[1].Omega)*.5f-RearMean;
+  const float TandemDifference=AxleCount()==3?(WheelState[2].Omega+WheelState[3].Omega-WheelState[4].Omega-WheelState[5].Omega)*.5f:0;
+  if(AxleCount()==3&&!CenterLocked&&FMath::Abs(TandemDifference)>2.f){
+    Notice=TEXT("Let both rear axle shafts stop spinning before engaging the tandem locks");return;
+  }
   if(!TerraSim::CenterShiftAllowed(HasCenterLocker(),DrivenWheel(0),DrivenWheel(2),ActualSpeed,Throttle,Difference)){
     Notice=!HasCenterLocker()?(HasRigidTransfer()?TEXT("4H / 4L already couples the front and rear shafts"):TEXT("Fit a center differential in the garage; separate axle motors have no center shaft")):
       TEXT("Stop, release the throttle and let wheelspin settle before shifting the center lock");return;
   }
   CenterLocked=!CenterLocked;
-  Notice=CenterLocked?TEXT("Center differential LOCKED - release on firm ground before tight turns"):TEXT("Center differential OPEN - front and rear shafts may turn at different speeds");
+  Notice=CenterLocked?(AxleCount()==3?TEXT("Center and tandem shaft differentials LOCKED - release on firm ground"):TEXT("Center differential LOCKED - release on firm ground before tight turns")):TEXT("Center differential OPEN - shafts may turn at different speeds");
 }
 FString ATerraVehicle::DriveDescription() const {
   const auto C=DriveCapabilities();
+  if(AxleCount()==3&&DrivenWheel(0)&&DrivenWheel(2))return LowRange?TEXT("6WD LOW"):TEXT("6WD HIGH");
   if(LowRange&&HasLowRange())return FString::Printf(TEXT("4L %.2f:1"),C.LowRatio);
   if(C.Permanent||(C.CenterLocker&&FourDrive))return CenterLockActive()?TEXT("4WD HIGH"):TEXT("AWD HIGH");
   if(FourDrive&&C.FourDrive)return TEXT("4H");
@@ -156,10 +166,18 @@ void ATerraVehicle::ApplyUpgrades(){
   if(!Spec.IsValid())return;
   Builds[VehicleIndex].Sanitize(HasElectrical());
   Tuning=TerraSim::Tune(Builds[VehicleIndex],IsElectric(),HasElectrical());
+  if(Number(TEXT("factoryPortalLiftM"),0)>0){
+    // Factory portal chassis receive reinforcement/regearing and only a small
+    // extra drop, rather than stacking another full portal kit beneath them.
+    Tuning.Lift-=Tuning.PortalLift;Tuning.PortalLift*=.18f;Tuning.Lift+=Tuning.PortalLift;
+    Tuning.HardwareMass*=.30f;
+  }
   EngineUpgrade=Builds[VehicleIndex].Stage[TerraSim::Engine];
   LiftUpgrade=Builds[VehicleIndex].Stage[TerraSim::Suspension];
   const auto Capabilities=DriveCapabilities();
-  Mass=(Number(TEXT("mass"),2100)+ElectricConfig().NetMassKg+CombustionConfig().NetMassKg)*Tuning.Mass+Tuning.HardwareMass+Capabilities.HardwareMass+TerraSim::ResolveTireAirHardware(UpgradeStage(TerraSim::TireAir)).MassKg;
+  const float AirMass=FMath::Max(0.f,TerraSim::ResolveTireAirHardware(TireAirHardwareStage()).MassKg-
+      TerraSim::ResolveTireAirHardware(int(Number(TEXT("factoryTireAirStage"),0))).MassKg);
+  Mass=(Number(TEXT("mass"),2100)+ElectricConfig().NetMassKg+CombustionConfig().NetMassKg)*Tuning.Mass+Tuning.HardwareMass+Capabilities.HardwareMass+AirMass;
   if(!Capabilities.FourDrive)FourDrive=false;
   if(Capabilities.Permanent)FourDrive=true;
   if(!HasLowRange())LowRange=false;
@@ -194,8 +212,8 @@ void ATerraVehicle::ApplyUpgrades(){
     const float Raised=Tuning.Lift+(Radius-Number(TEXT("tireRadius"),.42f));
     const float Floor=RouteIndex>=0?Terrain->Routes[RouteIndex].Spawn.Z:Terrain->Spawns[Zone].Z;
     SetActorLocation(FVector(P.X,P.Y,Floor+(CG+Raised)*100),false,nullptr,ETeleportType::TeleportPhysics);
-    for(int I=0;I<4;++I){
-      const FVector Local(Wheelbase*(I<2?1-FrontWeight:-FrontWeight)*100,(I%2?1:-1)*Track*50,(Radius-CG-Raised)*100);
+    for(int I=0;I<WheelCount();++I){
+      const FVector Local(AxleOffsetM(I/2)*100,(I%2?1:-1)*Track*50,(Radius-CG-Raised)*100);
       Wheels[I]->SetWorldLocationAndRotation(GetActorTransform().TransformPosition(Local),GetActorQuat());
     }
   }
@@ -247,6 +265,13 @@ void ATerraVehicle::SetGarage(bool Open){
     ConfigureCoachworkCollision();
     Chassis->SetMassOverrideInKg(NAME_None,Mass+(Tracks?380:0));
     Chassis->SetCenterOfMass(FVector(0,0,-2.f*UpgradeStage(TerraSim::Frame)));
+    // Garage positioning queued a Chaos kinematic target. A same-frame zone
+    // teleport writes the dynamic XR, but Chaos pushes the older target after
+    // XR and also applies Position targets to dynamic bodies. Explicitly send
+    // mode None on resume; merely clearing its dirty flag would retain it.
+    FPhysicsCommand::ExecuteWrite(Chassis->BodyInstance.GetPhysicsActor(),[](const FPhysicsActorHandle& Actor){
+      Actor->GetGameThreadAPI().SetKinematicTarget(Chaos::FKinematicTarget());
+    });
     SpawnCooldown=.7f;
     PC->bShowMouseCursor=false;PC->SetInputMode(FInputModeGameOnly());
     FSlateApplication::Get().SetAllUserFocusToGameViewport();
@@ -260,6 +285,10 @@ FString ATerraVehicle::UpgradeName(int Part) const{
   return Part==TerraSim::Engine&&IsElectric()?TEXT("MOTOR POWER"):Names[Part];
 }
 FString ATerraVehicle::UpgradeDescription(int Part) const{
+  if(Part==TerraSim::Differentials&&AxleCount()==3)return FString::Printf(TEXT("Front and rear axle locks are retained. %s operates the front axle; %s operates both rear cross-axle locks. Stop to engage; stage III adds unlocked limited-slip preload."),*ControlLabel(TerraControls::Action::FrontLock),*ControlLabel(TerraControls::Action::RearLock));
+  if(Part==TerraSim::Portals&&Number(TEXT("factoryPortalLiftM"),0)>0)return TEXT("Factory portal housings are already fitted. Stages reinforce and regear the existing wheel ends, with a small additional drop. Their added clearance is shown on each stage.");
+  if(Part==TerraSim::TireAir&&Number(TEXT("factoryTireAirStage"),0)>0)return TEXT("Fast factory CTIS is already fitted. STOCK and the KEEP stage selections retain its inflation, deflation and speed limits. Lower PSI helps soft ground but adds steering squirm and hurts road braking.");
+  if(Part==TerraSim::Drivetrain&&AxleCount()==3)return TEXT("Six-wheel high drive and selectable low range are factory fitted. Higher stages retain all three driven axles and add stronger crawler gearing.");
   if(Part==TerraSim::Differentials)return FString::Printf(TEXT("Add a locker on the main drive axle, then both axles; stage III adds limited-slip preload when unlocked. %s rear / %s front; stop to engage."),*ControlLabel(TerraControls::Action::RearLock),*ControlLabel(TerraControls::Action::FrontLock));
   const TCHAR *Descriptions[]={TEXT("Longer articulation, controlled damping and added clearance."),
     TEXT("Stronger torque delivery at every engine speed."),
@@ -274,7 +303,8 @@ FString ATerraVehicle::UpgradeDescription(int Part) const{
     TEXT("Original game conversion kits: single rear motor with optional transfer 4WD, dual axle motors, or four independent wheel motors. Includes battery and donor hardware mass changes."),
     TEXT("Onboard inflation and deflation while moving. Higher stages improve air flow and operating speed. Lower PSI helps soft ground but adds squirm and hurts road braking."),
     TEXT("A full-time center case with a selectable front/rear shaft lock. The open center allows different axle speeds; lock it for split traction. Stop and release throttle to shift. Independent axle/wheel motors have no center differential.")};
-  if(Part==TerraSim::CenterDifferential&&VehicleIndex==8&&HasCenterLocker())return TEXT("Factory selectable center differential lock is already fitted. Stop and release throttle to shift it.");
+  if(Part==TerraSim::CenterDifferential&&TerraSim::ElectricAllWheelDrive(ElectricLayout()))return AxleCount()==3?TEXT("Separate front and rear motors replace the center differential in this conversion. The two rear axles retain a geared tandem connection."):TEXT("Separate axle or wheel motors have no mechanical center differential. Use the fitted axle locks for left/right wheel-speed control.");
+  if(Part==TerraSim::CenterDifferential&&(VehicleIndex==8||VehicleIndex==9)&&HasCenterLocker())return AxleCount()==3?TEXT("Factory center and rear tandem shaft locks are already fitted. The center-lock control operates both; stop and release throttle to shift."):TEXT("Factory selectable center differential lock is already fitted. Stop and release throttle to shift it.");
   if(Part==TerraSim::Engine&&IsElectric())return IsFactoryElectric()?TEXT("More power from the factory motors. The original motor count and layout are retained."):TEXT("Increase output from the installed electric conversion motors.");
   if(Part==TerraSim::EVSwap&&IsFactoryElectric())return TEXT("Gasoline V8 with eight-speed and mechanical axle drive. 350/500/700 hp base kits; Engine Power tunes the fitted kit. STOCK restores the factory EV.");
   if(Part==TerraSim::Electrical)return !HasElectrical()?TEXT("Not fitted to this vehicle."):IsElectric()?TEXT("Battery/inverter output, sealing and auxiliary power; motor layout stays fixed."):Descriptions[Part];
@@ -284,10 +314,13 @@ FString ATerraVehicle::UpgradeStageName(int Part,int Stage) const {
   if(Stage==0)return TEXT("STOCK");
   if(Part==TerraSim::EVSwap)return IsFactoryElectric()?(Stage==1?TEXT("350HP"):Stage==2?TEXT("500HP"):TEXT("700HP")):(Stage==1?TEXT("SINGLE"):Stage==2?TEXT("DUAL"):TEXT("QUAD"));
   if(Part==TerraSim::CenterDifferential)return Stage==1?TEXT("SELECTABLE"):Stage==2?TEXT("HEAVY DUTY"):TEXT("EXPEDITION");
-  if(Part==TerraSim::TireAir)return Stage==1?TEXT("BASIC"):Stage==2?TEXT("CTIS"):TEXT("FAST");
-  if(Part==TerraSim::Drivetrain)return Stage==1?TEXT("4H"):Stage==2?TEXT("4L"):TEXT("CRAWL");
+  if(Part==TerraSim::TireAir){
+    if(Stage<=int(Number(TEXT("factoryTireAirStage"),0)))return FString::Printf(TEXT("KEEP %s"),Stage==1?TEXT("I"):Stage==2?TEXT("II"):TEXT("III"));
+    return Stage==1?TEXT("BASIC"):Stage==2?TEXT("CTIS"):TEXT("FAST");
+  }
+  if(Part==TerraSim::Drivetrain)return Stage==1?(AxleCount()==3?TEXT("6H"):TEXT("4H")):Stage==2?(AxleCount()==3?TEXT("6L"):TEXT("4L")):TEXT("CRAWL");
   if(Part==TerraSim::Differentials)return Stage==1?TEXT("MAIN"):Stage==2?TEXT("BOTH"):TEXT("LSD+");
-  if(Part==TerraSim::Portals)return FString::Printf(TEXT("+%.1f\""),TerraUnits::Inches(Stage==1?.08f:Stage==2?.13f:.18f));
+  if(Part==TerraSim::Portals)return FString::Printf(TEXT("+%.1f\""),TerraUnits::Inches((Stage==1?.08f:Stage==2?.13f:.18f)*(Number(TEXT("factoryPortalLiftM"),0)>0?.18f:1.f)));
   return Stage==1?TEXT("I"):Stage==2?TEXT("II"):TEXT("III");
 }
 FString ATerraVehicle::UpgradeEffect(int Part) const{
@@ -300,19 +333,28 @@ FString ATerraVehicle::UpgradeEffect(int Part) const{
   case TerraSim::Frame:return FString::Printf(TEXT("+%.0f%% chassis damping  /  %.0f%% less combined impact damage"),(Tuning.Stability-1)*100,(1-Tuning.Damage)*100);
   case TerraSim::Body:return FString::Printf(TEXT("%.0f lb total  /  %.0f%% less drag  /  armor stage %d"),TerraUnits::Pounds(Mass),(1-Tuning.Drag)*100,S);
   case TerraSim::Electrical:return !HasElectrical()?TEXT("NOT AVAILABLE"):FString::Printf(TEXT("+%.0f%% winch  /  %.1f in water margin%s"),(Tuning.Winch-1)*100,TerraUnits::Inches(Tuning.WaterDepth),IsElectric()?*FString::Printf(TEXT("  /  +%.0f%% EV output"),(Tuning.ElectricalPower-1)*100):TEXT(""));
-  case TerraSim::Drivetrain:return FString::Printf(TEXT("%s  /  %s  /  %.0f lb drivetrain + locker hardware"),HasFourDrive()?TEXT("4H equipped"):TEXT("Two-wheel drive"),HasLowRange()?*FString::Printf(TEXT("%.2f:1 selectable low"),DriveCapabilities().LowRatio):TEXT("High range only"),TerraUnits::Pounds(DriveCapabilities().HardwareMass));
+  case TerraSim::Drivetrain:return FString::Printf(TEXT("%s  /  %s  /  %.0f lb drivetrain + locker hardware"),HasFourDrive()?(AxleCount()==3?TEXT("6H equipped"):TEXT("4H equipped")):(AxleCount()==3?TEXT("Four rear wheels driven"):TEXT("Two-wheel drive")),HasLowRange()?*FString::Printf(TEXT("%.2f:1 selectable low"),DriveCapabilities().LowRatio):TEXT("High range only"),TerraUnits::Pounds(DriveCapabilities().HardwareMass));
   case TerraSim::EVSwap:{
     if(IsICEConversion()){const auto C=CombustionConfig();return FString::Printf(TEXT("Gasoline V8 / %.0f hp / 8-speed / %+.0f lb conversion mass"),PowerHP(),TerraUnits::Pounds(C.NetMassKg));}
     const auto C=ElectricConfig();return C.Layout==TerraSim::MotorLayout::None?TEXT("Factory combustion drivetrain"):FString::Printf(TEXT("%s %d motors / %.0f hp / %.0f kWh / %+.0f lb conversion mass"),IsFactoryElectric()?TEXT("Factory"):TEXT("Converted"),TerraSim::ElectricMotorCount(C.Layout),PowerHP(),C.BatteryKWh,TerraUnits::Pounds(C.NetMassKg));}
-  case TerraSim::TireAir:{const auto H=TerraSim::ResolveTireAirHardware(S);return S?FString::Printf(TEXT("%.2f PSI/s inflate / %.2f deflate / up to %.0f mph / +%.0f lb"),H.InflatePSIPerSecond,H.DeflatePSIPerSecond,TerraUnits::MPH(H.MaximumSpeedMPS),TerraUnits::Pounds(H.MassKg)):TEXT("Stopped manual bleed / garage inflation");}
+  case TerraSim::TireAir:{
+    const int FactoryStage=int(Number(TEXT("factoryTireAirStage"),0));
+    const auto H=TerraSim::ResolveTireAirHardware(TireAirHardwareStage());
+    const float AddedMass=FMath::Max(0.f,H.MassKg-TerraSim::ResolveTireAirHardware(FactoryStage).MassKg);
+    return H.Stage?FString::Printf(TEXT("%s%.2f PSI/s inflate / %.2f deflate / up to %.0f mph / +%.0f lb"),FactoryStage?TEXT("Factory CTIS / "):TEXT(""),H.InflatePSIPerSecond,H.DeflatePSIPerSecond,TerraUnits::MPH(H.MaximumSpeedMPS),TerraUnits::Pounds(AddedMass)):TEXT("Stopped manual bleed / garage inflation");
+  }
   case TerraSim::CenterDifferential:
-    if(VehicleIndex==8&&HasCenterLocker())return TEXT("Factory center locker retained / stop and release throttle to shift");
-    if(TerraSim::ElectricAllWheelDrive(ElectricLayout()))return TEXT("Independent motors: no mechanical center shaft");
+    if((VehicleIndex==8||VehicleIndex==9)&&HasCenterLocker())return AxleCount()==3?TEXT("Factory center + tandem shaft locks retained / one control / stop to shift"):TEXT("Factory center locker retained / stop and release throttle to shift");
+    if(TerraSim::ElectricAllWheelDrive(ElectricLayout()))return AxleCount()==3?TEXT("Independent front/rear motors / geared rear tandem / no selectable center lock"):TEXT("Independent motors: no mechanical center shaft");
     if(!HasFourDrive())return TEXT("Fit the four-wheel drivetrain conversion first");
     if(!S)return HasRigidTransfer()?TEXT("Part-time 4H / 4L already couples both shafts"):TEXT("No selectable center lock fitted");
     return FString::Printf(TEXT("Full-time center case / selectable lock / +%.0f lb hardware / %s"),TerraUnits::Pounds(TerraSim::CenterHardwareMass(S)),S==1?TEXT("standard case"):S==2?TEXT("reinforced case"):TEXT("high-load case"));
-  case TerraSim::Differentials:return FString::Printf(TEXT("Front: %s  /  Rear: %s%s"),IndependentWheel(0)?TEXT("motor torque control"):HasLocker(true)?TEXT("selectable locker"):TEXT("open"),IndependentWheel(2)?TEXT("motor torque control"):HasLocker(false)?TEXT("selectable locker"):TEXT("open"),S==3?TEXT("  /  3:1 limited-slip preload"):TEXT(""));
-  case TerraSim::Portals:return FString::Printf(TEXT("+%.1f in clearance  /  %.2f:1 reduction  /  +%.0f lb  /  %.0f%% gearing speed"),TerraUnits::Inches(PortalLift()),PortalReduction(),TerraUnits::Pounds(Tuning.HardwareMass),100/PortalReduction());
+  case TerraSim::Differentials:
+    if(AxleCount()==3)return FString::Printf(TEXT("Front: %s / both rear axles: selectable lockers%s"),IndependentWheel(0)?TEXT("virtual lock"):TEXT("selectable locker"),S==3?TEXT(" / unlocked limited-slip preload"):TEXT(""));
+    return FString::Printf(TEXT("Front: %s  /  Rear: %s%s"),IndependentWheel(0)?TEXT("motor torque control"):HasLocker(true)?TEXT("selectable locker"):TEXT("open"),IndependentWheel(2)?TEXT("motor torque control"):HasLocker(false)?TEXT("selectable locker"):TEXT("open"),S==3?TEXT("  /  3:1 limited-slip preload"):TEXT(""));
+  case TerraSim::Portals:
+    if(Number(TEXT("factoryPortalLiftM"),0)>0)return FString::Printf(TEXT("Factory drop %.1f in / added %.1f in clearance / %.2f:1 extra reduction / +%.0f lb"),TerraUnits::Inches(Number(TEXT("factoryPortalLiftM"),0)),TerraUnits::Inches(Tuning.PortalLift),PortalReduction(),TerraUnits::Pounds(Tuning.HardwareMass));
+    return FString::Printf(TEXT("+%.1f in clearance  /  %.2f:1 reduction  /  +%.0f lb  /  %.0f%% gearing speed"),TerraUnits::Inches(PortalLift()),PortalReduction(),TerraUnits::Pounds(Tuning.HardwareMass),100/PortalReduction());
   }
   return FString();
 }

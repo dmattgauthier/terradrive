@@ -6,6 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {Terrain} from './native-terrain.mjs';
+import {buildGardenGeology} from './garden-geology.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
 import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {refineExpRoof} from './refine-exp-roof.mjs';
@@ -26,6 +27,7 @@ import {refineVehicle,brakeCaliperModel,brakeRotorModel} from './vehicle-fidelit
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeData');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
+buildGardenGeology(data);
 globalThis.document={createElement(){return {width:0,height:0,getContext:()=>({fillRect(){},fillText(){},putImageData(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})})}}};
 const mats=[],matIds=new Map(),assets=[],tints=new Map();
 // Retain existing material IDs when geometry changes. Otherwise adding one

@@ -214,8 +214,26 @@ export function refineVehicle(view,spec){
     const badge=text(view.body,'2500',.15,.033,alloy);badge.position.set(-.66,.949,-3.027);badge.rotation.y=Math.PI;
   }
   if(spec.bodyStyle==='sedan'){
-    const label=text(view.body,'CIVIC',.19,.033,alloy);label.position.set(.49,.927,-2.368);label.rotation.y=Math.PI;
-    const sport=text(view.body,'SPORT',.13,.025,alloy);sport.position.set(-.52,.925,-2.369);sport.rotation.y=Math.PI;
+    // Badges are added after the formed rear sheet and body-wide draw. Fit
+    // them to that final sheet; the old fixed plane floated behind the corners.
+    view.body.updateWorldMatrix(true,true);const painted=[];
+    view.body.traverse(o=>{if(o.isMesh&&o.material===view.materials.paint)painted.push(o);});
+    const fit=(value,cx,width,height)=>{
+      const cy=.734,label=text(view.body,value,width,height,alloy);label.position.set(cx,cy,-2.368);label.rotation.y=Math.PI;label.name='civic-fitted-'+value.toLowerCase()+'-badge';
+      const nx=8,ny=2,x0=cx-width*.56,x1=cx+width*.56,y0=cy-.004,y1=cy+height+.004,rows=[];
+      const direction=new THREE.Vector3(0,0,1).transformDirection(view.body.matrixWorld);
+      for(let j=0;j<=ny;j++){const row=[];for(let i=0;i<=nx;i++){
+        const x=THREE.MathUtils.lerp(x0,x1,i/nx),y=THREE.MathUtils.lerp(y0,y1,j/ny),origin=view.body.localToWorld(new THREE.Vector3(x,y,-spec.length));
+        const hit=new THREE.Raycaster(origin,direction,0,spec.length*1.5).intersectObjects(painted,false)[0];
+        const rearZ=hit&&view.body.worldToLocal(hit.point.clone()).z;if(!hit||rearZ> -spec.wheelbase*.5)throw new Error('Civic badge has no painted rear mounting sheet');row.push(rearZ);
+      }rows.push(row);}
+      const sheet=(x,y)=>{const u=Math.max(0,Math.min(nx-1e-7,(x-x0)/(x1-x0)*nx)),v=Math.max(0,Math.min(ny-1e-7,(y-y0)/(y1-y0)*ny)),i=Math.floor(u),j=Math.floor(v);return THREE.MathUtils.lerp(THREE.MathUtils.lerp(rows[j][i],rows[j][i+1],u-i),THREE.MathUtils.lerp(rows[j+1][i],rows[j+1][i+1],u-i),v-j);};
+      view.body.updateWorldMatrix(true,true);const inverse=view.body.matrixWorld.clone().invert();
+      label.traverse(o=>{if(!o.isMesh)return;const toBody=inverse.clone().multiply(o.matrixWorld),back=toBody.clone().invert(),normalToBody=new THREE.Matrix3().getNormalMatrix(toBody),normalBack=new THREE.Matrix3().getNormalMatrix(back),p=o.geometry.attributes.position,n=o.geometry.attributes.normal;
+        for(let i=0;i<p.count;i++){const q=new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(toBody),nn=new THREE.Vector3().fromBufferAttribute(n,i).applyMatrix3(normalToBody),e=.0001,dx=(sheet(q.x+e,q.y)-sheet(q.x-e,q.y))/(2*e),dy=(sheet(q.x,q.y+e)-sheet(q.x,q.y-e))/(2*e);nn.set(nn.x-dx*nn.z,nn.y-dy*nn.z,nn.z).applyMatrix3(normalBack).normalize();q.z=sheet(q.x,q.y)-.004+(q.z-label.position.z);q.applyMatrix4(back);p.setXYZ(i,q.x,q.y,q.z);n.setXYZ(i,nn.x,nn.y,nn.z);}o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();
+      });
+    };
+    fit('CIVIC',.49,.19,.028);fit('SPORT',-.52,.13,.025);
   }
   // Fine heater lines occupy the rear glass, avoiding the absent canvas maps.
   const rear={jeep:[-2.079,1.32,1.74,.70],bronco:[-2.083,1.34,1.73,.73],van:[-3.029,1.12,1.98,.78],sedan:[-1.44,1.02,1.32,.59],hummer:[-2.52,1.50,1.86,.84]}[spec.bodyStyle];

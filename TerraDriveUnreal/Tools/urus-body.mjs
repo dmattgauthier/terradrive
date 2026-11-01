@@ -27,11 +27,11 @@ export function urusView(spec){
  // The two end closures and their side returns share their longitudinal
  // contour. This keeps a more deeply formed fascia/hatch closed at oblique
  // angles, including seals, lamps, plate returns and the bumper corners.
- const frontSurface=(x,y)=>front-.271*(Math.abs(x)/.99)**2-.087*gauss(y,.66,.16)-.028*smooth(y,.925,1.035)*(1-smooth(Math.abs(x),.34,.84));
+ const frontSurface=(x,y)=>front-.305*(Math.abs(x)/.99)**2-.096*gauss(y,.66,.16)-.036*smooth(y,.925,1.035)*(1-smooth(Math.abs(x),.34,.84));
  const rearSurface=(x,y)=>{
   const a=Math.abs(x),centre=1-smooth(a,.58,.89),foldY=.956-.135*clamp(a/.85,0,1);
-  const crease=.058*gauss(y,foldY-.025,.085),plateDraw=.033*gauss(y,.735,.155)*gauss(x,0,.60);
-  return rear+.245*(a/.99)**2+centre*(crease+plateDraw+.010*gauss(y,.57,.055));
+  const crease=.065*gauss(y,foldY-.025,.085),plateDraw=.038*gauss(y,.735,.155)*gauss(x,0,.60);
+  return rear+.275*(a/.99)**2+centre*(crease+plateDraw+.010*gauss(y,.57,.055));
  };
  // Rounded parameter contours keep the cut sheet, seal and glass on the same
  // boundary. The former four straight window corners made the greenhouse
@@ -213,11 +213,11 @@ export function urusView(spec){
  const hoodRows=[[.72,1.156,.81],[1.08,1.125,.849],[1.50,1.091,.870],[1.93,1.055,.844],[2.27,1.017,.762],[2.48,.976,.64]];
  const hood=(x,z,off=0)=>{
   const t=x/station(hoodRows,z,2),fade=smooth(z,.72,.94)*(1-smooth(z,2.25,2.48));
-  const blade=.045*gauss(Math.abs(t),.81,.095)-.017*gauss(Math.abs(t),.60,.14);
+  const blade=.030*gauss(Math.abs(t),.81,.120)-.008*gauss(Math.abs(t),.60,.14);
   const shoulder=.010*gauss(Math.abs(t),.98,.13)*fade;
   // Sweep the leading corners back around the central nose. Carbon and
   // painted domains, cooling-duct returns and seams all use this same map.
-  const sweep=.098*smooth(z,1.84,2.48)*Math.abs(t)**1.85;
+  const sweep=.122*smooth(z,1.84,2.48)*Math.abs(t)**1.85;
   return[x,station(hoodRows,z,1)+.039*(1-t*t)+fade*blade+shoulder+off,z-sweep];
  };
  const ventOutline=[[.613,1.27],[.752,1.34],[.691,1.83],[.575,1.96],[.552,1.87]];
@@ -245,12 +245,15 @@ export function urusView(spec){
  for(const s of [-1,1]){
   surface(g,m.paint,110,12,(u,v)=>{const z=lerp(.72,2.48,u),a=hood(s*station(hoodRows,z,2),z),b=sidePoint(s,z,belt(z));return a.map((n,k)=>lerp(n,b[k],v));},s<0).name='urus-bonnet-shoulder-sheet-'+s;
   curve(g,dark,Array.from({length:65},(_,i)=>{const z=lerp(.74,2.34,i/64);return hood(s*(station(hoodRows,z,2)-.014),z,.002);}),.0014);
-  const outline=ventOutline,inner=inset(outline,.88),vent=outline.map(([x,z])=>hood(s*x,z,.0015));
+  const outline=ventOutline,inner=inset(outline,.966),vent=outline.map(([x,z])=>hood(s*x,z,.0005));
   mappedPolygon(g,carbon,outline,(x,z)=>hood(s*x,z,.001),[inner],s>0,12).name='urus-bonnet-vent-lip';
-  mappedPolygon(g,dark,inner,(x,z)=>hood(s*x,z,-.035),[],s>0,12);
-  for(let j=0;j<inner.length;j++)surface(g,carbon,16,4,(u,v)=>{const a=outline[j],b=outline[(j+1)%outline.length],c=inner[j],d=inner[(j+1)%inner.length];return hood(s*lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v),lerp(.001,-.035,v));},s<0);
-  line(g,black,[...vent,vent[0]],.0025);
-  for(let j=0;j<9;j++){const z=1.37+j*.052;quad(grille,hood(s*(.612-.075*(z-1.37)),z,-.018),hood(s*(.735-.130*(z-1.37)),z+.015,-.018),hood(s*(.731-.130*(z-1.37)),z+.024,-.010),hood(s*(.611-.075*(z-1.37)),z+.009,-.010),8,2,s>0);}
+  mappedPolygon(g,dark,inner,(x,z)=>hood(s*x,z,-.024),[],s>0,12).name='urus-bonnet-vent-floor';
+  for(let j=0;j<inner.length;j++)surface(g,carbon,16,4,(u,v)=>{const a=outline[j],b=outline[(j+1)%outline.length],c=inner[j],d=inner[(j+1)%inner.length];return hood(s*lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v),lerp(.0005,-.024,v));},s<0).name='urus-bonnet-vent-nested-return';
+  line(g,black,[...vent,vent[0]],.0013);
+  // Section each louver against the actual aperture instead of fixed spans
+  // that could protrude through its rim. All blade vertices sit below skin.
+  const span=z=>{const xs=[];for(let k=0;k<inner.length;k++){const a=inner[k],b=inner[(k+1)%inner.length];if((a[1]<=z&&b[1]>z)||(b[1]<=z&&a[1]>z))xs.push(lerp(a[0],b[0],(z-a[1])/(b[1]-a[1])));}return[Math.min(...xs)+.003,Math.max(...xs)-.003];};
+  for(let j=0;j<9;j++){const z=1.37+j*.052,[a,b]=span(z),[c,d]=span(z+.016);quad(grille,hood(s*a,z,-.016),hood(s*b,z,-.016),hood(s*d,z+.016,-.009),hood(s*c,z+.016,-.009),8,2,s>0).name='urus-bonnet-vent-recessed-louver';}
  }
  // Wrapped front fascia. Real apertures, a broad splitter and boxed air
  // curtains replace the old flat hexagons and tubular bumper guard.

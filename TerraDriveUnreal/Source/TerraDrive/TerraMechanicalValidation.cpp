@@ -61,7 +61,7 @@ bool WriteFixture(int Version,int Cars,int Parts,bool Invalid=false){
 void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
   const bool PlanWritten=WriteFixturePlan();
   for(int Version:{1,2,3,4,5}){
-    const int Cars=Version==1?5:Version<4?6:ATerraVehicle::VehicleCount,Parts=Version<3?7:Version==3?10:12;
+    const int Cars=Version==1?5:Version<4?6:9,Parts=Version<3?7:Version==3?10:12;
     bool Valid=PlanWritten&&WriteFixture(Version,Cars,Parts)&&V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
     for(int I=0;I<ATerraVehicle::VehicleCount;I++)for(int P=0;P<TerraSim::PartCount;P++){
       const int Expected=I>=Cars||P>=Parts?0:I==2&&P==TerraSim::Electrical?0:Version<=4&&(I==4||I==7)&&P==TerraSim::EVSwap?0:(P+I)%4;
@@ -77,17 +77,17 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
     for(int P=0;P<TerraSim::PartCount;++P)V->Builds[I].Stage[P]=I==2&&P==TerraSim::Electrical?0:(P+I)%4;
     Loaded[I]=V->Builds[I];
   }
-  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v7.json")));
+  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v8.json")));
   FString Json;TSharedPtr<FJsonObject> Root;
-  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v7.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
+  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v8.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
   if(Shape){
     double Version=0;const TArray<TSharedPtr<FJsonValue>>* Cars=nullptr;
-    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==7&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
+    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==8&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
     if(Shape)for(const auto& Car:*Cars){const TArray<TSharedPtr<FJsonValue>>* Parts=nullptr;Shape&=Car->TryGetArray(Parts)&&Parts->Num()==TerraSim::PartCount;}
   }
   for(auto& B:V->Builds)B={};
-  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v7.json")))&&SameBuilds(V,Loaded);
-  Check(TEXT("v7 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
+  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v8.json")))&&SameBuilds(V,Loaded);
+  Check(TEXT("v8 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
   for(int I=0;I<ATerraVehicle::VehicleCount;I++)V->Builds[I]=State.Before[I];
 }
 void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
@@ -98,7 +98,7 @@ void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,flo
   const auto Factory=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[I]->AsObject();
   const auto Features=Factory->GetObjectField(TEXT("features"));
   bool FactoryFourDrive=false;
-  for(const auto& Mode:Factory->GetArrayField(TEXT("driveModes")))FactoryFourDrive|=Mode->AsString().Contains(TEXT("4"))||Mode->AsString().Contains(TEXT("AWD"));
+  for(const auto& Mode:Factory->GetArrayField(TEXT("driveModes")))FactoryFourDrive|=Mode->AsString().Contains(TEXT("4"))||Mode->AsString().Contains(TEXT("AWD"))||Mode->AsString().Contains(TEXT("6"));
   const bool FactoryFrontPrimary=Factory->GetStringField(TEXT("defaultMode"))==TEXT("FWD");
   const float FactoryLow=FMath::Max(1.f,float(Factory->GetNumberField(TEXT("lowRatio"))));
   const bool FrontLock=Features->GetBoolField(TEXT("frontLocker"))||V->IndependentWheel(0),RearLock=Features->GetBoolField(TEXT("rearLocker"))||V->IndependentWheel(2);
@@ -134,22 +134,22 @@ void GearChecks(ATerraVehicle* V,int Stage,const FString& Label,TFunctionRef<voi
       Finite&=C->GetInstanceTransform(I,T,true)&&!T.ContainsNaN()&&T.GetScale3D().GetMin()>0&&T.GetRotation().IsNormalized();Instances++;
     }
   }
-  Check(Label+TEXT("all nine loaded running gear groups retain the legacy suspension and hub components"),Loaded&&V->SuspensionParts.Num()==20&&V->HubDetails.Num()==16,Instances);
+  Check(Label+TEXT("all nine loaded running gear groups retain the legacy suspension and hub components"),Loaded&&V->SuspensionParts.Num()==V->WheelCount()*5&&V->HubDetails.Num()==V->WheelCount()*4,Instances);
   Check(Label+TEXT("live axle suspension steering and brake instances have finite positive transforms"),Finite&&Instances>=30,Instances);
   Check(Label+TEXT("instanced running gear adds no individual shadows or physical collision"),Lightweight,V->RunningGearMeshes.Num());
   const int Ceramic=V->RunningGearMeshes.IsValidIndex(7)?V->RunningGearMeshes[7]->GetInstanceCount():-1;
   const int Solid=V->RunningGearMeshes.IsValidIndex(8)?V->RunningGearMeshes[8]->GetInstanceCount():-1;
-  Check(Label+TEXT("factory brake architecture supplies four rotors with the correct ceramic or solid axle"),Rotors==4&&Ceramic==(V->VehicleIndex==5?4:0)&&Solid==(V->VehicleIndex==2?2:0),Rotors);
+  Check(Label+TEXT("factory brake architecture supplies one rotor per wheel with the correct ceramic or solid axle"),Rotors==V->WheelCount()&&Ceramic==(V->VehicleIndex==5?4:0)&&Solid==(V->VehicleIndex==2?2:0),Rotors);
   const int Boxes=V->RunningGearMeshes.IsValidIndex(4)?V->RunningGearMeshes[4]->GetInstanceCount():-1;
   if(Stage==0)State.StockBoxes=Boxes;
-  Check(Label+TEXT("portal stages add exactly four separate wheel-end drop housings"),Boxes==State.StockBoxes+(Stage?4:0),Boxes-State.StockBoxes);
+  Check(Label+TEXT("portal stages retain one housing per wheel without duplicating factory portals"),Boxes==(V->SpecValue(TEXT("factoryPortalLiftM"))>0?State.StockBoxes:State.StockBoxes+(Stage?V->WheelCount():0)),Boxes-State.StockBoxes);
 }
 void SpinChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
   const FString Label=FString::Printf(TEXT("vehicle %d stock "),V->VehicleIndex);
-  bool Rims=V->Rims.Num()==4,Rotors=true,Calipers=V->HubDetails.Num()==16;
+  bool Rims=V->Rims.Num()==V->WheelCount(),Rotors=true,Calipers=V->HubDetails.Num()==V->WheelCount()*4;
   float Rotation=0;int RotorIndex[9]={};
   const FVector Up=V->GetActorUpVector();
-  for(int I=0;I<4;++I){
+  for(int I=0;I<V->WheelCount();++I){
     Rotation=FMath::Max(Rotation,FMath::Abs(V->WheelState[I].Rotation));
     const auto Q=V->Wheels[I]->GetComponentQuat();
     const FVector RimScale=V->Rims.IsValidIndex(I)?V->Rims[I]->GetComponentScale():FVector::ZeroVector;
@@ -195,8 +195,9 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     const FVector P=V->GetActorLocation();
     const float Height=(P.Z-V->Terrain->Height(P.X,P.Y))/100;
     Check(Label+TEXT("real Chaos mass survives garage close and welded body activation"),FMath::Abs(V->Chassis->GetMass()-V->Mass)<FMath::Max(1.f,V->Mass*.001f),V->Chassis->GetMass()*2.2046226f);
-    Check(Label+TEXT("four supported tires settle at the raised ride height"),V->ContactCount==4&&FMath::Abs(Height-V->ExpectedRideHeight())<.10f&&!P.ContainsNaN(),Height/.0254f);
-    if(Stage>0)Check(Label+TEXT("physical clearance grows with every portal stage"),Height>State.PreviousHeight+.025f,(Height-State.PreviousHeight)/.0254f);
+    Check(Label+TEXT("all physical tires settle at the raised ride height"),V->ContactCount==V->WheelCount()&&FMath::Abs(Height-V->ExpectedRideHeight())<.10f&&!P.ContainsNaN(),Height/.0254f);
+    if(Stage>0){const float Lift[]={0,.08f,.13f,.18f};const float Step=(Lift[Stage]-Lift[Stage-1])*(V->SpecValue(TEXT("factoryPortalLiftM"))>0?.18f:1.f);
+      Check(Label+TEXT("physical clearance follows the selected retrofit or factory reinforcement calibration"),Height>State.PreviousHeight+.001f&&FMath::Abs(Height-State.PreviousHeight-Step)<.025f,(Height-State.PreviousHeight)/.0254f);}
     GearChecks(V,Stage,Label,Check);
     State.PreviousHeight=Height;
     UE_LOG(LogTemp,Display,TEXT("TERRA_MECHANICAL vehicle=%d stage=%d massLb=%.2f rideIn=%.3f expectedIn=%.3f portalIn=%.3f reduction=%.2f inertia=%.3f"),Vehicle,Stage,V->Mass*2.2046226f,Height/.0254f,V->ExpectedRideHeight()/.0254f,V->PortalLift()/.0254f,V->PortalReduction(),V->WheelInertia());

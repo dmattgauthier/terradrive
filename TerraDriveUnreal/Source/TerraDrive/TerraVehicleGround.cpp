@@ -15,9 +15,9 @@ void ATerraVehicle::UpdateBodyGroundGrip(){
   auto Ground=Terrain->Sample(GetActorLocation());
   FVector SupportNormal=Ground.Normal,ConstructedNormal=FVector::ZeroVector;
   float ConstructedLoad=0;
-  for(const auto& W:WheelState)if(W.Constructed&&W.ContactValid&&W.Load>50){
+  for(int I=0;I<WheelCount();++I){const auto& W=WheelState[I];if(W.Constructed&&W.ContactValid&&W.Load>50){
     ConstructedNormal+=W.Ground.Normal*W.Load;ConstructedLoad+=W.Load;Ground.Surface=W.Ground.Surface;
-  }
+  }}
   // Correctly supported inverted loop driving is upright relative to its
   // track. World-up alone must not turn that into overturned body drag.
   if(ConstructedLoad>50)SupportNormal=ConstructedNormal.GetSafeNormal();
