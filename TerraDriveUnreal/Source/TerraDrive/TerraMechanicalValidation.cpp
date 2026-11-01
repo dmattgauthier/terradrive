@@ -77,17 +77,17 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
     for(int P=0;P<TerraSim::PartCount;++P)V->Builds[I].Stage[P]=I==2&&P==TerraSim::Electrical?0:(P+I)%4;
     Loaded[I]=V->Builds[I];
   }
-  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v6.json")));
+  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v7.json")));
   FString Json;TSharedPtr<FJsonObject> Root;
-  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v6.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
+  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v7.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
   if(Shape){
     double Version=0;const TArray<TSharedPtr<FJsonValue>>* Cars=nullptr;
-    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==6&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
+    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==7&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
     if(Shape)for(const auto& Car:*Cars){const TArray<TSharedPtr<FJsonValue>>* Parts=nullptr;Shape&=Car->TryGetArray(Parts)&&Parts->Num()==TerraSim::PartCount;}
   }
   for(auto& B:V->Builds)B={};
-  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v6.json")))&&SameBuilds(V,Loaded);
-  Check(TEXT("v6 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
+  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v7.json")))&&SameBuilds(V,Loaded);
+  Check(TEXT("v7 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
   for(int I=0;I<ATerraVehicle::VehicleCount;I++)V->Builds[I]=State.Before[I];
 }
 void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
@@ -101,7 +101,8 @@ void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,flo
   for(const auto& Mode:Factory->GetArrayField(TEXT("driveModes")))FactoryFourDrive|=Mode->AsString().Contains(TEXT("4"))||Mode->AsString().Contains(TEXT("AWD"));
   const bool FactoryFrontPrimary=Factory->GetStringField(TEXT("defaultMode"))==TEXT("FWD");
   const float FactoryLow=FMath::Max(1.f,float(Factory->GetNumberField(TEXT("lowRatio"))));
-  Check(Label+TEXT("stock factory drivetrain and lockers retained"),Stock.FourDrive==FactoryFourDrive&&Stock.FrontPrimary==FactoryFrontPrimary&&Stock.FrontLocker==Features->GetBoolField(TEXT("frontLocker"))&&Stock.RearLocker==Features->GetBoolField(TEXT("rearLocker"))&&FMath::IsNearlyEqual(Stock.LowRatio,FactoryLow,.001f)&&V->HasLowRange()==(FactoryLow>1.05f),Stock.LowRatio);
+  const bool FrontLock=Features->GetBoolField(TEXT("frontLocker"))||V->IndependentWheel(0),RearLock=Features->GetBoolField(TEXT("rearLocker"))||V->IndependentWheel(2);
+  Check(Label+TEXT("stock factory drivetrain and mechanical or virtual lockers retained"),Stock.FourDrive==FactoryFourDrive&&Stock.FrontPrimary==FactoryFrontPrimary&&Stock.FrontLocker==FrontLock&&Stock.RearLocker==RearLock&&FMath::IsNearlyEqual(Stock.LowRatio,FactoryLow,.001f)&&V->HasLowRange()==(FactoryLow>1.05f),Stock.LowRatio);
   V->SetUpgrade(TerraSim::Drivetrain,1,false);V->FourDrive=true;
   Check(Label+TEXT("4H conversion drives all four wheels"),V->HasFourDrive()&&V->DrivenWheel(0)&&V->DrivenWheel(1)&&V->DrivenWheel(2)&&V->DrivenWheel(3),V->Mass);
   V->SetUpgrade(TerraSim::Drivetrain,2,false);V->LowRange=true;

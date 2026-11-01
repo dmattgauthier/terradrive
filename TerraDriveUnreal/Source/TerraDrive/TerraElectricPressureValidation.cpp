@@ -38,12 +38,12 @@ struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TWeakObjectPtr<ACameraActor> Camera;
   TerraSim::UpgradeSetup Before[Count];
-  float BeforePressure[Count]={},BeforeBattery[Count]={};
+  float BeforePressure[Count]={},BeforeBattery[Count]={},BeforeFuel[Count]={};
   FTerraWheel OriginalWheels[4];
   int OriginalVehicle=0,OriginalZone=0,OriginalRoute=-1,Trial=0,Phase=0,Frames=0,MovingFrames=0,LoadedFrames=0;
   bool OriginalGarage=false,OriginalTracks=false,OriginalFour=false,OriginalLow=false,OriginalFrontLock=false,OriginalRearLock=false,OriginalCenterLock=false,OriginalDescent=false;
-  bool OriginalDriverInput=false,OriginalForward=false,OriginalReverse=false,OriginalStop=false,OriginalHUD=true,OriginalAirRequested=false,OriginalDamageEnabled=true;
-  float OriginalPressure=35,OriginalTarget=35,OriginalSOC=1,OriginalDamage=0;
+  bool OriginalDriverInput=false,OriginalForward=false,OriginalReverse=false,OriginalStop=false,OriginalHUD=true,OriginalAirRequested=false,OriginalDamageEnabled=true,OriginalEnergyUsage=true;
+  float OriginalPressure=35,OriginalTarget=35,OriginalSOC=1,OriginalDamage=0,OriginalFuel=.75f;
   float OriginalThrottle=0,OriginalSteer=0,OriginalBrake=0,Time=0,PeakSpeed=0,PeakDrive=0,PeakRegen=0,WheelDifference=0,LoadedFraction=0;
   float InitialPSI=35,PatchSum=0,LoadSum=0,MaxDepth=0,StartYaw=0,BrakeDistance[2]={},BrakeTime[2]={},SteerYaw[2]={},SteerLateral[2]={},SoilPatch[2]={},SoilDepth[2]={};
   float StockMass[Count]={},StockPower[Count]={};
@@ -104,34 +104,34 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
   }
   V->PressureTarget=30.f+V->VehicleIndex*2;V->BatterySOC=.2f+V->VehicleIndex*.07f;
   V->DamageEnabled=false;
-  bool RoundTrip=V->SaveGarage(Path(TEXT("electric-v6-roundtrip.json")));
+  bool RoundTrip=V->SaveGarage(Path(TEXT("electric-v7-roundtrip.json")));
   FString Json;TSharedPtr<FJsonObject> Root;
-  bool Shape=FFileHelper::LoadFileToString(Json,*Path(TEXT("electric-v6-roundtrip.json")))&&
+  bool Shape=FFileHelper::LoadFileToString(Json,*Path(TEXT("electric-v7-roundtrip.json")))&&
     FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
   if(Shape){
     double Version=0;const TArray<TSharedPtr<FJsonValue>>* Cars=nullptr;
     bool DamageMode=true;
-    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==6&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==Count&&Root->TryGetBoolField(TEXT("damageEnabled"),DamageMode)&&!DamageMode;
+    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==7&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==Count&&Root->TryGetBoolField(TEXT("damageEnabled"),DamageMode)&&!DamageMode;
     if(Shape)for(const auto& Car:*Cars){const TArray<TSharedPtr<FJsonValue>>* Parts=nullptr;Shape&=Car->TryGetArray(Parts)&&Parts->Num()==13;}
   }
   for(auto& Build:V->Builds)Build={};
   V->DamageEnabled=true;
-  RoundTrip&=V->LoadGarage(Path(TEXT("electric-v6-roundtrip.json")))&&SameBuilds(V,Loaded)&&!V->DamageEnabled;
-  Check(TEXT("v6 garage stores nine vehicles thirteen ordered upgrade slots and the free run setting"),Shape,TerraSim::PartCount);
-  Check(TEXT("v6 round trip retains donor appropriate powertrain conversion and all previous hardware stages"),RoundTrip,Count);
+  RoundTrip&=V->LoadGarage(Path(TEXT("electric-v7-roundtrip.json")))&&SameBuilds(V,Loaded)&&!V->DamageEnabled;
+  Check(TEXT("v7 garage stores nine vehicles thirteen ordered upgrade slots and the free run setting"),Shape,TerraSim::PartCount);
+  Check(TEXT("v7 round trip retains donor appropriate powertrain conversion and all previous hardware stages"),RoundTrip,Count);
   bool Profiles=RoundTrip;
   for(int I=0;I<Count;++I)Profiles&=FMath::Abs(V->PressureProfiles[I]-(30.f+I*2))<.001f&&FMath::Abs(V->BatteryProfiles[I]-(.2f+I*.07f))<.00001f;
-  Check(TEXT("v6 round trip retains nine independent pressure targets and battery charge states"),Profiles,Count);
+  Check(TEXT("v7 round trip retains nine independent pressure targets and battery charge states"),Profiles,Count);
   bool BadProfile=false;
   if(Root.IsValid()){
     auto Bad=Root->GetArrayField(TEXT("pressureTargets"));Bad[0]=MakeShared<FJsonValueNumber>(7);Root->SetArrayField(TEXT("pressureTargets"),Bad);
     FString BadJson;
     BadProfile=FJsonSerializer::Serialize(Root,TJsonWriterFactory<>::Create(&BadJson))&&
-      FFileHelper::SaveStringToFile(BadJson,*Path(TEXT("electric-v6-invalid-pressure.json")))&&
-      !V->LoadGarage(Path(TEXT("electric-v6-invalid-pressure.json")))&&SameBuilds(V,Loaded)&&!V->DamageEnabled;
+      FFileHelper::SaveStringToFile(BadJson,*Path(TEXT("electric-v7-invalid-pressure.json")))&&
+      !V->LoadGarage(Path(TEXT("electric-v7-invalid-pressure.json")))&&SameBuilds(V,Loaded)&&!V->DamageEnabled;
     for(int I=0;I<Count;++I)BadProfile&=FMath::Abs(V->PressureProfiles[I]-(30.f+I*2))<.001f&&FMath::Abs(V->BatteryProfiles[I]-(.2f+I*.07f))<.00001f;
   }
-  Check(TEXT("invalid v6 tire pressure rejects atomically without altering builds charge profiles or free run"),BadProfile,7);
+  Check(TEXT("invalid v7 tire pressure rejects atomically without altering builds charge profiles or free run"),BadProfile,7);
   TSharedPtr<FJsonObject> Legacy;
   bool Migration=FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Legacy)&&Legacy.IsValid();
   if(Migration){
@@ -157,8 +157,8 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
     }
   }
   Check(TEXT("v4 factory EV replacements migrate to original motor layout without reinterpreting them as gasoline kits or losing other saved fields"),Migration,Count);
-  for(int I=0;I<Count;++I){V->Builds[I]=State.Before[I];V->PressureProfiles[I]=State.BeforePressure[I];V->BatteryProfiles[I]=State.BeforeBattery[I];}
-  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->TireAirRequested=State.OriginalAirRequested;V->DamageEnabled=State.OriginalDamageEnabled;
+  for(int I=0;I<Count;++I){V->Builds[I]=State.Before[I];V->PressureProfiles[I]=State.BeforePressure[I];V->BatteryProfiles[I]=State.BeforeBattery[I];V->FuelProfiles[I]=State.BeforeFuel[I];}
+  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->FuelFraction=State.OriginalFuel;V->EnergyUsageEnabled=State.OriginalEnergyUsage;V->TireAirRequested=State.OriginalAirRequested;V->DamageEnabled=State.OriginalDamageEnabled;
 }
 void ResetInput(ATerraVehicle* V){
   V->TestDriverInput=false;V->TestForward=V->TestReverse=V->TestStop=false;
@@ -179,8 +179,8 @@ void Restore(ATerraVehicle* V){
   if(State.Restored)return;
   V->SetGarage(true);for(int I=0;I<Count;++I)V->Builds[I]=State.Before[I];
   V->SelectVehicle(State.OriginalVehicle);V->SetTracks(State.OriginalTracks);
-  for(int I=0;I<Count;++I){V->PressureProfiles[I]=State.BeforePressure[I];V->BatteryProfiles[I]=State.BeforeBattery[I];}
-  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->Damage=State.OriginalDamage;V->DamageEnabled=State.OriginalDamageEnabled;
+  for(int I=0;I<Count;++I){V->PressureProfiles[I]=State.BeforePressure[I];V->BatteryProfiles[I]=State.BeforeBattery[I];V->FuelProfiles[I]=State.BeforeFuel[I];}
+  V->Pressure=State.OriginalPressure;V->PressureTarget=State.OriginalTarget;V->BatterySOC=State.OriginalSOC;V->FuelFraction=State.OriginalFuel;V->EnergyUsageEnabled=State.OriginalEnergyUsage;V->Damage=State.OriginalDamage;V->DamageEnabled=State.OriginalDamageEnabled;
   V->FourDrive=State.OriginalFour;V->LowRange=State.OriginalLow;V->FrontLocked=State.OriginalFrontLock;V->RearLocked=State.OriginalRearLock;V->CenterLocked=State.OriginalCenterLock;V->DescentAssist=State.OriginalDescent;
   V->Zone=State.OriginalZone;V->RouteIndex=State.OriginalRoute;V->SetGarage(State.OriginalGarage);
   V->SetActorTransform(State.OriginalTransform,false,nullptr,ETeleportType::TeleportPhysics);
@@ -673,12 +673,12 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     State=FState();State.Vehicle=V;
     State.OriginalVehicle=V->VehicleIndex;State.OriginalGarage=V->Garage;State.OriginalZone=V->Zone;State.OriginalRoute=V->RouteIndex;
     State.OriginalTracks=V->Tracks;State.OriginalFour=V->FourDrive;State.OriginalLow=V->LowRange;State.OriginalFrontLock=V->FrontLocked;State.OriginalRearLock=V->RearLocked;State.OriginalCenterLock=V->CenterLocked;State.OriginalDescent=V->DescentAssist;
-    State.OriginalPressure=V->Pressure;State.OriginalTarget=V->PressureTarget;State.OriginalSOC=V->BatterySOC;State.OriginalDamage=V->Damage;
+    State.OriginalPressure=V->Pressure;State.OriginalTarget=V->PressureTarget;State.OriginalSOC=V->BatterySOC;State.OriginalFuel=V->FuelFraction;State.OriginalEnergyUsage=V->EnergyUsageEnabled;State.OriginalDamage=V->Damage;
     State.OriginalAirRequested=V->TireAirRequested;State.OriginalDamageEnabled=V->DamageEnabled;
     State.OriginalDriverInput=V->TestDriverInput;State.OriginalForward=V->TestForward;State.OriginalReverse=V->TestReverse;State.OriginalStop=V->TestStop;
     State.OriginalThrottle=V->TestThrottle;State.OriginalSteer=V->TestSteer;State.OriginalBrake=V->TestBrake;
     State.OriginalTransform=V->GetActorTransform();State.OriginalVelocity=V->Chassis->GetPhysicsLinearVelocity();State.OriginalAngular=V->Chassis->GetPhysicsAngularVelocityInRadians();
-    for(int I=0;I<Count;++I){State.Before[I]=V->Builds[I];State.BeforePressure[I]=V->PressureProfiles[I];State.BeforeBattery[I]=V->BatteryProfiles[I];}
+    for(int I=0;I<Count;++I){State.Before[I]=V->Builds[I];State.BeforePressure[I]=V->PressureProfiles[I];State.BeforeBattery[I]=V->BatteryProfiles[I];State.BeforeFuel[I]=V->FuelProfiles[I];}
     for(int I=0;I<4;++I)State.OriginalWheels[I]=V->WheelState[I];
     if(auto* PC=Cast<APlayerController>(V->GetController()))if(auto* HUD=PC->GetHUD())State.OriginalHUD=HUD->bShowHUD;
     const bool Shape=Roster(V).Num()==Count&&Count==9&&TerraSim::PartCount==13;

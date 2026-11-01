@@ -142,6 +142,7 @@ void STerraGarage::Construct(const FArguments &Args) {
           +SWidgetSwitcher::Slot()[VehiclePage()]
           +SWidgetSwitcher::Slot()[UpgradePage()]
           +SWidgetSwitcher::Slot()[GraphicsPage()]]
+        +SVerticalBox::Slot().AutoHeight().Padding(28,10,28,0)[EnergyControls(Args._Vehicle)]
         +SVerticalBox::Slot().AutoHeight().Padding(28,10,28,0)
         [SNew(SBorder).BorderImage(&Panel).Padding(12,8)
           [SNew(SHorizontalBox)
@@ -173,6 +174,24 @@ void STerraGarage::Construct(const FArguments &Args) {
               [Label(TEXT("LET'S DRIVE   >"),14,FLinearColor(.025,.06,.04),true)]]]]
       ]]];
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRenderOnly"))){Page=2;Pages->SetActiveWidgetIndex(2);}
+}
+TSharedRef<SWidget> STerraGarage::EnergyControls(ATerraVehicle* Pawn){
+  TWeakObjectPtr<ATerraVehicle> V=Pawn;
+  return SNew(SBorder).BorderImage(&Panel).Padding(12,8)
+    [SNew(SHorizontalBox)
+      +SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+      [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(12,10))
+        .ButtonColorAndOpacity_Lambda([V]{return V.IsValid()&&V->EnergyUsageEnabled?FLinearColor(.14,.23,.21):FLinearColor(.15,.30,.22);})
+        .OnClicked_Lambda([V]{if(V.IsValid())V->SetEnergyUsageEnabled(!V->EnergyUsageEnabled);return FReply::Handled();})
+        [SNew(STextBlock).Text_Lambda([V]{return FText::FromString(V.IsValid()&&V->EnergyUsageEnabled?TEXT("FUEL / CHARGE USE: ON"):TEXT("UNLIMITED FUEL / CHARGE"));}).Font(Font(11,true)).ColorAndOpacity(White)]]
+      +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center).Padding(14,0)
+      [SNew(STextBlock).Text_Lambda([V]{return FText::FromString(V.IsValid()?V->EnergyDescription():TEXT(""));}).Font(Font(11)).ColorAndOpacity(Muted).AutoWrapText(true)]
+      +SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+      [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(12,10)).ButtonColorAndOpacity(FLinearColor(.14,.23,.21))
+        .IsEnabled_Lambda([V]{return V.IsValid()&&V->CanServiceEnergy();})
+        .ToolTipText(FText::FromString(TEXT("Stop upright to instantly charge the battery or fill the tank.")))
+        .OnClicked_Lambda([V]{if(V.IsValid())V->ServiceEnergy();return FReply::Handled();})
+        [SNew(STextBlock).Text_Lambda([V]{return FText::FromString(V.IsValid()&&V->IsElectric()?TEXT("CHARGE TO 100%"):TEXT("FILL FUEL TANK"));}).Font(Font(11,true)).ColorAndOpacity(Mint)]]];
 }
 TSharedRef<SWidget> STerraGarage::GraphicsPage(){
   auto Options=SNew(SVerticalBox);
@@ -250,7 +269,7 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
         [SNew(SScrollBox)+SScrollBox::Slot()[SNew(SVerticalBox)
           +SVerticalBox::Slot().AutoHeight()[Label(TEXT("READY FOR THE NEXT LINE"),10,Mint,true)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,12,0,14)
-          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(23,true)).ColorAndOpacity(White).AutoWrapText(true)]
+          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(23,true)).ColorAndOpacity(White).WrapTextAt(228)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,4)[Label(TEXT("FACTORY CHARACTER"),9,Muted,true)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,14)
           [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Notes[FMath::Clamp(Vehicle.IsValid()?Vehicle->VehicleIndex:0,0,ATerraVehicle::VehicleCount-1)]);}).Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]

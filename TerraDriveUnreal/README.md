@@ -1,6 +1,12 @@
 # Terra Drive native port
 
-The current [performance review and stall correction](docs/performance-review-22.md) removes redundant terrain collision payloads and full-world repair rebuilds. Matched native trials reduce terrain repair from about 3.04 seconds to 21.1 ms and lower peak process memory. Frame times vary with warm-up and host memory pressure; exact paired results and limits are documented, without a universal FPS claim. The complete quarry trail now has real-time verification. Development uses feature branches and PRs for Code Review; see [the contribution workflow](../CONTRIBUTING.md).
+The [EV locker and energy service update](docs/ev-lockers-energy.md) gives
+mechanical and virtual axle locks the same left/right wheel-speed constraint.
+The garage and Esc menu offer battery charging, refueling and a saved unlimited
+fuel/charge option. ICE vehicles have a fuel gauge and consumption; save format
+7 preserves existing builds and adds per-vehicle fuel levels.
+
+The preceding [performance review and stall correction](docs/performance-review-22.md) removes redundant terrain collision payloads and full-world repair rebuilds. Matched native trials reduce terrain repair from about 3.04 seconds to 21.1 ms and lower peak process memory. Frame times vary with warm-up and host memory pressure; exact paired results and limits are documented, without a universal FPS claim. The complete quarry trail now has real-time verification. Development uses feature branches and PRs for Code Review; see [the contribution workflow](../CONTRIBUTING.md).
 
 The preceding [boulder, mud and park round](docs/boulders-mud-park-21.md) joins scanned rock seams into solid boulders, adds 24 varied dry/snow rock variants, a wet Blackwater bog and three additional Summit park routes. Low-speed tire holding and real-time jump measurements accompany the changes. Native verification records **1,812 passing checks**, **152 fresh portable checks** and **252 captures actually reviewed**. This includes 344 checks on the final executable and 1,468 on identical gameplay/dedicated-test code before a general-test fixture repair. Browser source, vehicle meshes and current player settings are preserved. See the [native validation record](docs/validation-native.md) for exact build hashes and measured results.
 

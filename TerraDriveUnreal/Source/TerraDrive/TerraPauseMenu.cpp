@@ -76,7 +76,10 @@ TSharedRef<SWidget> STerraPauseMenu::HomePage(){
       +SVerticalBox::Slot().AutoHeight().Padding(0,22,0,0)[Label(TEXT("GRAPHICS"),12,Mint,true)]
       +SVerticalBox::Slot().AutoHeight().Padding(0,7,0,0)[Label(TEXT("Choose a rendering preset. Changes apply immediately and are saved."),15,Muted)]
       +SVerticalBox::Slot().AutoHeight().Padding(0,22,0,0)[Label(TEXT("GARAGE"),12,Mint,true)]
-      +SVerticalBox::Slot().AutoHeight().Padding(0,7,0,0)[Label(TEXT("Available once the vehicle has stopped. Your vehicle selection and upgrades are saved separately from the keyboard layout."),15,Muted)]];
+      +SVerticalBox::Slot().AutoHeight().Padding(0,7,0,0)[Label(TEXT("Available once the vehicle has stopped. Your vehicle selection and upgrades are saved separately from the keyboard layout."),15,Muted)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,20,0,0)[Label(TEXT("ENERGY SERVICE / FREE RUN"),12,Mint,true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,7,0,0)[Label(TEXT("Stop upright to charge or refuel. Switch usage off for unlimited driving; your existing levels are kept."),13,Muted)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,10,0,0)[STerraGarage::EnergyControls(Vehicle.Get())]];
 }
 TSharedRef<SWidget> STerraPauseMenu::ControlsPage(){
   auto List=SNew(SVerticalBox);Rows.SetNum(TerraControls::Count);

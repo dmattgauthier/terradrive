@@ -167,7 +167,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   auto &List = Terrain->Data->GetArrayField(TEXT("vehicles"));
   const int PreviousRoute = RouteIndex;
   Terrain->BreakTireMarks();
-  if(Spec.IsValid()&&Initialized){PressureProfiles[VehicleIndex]=PressureTarget;BatteryProfiles[VehicleIndex]=BatterySOC;}
+  if(Spec.IsValid()&&Initialized){PressureProfiles[VehicleIndex]=PressureTarget;BatteryProfiles[VehicleIndex]=BatterySOC;FuelProfiles[VehicleIndex]=FuelFraction;}
   VehicleIndex = (Index + List.Num()) % List.Num();
   Spec = List[VehicleIndex]->AsObject();
   VehicleName = Spec->GetStringField(TEXT("name"));
@@ -191,6 +191,8 @@ void ATerraVehicle::SelectVehicle(int Index) {
   Rest = Suspension->GetNumberField(TEXT("restLength"));
   Pressure = PressureTarget=PressureProfiles[VehicleIndex]>0?PressureProfiles[VehicleIndex]:Number(TEXT("stockPSIFront"),Number(TEXT("stockPSI"),35));
   BatterySOC=BatteryProfiles[VehicleIndex];TireAirRequested=false;LastRegenPowerW=0;
+  FuelFraction=FuelProfiles[VehicleIndex];LastFuelGPH=LastElectricDrawW=0;
+  BatteryEnergyRemainder=FuelEnergyRemainder=0;
   for(int I=0;I<4;++I)LastWheelDriveNm[I]=LastWheelRegenNm[I]=0;
   const float Length=Number(TEXT("bodyLength"),Number(TEXT("length"),4.8f));
   const float HalfWidth=Number(TEXT("width"),1.8f)*.42f;
@@ -526,6 +528,7 @@ void ATerraVehicle::Simulate(float Dt) {
   // last frame's RPM made loaded locked axles alternate drive and zero torque.
   TotalTorque *=
       Throttle * Tuning.Power * Tuning.ElectricalPower * Tuning.DriveEfficiency * DamageDriveFactor() * Direction;
+  if(!HasPropulsionEnergy())TotalTorque=0;
   const float WaterDepth=Terrain->Sample(GetActorLocation()).Water/100;
   TotalTorque*=1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f);
   if (Tracks && FMath::Abs(Speed) > 12)
@@ -599,7 +602,7 @@ void ATerraVehicle::Simulate(float Dt) {
   if (FMath::Abs(Speed)>11.1f) FrontLocked=RearLocked=false;
   float Omega[4];for(int I=0;I<4;++I){Omega[I]=WheelState[I].Omega;LastWheelDriveNm[I]=LastWheelRegenNm[I]=0;}
   const float Environment= Tuning.DriveEfficiency*DamageDriveFactor()*(1-FMath::Clamp((WaterDepth-Tuning.WaterDepth)*1.1f,0.f,.65f));
-  float ElectricThrottle=Throttle*(BatterySOC>.001f?1.f:0.f);
+  float ElectricThrottle=Throttle*(HasPropulsionEnergy()?1.f:0.f);
   if(Tracks&&FMath::Abs(Speed)>12)ElectricThrottle=0;
   
   const auto MotorDrive=TerraSim::ElectricDriveTorque(EV,Omega,ElectricThrottle,Direction,Low,PortalReduction(),Environment,FourDrive);
@@ -668,9 +671,10 @@ void ATerraVehicle::Simulate(float Dt) {
     for(int Axle=0;Axle<2;++Axle){
     const float Coupling=(Axle==0?CenterTorque:-CenterTorque);
     const int A=Axle*2,B=A+1;
-    const bool Locked=(Axle==0?FrontLocked:RearLocked)&&!IndependentMotor[A];
+    const bool Locked=Axle==0?FrontLocked:RearLocked;
     if(Locked){
-      // A locked axle shares shaft speed as well as torque. Solve both tire
+      // Mechanical and virtual axle locks both enforce equal wheel speed.
+      // Solve both tire
       // contact constraints together, including both wheels' inertia, so an
       // unloaded wheel cannot free-rev independently and trip the limiter.
       const float Previous=(WheelState[A].Omega+WheelState[B].Omega)*.5f;
@@ -800,8 +804,9 @@ void ATerraVehicle::Simulate(float Dt) {
   LastRegenPowerW=0;
   if(Electric){float Consumed=0;for(int I=0;I<4;++I){Consumed+=FMath::Max(0.f,(LastWheelDriveNm[I]-(I<2?LastCenterCouplingNm:-LastCenterCouplingNm)*.5f)*WheelState[I].Omega);LastRegenPowerW+=LastWheelRegenNm[I]*FMath::Abs(WheelState[I].Omega)*.82f;}
     LastRegenPowerW=FMath::Min(LastRegenPowerW,Regeneration.RecoveredPowerW);
-    BatterySOC=FMath::Clamp(BatterySOC+(LastRegenPowerW-Consumed/FMath::Max(.5f,EV.Efficiency)-350.f)*Dt/FMath::Max(1.f,EV.BatteryKWh*3600000.f),0.f,1.f);
+    LastElectricDrawW=Consumed/FMath::Max(.5f,EV.Efficiency)+350.f;
   }
+  UpdateEnergy(Dt);
   UpdateWheelVisuals();
   UpdateVisualDetails();
   if (SoilTimer >= .025f)
@@ -929,4 +934,8 @@ void ATerraVehicle::SaveSetup() {
   GConfig->SetBool(TEXT("TerraDrive"), TEXT("Tracks"), Tracks,
                    GGameUserSettingsIni);
   GConfig->Flush(false, GGameUserSettingsIni);
+}
+void ATerraVehicle::EndPlay(const EEndPlayReason::Type EndPlayReason){
+  if(Initialized&&!AutoTest)SaveGarage(GaragePath());
+  Super::EndPlay(EndPlayReason);
 }
