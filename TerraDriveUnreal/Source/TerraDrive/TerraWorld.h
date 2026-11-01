@@ -87,6 +87,7 @@ public:
   virtual void BeginPlay() override;
   virtual void Tick(float Dt) override;
   FTerraSample Sample(FVector P) const;
+  bool HasGardenGeology() const {return GardenGeologyLoaded;}
   FTerraSurfaceBlend SurfaceBlend(float X,float Y) const;
   bool HasSurfaceBlend() const { return N>1&&BlendWeights.Num()==N*N*7&&GroundBlendMaterial!=nullptr; }
   TSharedPtr<FJsonObject> TransitionData;
@@ -143,6 +144,8 @@ public:
 
 private:
   TArray<float> Heights, Water;
+  TArray<float> GardenHeights;
+  bool GardenGeologyLoaded=false;
   TArray<uint8> Surfaces;
   TArray<uint8> BlendWeights;
   TArray<FVector2D> QuarryTrailPolyline;
@@ -172,9 +175,9 @@ private:
   void UpdateTile(FTerraTile &Tile);
   void LoadScenery();
   TArray<FTerraTireMark> TireMarks;
-  FVector LastMark[4];
-  bool MarkConnected[4]={false,false,false,false},MarksDirty=false;
-  float MarkPhase[4]={0,0,0,0};
+  FVector LastMark[6];
+  bool MarkConnected[6]={},MarksDirty=false;
+  float MarkPhase[6]={};
   int NextMark=0,ThrottleMarkRefresh=0;
   void RebuildTireMarks();
   TArray<FTerraBodyMark> BodyMarks;

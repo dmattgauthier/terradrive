@@ -25,7 +25,7 @@ if(!(Test-Path -LiteralPath $taskPlanPath) -or (Get-Item -LiteralPath $taskPlanP
 $taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw | ConvertFrom-Json
 $taskRoster=Get-Content -LiteralPath (Join-Path $taskRoot 'Content/NativeData/vehicle-ground-probes.json') -Raw | ConvertFrom-Json
 $taskVehicleCount=@($taskRoster.vehicles).Count
-$taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 0 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and $taskPlan.partCount -eq 12 -and $taskPlan.portalStages -eq 4 -and @($taskPlan.trials).Count -eq $taskVehicleCount*$taskPlan.portalStages
+$taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 0 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and $taskPlan.partCount -eq 13 -and $taskPlan.portalStages -eq 4 -and $taskPlan.migrationChecks -eq 5 -and $taskPlan.persistenceChecks -eq 2 -and $taskPlan.capabilityChecksPerVehicle -eq 8 -and $taskPlan.growthChecksPerVehicle -eq 3 -and $taskPlan.spinChecksPerVehicle -eq 4 -and $taskPlan.stationaryChecksPerTrial -eq 10 -and @($taskPlan.trials).Count -eq $taskVehicleCount*$taskPlan.portalStages
 $taskCoverage=[Collections.Generic.HashSet[string]]::new()
 foreach($taskTrial in $taskPlan.trials){
  $taskPlanValid=$taskPlanValid -and $taskTrial.vehicle -ge 0 -and $taskTrial.vehicle -lt $taskVehicleCount -and $taskTrial.stage -ge 0 -and $taskTrial.stage -lt $taskPlan.portalStages

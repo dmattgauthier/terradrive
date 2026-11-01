@@ -38,6 +38,6 @@ int main(){
     check(!EnergyServiceAllowed(false,true,1,0,false)&&!EnergyServiceAllowed(false,true,0,1,false),"service cannot freeze moving or rotating vehicles");
     check(!EnergyServiceAllowed(false,true,0,0,true)&&!EnergyServiceAllowed(false,false,0,0,false),"service requires a safe menu context");
     check(!EnergyServiceAllowed(false,true,nan,0,false),"nonfinite speed blocks service");
-    check(UpgradeStageCountForVersion(6)==13&&UpgradeStageCountForVersion(7)==13&&UpgradeStageCountForVersion(8)==0,"new save retains ordered upgrade slots and rejects unknown future format");
+    check(UpgradeStageCountForVersion(6)==13&&UpgradeStageCountForVersion(7)==13&&UpgradeStageCountForVersion(8)==13&&UpgradeStageCountForVersion(9)==0,"new save retains ordered upgrade slots and rejects unknown future format");
     std::cout<<checks<<" energy checks passed\n";
 }

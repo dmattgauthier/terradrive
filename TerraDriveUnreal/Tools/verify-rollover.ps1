@@ -1,4 +1,4 @@
-param([switch]$Quick,[ValidateRange(0,8)][int]$QuickVehicle=3,[switch]$AllowLegacyProxy,[switch]$MeasurePerformance,[string]$FixtureFile='',[string]$Name='rollover',[int]$TimeoutSeconds=900)
+param([switch]$Quick,[ValidateRange(0,9)][int]$QuickVehicle=3,[switch]$AllowLegacyProxy,[switch]$MeasurePerformance,[string]$FixtureFile='',[string]$Name='rollover',[int]$TimeoutSeconds=900)
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(@(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue).Count){throw 'Close engine processes before the isolated rollover check'}

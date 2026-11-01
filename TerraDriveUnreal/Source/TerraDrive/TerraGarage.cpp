@@ -33,10 +33,10 @@ FSlateFontInfo Font(int Size, bool Bold=false) { return FCoreStyle::GetDefaultFo
 TSharedRef<STextBlock> Label(const FString &S,int Size=12,FLinearColor Color=White,bool Bold=false) {
   return SNew(STextBlock).Text(FText::FromString(S)).Font(Font(Size,Bold)).ColorAndOpacity(Color);
 }
-const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV"),TEXT("URUS"),TEXT("EARTHCRUISER"),TEXT("G 580 EV"),TEXT("AMG G 63")};
+const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV"),TEXT("URUS"),TEXT("EARTHCRUISER"),TEXT("G 580 EV"),TEXT("G 63 4x4 SQUARED"),TEXT("G 63 AMG 6x6")};
 const TCHAR* Roles[]={TEXT("RUBICON  /  TECHNICAL CRAWLER"),TEXT("BADLANDS  /  ALL-TERRAIN"),
  TEXT("SPORT  /  LIGHT & AGILE"),TEXT("2500  /  EXPEDITION VAN"),TEXT("3X SUV  /  ELECTRIC TORQUE"),TEXT("PERFORMANTE  /  V8 SUPER SUV"),
- TEXT("EXP98  /  OVERLAND CAB-OVER"),TEXT("EQ TECHNOLOGY  /  FOUR-MOTOR EV"),TEXT("AMG  /  V8 & FACTORY LOCKERS")};
+ TEXT("EXP98  /  OVERLAND CAB-OVER"),TEXT("EQ TECHNOLOGY  /  FOUR-MOTOR EV"),TEXT("PORTAL AXLES  /  AMG V8"),TEXT("THREE PORTAL AXLES  /  SIX-WHEEL DRIVE")};
 const TCHAR* Notes[]={TEXT("Solid axles, low range and front/rear lockers.\nA deliberate line is your best tool."),
  TEXT("Independent front suspension and locking axles.\nBuilt for speed between the obstacles."),
  TEXT("Lightweight front-wheel drive.\nFind the smooth line and keep momentum."),
@@ -44,7 +44,8 @@ const TCHAR* Notes[]={TEXT("Solid axles, low range and front/rear lockers.\nA de
  TEXT("Electric all-wheel drive and rear steering.\nImmediate torque meets substantial weight."),TEXT("Twin-turbo V8, steel coils and road tires.\nChoose flowing trails over deep rock steps."),
  TEXT("A heavy expedition cabin on leaf-sprung axles.\nUse low range and allow room for the rear overhang."),
  TEXT("Four-wheel motor torque control and low range.\nA heavy electric off-roader with a rear Design Box."),
- TEXT("V8 power, low range and three factory locks.\nSide-exit exhaust and a covered rear spare.")};
+ TEXT("Raised portal-axle stance, V8 power and three factory locks.\nCarbon arch extensions and a covered spare."),
+ TEXT("Six driven tires, three portal axles and five locking differentials.\nCenter key couples both longitudinal shafts; rear key locks both rear axles.")};
 static_assert(UE_ARRAY_COUNT(ShortNames)==ATerraVehicle::VehicleCount,"Garage names must match the vehicle roster");
 static_assert(UE_ARRAY_COUNT(Roles)==ATerraVehicle::VehicleCount,"Garage roles must match the vehicle roster");
 static_assert(UE_ARRAY_COUNT(Notes)==ATerraVehicle::VehicleCount,"Garage notes must match the vehicle roster");
@@ -261,7 +262,7 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
       [SNew(SVerticalBox)
         +SVerticalBox::Slot().AutoHeight().Padding(4,0,0,10)[Label(TEXT("CHOOSE YOUR VEHICLE"),12,Mint,true)]
         +SVerticalBox::Slot().FillHeight(1)[SNew(SScrollBox)+SScrollBox::Slot()[List]]
-        +SVerticalBox::Slot().AutoHeight().Padding(4,6,0,0)[Label(TEXT("SCROLL FOR ALL NINE VEHICLES"),9,Muted)]]]
+        +SVerticalBox::Slot().AutoHeight().Padding(4,6,0,0)[Label(TEXT("SCROLL FOR ALL TEN VEHICLES"),9,Muted)]]]
     +SHorizontalBox::Slot().FillWidth(1).Padding(20,0)
       [SNew(STerraVehiclePreview).Vehicle(Vehicle.Get())]
     +SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(285)
@@ -272,14 +273,14 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
           [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(23,true)).ColorAndOpacity(White).WrapTextAt(228)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,4)[Label(TEXT("FACTORY CHARACTER"),9,Muted,true)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,14)
-          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Notes[FMath::Clamp(Vehicle.IsValid()?Vehicle->VehicleIndex:0,0,ATerraVehicle::VehicleCount-1)]);}).Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]
+          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Notes[FMath::Clamp(Vehicle.IsValid()?Vehicle->VehicleIndex:0,0,ATerraVehicle::VehicleCount-1)]);}).Font(Font(12)).ColorAndOpacity(Muted).WrapTextAt(228)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,4)[Label(TEXT("CURRENT POWERTRAIN"),9,Muted,true)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,12)
-          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->PowertrainDescription():TEXT(""));}).Font(Font(11,true)).ColorAndOpacity(Mint).AutoWrapText(true)]
+          [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->PowertrainDescription():TEXT(""));}).Font(Font(11,true)).ColorAndOpacity(Mint).WrapTextAt(228)]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("OUTPUT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f hp"),Vehicle.IsValid()?Vehicle->PowerHP():0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("WEIGHT"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.0f lb"),Vehicle.IsValid()?TerraUnits::Pounds(Vehicle->Mass):0));}))]
           +SVerticalBox::Slot().AutoHeight()[Metric(TEXT("TIRE DIAMETER"),TAttribute<FText>::CreateLambda([this]{return FText::FromString(FString::Printf(TEXT("%.1f in"),Vehicle.IsValid()?Vehicle->TireDiameter():0));}))]
-          +SVerticalBox::Slot().AutoHeight()[SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->TireAirDescription():TEXT(""));}).Font(Font(10)).ColorAndOpacity(Muted).AutoWrapText(true)]
+          +SVerticalBox::Slot().AutoHeight()[SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->TireAirDescription():TEXT(""));}).Font(Font(10)).ColorAndOpacity(Muted).WrapTextAt(228)]
           +SVerticalBox::Slot().AutoHeight().Padding(0,14,0,0)
           [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(12,10)).ButtonColorAndOpacity(FLinearColor(.18,.3,.24))
             .OnClicked_Lambda([this]{Page=1;Pages->SetActiveWidgetIndex(1);return FReply::Handled();})[Label(TEXT("BUILD THIS VEHICLE   >"),12,Mint,true)]]

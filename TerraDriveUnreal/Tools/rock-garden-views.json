@@ -1,0 +1,10 @@
+{
+  "coordinateSystem": "Unreal centimetres; targetZ is sampled from BaseHeight, then offset upward",
+  "views": [
+    {"id":"garden-main-outcrop","targetXY":[11800,-13500],"focusAboveGroundCM":90,"eyeOffsetCM":[-900,1050,650],"fieldOfView":55},
+    {"id":"garden-detached-blocks","targetXY":[15600,-8800],"focusAboveGroundCM":80,"eyeOffsetCM":[-760,-650,490],"fieldOfView":55},
+    {"id":"garden-ledge-silhouette","targetXY":[14300,-14500],"focusAboveGroundCM":110,"eyeOffsetCM":[950,640,480],"fieldOfView":55},
+    {"id":"garden-stone-close","targetXY":[9900,-9100],"focusAboveGroundCM":60,"eyeOffsetCM":[-420,390,250],"fieldOfView":55},
+    {"id":"garden-articulation-line","targetXY":[10200,-11200],"focusAboveGroundCM":70,"eyeOffsetCM":[-1150,650,610],"fieldOfView":55}
+  ]
+}

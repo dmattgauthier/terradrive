@@ -13,7 +13,10 @@ import {refineVehicle,refineFactoryWheel} from './vehicle-fidelity.mjs';
 import {bodyRefinement} from './body-refinement.mjs';
 import {buildEarthCruiser,refineEarthCruiser} from './earthcruiser-exp.mjs';
 import {gClassView,refineGClass} from './mercedes-gclass.mjs';
+import {gClassSquaredView,gClassSixView,refineGVariant} from './gclass-variants.mjs';
 export function nativeVehicle(spec){
+  if(spec.bodyStyle==='g63six')return gClassSixView(spec);
+  if(spec.gClassVariant==='squared')return gClassSquaredView(spec);
   if(spec.bodyStyle==='earthcruiser')return buildEarthCruiser(spec);
   if(['g580','g63'].includes(spec.bodyStyle))return gClassView(spec);
   if(spec.bodyStyle==='urus')return urusView(spec);
@@ -29,7 +32,7 @@ export function nativeVehicle(spec){
   else if(spec.bodyStyle==='sedan')buildCivic(view,geo);
   else if(spec.bodyStyle==='van')buildSprinter(view,geo);
   else buildSUV(view,geo,spec.bodyStyle==='bronco');
-  view._underbody();mergeStaticMeshes(view.body);
+  view._underbody();mergeStaticMeshes(view.body,o=>o.name!=='sprinter-rear-door-aperture-return');
   geo.roundBodyEnds(view.body,spec.bodyStyle);geo.roundRoofShoulders(view.body,spec.bodyStyle);
   view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:12,ceramicGlazingBorders:true,analyticSurfaceNormals:true,roundedSolidParts:true,thinnerWindowSeals:true,glazingReturns:true,continuousUpholsteryNormals:true,nativeFenders:['jeep','bronco'].includes(spec.bodyStyle),formedCowls:['jeep','bronco'].includes(spec.bodyStyle),formedCabSheets:['sedan','van'].includes(spec.bodyStyle),recessedMeshGrilles:spec.bodyStyle==='sedan',recessedBonnetVents:spec.bodyStyle==='hummer'};
   if(spec.bodyStyle==='sedan')Object.assign(view.root.userData.nativeConstruction,{bodySurfaceRevision:12,straightAPillarEdges:true,formedBonnetAndTrunk:true});
@@ -53,10 +56,11 @@ export function vehicleFinishes(view,spec){
 
 export function prepareNativeVehicle(spec){
  const view=nativeVehicle(spec);let parts;
- if(spec.bodyStyle==='earthcruiser')parts=refineEarthCruiser(view,spec);
+ if(spec.bodyStyle==='g63six'||spec.gClassVariant==='squared')parts=refineGVariant(view,spec);
+ else if(spec.bodyStyle==='earthcruiser')parts=refineEarthCruiser(view,spec);
  else if(['g580','g63'].includes(spec.bodyStyle))parts=refineGClass(view,spec);
  else {bodyRefinement(view,spec);vehicleFinishes(view,spec);parts=refineVehicle(view,spec);}
- if(['earthcruiser','g580','g63'].includes(spec.bodyStyle))vehicleFinishes(view,spec);
- view.root.userData.nativeFidelity={...view.root.userData.nativeFidelity,referenceCraftRevision:18};
+ if(['earthcruiser','g580','g63','g63six'].includes(spec.bodyStyle))vehicleFinishes(view,spec);
+ view.root.userData.nativeFidelity={...view.root.userData.nativeFidelity,referenceCraftRevision:Math.max(24,view.root.userData.nativeFidelity?.referenceCraftRevision??0)};
  return {view,parts};
 }

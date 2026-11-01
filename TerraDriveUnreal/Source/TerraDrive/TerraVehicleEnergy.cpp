@@ -4,7 +4,7 @@
 float ATerraVehicle::FuelCapacityGallons()const{
   // Gameplay tanks for the nine chassis, including optional gasoline donors.
   // These remain estimates; no certified fuel-economy figures are implied.
-  static constexpr float Gallons[]={21.5f,20.8f,12.4f,24.5f,26.f,22.5f,60.f,26.f,26.f};
+  static constexpr float Gallons[]={21.5f,20.8f,12.4f,24.5f,26.f,22.5f,60.f,26.f,26.f,42.f};
   return Gallons[FMath::Clamp(VehicleIndex,0,VehicleCount-1)];
 }
 FString ATerraVehicle::EnergyDescription()const{
@@ -45,7 +45,7 @@ void ATerraVehicle::UpdateEnergy(float Dt){
   }else{
     LastElectricDrawW=LastRegenPowerW=0;
     float WheelPower=0;
-    for(int I=0;I<4;++I)WheelPower+=FMath::Max(0.f,(LastWheelDriveNm[I]-(I<2?LastCenterCouplingNm:-LastCenterCouplingNm)*.5f)*WheelState[I].Omega);
+    for(int I=0;I<WheelCount();++I)WheelPower+=FMath::Max(0.f,(LastWheelDriveNm[I]-WheelShaftCouplingNm(I))*WheelState[I].Omega);
     LastFuelGPH=TerraSim::FuelUseGallonsPerHour(WheelPower,.28f,.18f+PowerHP()*.00065f,HasPropulsionEnergy());
     if(EnergyUsageEnabled){
       const double Next=TerraSim::AdvanceFuel(double(FuelFraction)+FuelEnergyRemainder,Dt,FuelCapacityGallons(),LastFuelGPH,true);

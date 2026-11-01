@@ -1,0 +1,460 @@
+{
+  "revision": 24,
+  "sourceOnly": true,
+  "pass": true,
+  "checks": 65,
+  "vehicles": [
+    {
+      "vehicle": "Mercedes-AMG G 63 4x4 squared",
+      "id": "mercedes-amg-g63",
+      "style": "g63",
+      "checks": 28,
+      "pass": true,
+      "sourceOnly": true,
+      "geometry": {
+        "vertices": 337935,
+        "triangles": 451323,
+        "bounds": [
+          [
+            -1.098000000026077,
+            0.5291305184364319,
+            -2.5524946599585916
+          ],
+          [
+            1.098000000026077,
+            2.2655000005662442,
+            2.3350000000474975
+          ]
+        ]
+      },
+      "tests": [
+        {
+          "case": "finite source positions and normals",
+          "pass": true,
+          "vertices": 337935,
+          "nonfinite": 0
+        },
+        {
+          "case": "unit shading normals",
+          "pass": true,
+          "nonunit": 4,
+          "normalizedFraction": 0.9999881634042049
+        },
+        {
+          "case": "bounded triangle budget without cab duplication",
+          "pass": true,
+          "triangles": 451323,
+          "vertices": 337935
+        },
+        {
+          "case": "roof height follows the selected reference envelope within one inch",
+          "pass": true,
+          "actualM": 2.2655000005662442,
+          "referenceStatus": "Variant dimension estimate; first-party dimension sheet unavailable."
+        },
+        {
+          "case": "body length follows the selected reference envelope",
+          "pass": true,
+          "actualM": 4.887494660006089,
+          "referenceStatus": "Retained modern-G donor envelope."
+        },
+        {
+          "case": "mirror envelope is bounded while factory flares span the catalog width",
+          "pass": true,
+          "actualM": 2.196000000052154
+        },
+        {
+          "case": "body uses the actual simulator CG",
+          "pass": true,
+          "bodyY": -1.03,
+          "cg": 1.03
+        },
+        {
+          "case": "detached wheel assets are centred at their export hubs",
+          "pass": true,
+          "wheelCount": 4
+        },
+        {
+          "case": "tire outer radius agrees with the physical tire",
+          "pass": true,
+          "renderM": 0.4597250638105403,
+          "physicsM": 0.45815
+        },
+        {
+          "case": "tire section width retains its source dimension",
+          "pass": true,
+          "renderM": 0.3366499999191614,
+          "physicsM": 0.325
+        },
+        {
+          "case": "bead-seat wheel size is independent of the larger tire",
+          "pass": true,
+          "renderRadiusM": 0.28107640147209173,
+          "beadRadiusM": 0.2794
+        },
+        {
+          "case": "front door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400756911343732
+        },
+        {
+          "case": "front door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400756911343732
+        },
+        {
+          "case": "windshield is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 3.438726693666352
+        },
+        {
+          "case": "squared conversion retains the 113.8-inch wheelbase",
+          "pass": true,
+          "wheelbaseM": 2.89
+        },
+        {
+          "case": "newer 4x4 squared uses 22-inch wheels with 325/55 tires",
+          "pass": true,
+          "tireSize": "325/55R22"
+        },
+        {
+          "case": "squared has four wide carbon arch faces",
+          "pass": true
+        },
+        {
+          "case": "roof lamps are two separate recessed factory modules",
+          "pass": true
+        },
+        {
+          "case": "covered spare remains round and matches the larger tires",
+          "pass": true,
+          "diametersM": [
+            0.9163000341176385,
+            0.9163000341176386,
+            0.2834842049215265
+          ]
+        },
+        {
+          "case": "variant badge has clear space beside the enlarged spare",
+          "pass": true,
+          "badgeX": [
+            -0.8303152555046341,
+            -0.6002764475703071
+          ],
+          "spareX": [
+            -0.45815001705881925,
+            0.45815001705881925
+          ]
+        },
+        {
+          "case": "every physical axle has two explicit outward fender faces",
+          "pass": true,
+          "faces": 4
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer--1--1.445",
+          "pass": true,
+          "normal": [
+            -0.9932064414024353,
+            0.0033176573924720287,
+            -0.11631845682859421
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer--1-1.445",
+          "pass": true,
+          "normal": [
+            -0.9932064414024353,
+            0.003317735157907009,
+            -0.11631835997104645
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer-1--1.445",
+          "pass": true,
+          "normal": [
+            0.9932064414024353,
+            0.0033176573924720287,
+            -0.11631845682859421
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer-1-1.445",
+          "pass": true,
+          "normal": [
+            0.9932064414024353,
+            0.003317735157907009,
+            -0.11631835997104645
+          ]
+        },
+        {
+          "case": "brake and reverse remain distinct exported dynamic materials",
+          "pass": true
+        }
+      ],
+      "limitations": [
+        "Original photographic reconstruction, not manufacturer CAD or production-game scan.",
+        "Variant dimension and axle envelopes are reference estimates; a first-party dimension sheet was not inspectable.",
+        "Native collision, six-wheel behavior and rendering require separate integration verification."
+      ]
+    },
+    {
+      "vehicle": "Mercedes-Benz G 63 AMG 6x6",
+      "id": "mercedes-amg-g63-6x6",
+      "style": "g63six",
+      "checks": 37,
+      "pass": true,
+      "sourceOnly": true,
+      "geometry": {
+        "vertices": 277460,
+        "triangles": 414993,
+        "bounds": [
+          [
+            -1.098000000026077,
+            0.48913052678108215,
+            -2.8869999996647238
+          ],
+          [
+            1.098000000026077,
+            2.210659914970398,
+            2.9900000000474973
+          ]
+        ]
+      },
+      "tests": [
+        {
+          "case": "finite source positions and normals",
+          "pass": true,
+          "vertices": 277460,
+          "nonfinite": 0
+        },
+        {
+          "case": "unit shading normals",
+          "pass": true,
+          "nonunit": 6,
+          "normalizedFraction": 0.999978375261299
+        },
+        {
+          "case": "bounded triangle budget without cab duplication",
+          "pass": true,
+          "triangles": 414993,
+          "vertices": 277460
+        },
+        {
+          "case": "roof height follows the selected reference envelope within one inch",
+          "pass": true,
+          "actualM": 2.210659914970398,
+          "referenceStatus": "Variant dimension estimate; first-party dimension sheet unavailable."
+        },
+        {
+          "case": "body length follows the selected reference envelope",
+          "pass": true,
+          "actualM": 5.876999999712221,
+          "referenceStatus": "Variant dimension estimate."
+        },
+        {
+          "case": "mirror envelope is bounded while factory flares span the catalog width",
+          "pass": true,
+          "actualM": 2.196000000052154
+        },
+        {
+          "case": "body uses the actual simulator CG",
+          "pass": true,
+          "bodyY": -1.06,
+          "cg": 1.06
+        },
+        {
+          "case": "detached wheel assets are centred at their export hubs",
+          "pass": true,
+          "wheelCount": 6
+        },
+        {
+          "case": "tire outer radius agrees with the physical tire",
+          "pass": true,
+          "renderM": 0.4714442803048171,
+          "physicsM": 0.4699
+        },
+        {
+          "case": "tire section width retains its source dimension",
+          "pass": true,
+          "renderM": 0.3289549999191614,
+          "physicsM": 0.3175
+        },
+        {
+          "case": "bead-seat wheel size is independent of the larger tire",
+          "pass": true,
+          "renderRadiusM": 0.2285999953746796,
+          "beadRadiusM": 0.2286
+        },
+        {
+          "case": "front door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400756911343732
+        },
+        {
+          "case": "front door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400756911343732
+        },
+        {
+          "case": "windshield is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.7837266936663516
+        },
+        {
+          "case": "all three axle positions retain the selected 123-inch first wheelbase and 43-inch tandem spacing",
+          "pass": true,
+          "axles": [
+            2.1,
+            -1.02,
+            -2.12
+          ],
+          "referenceStatus": "Variant wheelbase estimates."
+        },
+        {
+          "case": "six-wheel geometry uses explicit CG-relative hardpoints",
+          "pass": true,
+          "offsetZ": 0
+        },
+        {
+          "case": "rear cab window is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 0.3489999771118164
+        },
+        {
+          "case": "cargo bed is open over its ribbed floor -1.85",
+          "pass": true,
+          "firstSurfaceM": 0.9090000000521541
+        },
+        {
+          "case": "cargo bed is open over its ribbed floor -2.35",
+          "pass": true,
+          "firstSurfaceM": 0.9090000000521541
+        },
+        {
+          "case": "pickup has distinct tailgate and closed cab back",
+          "pass": true
+        },
+        {
+          "case": "classic AMG front uses twin blades instead of thirteen modern slats",
+          "pass": true
+        },
+        {
+          "case": "classic front retains two projector assemblies",
+          "pass": true
+        },
+        {
+          "case": "classic cabin has separate analogue binnacle and tablet",
+          "pass": true
+        },
+        {
+          "case": "factory front roof spoiler has two recessed LED housings",
+          "pass": true
+        },
+        {
+          "case": "lower cab repair faces outward -1",
+          "pass": true,
+          "meanNormalX": 1
+        },
+        {
+          "case": "lower cab repair faces outward 1",
+          "pass": true,
+          "meanNormalX": 1
+        },
+        {
+          "case": "both faces have original perforated beadlock wheel plates",
+          "pass": true,
+          "faces": 2
+        },
+        {
+          "case": "every physical axle has two explicit outward fender faces",
+          "pass": true,
+          "faces": 6
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-arch-outer--1-2.1",
+          "pass": true,
+          "normal": [
+            -0.9932064414024353,
+            0.0033177330624312162,
+            -0.11631833016872406
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-arch-outer--1--1.02",
+          "pass": true,
+          "normal": [
+            -0.9932064414024353,
+            0.0033176548313349485,
+            -0.11631841212511063
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-arch-outer--1--2.12",
+          "pass": true,
+          "normal": [
+            -0.9932064414024353,
+            0.0033177335280925035,
+            -0.11631834506988525
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-arch-outer-1-2.1",
+          "pass": true,
+          "normal": [
+            0.9932064414024353,
+            0.0033177330624312162,
+            -0.11631833016872406
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-arch-outer-1--1.02",
+          "pass": true,
+          "normal": [
+            0.9932064414024353,
+            0.0033176548313349485,
+            -0.11631841212511063
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-arch-outer-1--2.12",
+          "pass": true,
+          "normal": [
+            0.9932064414024353,
+            0.0033177335280925035,
+            -0.11631834506988525
+          ]
+        },
+        {
+          "case": "brake and reverse remain distinct exported dynamic materials",
+          "pass": true
+        }
+      ],
+      "limitations": [
+        "Original photographic reconstruction, not manufacturer CAD or production-game scan.",
+        "Variant dimension and axle envelopes are reference estimates; a first-party dimension sheet was not inspectable.",
+        "Native collision, six-wheel behavior and rendering require separate integration verification."
+      ]
+    }
+  ]
+}

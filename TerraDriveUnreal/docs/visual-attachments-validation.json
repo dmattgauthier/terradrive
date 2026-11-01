@@ -1,0 +1,1961 @@
+{
+  "revision": 24,
+  "sourceOnly": true,
+  "pass": true,
+  "checks": 196,
+  "vehicles": [
+    {
+      "id": "civic-sport",
+      "checks": 4,
+      "tests": [
+        {
+          "case": "native badge exists civic-fitted-civic-badge",
+          "pass": true
+        },
+        {
+          "case": "badge follows formed trunk with millimetre attachment clearance civic-fitted-civic-badge",
+          "pass": true,
+          "samples": 18,
+          "minimumGapM": 0.0011546373498183549,
+          "maximumGapM": 0.0049439118308352015
+        },
+        {
+          "case": "native badge exists civic-fitted-sport-badge",
+          "pass": true
+        },
+        {
+          "case": "badge follows formed trunk with millimetre attachment clearance civic-fitted-sport-badge",
+          "pass": true,
+          "samples": 30,
+          "minimumGapM": 0.004007824427233242,
+          "maximumGapM": 0.004493796215632617
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "sprinter-2500",
+      "checks": 187,
+      "tests": [
+        {
+          "case": "both rear door apertures have continuous depth returns",
+          "pass": true
+        },
+        {
+          "case": "door returns bridge header to sill and full frame depth",
+          "pass": true,
+          "bounds": [
+            [
+              -0.9054425954818726,
+              0.6069999933242798,
+              -3.0063037872314453
+            ],
+            [
+              -0.004999999888241291,
+              2.382357120513916,
+              -2.930250406265259
+            ]
+          ]
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 0",
+          "pass": true,
+          "point": [
+            -0.005116666667163372,
+            0.6397833426793416,
+            -2.967700958251953
+          ],
+          "opaqueDistanceM": 0.020000000000000004
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 1",
+          "pass": true,
+          "point": [
+            -0.5253333449363708,
+            0.6069999933242798,
+            -2.9599991639455157
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 2",
+          "pass": true,
+          "point": [
+            -0.2826666633288065,
+            0.6069999933242798,
+            -2.965282360712687
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 3",
+          "pass": true,
+          "point": [
+            -0.43433334430058795,
+            0.6069999933242798,
+            -2.9686683813730874
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 4",
+          "pass": true,
+          "point": [
+            -0.8107962012290955,
+            0.6365220149358113,
+            -2.94274624188741
+          ],
+          "opaqueDistanceM": 0.019999999999999966
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 5",
+          "pass": true,
+          "point": [
+            -0.8817799091339111,
+            0.8974992831548054,
+            -2.938804308573405
+          ],
+          "opaqueDistanceM": 0.020000000000000028
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 6",
+          "pass": true,
+          "point": [
+            -0.8923214475313822,
+            1.0158175627390542,
+            -2.9323688348134356
+          ],
+          "opaqueDistanceM": 0.01999999999999994
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 7",
+          "pass": true,
+          "point": [
+            -0.9053681492805481,
+            1.359670321146647,
+            -2.9363457361857095
+          ],
+          "opaqueDistanceM": 0.019999999999999962
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 8",
+          "pass": true,
+          "point": [
+            -0.9029156764348347,
+            1.459583560625712,
+            -2.934168259302775
+          ],
+          "opaqueDistanceM": 0.02000000000000007
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 9",
+          "pass": true,
+          "point": [
+            -0.8778288960456848,
+            1.981480360031128,
+            -2.935275077819824
+          ],
+          "opaqueDistanceM": 0.01999999999999998
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 10",
+          "pass": true,
+          "point": [
+            -0.8669071594874064,
+            2.23953374226888,
+            -2.9345805644989014
+          ],
+          "opaqueDistanceM": 0.020000000000000098
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 11",
+          "pass": true,
+          "point": [
+            -0.8408902684847513,
+            2.329628547032674,
+            -2.941002607345581
+          ],
+          "opaqueDistanceM": 0.01999999999999997
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 12",
+          "pass": true,
+          "point": [
+            -0.7674240668614705,
+            2.366703907648722,
+            -2.9463318983713784
+          ],
+          "opaqueDistanceM": 0.020000000000000084
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 13",
+          "pass": true,
+          "point": [
+            -0.5095866918563843,
+            2.373729308446248,
+            -2.9619643688201904
+          ],
+          "opaqueDistanceM": 0.020000000000000306
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 14",
+          "pass": true,
+          "point": [
+            -0.5389362275600433,
+            2.37319008509318,
+            -2.9658052126566568
+          ],
+          "opaqueDistanceM": 0.01999999999999986
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 15",
+          "pass": true,
+          "point": [
+            -0.029379218816757202,
+            2.381502151489258,
+            -2.9711804389953613
+          ],
+          "opaqueDistanceM": 0.020000000000000063
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 16",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            0.9974168539047241,
+            -2.964436928431193
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 17",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.6371667385101318,
+            -2.9690065383911133
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 18",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            2.0992084344228106,
+            -2.967918554941813
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 19",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.7793334325154622,
+            -2.967265685399373
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 20",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.6371667385101318,
+            -2.972488244374593
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 21",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            0.6775418519973755,
+            -2.967918554941813
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 22",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.1395834684371948,
+            -2.974229017893473
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 23",
+          "pass": true,
+          "point": [
+            -0.007566666696220636,
+            0.6258999903996785,
+            -2.981660525004069
+          ],
+          "opaqueDistanceM": 0.019999999999999966
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 24",
+          "pass": true,
+          "point": [
+            -0.5253333449363708,
+            0.6069999933242798,
+            -2.9685089588165283
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 25",
+          "pass": true,
+          "point": [
+            -0.3736666738986969,
+            0.6069999933242798,
+            -2.978996435801188
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 26",
+          "pass": true,
+          "point": [
+            -0.7702692151069641,
+            0.6071126659711201,
+            -2.9557824929555254
+          ],
+          "opaqueDistanceM": 0.01999999999999984
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 27",
+          "pass": true,
+          "point": [
+            -0.83430016040802,
+            0.7226012547810872,
+            -2.9514546394348145
+          ],
+          "opaqueDistanceM": 0.020000000000000056
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 28",
+          "pass": true,
+          "point": [
+            -0.8854719599088032,
+            0.9157155950864155,
+            -2.9445437590281167
+          ],
+          "opaqueDistanceM": 0.020000000000000087
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 29",
+          "pass": true,
+          "point": [
+            -0.8948001066843668,
+            1.076658805211385,
+            -2.948952515920003
+          ],
+          "opaqueDistanceM": 0.019999999999999993
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 30",
+          "pass": true,
+          "point": [
+            -0.9052073558171589,
+            1.3783321777979531,
+            -2.9424428145090737
+          ],
+          "opaqueDistanceM": 0.020000000000000056
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 31",
+          "pass": true,
+          "point": [
+            -0.8989307681719462,
+            1.5639629364013672,
+            -2.9404098192850747
+          ],
+          "opaqueDistanceM": 0.02000000000000003
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 32",
+          "pass": true,
+          "point": [
+            -0.8710766235987345,
+            2.1554458141326904,
+            -2.9481417338053384
+          ],
+          "opaqueDistanceM": 0.019999999999999955
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 33",
+          "pass": true,
+          "point": [
+            -0.866078237692515,
+            2.2495191891988116,
+            -2.947006781895955
+          ],
+          "opaqueDistanceM": 0.019999999999999962
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 34",
+          "pass": true,
+          "point": [
+            -0.8351559241612752,
+            2.337054332097371,
+            -2.947971661885579
+          ],
+          "opaqueDistanceM": 0.020000000000000337
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 35",
+          "pass": true,
+          "point": [
+            -0.7582133014996846,
+            2.368351459503174,
+            -2.9598859151204424
+          ],
+          "opaqueDistanceM": 0.020000000000000104
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 36",
+          "pass": true,
+          "point": [
+            -0.5976352890332539,
+            2.372111638387044,
+            -2.967550754547119
+          ],
+          "opaqueDistanceM": 0.020000000000000233
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 37",
+          "pass": true,
+          "point": [
+            -0.1573922385772069,
+            2.3802002271016436,
+            -2.977640072504679
+          ],
+          "opaqueDistanceM": 0.020000000000000566
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 38",
+          "pass": true,
+          "point": [
+            -0.016314757677416004,
+            2.3761421839396157,
+            -2.9781616528828936
+          ],
+          "opaqueDistanceM": 0.02000000000000027
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 39",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.2106668154398599,
+            -2.976850589116414
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 40",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.7437917391459146,
+            -2.9792556762695312
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 41",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            2.063666741053263,
+            -2.9751014709472656
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 42",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.7793334325154622,
+            -2.9770692189534502
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 43",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.8859584331512451,
+            -2.9842844009399414
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 44",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            0.7130835056304932,
+            -2.9842844009399414
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 45",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.4239168167114258,
+            -2.9825352827707925
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 46",
+          "pass": true,
+          "point": [
+            -0.015033333251873652,
+            0.6147000193595886,
+            -2.9886730511983233
+          ],
+          "opaqueDistanceM": 0.020000000000000025
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 47",
+          "pass": true,
+          "point": [
+            -0.070333331823349,
+            0.6069999933242798,
+            -2.9916270573933916
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 48",
+          "pass": true,
+          "point": [
+            -0.46466667453447974,
+            0.6069999933242798,
+            -2.984482526779175
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 49",
+          "pass": true,
+          "point": [
+            -0.7848070462544758,
+            0.6094789306322733,
+            -2.967199643452962
+          ],
+          "opaqueDistanceM": 0.02000000000000004
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 50",
+          "pass": true,
+          "point": [
+            -0.8342969218889872,
+            0.7226012547810872,
+            -2.9584690729777017
+          ],
+          "opaqueDistanceM": 0.019999999999999983
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 51",
+          "pass": true,
+          "point": [
+            -0.8877762158711751,
+            0.9317916433016459,
+            -2.956603527069092
+          ],
+          "opaqueDistanceM": 0.01793463135087768
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 52",
+          "pass": true,
+          "point": [
+            -0.8986050883928934,
+            1.1679206291834512,
+            -2.9570154349009194
+          ],
+          "opaqueDistanceM": 0.00928037781921286
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 53",
+          "pass": true,
+          "point": [
+            -0.8752164642016093,
+            2.0510665575663247,
+            -2.950675328572591
+          ],
+          "opaqueDistanceM": 0.02000000000000003
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 54",
+          "pass": true,
+          "point": [
+            -0.8906695445378621,
+            1.7379284699757893,
+            -2.9525245825449624
+          ],
+          "opaqueDistanceM": 0.02000000000000008
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 55",
+          "pass": true,
+          "point": [
+            -0.8739649256070454,
+            2.085859616597493,
+            -2.957651138305664
+          ],
+          "opaqueDistanceM": 0.02000000000000005
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 56",
+          "pass": true,
+          "point": [
+            -0.863806943098704,
+            2.260762055714925,
+            -2.953479766845703
+          ],
+          "opaqueDistanceM": 0.020000000000000115
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 57",
+          "pass": true,
+          "point": [
+            -0.8290250698725382,
+            2.341970920562744,
+            -2.961281855901082
+          ],
+          "opaqueDistanceM": 0.019999999999999796
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 58",
+          "pass": true,
+          "point": [
+            -0.7470846970876057,
+            2.369313796361287,
+            -2.9672759373982744
+          ],
+          "opaqueDistanceM": 0.020000000000000236
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 59",
+          "pass": true,
+          "point": [
+            -0.5095866918563843,
+            2.373729308446248,
+            -2.9785268306732178
+          ],
+          "opaqueDistanceM": 0.020000000000000306
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 60",
+          "pass": true,
+          "point": [
+            -0.1573922385772069,
+            2.3802002271016436,
+            -2.990633408228556
+          ],
+          "opaqueDistanceM": 0.020000000000000566
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 61",
+          "pass": true,
+          "point": [
+            -0.008965997335811455,
+            2.3672937552134194,
+            -2.992189089457194
+          ],
+          "opaqueDistanceM": 0.019509080779363325
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 62",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.3172918558120728,
+            -2.9871362050374346
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 63",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            2.205833355585734,
+            -2.9930682977040606
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 64",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            2.063666741053263,
+            -2.986257473627726
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 65",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.9570417404174805,
+            -2.9941666920979815
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 66",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.4239168167114258,
+            -2.990431785583496
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 67",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            0.9974168539047241,
+            -2.9908711115519204
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 68",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.3172918558120728,
+            -2.9919696648915606
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 69",
+          "pass": true,
+          "point": [
+            -0.02565000019967556,
+            0.608983318010966,
+            -3.0027662118275957
+          ],
+          "opaqueDistanceM": 0.01999999999999999
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 70",
+          "pass": true,
+          "point": [
+            -0.10066666454076767,
+            0.6069999933242798,
+            -2.99582839012146
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 71",
+          "pass": true,
+          "point": [
+            -0.707339604695638,
+            0.6069999933242798,
+            -2.982228358586629
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 72",
+          "pass": true,
+          "point": [
+            -0.7979663610458374,
+            0.616690436999003,
+            -2.9723166624704995
+          ],
+          "opaqueDistanceM": 0.02000000000000003
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 73",
+          "pass": true,
+          "point": [
+            -0.8732825915018717,
+            0.8657467762629191,
+            -2.965209404627482
+          ],
+          "opaqueDistanceM": 0.019999999999999983
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 74",
+          "pass": true,
+          "point": [
+            -0.8893809119860331,
+            0.9503206411997477,
+            -2.9626053969065347
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 75",
+          "pass": true,
+          "point": [
+            -0.9048311710357666,
+            1.3316830396652222,
+            -2.9639944235483804
+          ],
+          "opaqueDistanceM": 0.019999999999999966
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 76",
+          "pass": true,
+          "point": [
+            -0.8836272160212199,
+            1.877100944519043,
+            -2.958882490793864
+          ],
+          "opaqueDistanceM": 0.01999999999999996
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 77",
+          "pass": true,
+          "point": [
+            -0.9004239241282145,
+            1.5291697978973389,
+            -2.966844320297241
+          ],
+          "opaqueDistanceM": 0.015375770538616867
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 78",
+          "pass": true,
+          "point": [
+            -0.8787655234336853,
+            1.981480360031128,
+            -2.965986887613932
+          ],
+          "opaqueDistanceM": 0.02000000000000003
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 79",
+          "pass": true,
+          "point": [
+            -0.8525673151016235,
+            2.300099929173787,
+            -2.9674503803253174
+          ],
+          "opaqueDistanceM": 0.019999999999999945
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 80",
+          "pass": true,
+          "point": [
+            -0.7825629115104675,
+            2.362107515335083,
+            -2.973360061645508
+          ],
+          "opaqueDistanceM": 0.01999999999999991
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 81",
+          "pass": true,
+          "point": [
+            -0.27479038139184314,
+            2.3780433336893716,
+            -2.9961941242218018
+          ],
+          "opaqueDistanceM": 0.02000000000000005
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 82",
+          "pass": true,
+          "point": [
+            -0.5095866918563843,
+            2.373729308446248,
+            -2.989677349726359
+          ],
+          "opaqueDistanceM": 0.020000000000000306
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 83",
+          "pass": true,
+          "point": [
+            -0.3628390034039815,
+            2.3764256636301675,
+            -3.000577688217163
+          ],
+          "opaqueDistanceM": 0.019999999999999938
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 84",
+          "pass": true,
+          "point": [
+            -0.00523329402009646,
+            2.3524290720621743,
+            -2.9992376963297525
+          ],
+          "opaqueDistanceM": 0.019999999999999997
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 85",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.2106668154398599,
+            -2.9961462815602617
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 86",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            2.205833355585734,
+            -3.001004298528035
+          ],
+          "opaqueDistanceM": 0.00966124346581812
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 87",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.5305417776107788,
+            -2.997471173604329
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 88",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.8504167795181274,
+            -3.0036540031433105
+          ],
+          "opaqueDistanceM": 0.009181648295290886
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 89",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.1395834684371948,
+            -3.001445770263672
+          ],
+          "opaqueDistanceM": 0.009051056920207714
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 90",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            0.819708506266276,
+            -3.0058621565500894
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 91",
+          "pass": true,
+          "point": [
+            -0.004999999888241291,
+            1.1395834684371948,
+            -3.005199670791626
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "door returns bridge header to sill and full frame depth",
+          "pass": true,
+          "bounds": [
+            [
+              0.004999999888241291,
+              0.6069999933242798,
+              -3.0063037872314453
+            ],
+            [
+              0.9054425954818726,
+              2.382357120513916,
+              -2.930250406265259
+            ]
+          ]
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 92",
+          "pass": true,
+          "point": [
+            0.005116666667163372,
+            0.6397833426793416,
+            -2.967700958251953
+          ],
+          "opaqueDistanceM": 0.020000000000000004
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 93",
+          "pass": true,
+          "point": [
+            0.5253333449363708,
+            0.6069999933242798,
+            -2.958258787790934
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 94",
+          "pass": true,
+          "point": [
+            0.2826666633288065,
+            0.6069999933242798,
+            -2.9678929646809893
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 95",
+          "pass": true,
+          "point": [
+            0.43433334430058795,
+            0.6069999933242798,
+            -2.966690858205159
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 96",
+          "pass": true,
+          "point": [
+            0.8107962012290955,
+            0.6365220149358113,
+            -2.94274624188741
+          ],
+          "opaqueDistanceM": 0.019999999999999966
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 97",
+          "pass": true,
+          "point": [
+            0.8817799091339111,
+            0.8974992831548054,
+            -2.938804308573405
+          ],
+          "opaqueDistanceM": 0.020000000000000028
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 98",
+          "pass": true,
+          "point": [
+            0.8922808170318604,
+            1.0158175627390542,
+            -2.938484986623128
+          ],
+          "opaqueDistanceM": 0.020000000000000042
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 99",
+          "pass": true,
+          "point": [
+            0.9053681492805481,
+            1.359670321146647,
+            -2.9363457361857095
+          ],
+          "opaqueDistanceM": 0.019999999999999962
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 100",
+          "pass": true,
+          "point": [
+            0.9029075503349304,
+            1.459583560625712,
+            -2.934929291407267
+          ],
+          "opaqueDistanceM": 0.01999999999999996
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 101",
+          "pass": true,
+          "point": [
+            0.8779659469922383,
+            1.981480360031128,
+            -2.9387097358703613
+          ],
+          "opaqueDistanceM": 0.02000000000000007
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 102",
+          "pass": true,
+          "point": [
+            0.8669071594874064,
+            2.23953374226888,
+            -2.9345805644989014
+          ],
+          "opaqueDistanceM": 0.020000000000000098
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 103",
+          "pass": true,
+          "point": [
+            0.8408902684847513,
+            2.329628547032674,
+            -2.941002607345581
+          ],
+          "opaqueDistanceM": 0.01999999999999997
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 104",
+          "pass": true,
+          "point": [
+            0.7674240668614705,
+            2.366703907648722,
+            -2.9463318983713784
+          ],
+          "opaqueDistanceM": 0.020000000000000084
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 105",
+          "pass": true,
+          "point": [
+            0.5095866918563843,
+            2.373729308446248,
+            -2.9603726863861084
+          ],
+          "opaqueDistanceM": 0.020000000000000306
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 106",
+          "pass": true,
+          "point": [
+            0.5389362275600433,
+            2.37319008509318,
+            -2.9644998709360757
+          ],
+          "opaqueDistanceM": 0.01999999999999986
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 107",
+          "pass": true,
+          "point": [
+            0.029379218816757202,
+            2.381502151489258,
+            -2.9711804389953613
+          ],
+          "opaqueDistanceM": 0.020000000000000063
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 108",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            0.9974168539047241,
+            -2.9661777019500732
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 109",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.6371667385101318,
+            -2.965524911880493
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 110",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            2.0992084344228106,
+            -2.969441811243693
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 111",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.7793334325154622,
+            -2.968136151631673
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 112",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.6371667385101318,
+            -2.972488244374593
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 113",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            0.6775418519973755,
+            -2.9711825847625732
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 114",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.1395834684371948,
+            -2.9677008787790933
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 115",
+          "pass": true,
+          "point": [
+            0.007566666696220636,
+            0.6258999903996785,
+            -2.981660525004069
+          ],
+          "opaqueDistanceM": 0.019999999999999966
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 116",
+          "pass": true,
+          "point": [
+            0.5253333449363708,
+            0.6069999933242798,
+            -2.969383319218953
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 117",
+          "pass": true,
+          "point": [
+            0.3736666738986969,
+            0.6069999933242798,
+            -2.9801880518595376
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 118",
+          "pass": true,
+          "point": [
+            0.7702692151069641,
+            0.6071126659711201,
+            -2.9557824929555254
+          ],
+          "opaqueDistanceM": 0.01999999999999984
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 119",
+          "pass": true,
+          "point": [
+            0.8343015710512797,
+            0.7226012547810872,
+            -2.9483147462209063
+          ],
+          "opaqueDistanceM": 0.019999999999999962
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 120",
+          "pass": true,
+          "point": [
+            0.8854719599088032,
+            0.9157155950864155,
+            -2.9445437590281167
+          ],
+          "opaqueDistanceM": 0.020000000000000087
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 121",
+          "pass": true,
+          "point": [
+            0.8948089083035786,
+            1.076658805211385,
+            -2.9474238554636636
+          ],
+          "opaqueDistanceM": 0.020000000000000104
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 122",
+          "pass": true,
+          "point": [
+            0.9052073558171589,
+            1.3783321777979531,
+            -2.9424428145090737
+          ],
+          "opaqueDistanceM": 0.020000000000000056
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 123",
+          "pass": true,
+          "point": [
+            0.8989341855049133,
+            1.5639629364013672,
+            -2.9461396535237627
+          ],
+          "opaqueDistanceM": 0.02000000000000001
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 124",
+          "pass": true,
+          "point": [
+            0.8708579341570536,
+            2.1554458141326904,
+            -2.9427769978841143
+          ],
+          "opaqueDistanceM": 0.01999999999999998
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 125",
+          "pass": true,
+          "point": [
+            0.866078237692515,
+            2.2495191891988116,
+            -2.947006781895955
+          ],
+          "opaqueDistanceM": 0.019999999999999962
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 126",
+          "pass": true,
+          "point": [
+            0.8351559241612752,
+            2.337054332097371,
+            -2.947971661885579
+          ],
+          "opaqueDistanceM": 0.020000000000000337
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 127",
+          "pass": true,
+          "point": [
+            0.7582133014996846,
+            2.368351459503174,
+            -2.9598859151204424
+          ],
+          "opaqueDistanceM": 0.020000000000000104
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 128",
+          "pass": true,
+          "point": [
+            0.5976352890332539,
+            2.372111638387044,
+            -2.9679504235585528
+          ],
+          "opaqueDistanceM": 0.020000000000000233
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 129",
+          "pass": true,
+          "point": [
+            0.1573922385772069,
+            2.3802002271016436,
+            -2.98288615544637
+          ],
+          "opaqueDistanceM": 0.020000000000000566
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 130",
+          "pass": true,
+          "point": [
+            0.016314757677416004,
+            2.3761421839396157,
+            -2.9781616528828936
+          ],
+          "opaqueDistanceM": 0.02000000000000027
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 131",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.2106668154398599,
+            -2.97597599029541
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 132",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.7437917391459146,
+            -2.976850589116414
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 133",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            2.063666741053263,
+            -2.9829725424448648
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 134",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.7793334325154622,
+            -2.9792555967966714
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 135",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.8859584331512451,
+            -2.983191172281901
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 136",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            0.7130835056304932,
+            -2.97597599029541
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 137",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.4239168167114258,
+            -2.9820979436238604
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 138",
+          "pass": true,
+          "point": [
+            0.015033333251873652,
+            0.6147000193595886,
+            -2.9886730511983233
+          ],
+          "opaqueDistanceM": 0.020000000000000025
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 139",
+          "pass": true,
+          "point": [
+            0.070333331823349,
+            0.6069999933242798,
+            -2.9885520140329995
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 140",
+          "pass": true,
+          "point": [
+            0.46466667453447974,
+            0.6069999933242798,
+            -2.9884720643361407
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 141",
+          "pass": true,
+          "point": [
+            0.7848070462544758,
+            0.6094789306322733,
+            -2.967199643452962
+          ],
+          "opaqueDistanceM": 0.02000000000000004
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 142",
+          "pass": true,
+          "point": [
+            0.8342968225479126,
+            0.7226012547810872,
+            -2.9600458939870196
+          ],
+          "opaqueDistanceM": 0.019999999999999993
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 143",
+          "pass": true,
+          "point": [
+            0.8877762158711751,
+            0.9317916433016459,
+            -2.956603527069092
+          ],
+          "opaqueDistanceM": 0.01793463135087768
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 144",
+          "pass": true,
+          "point": [
+            0.8986146052678425,
+            1.1679206291834512,
+            -2.954713424046834
+          ],
+          "opaqueDistanceM": 0.0022706933000124804
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 145",
+          "pass": true,
+          "point": [
+            0.8752063314119974,
+            2.0510665575663247,
+            -2.9502917925516763
+          ],
+          "opaqueDistanceM": 0.020000000000000046
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 146",
+          "pass": true,
+          "point": [
+            0.8906473914782206,
+            1.7379284699757893,
+            -2.950990358988444
+          ],
+          "opaqueDistanceM": 0.019999999999999993
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 147",
+          "pass": true,
+          "point": [
+            0.8738028009732564,
+            2.085859616597493,
+            -2.9522634347279864
+          ],
+          "opaqueDistanceM": 0.020000000000000157
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 148",
+          "pass": true,
+          "point": [
+            0.863806943098704,
+            2.260762055714925,
+            -2.953479766845703
+          ],
+          "opaqueDistanceM": 0.020000000000000115
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 149",
+          "pass": true,
+          "point": [
+            0.8290250698725382,
+            2.341970920562744,
+            -2.961281855901082
+          ],
+          "opaqueDistanceM": 0.019999999999999796
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 150",
+          "pass": true,
+          "point": [
+            0.7470846970876057,
+            2.369313796361287,
+            -2.9672759373982744
+          ],
+          "opaqueDistanceM": 0.020000000000000236
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 151",
+          "pass": true,
+          "point": [
+            0.5095866918563843,
+            2.373729308446248,
+            -2.9833438396453857
+          ],
+          "opaqueDistanceM": 0.020000000000000306
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 152",
+          "pass": true,
+          "point": [
+            0.1573922385772069,
+            2.3802002271016436,
+            -2.990633408228556
+          ],
+          "opaqueDistanceM": 0.020000000000000566
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 153",
+          "pass": true,
+          "point": [
+            0.008965997335811455,
+            2.3672937552134194,
+            -2.992189089457194
+          ],
+          "opaqueDistanceM": 0.019509080779363325
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 154",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.3172918558120728,
+            -2.987355947494507
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 155",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            2.205833355585734,
+            -2.9869165420532227
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 156",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            2.063666741053263,
+            -2.992848555246989
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 157",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.9570417404174805,
+            -2.994825839996338
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 158",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.4239168167114258,
+            -2.995265245437622
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 159",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            0.9974168539047241,
+            -2.992189407348633
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 160",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.3172918558120728,
+            -2.993068218231201
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 161",
+          "pass": true,
+          "point": [
+            0.02565000019967556,
+            0.608983318010966,
+            -3.0027662118275957
+          ],
+          "opaqueDistanceM": 0.01999999999999999
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 162",
+          "pass": true,
+          "point": [
+            0.10066666454076767,
+            0.6069999933242798,
+            -3.004659096399943
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 163",
+          "pass": true,
+          "point": [
+            0.7073397040367126,
+            0.6069999933242798,
+            -2.9814267953236895
+          ],
+          "opaqueDistanceM": 0.020000000000000018
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 164",
+          "pass": true,
+          "point": [
+            0.7979663610458374,
+            0.616690436999003,
+            -2.9723166624704995
+          ],
+          "opaqueDistanceM": 0.02000000000000003
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 165",
+          "pass": true,
+          "point": [
+            0.8732804258664448,
+            0.8657467762629191,
+            -2.967539072036743
+          ],
+          "opaqueDistanceM": 0.020000000000000077
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 166",
+          "pass": true,
+          "point": [
+            0.8893809119860331,
+            0.9503206411997477,
+            -2.9626053969065347
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 167",
+          "pass": true,
+          "point": [
+            0.9048311710357666,
+            1.3316830396652222,
+            -2.9639944235483804
+          ],
+          "opaqueDistanceM": 0.019999999999999966
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 168",
+          "pass": true,
+          "point": [
+            0.8836959203084309,
+            1.877100944519043,
+            -2.9619645277659097
+          ],
+          "opaqueDistanceM": 0.020000000000000098
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 169",
+          "pass": true,
+          "point": [
+            0.9004180828730265,
+            1.5291697978973389,
+            -2.966071287790934
+          ],
+          "opaqueDistanceM": 0.01999999999999996
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 170",
+          "pass": true,
+          "point": [
+            0.8786700963973999,
+            1.981480360031128,
+            -2.9632810751597085
+          ],
+          "opaqueDistanceM": 0.02000000000000004
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 171",
+          "pass": true,
+          "point": [
+            0.8525673151016235,
+            2.300099929173787,
+            -2.9674503803253174
+          ],
+          "opaqueDistanceM": 0.019999999999999945
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 172",
+          "pass": true,
+          "point": [
+            0.7825629115104675,
+            2.362107515335083,
+            -2.973360061645508
+          ],
+          "opaqueDistanceM": 0.01999999999999991
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 173",
+          "pass": true,
+          "point": [
+            0.27479038139184314,
+            2.3780433336893716,
+            -2.99458114306132
+          ],
+          "opaqueDistanceM": 0.02000000000000005
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 174",
+          "pass": true,
+          "point": [
+            0.5095866918563843,
+            2.373729308446248,
+            -2.9920968214670816
+          ],
+          "opaqueDistanceM": 0.020000000000000306
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 175",
+          "pass": true,
+          "point": [
+            0.3628390034039815,
+            2.3764256636301675,
+            -2.998370011647542
+          ],
+          "opaqueDistanceM": 0.019999999999999938
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 176",
+          "pass": true,
+          "point": [
+            0.00523329402009646,
+            2.3524290720621743,
+            -2.9992376963297525
+          ],
+          "opaqueDistanceM": 0.019999999999999997
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 177",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.2106668154398599,
+            -2.9987960656483965
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 178",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            2.205833355585734,
+            -3.000120957692464
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 179",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.5305417776107788,
+            -2.9994584719340005
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 180",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.8504167795181274,
+            -3.0058621565500894
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 181",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.1395834684371948,
+            -3.0036540031433105
+          ],
+          "opaqueDistanceM": 0.009181699544934068
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 182",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            0.819708506266276,
+            -2.9972503185272217
+          ],
+          "opaqueDistanceM": 0.02
+        },
+        {
+          "case": "oblique seam probe meets opaque jamb 183",
+          "pass": true,
+          "point": [
+            0.004999999888241291,
+            1.1395834684371948,
+            -2.999900182088216
+          ],
+          "opaqueDistanceM": 0.02
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "urus-performante",
+      "checks": 4,
+      "tests": [
+        {
+          "case": "two recessed vent floors and eighteen inset blades remain",
+          "pass": true,
+          "floors": 2,
+          "louvers": 18
+        },
+        {
+          "case": "louvers occupy the actual aperture rather than hiding under intact painted bonnet",
+          "pass": true,
+          "probes": 54,
+          "maximumFirstHitOffsetM": 0
+        },
+        {
+          "case": "cooling slot remains a genuine recess -0.647",
+          "pass": true,
+          "heightM": 1.0963473430026283
+        },
+        {
+          "case": "cooling slot remains a genuine recess 0.647",
+          "pass": true,
+          "heightM": 1.0963473430026283
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "earthcruiser-exp",
+      "checks": 1,
+      "tests": [
+        {
+          "case": "specific utility-hatch side has no second common-hatch hinge pair",
+          "pass": true,
+          "commonHinges": 0
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

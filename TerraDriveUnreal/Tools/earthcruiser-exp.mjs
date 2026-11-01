@@ -102,8 +102,8 @@ export function earthCruiserRim(spec=EARTHCRUISER_EXP_SPEC){
 
 function cab(view){
   const g=view.body,m=view.materials,L=EARTHCRUISER_EXP_LANDMARKS,half=L.cabHalfWidth,frontAxle=L.frontAxleZ,wy=view.spec.tireRadius;
-  const frontZ=(x,y)=>station([[.70,2.47],[1.02,2.50],[1.40,2.47],[1.58,2.44],[2.43,2.18],[2.53,2.14]],y,1)-.055*(Math.abs(x)/half)**4
-    +.015*(1-(x/half)**2)*Math.exp(-(((y-1.43)/.13)**2));
+  const frontZ=(x,y)=>station([[.70,2.47],[1.02,2.50],[1.40,2.47],[1.58,2.44],[2.43,2.18],[2.53,2.14]],y,1)-.070*(Math.abs(x)/half)**4
+    +.027*(1-(x/half)**2)*Math.exp(-(((y-1.43)/.13)**2));
   const face=(x,y,off=0)=>[x,y,frontZ(x,y)+off];
   const frontEdge=round([[-.98,.73],[-.995,1.40],[-.965,2.42],[-.86,2.52],[.86,2.52],[.965,2.42],[.995,1.40],[.98,.73]],.065,7);
   const windshield=round([[-.88,1.59],[-.85,2.40],[-.78,2.46],[.78,2.46],[.85,2.40],[.88,1.59],[.78,1.54],[-.78,1.54]],.035,6);
@@ -270,9 +270,13 @@ function house(view){
       }
     }
     // Compartment hatch and service fillers differ from side to side.
-    const h=round([[-3.09,1.063],[-3.09,1.506],[-2.30,1.506],[-2.30,1.063]],.021,4);
-    trimRing(g,m.dark,h,inset(h,.016),(z,y)=>map(z,y,.004),side>0);
-    for(const z of [-3.04,-2.35])box(g,m.black,map(z,1.423,.012),[.014,.066,.026],.004);
+    // The opposite side already has its two specific utility hatches above.
+    // Adding the common rear compartment there doubled the outline/hinges.
+    if(side<0){
+      const h=round([[-3.09,1.063],[-3.09,1.506],[-2.30,1.506],[-2.30,1.063]],.021,4);
+      trimRing(g,m.dark,h,inset(h,.016),(z,y)=>map(z,y,.004),false);
+      for(const z of [-3.04,-2.35])box(g,m.black,map(z,1.423,.012),[.014,.066,.026],.004);
+    }
     for(const z of [-.38,.35])cylinder(g,m.black,map(z,1.484,.005),.017,.012,'x',16);
     const service=round([[-2.13,1.078],[-2.13,1.402],[-1.80,1.402],[-1.80,1.078]],.025,4);trimRing(g,m.whiteShell,service,inset(service,.07),(z,y)=>map(z,y,.009),side>0);
     cylinder(g,m.chrome,map(-1.855,1.122,.015),.008,.008,'x',10);
@@ -365,7 +369,7 @@ export function buildEarthCruiser(spec=EARTHCRUISER_EXP_SPEC){
   // Batch by material only after openings, split body seams and trim are built.
   mergeStaticMeshes(body);
   root.userData.nativeConstruction={version:3,bodySurfaceRevision:14,automotiveFinishes:true,originalReferenceGeometry:true,sourceConfiguration:'2022 EXP98 single-cab Isuzu NPR GM6.6V8',cabOver:true,closedPopTop:true,asymmetricOverhangs:true,realWindowApertures:true,geometryLettering:true};
-  root.userData.bodyRefinement={version:14,style:'earthcruiser',method:'Original unwarped formed cab-over and molded camper shell',preservedHardpoints:true};
+  root.userData.bodyRefinement={version:24,style:'earthcruiser',method:'Original formed cab-over, deeper NPR front-sheet crown and rolled corners, molded camper shell',preservedHardpoints:true};
   root.userData.visualModel={type:'Original primary-reference reconstruction; no OEM CAD',version:14,landmarks:EARTHCRUISER_EXP_LANDMARKS};
   root.userData.nativeFidelity={version:3,splitTireAndRim:true,factorySpokeProfile:'Method-style eight-window',bodyClearcoat:true,geometryLettering:true,matchingCoveredSpare:true,measuredManufacturerCAD:false};
   view.dispose=()=>{const gs=new Set(),ms=new Set();for(const group of [root,...view.wheels.map(w=>w.root)])group.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const mat of Array.isArray(o.material)?o.material:[o.material])ms.add(mat);});view.wheels.forEach(w=>w.deformation?.dispose?.());gs.forEach(x=>x.dispose());ms.forEach(x=>x.dispose());scene.clear();};

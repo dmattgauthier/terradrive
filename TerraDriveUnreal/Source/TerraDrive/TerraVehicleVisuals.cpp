@@ -9,7 +9,7 @@
 
 void ATerraVehicle::UpdateWheelVisuals(){
   const FVector Up=GetActorUpVector();
-  for(int I=0;I<4;++I){
+  for(int I=0;I<WheelCount();++I){
     const auto &W=WheelState[I];
     FQuat Q=FQuat(Up,Overturned?0.f:W.Angle)*GetActorQuat();
     if(!Tracks)Q=Q*FQuat(FVector::RightVector,W.Rotation);
@@ -66,7 +66,7 @@ void ATerraVehicle::CreateVisualDetails(){
   }
 }
 void ATerraVehicle::UpdateVisualDetails(){
-  if(!Spec.IsValid()||SuspensionParts.Num()!=20)return;
+  if(!Spec.IsValid()||SuspensionParts.Num()!=WheelCount()*4+AxleCount()*2)return;
   Protection->SetVisibility(UpgradeStage(TerraSim::Body)>0||UpgradeStage(TerraSim::Frame)>0);
   // Recovery kit is visible on off-road vehicles; the sedan gets its sport trim.
   TrailEquipment->SetVisibility(VehicleIndex==2||UpgradeStage(TerraSim::Electrical)>0);
@@ -92,7 +92,7 @@ void ATerraVehicle::UpdateVisualDetails(){
   const float PortalCM=PortalLift()*100.f;
   const FString BodyStyle=Spec->GetStringField(TEXT("bodyStyle"));
   const bool Expedition=BodyStyle==TEXT("earthcruiser");
-  const bool ModernG=BodyStyle==TEXT("g580")||BodyStyle==TEXT("g63");
+  const bool ModernG=BodyStyle==TEXT("g580")||BodyStyle==TEXT("g63")||BodyStyle==TEXT("g63six");
   const float AxleRestZ=(Radius-CG)*100.f;
   const auto MotorLayout=ElectricLayout();
   const bool Electric=MotorLayout!=TerraSim::MotorLayout::None;
@@ -147,9 +147,9 @@ void ATerraVehicle::UpdateVisualDetails(){
     const float PackZ=(Number(TEXT("clearance"),.22f)+.09f-CG)*100.f;
     Box(At(-Wheelbase*4.f,0,PackZ),GetActorQuat(),FVector(Wheelbase*58.f,Track*66.f,16));
   }
-  FVector AxleJoints[4];
-  for(int I=0;I<4;++I){
-    const bool Front=I<2;const float Side=I%2?1.f:-1.f,X=Wheelbase*(Front?1-FrontWeight:-FrontWeight)*100;
+  FVector AxleJoints[MaxWheels];
+  for(int I=0;I<WheelCount();++I){
+    const bool Front=I<2;const float Side=I%2?1.f:-1.f,X=AxleOffsetM(I/2)*100;
     const float RotorRadius=VehicleIndex==5?(Front?22.f:18.5f):VehicleIndex==2?(Front?14.097f:12.954f):RimRadius*(VehicleIndex==3?.71f:.735f);
     const FString Type=Suspension->GetStringField(Front?TEXT("frontType"):TEXT("rearType"));
     const bool Solid=Type.Contains(TEXT("solid"))||Type.Contains(TEXT("live axle"))||Type.Contains(TEXT("live rear axle"));
@@ -182,7 +182,7 @@ void ATerraVehicle::UpdateVisualDetails(){
     Link(I*4+3,ArmA,ArmB,VehicleIndex==4?2.4f:1.9f);
     for(int K=0;K<2;++K)SuspensionParts[I*4+K]->SetVisibility(!Tracks);
     SuspensionParts[I*4+3]->SetVisibility(!Tracks&&!(Expedition&&Leaf));
-    if(HubDetails.Num()!=16)continue;
+    if(HubDetails.Num()!=WheelCount()*4)continue;
     for(int Branch=0;Branch<2;++Branch){
       auto *Part=HubDetails[I*4+Branch].Get();Part->SetVisibility(!Tracks&&Wishbone);
       const FVector A=At(X+(Branch?17.f:-17.f),Side*Track*27.f,ModernG?AxleRestZ+15.f:3.f);
@@ -249,23 +249,23 @@ void ATerraVehicle::UpdateVisualDetails(){
         const FVector Axis=Steering.RotateVector(FVector(0,1.3f,0));Rod(1,C-Axis*.5f,C+Axis*.5f,.75f);}
     }
   }
-  for(int Axle=0;Axle<2;++Axle){
+  for(int Axle=0;Axle<AxleCount();++Axle){
     const FString Type=Suspension->GetStringField(Axle?TEXT("rearType"):TEXT("frontType"));
     const bool Solid=Type.Contains(TEXT("solid"))||Type.Contains(TEXT("live axle"))||Type.Contains(TEXT("live rear axle"));
     const bool DeDion=Type.Contains(TEXT("de-dion"),ESearchCase::IgnoreCase)||Type.Contains(TEXT("de dion"),ESearchCase::IgnoreCase);
     const bool Leaf=Type.Contains(TEXT("leaf"));
     const bool IndependentPair=IndependentWheel(Axle*2)&&IndependentWheel(Axle*2+1);
-    SuspensionParts[16+Axle*2]->SetVisibility(!Tracks&&Solid);
-    SuspensionParts[17+Axle*2]->SetVisibility(!Tracks&&Solid&&!IndependentPair);
+    SuspensionParts[WheelCount()*4+Axle*2]->SetVisibility(!Tracks&&Solid);
+    SuspensionParts[WheelCount()*4+1+Axle*2]->SetVisibility(!Tracks&&Solid&&!IndependentPair);
     const FVector A=AxleJoints[Axle*2],B=AxleJoints[Axle*2+1];
-    Link(16+Axle*2,A,B,5.5f);
+    Link(WheelCount()*4+Axle*2,A,B,5.5f);
     const FVector Center=(A+B)*.5f;
     const FVector AxleDir=(B-A).GetSafeNormal(),Forward=FVector::CrossProduct(AxleDir,Up).GetSafeNormal();
     const FQuat AxleRotation=FRotationMatrix::MakeFromXY(Forward,AxleDir).ToQuat();
-    SuspensionParts[17+Axle*2]->SetWorldLocationAndRotation(Center,AxleRotation);
-    SuspensionParts[17+Axle*2]->SetWorldScale3D(FVector(.27,.34,.31));
+    SuspensionParts[WheelCount()*4+1+Axle*2]->SetWorldLocationAndRotation(Center,AxleRotation);
+    SuspensionParts[WheelCount()*4+1+Axle*2]->SetWorldScale3D(FVector(.27,.34,.31));
     if(Tracks)continue;
-    const float X=Wheelbase*(Axle? -FrontWeight:1-FrontWeight)*100.f;
+    const float X=AxleOffsetM(Axle)*100.f;
     const FVector DiffCenter=Solid?Center:At(X,0,(Radius-CG)*100.f+3.f);
     if((DrivenWheel(Axle*2)||HasFourDrive())&&!IndependentPair){
       if(!Solid)Ball(2,DiffCenter,FVector(VehicleIndex==4?37.f:28.f,30.f,23.f));
@@ -283,7 +283,7 @@ void ATerraVehicle::UpdateVisualDetails(){
         Rod(0,Center-Forward*12.f,Center-Forward*14.f,12.5f);
       }
     }
-    if(MotorLayout==TerraSim::MotorLayout::Dual||(MotorLayout==TerraSim::MotorLayout::Triple&&Axle==0))MotorCan(At(X+12.f,0,DriveUnitZ),12.f);
+    if((MotorLayout==TerraSim::MotorLayout::Dual&&Axle<2)||(MotorLayout==TerraSim::MotorLayout::Triple&&Axle==0))MotorCan(At(X+12.f,0,DriveUnitZ),12.f);
     if(IndependentPair)for(float Side:{-1.f,1.f}){
       MotorCan(At(X,Side*24.f,DriveUnitZ),9.5f);
       Box(At(X,Side*36.f,(Radius-CG)*100.f+3.f),GetActorQuat(),FVector(18,12,19));

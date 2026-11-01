@@ -13,7 +13,7 @@ struct UpgradeSetup {
     }
 };
 inline int UpgradeStageCountForVersion(int version) {
-    return version==1||version==2?7:version==3?10:version==4||version==5?12:version==6||version==7?PartCount:0;
+    return version==1||version==2?7:version==3?10:version==4||version==5?12:version>=6&&version<=8?PartCount:0;
 }
 inline bool DecodeUpgradeStages(const double* values,int count,int version,bool electrical,UpgradeSetup& result,bool factoryElectric=false) {
     if(!values||count!=UpgradeStageCountForVersion(version)||count==0)return false;

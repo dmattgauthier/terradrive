@@ -1,4 +1,4 @@
-param([switch]$Package,[switch]$ImportAssets,[switch]$SkipBuild,[switch]$SkipExport,[switch]$SkipCook,
+param([switch]$Package,[switch]$ImportAssets,[switch]$SkipBuild,[switch]$SkipExport,[switch]$SkipCook,[ValidateRange(1,512)][int]$ImportBatchSize=8,
       [string]$EngineRoot='C:\Program Files\Epic Games\UE_5.8')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
@@ -27,15 +27,34 @@ if ($ImportAssets) {
     $scriptPath=(Join-Path $PSScriptRoot 'import-assets.py').Replace('\','/')
     $importLog=Join-Path $projectRoot 'Saved\Logs\import-assets.log'
     $started=Get-Date
-    $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$scriptPath+'"'),'-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$importLog+'"'))
+    $taskImportData=Get-Content -LiteralPath (Join-Path $projectRoot 'SourceAssets/import.json') -Raw|ConvertFrom-Json
+    $taskAssetCount=@($taskImportData.assets).Count
+    try {
+    for($taskStart=0;$taskStart -lt $taskAssetCount;$taskStart+=$ImportBatchSize){
+    $taskEnd=[Math]::Min($taskAssetCount,$taskStart+$ImportBatchSize)
+    $env:TERRA_IMPORT_START=[string]$taskStart;$env:TERRA_IMPORT_END=[string]$taskEnd
+    $taskBatchLog=Join-Path $projectRoot ('Saved/Logs/import-assets-'+$taskStart+'.log')
+    $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$scriptPath+'"'),'-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$taskBatchLog+'"'))
     $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList $editorArgs -WindowStyle Hidden -PassThru
     # Wait for the commandlet itself. Start-Process -Wait can also wait on
     # persistent compiler/cache descendants after the commandlet has exited.
     $editorProcess.WaitForExit()
     $editorProcess.Refresh()
-    if ($editorProcess.ExitCode -or !(Test-Path -LiteralPath $importMarker) -or (Get-Item -LiteralPath $importMarker).LastWriteTime -lt $started -or !(Test-Path -LiteralPath (Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'))) { throw "Asset import did not produce a fresh completion marker and map. Inspect $importLog. If Unreal creates no log, run the editor outside the restricted process sandbox." }
+    if($editorProcess.ExitCode){throw "Asset batch $taskStart failed; inspect $taskBatchLog"}
+    if($taskEnd -lt $taskAssetCount){
+      $taskBatchMarker=Join-Path $projectRoot ('Saved/import-batch-'+$taskStart+'.json')
+      if(!(Test-Path -LiteralPath $taskBatchMarker) -or (Get-Item -LiteralPath $taskBatchMarker).LastWriteTime -lt $started){throw "No fresh batch marker for $taskStart"}
+    }
+    Write-Output ('Imported mesh batch '+$taskStart+'..'+($taskEnd-1)+' / '+$taskAssetCount)
+    }
+    } finally {
+    Remove-Item Env:TERRA_IMPORT_START,Env:TERRA_IMPORT_END -ErrorAction SilentlyContinue
+    }
+    if (!(Test-Path -LiteralPath $importMarker) -or (Get-Item -LiteralPath $importMarker).LastWriteTime -lt $started -or !(Test-Path -LiteralPath (Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'))) { throw "Asset import did not produce a fresh completion marker and map. Inspect the batch logs in Saved/Logs." }
 }
 if ($Package) {
+    & node (Join-Path $PSScriptRoot 'garden-geology.mjs')
+    if($LASTEXITCODE){throw 'Garden geology cache generation failed'}
     foreach ($required in @('Content\Maps\ProvingGround.umap','Content\NativeData\world.json','Content\NativeData\terrain.bin','Content\NativeData\vehicle-ground-probes.json','Content\NativeData\vehicle-collision.json')) {
         if (!(Test-Path -LiteralPath (Join-Path $projectRoot $required))) {
             throw "Missing $required. Run with -ImportAssets before packaging."
@@ -49,7 +68,7 @@ if ($Package) {
         $cookArgument='-skipcook'
     }
     $packageStarted=Get-Date
-    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive "-archivedirectory=$projectRoot\Build" -unattended -utf8output '-UbtArgs=-NoUBA -MaxParallelActions=2'
+    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$projectRoot\Build" -unattended -utf8output '-UbtArgs=-NoUBA -MaxParallelActions=2'
     if ($LASTEXITCODE) { throw 'Packaging failed' }
     if (!$SkipCook) {
         $cookLogs=@(Get-ChildItem -LiteralPath $env:uebp_LogFolder -Filter 'Cook-*.txt' | Where-Object { $_.LastWriteTime -ge $packageStarted })

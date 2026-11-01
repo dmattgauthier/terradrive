@@ -1,7 +1,7 @@
 {
   "terrainSamples": 1000,
   "maximumHeightExportErrorM": 0.0000019073486328125,
-  "vehicles": 9,
+  "vehicles": 10,
   "zones": 9,
   "zoneSamples": [
     {
@@ -68,7 +68,7 @@
       "heightM": 12.272045612335205
     }
   ],
-  "meshSources": 297,
+  "meshSources": 307,
   "constructedGroups": 2,
   "challengeRoutes": 13,
   "quarryDeckHeightM": 26.172911834716796,
@@ -79,6 +79,68 @@
   "tintedMaterials": 37,
   "preservedInstanceColors": true,
   "pass": true,
+  "vehicleTopology": [
+    {
+      "id": "wrangler-rubicon",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "bronco-badlands",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "civic-sport",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "sprinter-2500",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "hummer-ev-suv-3x",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "urus-performante",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "earthcruiser-exp",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "mercedes-g580-ev",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "mercedes-amg-g63",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "mercedes-amg-g63-6x6",
+      "wheels": 6,
+      "axles": 3,
+      "referenceCraftRevision": 24
+    }
+  ],
   "gradedTrailSamples": 363,
   "terrainGrade": "slate-rim-heightfield-1"
 }

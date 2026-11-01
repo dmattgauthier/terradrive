@@ -1,3 +1,9 @@
+# Current native acceptance — G-Class and fidelity pass24
+
+The current package passes **1,762 native checks** on one executable, plus **15,854 fresh portable checks**. It includes ten vehicles, six actual tire contacts on the G63 6×6 and bounded finer rock-garden geometry. [The current acceptance record](gclass-sixwheel-native-24.md) gives exact build/source hashes, visual-review coverage, cleanup and limits. Earlier results below are historical.
+
+---
+
 # Native validation — boulders, deep mud and Summit courses
 
 Native verification passes **1,812/1,812 checks** and **152 fresh portable collider checks**, with **252 captures actually viewed**. Of these native checks, **344 run on the final executable** and **1,468 retain their original dedicated-mode receipts from identical gameplay/test branches before a Full-only fixture repair**. Each accepted process exits 0 and identifies its own executable and cook hash. Evidence was accepted **2026-10-31T20:09:48.649812+00:00**. [native-validation.json](native-validation.json) records exact hashes; [the feature guide](boulders-mud-park-21.md) explains the changes and measured behavior.

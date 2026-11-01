@@ -6,8 +6,12 @@ import {G580,G63} from './native-vehicles.mjs';
 import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {gClassCoachworkPoint} from './mercedes-gclass.mjs';
 
+// The detailed standard-body fixture remains useful for the common donor
+// skins. Current portal variants have their own independently scaled probes
+// in validate-gclass-variants; do not apply old ride-height rays to them.
+const standardG63={...G63,name:'Standard G63 donor geometry fixture',gClassVariant:'standard',height:1.979,tireRadius:.3974,tireWidth:.295,tireSize:'295/40R22',rimDiameterInches:22,tireType:'road-performance'};
 const rows=[];
-for(const spec of [G580,G63]){
+for(const spec of [G580,standardG63]){
   const {view,parts}=prepareNativeVehicle(spec),ev=spec.bodyStyle==='g580',tests=[];
   view.root.updateMatrixWorld(true);
   const check=(name,pass,observed)=>{tests.push({name,pass,...observed});assert.ok(pass,spec.id+': '+name+' '+JSON.stringify(observed));};
@@ -119,6 +123,6 @@ assert.ok(rows[0].bonnetPeakYM-rows[1].bonnetPeakYM>.020,'EV raised bonnet is ph
 let minimumVerticalSlope=Infinity;
 for(let z=-2.7;z<=2.4;z+=.031)for(let y=0;y<=2.1;y+=.013){const slope=(gClassCoachworkPoint(0,y+.0001,z)[1]-gClassCoachworkPoint(0,y-.0001,z)[1])/.0002;minimumVerticalSlope=Math.min(minimumVerticalSlope,slope);}
 assert.ok(minimumVerticalSlope>.1,'reference fit does not fold any body sheet');
-const report={revision:16,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','Native rendered comparison remains required.']};
+const report={revision:24,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','G63 row exercises the standard donor fixture shared by the portal variants; current 4x4 squared and 6x6 geometry is checked separately in gclass-variants-validation.json.','Native rendered comparison remains required.']};
 fs.writeFileSync(new URL('../docs/gclass-shape-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.vehicle,checks:r.checks,glass:r.sideGlassWidthsM,bonnetPeakYM:r.bonnetPeakYM}))}));

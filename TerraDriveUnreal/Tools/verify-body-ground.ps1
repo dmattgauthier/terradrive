@@ -26,8 +26,22 @@ try{
  $planPath=Join-Path $OutputDirectory 'body-ground-fixtures.json'
  if(!(Test-Path -LiteralPath $planPath) -or (Get-Item -LiteralPath $planPath).LastWriteTime -lt $started){throw 'No fresh native fixture plan'}
  $plan=Get-Content -LiteralPath $planPath -Raw|ConvertFrom-Json
- $expectedTrials=if($Quick){6}else{39}
- if($plan.version -ne 1 -or $plan.vehicles -ne 9 -or @($plan.cases).Count -ne $expectedTrials -or $plan.checksPerTrial -ne 12 -or $plan.expectedChecks -ne 1+$expectedTrials*12 -or $plan.legacyControl -ne [bool]$LegacyControl){throw 'Incomplete native fixture matrix'}
+ $roster=Get-Content -LiteralPath (Join-Path $projectRoot 'Content/NativeData/vehicle-collision.json') -Raw|ConvertFrom-Json
+ $vehicleCount=@($roster.vehicles).Count
+ # Match the native matrix: three coast poses per car plus twelve surface
+ # poses, or the six explicit quick poses on vehicles 0,3,7.
+ $expectedTrials=if($Quick){6}else{$vehicleCount*3+12}
+ $expectedChecks=1+$expectedTrials*12
+ $planValid=$plan.version -eq 1 -and $vehicleCount -ge 8 -and $plan.vehicles -eq $vehicleCount -and $plan.quick -eq [bool]$Quick -and @($plan.cases).Count -eq $expectedTrials -and $plan.checksPerTrial -eq 12 -and $plan.expectedChecks -eq $expectedChecks -and $plan.legacyControl -eq [bool]$LegacyControl
+ $coverage=[Collections.Generic.HashSet[string]]::new()
+ foreach($case in $plan.cases){
+  $planValid=$planValid -and $case.vehicle -ge 0 -and $case.vehicle -lt $vehicleCount
+  if($Quick){$planValid=$planValid -and $case.vehicle -in @(0,3,7) -and $case.surface -eq 1 -and $case.roll -in @(90,180) -and $case.movingCoast -eq $true}
+  elseif($case.movingCoast -eq $true){$planValid=$planValid -and $case.surface -eq 1 -and $case.roll -in @(-90,90,180)}
+  else{$planValid=$planValid -and $case.movingCoast -eq $false -and $case.vehicle -eq 0 -and $case.surface -in @(0,2,3,4,5,6) -and $case.roll -in @(90,180)}
+  [void]$coverage.Add(('{0}:{1}:{2}:{3}' -f $case.vehicle,$case.surface,$case.roll,$case.movingCoast))
+ }
+ if(!$planValid -or $coverage.Count -ne $expectedTrials){throw 'Incomplete native fixture matrix'}
  $result=Get-Content -LiteralPath $report -Raw|ConvertFrom-Json
  $failed=@($result.tests|Where-Object {!$_.pass});$errors=@(Select-String -LiteralPath $log -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
  $receipt.checks=@($result.tests).Count;$receipt.expectedChecks=$plan.expectedChecks;$receipt.failures=$failed;$receipt.errors=@($errors.Line)

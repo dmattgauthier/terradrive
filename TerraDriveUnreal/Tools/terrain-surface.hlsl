@@ -138,6 +138,19 @@ Roughness=clamp(lerp(.66+rough*.31,.53,wet),.52,.99);
 if(Biome==2||Biome==3)Roughness=lerp(Roughness,.32+rough*.10,floorWear*.94*(1-churn*.15));
 if(Biome==0||Biome==2||Biome==3||Biome==5)Roughness=lerp(Roughness,.94,looseBank*.70);
 SurfaceNormal=normalize(n+relief*(Biome==0?.78:.48)*(1-floorWear*.70));
+if(Biome==4){
+  // The garden's physical half-metre mesh carries the silhouette. The same
+  // acquired scan layers now read at stone scale; low-contrast mineral
+  // streaks and sheltered lichen break up broad faces without collision
+  // displacement, additional texture fetches or a repeated crack decal.
+  float veinWarp=f.noise(p.xy*.31+17);
+  float mineralBand=f.noise(float2(p.z*.83+veinWarp*.65,p.x*.12+p.y*.17));
+  float lichen=smoothstep(.57,.78,f.noise(p.xy*.67+p.z*.15))*smoothstep(.42,.88,n.z);
+  color*=lerp(float3(.87,.88,.90),float3(1.08,1.06,1.02),mineralBand);
+  color=lerp(color,color*float3(.82,.92,.72),lichen*.24);
+  Roughness=clamp(Roughness+lichen*.055,.62,.99);
+  SurfaceNormal=normalize(n+relief*.78);
+}
 if(grassCover>.01){
   float2 q=p.xy*17+warp*3;
   float2 aggregate=float2(f.noise(q+float2(.12,0))-f.noise(q-float2(.12,0)),f.noise(q+float2(0,.12))-f.noise(q-float2(0,.12)));

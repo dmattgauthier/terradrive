@@ -147,7 +147,7 @@ terrain_specs = [
     ('asphalt',[source_layer(s) for s in ['asphalt_02','gravel_ground_01','brown_mud_02']],.15,[2.1,2.7,1.55]),
     ('mud',[source_layer(s) for s in ['brown_mud_02','dry_riverbed_rock','forest_ground_04']],.8,[2.1,2.7,1.55]),
     ('wetland',[source_layer('brown_mud_02'),mw_layer('Grass','leafy_grass'),source_layer('forest_ground_04')],.95,[2.1,2.7,1.55]),
-    ('rock',[mw_layer('Rock','rocks_ground_05'),source_layer('mossy_rock'),winter_layer('RockWall','T_Rock','HRO')],.12,[5.,3.4,4.]),
+    ('rock',[mw_layer('Rock','rocks_ground_05'),source_layer('mossy_rock'),winter_layer('RockWall','T_Rock','HRO')],.12,[2.8,1.9,3.2]),
     ('sand',[mw_layer('SandA','sand_03'),mw_layer('SandC','gravel_floor_02'),source_layer('dry_riverbed_rock')],.08,[3.2,2.7,1.55]),
     ('snow',[winter_layer('CleanSnow','T_CleanSnow','TRO'),winter_layer('SnowRoad','T_Road_Extra','TRD'),winter_layer('Pebbles','T_Pebbles','HRO')],0,[4.0,2.4,2.4])]
 for biome, (surface, layers, wetness, scales) in enumerate(terrain_specs):

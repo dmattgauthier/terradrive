@@ -103,7 +103,17 @@ public:
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> RunningGearMeshes;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> Protection;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> TrailEquipment;
-  FTerraWheel WheelState[4];
+  static constexpr int MaxWheels=6;
+  static constexpr int VehicleCount=10;
+  FTerraWheel WheelState[MaxWheels];
+  int WheelCount()const;
+  int AxleCount()const{return WheelCount()/2;}
+  float AxleOffsetM(int Axle)const;
+  float AxleLoadFraction(int Axle)const;
+  bool AxleLocked(int Axle)const{return Axle==0?FrontLocked:RearLocked;}
+  bool TandemLockActive()const;
+  float WheelShaftCouplingNm(int Wheel)const;
+  float LastTandemCouplingNm=0;
   FString VehicleName, SurfaceName, Notice;
   float Mass = 2100, Speed = 0, RPM = 700, Steer = 0, Throttle = 0, Brake = 0,
         Pressure = 35, Damage = 0, WinchTension = 0;
@@ -167,7 +177,7 @@ public:
   bool HasLowRange() const {return DriveCapabilities().LowRatio>1.05f;}
   bool HasLocker(bool Front) const {const auto C=DriveCapabilities();return Front?C.FrontLocker:C.RearLocker;}
   float EffectiveLowRatio() const {return LowRange?DriveCapabilities().LowRatio:1.f;}
-  float PortalLift() const {return Tuning.PortalLift;}
+  float PortalLift() const {return Number(TEXT("factoryPortalLiftM"),0)+Tuning.PortalLift;}
   float PortalReduction() const {return Tuning.PortalReduction;}
   bool DrivenWheel(int Index) const;
   int FactoryMotorCount() const;
@@ -183,7 +193,7 @@ public:
   float PressureTarget=35,BatterySOC=.75f,LastRegenPowerW=0;
   bool EnergyUsageEnabled=true;
   float FuelFraction=.75f,LastFuelGPH=0,LastElectricDrawW=0;
-  float FuelProfiles[9]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
+  float FuelProfiles[VehicleCount]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
   bool HasPropulsionEnergy()const{return TerraSim::PropulsionEnergyAvailable(EnergyUsageEnabled,IsElectric()?BatterySOC:FuelFraction);}
   float FuelCapacityGallons()const;
   FString EnergyDescription()const;
@@ -191,17 +201,18 @@ public:
   bool ServiceEnergy(bool Persist=true);
   void SetEnergyUsageEnabled(bool Enabled,bool Persist=true);
   void AdvanceEnergyForValidation(float Dt){if(AutoTest)UpdateEnergy(Dt);}
-  float LastWheelDriveNm[4]={},LastWheelRegenNm[4]={};
+  float LastWheelDriveNm[MaxWheels]={},LastWheelRegenNm[MaxWheels]={};
   void RequestTirePressure(float Target,bool Persist=true);
   void AdvanceTireAirForValidation(float Dt){if(AutoTest)UpdateTireAir(Dt);}
   bool TireAirPowered()const{return Damage<.99f&&(!IsElectric()||HasPropulsionEnergy());}
+  int TireAirHardwareStage()const{return FMath::Max(UpgradeStage(TerraSim::TireAir),int(Number(TEXT("factoryTireAirStage"),0)));}
   float WheelPressure(int Index) const;
   TerraSim::TirePressureBounds TireAirBounds() const;
   TerraSim::PressureEffects TirePressureHandling(bool Front=true) const;
   FString PowertrainDescription() const;
   FString TireAirDescription() const;
-  float PressureProfiles[9]={};
-  float BatteryProfiles[9]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
+  float PressureProfiles[VehicleCount]={};
+  float BatteryProfiles[VehicleCount]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
   FString DriveDescription() const;
   int UpgradeStage(int Part) const { return Builds[VehicleIndex].Stage[Part]; }
   bool HasElectrical() const { return VehicleIndex != 2||IsElectric(); }
@@ -220,7 +231,6 @@ public:
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
   float BumpTravel(bool Front) const;
   void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0;BodyGroundContactCount=0;PendingBodyGroundContacts.Reset(); }
-  static constexpr int VehicleCount=9;
   TerraSim::UpgradeSetup Builds[VehicleCount];
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> BrakeLamps;
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> ReverseLamps;
@@ -252,7 +262,7 @@ private:
   int LastVehicle = 0;
   float TireVisualScale = 1, WidthVisualScale = 1, Droop = .16f;
   float WinchLength = 0, ReverseHold = 0, SpawnCooldown = 1, CameraYaw = 0,
-        CameraPitch = -16, SoilTimer = 0, SprayBudget[4] = {0, 0, 0, 0};
+        CameraPitch = -16, SoilTimer = 0, SprayBudget[MaxWheels] = {};
   float Radius = .42f, Width = .285f, Wheelbase = 3, Track = 1.63f, CG = .76f,
         FrontWeight = .53f, Spring = 32000, Damping = 3900, Rest = .41f,
         Power = 210000;
@@ -261,6 +271,7 @@ private:
   void Simulate(float Dt);
   void UpdateSpray(float Dt);
   void CreateVisualDetails();
+  void ResizeWheelComponents();
   void UpdateVisualDetails();
   void SaveSetup();
   void UpdateTireAir(float Dt);

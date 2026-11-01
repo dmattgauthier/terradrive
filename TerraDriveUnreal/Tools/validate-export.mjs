@@ -4,11 +4,13 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Terrain} from './native-terrain.mjs';
+import {validateGardenGeology} from './garden-geology.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const gardenGeology=validateGardenGeology(path.join(root,'Content/NativeData'));
 const b=fs.readFileSync(path.join(root,'Content/NativeData/terrain.bin'));
 const data=JSON.parse(fs.readFileSync(path.join(root,'SourceAssets/import.json')));
 assert.equal(data.nativeRevision,'boulders-mud-park-21');
-assert.ok(data.vehicles.every(v=>v.nativeModel.referenceCraftRevision===18));
+assert.ok(data.vehicles.every(v=>v.nativeModel.referenceCraftRevision===24));
 assert.equal(new Set(data.materials.map(m=>m.id)).size,data.materials.length,'stable material IDs stay unique');
 // Circularity is tested against a fixed centre/radius, independently of the
 // course generator. Both axial extrema and intermediate profile points matter.
@@ -38,7 +40,26 @@ for(let i=0;i<1000;i++){
  assert.equal(data.surfaces[b[offset+8]],s.surface);
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
-assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,9);assert.equal(data.zones.length,9);
+assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,10);assert.equal(data.zones.length,9);
+// Existing garage IDs keep their positions; the six wheeler is appended.
+assert.deepEqual(data.vehicles.map(v=>v.id),['wrangler-rubicon','bronco-badlands','civic-sport','sprinter-2500','hummer-ev-suv-3x','urus-performante','earthcruiser-exp','mercedes-g580-ev','mercedes-amg-g63','mercedes-amg-g63-6x6']);
+const squared=data.vehicles[8],six=data.vehicles[9];
+assert.equal(squared.gClassVariant,'squared');assert.equal(squared.rimDiameterInches,22);
+assert.ok(Math.abs(squared.tireRadius-.45815)<1e-7&&Math.abs(squared.clearance-.351)<1e-7);
+assert.equal(six.wheelCount,6);assert.equal(six.axleCount,3);assert.equal(six.nativeModel.wheelCount,6);
+assert.deepEqual(six.axleOffsetsM,[2.10,-1.02,-2.12]);
+assert.ok(Math.abs(six.axleOffsetsM[0]-six.axleOffsetsM[1]-3.12)<1e-7);
+assert.ok(Math.abs(six.axleOffsetsM[1]-six.axleOffsetsM[2]-1.10)<1e-7);
+assert.ok(Math.abs(six.axleOffsetsM[0]-six.axleOffsetsM[2]-six.wheelbase)<1e-7);
+const axleLoads=[six.frontWeightFraction,(1-six.frontWeightFraction)/2,(1-six.frontWeightFraction)/2];
+assert.ok(axleLoads.every(v=>v>0&&v<.5));
+assert.ok(Math.abs(axleLoads.reduce((sum,load,i)=>sum+load*six.axleOffsetsM[i],0))<1e-6,'three static axle shares balance the chassis CG');
+assert.deepEqual(six.axleTorqueShares,[.30,.40,.30]);assert.ok(Math.abs(six.axleTorqueShares.reduce((a,b)=>a+b)-1)<1e-7);
+assert.equal(six.defaultMode,'6WD');assert.deepEqual(six.driveModes,['6WD']);
+assert.equal(six.features.frontLocker,true);assert.equal(six.features.rearLocker,true);
+assert.equal(six.factoryTireAirStage,3);assert.ok(six.factoryPortalLiftM>.1&&six.clearance>.4);
+assert.ok(Math.abs(six.tireRadius-.4699)<1e-7);assert.equal(six.rimDiameterInches,18);
+assert.equal(six.gears.length,7);assert.equal(six.nativeModel.construction.threeAxleBody,true);
 assert.equal(data.routes.length,13);assert.equal(data.constructed.length,2);
 assert.ok(data.quarryTrail.lengthM>280&&data.quarryTrail.lengthM<420);
 assert.equal(data.quarryTrail.routeIndex,8);assert.equal(data.routes[8].gates.length,20);
@@ -81,7 +102,7 @@ for(const t of data.trees)for(const p of t.parts){assert.ok(data.placements[p.gr
 assert.equal(data.displayUnits,'imperial');
 for(const v of data.vehicles)for(const part of ['armor','equipment'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
 for(const v of data.vehicles){
- assert.equal(v.nativeModel.version,3);assert.equal(v.nativeModel.splitTireAndRim,true);assert.equal(v.nativeModel.beveledTread,true);
+ assert.equal(v.nativeModel.version,v.bodyStyle==='g63six'||v.gClassVariant==='squared'?4:3);assert.equal(v.nativeModel.splitTireAndRim,true);assert.equal(v.nativeModel.beveledTread,true);
  for(const part of ['tire','rim'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
  const rimRadius=Number(v.tireSize.match(/R(\d+)/)[1])*.0254*.5*100;
  const vertices=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_rim.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
@@ -113,5 +134,7 @@ for(const m of data.materials)assert.equal(m.instanceTint,tinted.has(m.id));
 assert.ok(details>500&&solid>20);
 for(const group of data.nativeDetails)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(i.s.every(s=>s>0));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};
+report.vehicleTopology=data.vehicles.map(v=>({id:v.id,wheels:v.wheelCount??4,axles:v.axleCount??2,referenceCraftRevision:v.nativeModel.referenceCraftRevision}));
 report.gradedTrailSamples=gradedSamples;report.terrainGrade=data.terrainGrade;
+report.gardenGeology=gardenGeology;
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});fs.writeFileSync(path.join(root,'docs/export-validation.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

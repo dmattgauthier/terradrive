@@ -589,6 +589,20 @@ export function buildSprinter(view, geometry) {
     for(let i=36;i>=0;i--){const y=THREE.MathUtils.lerp(1.295,2.273,i/36);frameShape.lineTo(sideX(-1,y,0,tail),y);}frameShape.closePath();
     for(const contour of doorContours){const hole=new THREE.Path();contour.forEach(([x,y],i)=>i?hole.lineTo(x,y):hole.moveTo(x,y));hole.closePath();frameShape.holes.push(hole);}
     const frameGeo=new THREE.ShapeGeometry(frameShape,8);const fi=frameGeo.index.array;for(let i=0;i<fi.length;i+=3)[fi[i+1],fi[i+2]]=[fi[i+2],fi[i+1]];frameGeo.computeVertexNormals();finish(new THREE.Mesh(frameGeo,m.paint),g,0,0,tail);
+    // The doors stand aft of the frame. Bridge the full aperture depth with
+    // a real folded return; an unconnected hole and door show daylight at
+    // the roof header and outer jambs from an oblique rear view.
+    for(const contour of doorContours){
+      const center=contour.reduce((q,p)=>q.add(v3(...p)),v3()).multiplyScalar(1/contour.length);
+      const wall=surface(g,m.paint,contour.length,4,(u,v)=>{
+        const t=Math.min(contour.length-1e-7,u*contour.length),i=Math.floor(t),a=v3(...contour[i]),b=v3(...contour[(i+1)%contour.length]),p=a.lerp(b,t-i);
+        return[p.x,p.y,THREE.MathUtils.lerp(tail+.002,rearDoorPlane-rearX(1,p.y,0,p.x)-.001,v)];
+      });
+      const p=wall.geometry.attributes.position,n=wall.geometry.attributes.normal,ids=wall.geometry.index;let dot=0;
+      for(let i=0;i<p.count;i++)dot+=n.getX(i)*(center.x-p.getX(i))+n.getY(i)*(center.y-p.getY(i));
+      if(dot<0){for(let i=0;i<ids.count;i+=3){const a=ids.getX(i+1);ids.setX(i+1,ids.getX(i+2));ids.setX(i+2,a);}for(let i=0;i<n.count;i++)n.setXYZ(i,-n.getX(i),-n.getY(i),-n.getZ(i));}
+      wall.name='sprinter-rear-door-aperture-return';
+    }
     // Keep the weatherseal close behind the bowed door edges and wide enough
     // to cover the slot at oblique views. A narrow strip 17 mm farther inside
     // exposed alternating pieces of the frame/cabin through the center gap.
