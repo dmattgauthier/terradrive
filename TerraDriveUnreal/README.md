@@ -1,5 +1,15 @@
 # Terra Drive native port
 
+The [6×6 pickup correction](docs/g63-sixwheel-proportions.md) replaces the low
+triangular cargo bar with a full-height hoop and bent rear stays, joins the
+tandem fenders, deepens the wood-lined bed and corrects donor panels/steps that
+crossed the tires' travel. The physical three-axle spacing and existing garage
+profiles are retained. Only the 6×6 body and optional armor mesh inputs change.
+The [pass 25 native record](docs/g63-sixwheel-native-25.json) records **226 fresh
+passing checks**, ten manually reviewed 6×6 garage views, driving and rollover
+review, and exact package hashes. The full content cook uses the previously
+accepted native code. These capped functional checks do not measure uncapped FPS.
+
 The [G-Class and vehicle fidelity update](docs/vehicle-fidelity-24.md) adds a
 separate G63 AMG 6×6 with three simulated axles, six driven tire contacts and
 five differential locks, and replaces the old G63 selection with the newer
@@ -8,9 +18,9 @@ G63 4×4². All ten bodies receive contour or equipment changes. The
 detail with matching rendered terrain and tire support. Garage format 8
 preserves the nine existing profiles and appends the six-wheeler.
 
-[Final native acceptance](docs/gclass-sixwheel-native-24.md) records **1,762 passing
-native checks**, the corrected garage/travel physics command, source/asset hashes,
-visual limits and the **11.5 GB cleanup**. The current game is under
+[Prior pass 24 native acceptance](docs/gclass-sixwheel-native-24.md) records
+**1,762 passing native checks**, the corrected garage/travel physics command,
+source/asset hashes, visual limits and its **11.5 GB cleanup**. The current game is under
 `Build/Windows/TerraDrive.exe`.
 
 The [EV locker and energy service update](docs/ev-lockers-energy.md) gives

@@ -7,6 +7,8 @@ import {pathToFileURL} from 'node:url';
 import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {VEHICLES} from './native-vehicles.mjs';
 import {prepareNativeVehicle} from './vehicle-realism.mjs';
+import {SIX_PICKUP,sixOpeningY} from './g63-six-pickup.mjs';
+import {vehicleAdditions} from './native-models.mjs';
 export const portalStyle=s=>s.bodyStyle==='g63six'||s.gClassVariant==='squared';
 export function inspectGVariant(view,spec,parts){
  const six=spec.bodyStyle==='g63six',tests=[],check=(name,pass,observed={})=>{tests.push({case:name,pass,...observed});assert.ok(pass,spec.id+': '+name+' '+JSON.stringify(observed));};
@@ -17,7 +19,7 @@ export function inspectGVariant(view,spec,parts){
  check('finite source positions and normals',bad===0,{vertices,nonfinite:bad});
  check('unit shading normals',nonunit/vertices<.001,{nonunit,normalizedFraction:1-nonunit/vertices});
  check('bounded triangle budget without cab duplication',triangles<(six?450000:460000),{triangles,vertices});
- check('roof height follows the selected reference envelope within one inch',Math.abs(bounds.max.y-(six?2.210:2.250))<.0254,{actualM:bounds.max.y,referenceStatus:'Variant dimension estimate; first-party dimension sheet unavailable.'});
+ check('roof and roll bar follow the selected reference envelope within one inch',Math.abs(bounds.max.y-(six?SIX_PICKUP.height:2.250))<.0254,{actualM:bounds.max.y,referenceStatus:'Photo-based variant envelope; not a certified dimension drawing.'});
  check('body length follows the selected reference envelope',Math.abs(size.z-(six?5.875:4.873))<.065,{actualM:size.z,referenceStatus:six?'Variant dimension estimate.':'Retained modern-G donor envelope.'});
  check('mirror envelope is bounded while factory flares span the catalog width',size.x>2.10&&size.x<2.25,{actualM:size.x});
  check('body uses the actual simulator CG',Math.abs(view.body.position.y+spec.cgHeight)<1e-7,{bodyY:view.body.position.y,cg:spec.cgHeight});
@@ -29,21 +31,71 @@ export function inspectGVariant(view,spec,parts){
  const ray=(a,d)=>new T.Raycaster(view.body.localToWorld(new T.Vector3(...a)),new T.Vector3(...d).transformDirection(view.body.matrixWorld),0,12).intersectObject(view.body,true);
  const mat=h=>Array.isArray(h.object.material)?h.object.material[h.face.materialIndex]:h.object.material;
  function glass(name,a,d){const h=ray(a,d)[0];check(name+' is actual first-hit glazing',!!h&&!!mat(h).userData.vehicleGlass,{firstDistanceM:h?.distance});}
- const rise=six?.231:.271,shift=six?.655:0;
+ const rise=six?SIX_PICKUP.bodyRise:.271,shift=six?.655:0;
  for(const s of [-1,1])for(const [label,z]of [['front door',.15],['rear door',-.70]])glass(label+' '+s,[s*3,1.61+rise,z+shift],[-s,0,0]);
  glass('windshield',[0,1.61+rise,4],[0,0,-1]);
  if(six){
   check('all three axle positions retain the selected 123-inch first wheelbase and 43-inch tandem spacing',spec.axleOffsetsM?.length===3&&Math.abs(spec.axleOffsetsM[0]-spec.axleOffsetsM[1]-3.12)<.001&&Math.abs(spec.axleOffsetsM[1]-spec.axleOffsetsM[2]-1.10)<.001,{axles:spec.axleOffsetsM,referenceStatus:'Variant wheelbase estimates.'});
   check('six-wheel geometry uses explicit CG-relative hardpoints',Math.abs(view.body.position.z)<1e-7,{offsetZ:view.body.position.z});
   glass('rear cab window',[0,1.8,-1.25],[0,0,1]);
-  for(const z of [-1.85,-2.35]){const h=ray([0,3,z],[0,-1,0]).find(h=>!mat(h).transparent),y=h&&view.body.worldToLocal(h.point.clone()).y;check('cargo bed is open over its ribbed floor '+z,!!h&&y>.85&&y<1.0,{firstSurfaceM:y});}
+  for(const z of [-1.85,-2.35]){const h=ray([0,3,z],[0,-1,0]).find(h=>!mat(h).transparent),y=h&&view.body.worldToLocal(h.point.clone()).y;check('cargo bed is open over its bamboo floor '+z,!!h&&y>.95&&y<1.015,{firstSurfaceM:y});}
   check('pickup has distinct tailgate and closed cab back',names.includes('g63-six-sculpted-tailgate')&&names.includes('g63-six-closed-cab-rear-wall'),{});
   check('classic AMG front uses twin blades instead of thirteen modern slats',names.filter(n=>n==='g63-six-twin-blade-grille').length===2&&!names.includes('g63-panamericana-grille-bar'),{});
+  check('classic front has one emblem with no retained donor badge group',view.body.getObjectsByProperty('name','g63-six-classic-star-badge').length===1&&!view.body.getObjectByName('gclass-rigid-star-badge'),{});
   check('classic front retains two projector assemblies',view.body.getObjectsByProperty('name','g63-six-classic-projector-headlamp').length===2,{});
   check('classic cabin has separate analogue binnacle and tablet',names.includes('g63-six-analogue-instrument-binnacle')&&names.includes('g63-six-separate-command-tablet')&&!names.includes('gclass-modern-widescreen-frame'),{});
   check('factory front roof spoiler has two recessed LED housings',names.filter(n=>n.startsWith('g63-six-roof-carbon-light-housing-')).length===2,{});
   for(const s of [-1,1]){const o=view.body.getObjectByName('g63-six-cab-lower-rear-closure-'+s),n=o.geometry.attributes.normal;let facing=0;for(let i=0;i<n.count;i++)facing+=n.getX(i)*s;check('lower cab repair faces outward '+s,facing/n.count>.95,{meanNormalX:facing/n.count});}
   let face=0;parts.rim.traverse(o=>{if(o.name==='g63-six-beadlock-perforated-face')face++;});check('both faces have original perforated beadlock wheel plates',face===2,{faces:face});
+  const localBounds=o=>new T.Box3().setFromObject(o).applyMatrix4(view.body.matrixWorld.clone().invert());
+  const hoop=view.body.getObjectByName('g63-six-transverse-main-hoop'),hoopBox=localBounds(hoop),hoopTop=hoopBox.max.y;
+  check('main hoop reaches above the cab instead of peaking halfway up the bed',hoopTop>SIX_PICKUP.cabRoofY+.025&&hoopTop<SIX_PICKUP.cabRoofY+.10,{cabRoofM:SIX_PICKUP.cabRoofY,hoopTopM:hoopTop});
+  check('main hoop is immediately behind the cab and spans the pickup shoulders',hoopBox.min.z<SIX_PICKUP.cabRearZ-.10&&hoopBox.max.z>SIX_PICKUP.cabRearZ-.25&&hoopBox.max.x-hoopBox.min.x>1.50,{bounds:[hoopBox.min.toArray(),hoopBox.max.toArray()]});
+  check('native stock envelope includes the new bar and wider fenders',spec.height>=hoopTop-.002&&Math.abs(spec.width-SIX_PICKUP.width)<1e-6,{heightM:spec.height,widthM:spec.width});
+  for(const s of [-1,1]){
+   const upright=view.body.getObjectByName('g63-six-hoop-upright-'+s),stay=view.body.getObjectByName('g63-six-rear-stay-'+s),u=localBounds(upright),b=localBounds(stay);
+   check('roll-bar upright mounts to the front bed shoulder '+s,u.min.y<1.50&&u.max.y>2.28&&u.max.z<-.95,{bounds:[u.min.toArray(),u.max.toArray()]});
+   check('rear stay slopes from roof height and turns down to its rear foot '+s,b.min.z< -2.48&&b.max.z> -1.13&&b.max.y>2.27&&b.min.y<1.49,{bounds:[b.min.toArray(),b.max.toArray()]});
+   check('stainless bar is explicitly structural for rollover collision '+s,upright.material.userData.nativeRole==='structural'&&stay.material.userData.nativeRole==='structural',{});
+   const tandem=view.body.getObjectByName('g63-six-carbon-tandem-arch-outer-'+s),t=localBounds(tandem);
+   check('one joined rear fender spans both actual tandem tire centres '+s,t.min.z<spec.axleOffsetsM[2]-.55&&t.max.z>spec.axleOffsetsM[1]+.55,{fenderZM:[t.min.z,t.max.z],axleZM:spec.axleOffsetsM.slice(1)});
+   let oldPaint=0,openingProbes=0;
+   for(let z=1.54;z<=2.60;z+=.04){
+    const hits=ray([s*1.6,sixOpeningY(z)-.025,z],[-s,0,0]);++openingProbes;
+    oldPaint+=hits.some(h=>mat(h)===view.materials.paint&&view.body.worldToLocal(h.point.clone()).x*s>.88);
+   }
+   check('front wheel opening contains no retained rounded donor paint crescent '+s,oldPaint===0,{openingProbes,oldPaint});
+   for(let axle=0;axle<3;axle++){
+    // Probe actual triangles from the outside through each tire's upper
+    // silhouette. A bounding-box test misses painted sheets behind an arch.
+    let blocked=0,probes=0;const failures=[];
+    for(const bump of [0,.10])for(let deg=15;deg<=165;deg+=5){
+     const angle=deg*Math.PI/180,y=spec.tireRadius+bump+Math.sin(angle)*spec.tireRadius,z=spec.axleOffsetsM[axle]+Math.cos(angle)*spec.tireRadius;
+     const h=ray([s*1.6,y,z],[-s,0,0]).find(h=>!mat(h).transparent);++probes;
+     const x=h?Math.abs(view.body.worldToLocal(h.point.clone()).x):0;
+     if(x>spec.track/2-spec.tireWidth/2+.003){blocked++;failures.push({bump,deg,x,y,z,mesh:h.object.name});}
+    }
+    check('tire silhouette is clear of bed and cab sheets at axle '+axle+' side '+s,blocked===0,{probes,blocked,failures});
+   }
+   for(const prefix of ['g63-six-carbon-front-arch-crown-','g63-six-carbon-tandem-arch-crown-','g63-six-painted-bed-rail-','g63-six-tandem-inner-tub-crown-']){
+    const o=view.body.getObjectByName(prefix+s),n=o.geometry.attributes.normal;let up=0;for(let i=0;i<n.count;i++)up+=n.getY(i);
+    check('upper sheet faces upward '+prefix+s,up/n.count>.35,{meanNormalY:up/n.count});
+   }
+  }
+  const roofHit=ray([0,3,.1],[0,-1,0])[0];
+  check('classic pickup roof is solid painted metal instead of the donor panoramic glass',!!roofHit&&mat(roofHit)===view.materials.paint,{mesh:roofHit?.object.name});
+  check('rear lamps use the wide horizontal factory layout',[-1,1].every(s=>{const b=localBounds(view.body.getObjectByName('g63-six-horizontal-rear-lamp-housing-'+s));return b.max.x-b.min.x>1.8*(b.max.y-b.min.y);}),{});
+  const {armor}=vehicleAdditions(spec);view.root.add(armor);view.root.updateMatrixWorld(true);
+  for(const s of [-1,1]){
+   let blocked=0,probes=0;
+   for(const z0 of spec.axleOffsetsM)for(const bump of [0,.10])for(let deg=0;deg<360;deg+=10){
+    const a=deg*Math.PI/180,y=spec.tireRadius+bump+Math.sin(a)*spec.tireRadius,z=z0+Math.cos(a)*spec.tireRadius;
+    const hits=new T.Raycaster(view.body.localToWorld(new T.Vector3(s*1.6,y,z)),new T.Vector3(-s,0,0),0,3).intersectObject(armor,true);++probes;
+    blocked+=hits.some(h=>{const x=Math.abs(view.body.worldToLocal(h.point.clone()).x);return x>spec.track/2-spec.tireWidth/2+.003&&x<spec.track/2+spec.tireWidth/2-.003;});
+   }
+   check('optional armor and outriggers clear all three moving tire volumes '+s,blocked===0,{probes,blocked});
+  }
+  armor.removeFromParent();armor.traverse(o=>o.geometry?.dispose());
  }else{
   check('squared conversion retains the 113.8-inch wheelbase',Math.abs(spec.wheelbase-2.89)<1e-6,{wheelbaseM:spec.wheelbase});
   check('newer 4x4 squared uses 22-inch wheels with 325/55 tires',spec.tireSize==='325/55R22'&&spec.rimDiameterInches===22,{tireSize:spec.tireSize});
@@ -53,13 +105,13 @@ export function inspectGVariant(view,spec,parts){
   const badge=view.body.getObjectByName('g63-squared-visible-variant-badge'),badgeBox=new T.Box3().setFromObject(badge),spareBox=new T.Box3().setFromObject(spare);
   check('variant badge has clear space beside the enlarged spare',badgeBox.max.x<spareBox.min.x-.015||badgeBox.min.x>spareBox.max.x+.015,{badgeX:[badgeBox.min.x,badgeBox.max.x],spareX:[spareBox.min.x,spareBox.max.x]});
  }
- const archNames=names.filter(n=>/-outer-/.test(n)&&/carbon-(arch|extension)/.test(n));
- check('every physical axle has two explicit outward fender faces',archNames.length===(six?6:4),{faces:archNames.length});
- for(const name of archNames){const o=view.body.getObjectByName(name),n=o.geometry.attributes.normal,mid=Math.floor(n.count/2),s=name.includes('outer--1-')?-1:1;check('fender exterior faces out '+name,n.getX(mid)*s>.9,{normal:[n.getX(mid),n.getY(mid),n.getZ(mid)]});}
+ const archNames=names.filter(n=>/-outer-/.test(n)&&/carbon-(arch|extension|front-arch|tandem-arch)/.test(n));
+ check('front and rear fender exteriors are explicit closed surfaces',archNames.length===4,{faces:archNames.length,joinedTandem:six});
+ for(const name of archNames){const o=view.body.getObjectByName(name),n=o.geometry.attributes.normal,mid=Math.floor(n.count/2),s=name.includes('outer--1')?-1:1;check('fender exterior faces out '+name,n.getX(mid)*s>.9,{normal:[n.getX(mid),n.getY(mid),n.getZ(mid)]});}
  check('brake and reverse remain distinct exported dynamic materials',view.materials.red!==view.materials.reverse&&names.some(n=>n.includes('rear-brake-lamp'))||(!six&&view.materials.red!==view.materials.reverse),{});
  return{vehicle:spec.name,id:spec.id,style:spec.bodyStyle,checks:tests.length,pass:true,sourceOnly:true,geometry:{vertices,triangles,bounds:[bounds.min.toArray(),bounds.max.toArray()]},tests,limitations:['Original photographic reconstruction, not manufacturer CAD or production-game scan.','Variant dimension and axle envelopes are reference estimates; a first-party dimension sheet was not inspectable.','Native collision, six-wheel behavior and rendering require separate integration verification.']};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
  const rows=[];for(const s of VEHICLES.filter(portalStyle)){const {view,parts}=prepareNativeVehicle(s);try{rows.push(inspectGVariant(view,s,parts));}finally{view.dispose();}}
- assert.equal(rows.length,2);const report={revision:24,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0),vehicles:rows};fs.writeFileSync(new URL('../docs/gclass-variants-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.id,checks:r.checks,vertices:r.geometry.vertices,triangles:r.geometry.triangles}))}));
+ assert.equal(rows.length,2);const report={revision:25,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0),vehicles:rows};fs.writeFileSync(new URL('../docs/gclass-variants-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.id,checks:r.checks,vertices:r.geometry.vertices,triangles:r.geometry.triangles}))}));
 }

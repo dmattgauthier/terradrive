@@ -15,6 +15,7 @@ automotive_parents = {
     'wheel': 'Exterior/CarPaint/MI_CarPaint_Black',
     'rotor': 'Exterior/BrakeRotor/MI_BrakeRotor_Carbon_Ceramic',
     'brakeSteel': 'Exterior/BrakeRotor/MI_BrakeRotor_Iron_Clean',
+    'wood': 'Interior/Wood/MI_Wood_Oak_Veneer_02',
 }
 automotive_overrides = {
     'paint': {'PaintRoughness': .48, 'MinRoughness': .075, 'MaxRoughness': .12,
@@ -27,6 +28,7 @@ automotive_overrides = {
     'wheel': {'MinRoughness': .22, 'MaxRoughness': .30, 'OrangePeelIntensity': .015, 'PaintRoughness': .45},
     'rotor': {'Roughness Min': .36, 'Roughness Max': .51, 'Crack Intensity': .15},
     'brakeSteel': {'Roughness Min': .31, 'Roughness Max': .47, 'Normal Intensity': .20},
+    'wood': {'Roughness Min': .40, 'Roughness Max': .60, 'Clear Coat Amount': .15},
 }
 automotive_instances = {}
 automotive_bindings = []

@@ -16,11 +16,13 @@ export function vehicleAdditions(spec){
   const front=(spec.bodyStyle==='g63six'?2.99:spec.bodyStyle==='earthcruiser'?2.70:['g580','g63'].includes(spec.bodyStyle)?2.332:spec.bodyStyle==='van'?3.03:spec.bodyStyle==='hummer'?spec.length*.47:2.43)+offset;
   const low=(spec.bodyStyle==='g63six'?.46:spec.bodyStyle==='sedan'?.20:.33)-datum;
   // Folded belly plate, fasteners, tubular rock sliders and three outriggers.
-  box(armor,steel,[0,low,-.15+offset],[half*1.48,.045,spec.wheelbase*.72]);
+  box(armor,steel,[0,low,-.15+offset],[spec.bodyStyle==='g63six'?1.39:half*1.48,.045,spec.wheelbase*.72]);
   for(const side of [-1,1]){
     const x=side*(half+.035),a=-spec.wheelbase*.34+offset,b=spec.wheelbase*.33+offset;
     rod(armor,steel,[x,low+.12,a],[x,low+.12,b],spec.bodyStyle==='sedan'?.028:.043);
-    for(const z of [a+.15,(a+b)/2,b-.15])rod(armor,steel,[side*half*.62,low,z],[x,low+.12,z],.024);
+    // Tandem tires occupy the former SUV rear-outrigger station. Place its
+    // optional slider brackets in the clear space between front/middle axles.
+    for(const z of (spec.bodyStyle==='g63six'?[-.30,.55,1.18]:[a+.15,(a+b)/2,b-.15]))rod(armor,steel,[side*half*.62,low,z],[x,low+.12,z],.024);
     for(const z of [a,b])add(armor,new THREE.CylinderGeometry(.018,.018,.014,6),chrome,[side*half*.55,low-.03,z]);
   }
   const bash=box(armor,chrome,[0,low+.17,front-.29],[half*1.22,.045,.38]);bash.rotation.x=-.35;

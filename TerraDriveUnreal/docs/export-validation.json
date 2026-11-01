@@ -142,5 +142,12 @@
     }
   ],
   "gradedTrailSamples": 363,
-  "terrainGrade": "slate-rim-heightfield-1"
+  "terrainGrade": "slate-rim-heightfield-1",
+  "gardenGeology": {
+    "samples": 4096,
+    "vertices": 492929,
+    "sha256": "fab093775cd20e9a2a5d3cc1777200454b2f944a7a7b40045dbeffb320a8a816",
+    "bytes": 1971740,
+    "pass": true
+  }
 }
