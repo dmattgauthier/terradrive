@@ -1,0 +1,315 @@
+{
+  "revision": "g63-sixwheel-proportions-25",
+  "engine": "5.8.3",
+  "verifiedUTC": "2026-11-01T22:49:17.949139+00:00",
+  "nativeChecks": 226,
+  "executableSha256": "140b976cbe874c8eb8af407e9eb62e175dcf9e1fb68d97ec0b0c1ef7f0e633a0",
+  "nativeCodeReuse": {
+    "unchangedProducers": 88,
+    "acceptedCodeEvidence": "gclass-sixwheel-native-24.md",
+    "note": "All C++/Config/uproject bytes and project/package executable match accepted pass24 Candidate5. Full content recook; new native checks below."
+  },
+  "sourceProducers": 191,
+  "sourceManifestSha256": "00fbebd0ee6d54ac9078f4f4ff4dfe8edc0ffc3e88549cf7b515b1d260ef19e9",
+  "generatedInputs": 319,
+  "inputManifestSha256": "13ea4e2726a90611191c3bd5efaf0c0c96402b3dc391d3d16dd895334e328e38",
+  "changedMeshSources": {
+    "body": "d8064f517ae51f031e99fcd254339966dc3c8fe47336310e988d3aa006f39c4e",
+    "armor": "fe2797ada778333d6f0c644d68f2aa0b125f35abb0cf91691d5ab5bf3c17c8a5"
+  },
+  "sourceChecks": {
+    "models": 10,
+    "expeditionIncludingPortal": 151,
+    "portal": 95,
+    "sixWheel": 67,
+    "tireSilhouetteRays": 372,
+    "armorVolumeRays": 432,
+    "frontOpeningRays": 54,
+    "exportMeshes": 307,
+    "unchangedMeshInputsFromPass24": 305
+  },
+  "bodyTriangles": 443915,
+  "runs": [
+    {
+      "mode": "SixWheel",
+      "checks": 35,
+      "captures": 6,
+      "peakTemperatureC": 55.0,
+      "elapsedSeconds": 59.1539787,
+      "receiptSha256": "da151c53009192abb9bb04676c624df06bf17687a8c7c6d037b162094bc1324c",
+      "resultSha256": "81d786ef97e116b54f65426f820665f01d5ff6b609c023ab536ccf42b9b47122"
+    },
+    {
+      "mode": "Art",
+      "checks": 110,
+      "captures": 100,
+      "peakTemperatureC": 61.0,
+      "elapsedSeconds": 410.3741,
+      "receiptSha256": "7483a7b8adf8d4a624596c25a55a1ae3618978defd9a65111a0d5118b1af9b55",
+      "resultSha256": "5b24cde8457211e298b4bf3c49cc10c468bfe1455ee7d4b48ece5387ed1212bf"
+    },
+    {
+      "mode": "Rollover",
+      "checks": 81,
+      "captures": 10,
+      "peakTemperatureC": 58.0,
+      "elapsedSeconds": 86.8153009,
+      "receiptSha256": "3979c087ee0799e6e6a35598b5f927868940058fa1bbd08ce888d993c3b5cdb0",
+      "resultSha256": "2ce75a9c4ca5fbeadea8c29e5e4af385b01d2853a40533e08fa6370fc311a3c8"
+    }
+  ],
+  "visualReview": {
+    "accepted": true,
+    "reviewedUTC": "2026-11-01T22:46:37.551902+00:00",
+    "vehicleViewsReviewed": [
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-0.png",
+        "sha256": "8ace41307547ac1dff01ea2b794beaead718fb1b4fed6a186098bd58a2e54218"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-1.png",
+        "sha256": "da7531e535da6b5b48242715ef8c6e8f165f070875273c1e15c3c64439817ff0"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-2.png",
+        "sha256": "f44725188ab3cc4be155a298c7b1da454a79c7e6ed5a558e71ff8448787577bf"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-3.png",
+        "sha256": "5ee8d4f68ad4f41ec24a281358ec7e466970c1dab0f1ea7426143667366f1157"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-4.png",
+        "sha256": "9b2ec1f7a485e89a01f6d57fc5c7764b31dae0563ffca458d7a2c8ae8ec86d21"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-5.png",
+        "sha256": "41de8ec8ef3ed708d431186e76072d3cda6464653890c77e64a68a2cba8f8d0e"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-6.png",
+        "sha256": "5030b18287b767e5e71713da02831e300669ca56570577a2893c6b55c812e178"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-7.png",
+        "sha256": "7b35084ff995bd6afe0a1b734bd3b1f87d2982d4a31884d36fdd661e99757987"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-8.png",
+        "sha256": "82db44f990a6d0ce853870860b4ecb4dcff90acd8aa5429b67d91a244c981b0e"
+      },
+      {
+        "path": "Validation/Art/Screenshots/native-vehicle-9-hero-9.png",
+        "sha256": "a76fd5376ec6e5c8d3351714f136e2e8cab193ab10952d37ed529bf931684836"
+      }
+    ],
+    "drivingViewsReviewed": [
+      {
+        "path": "Validation/SixWheel/Screenshots/sixwheel-locked-motion.png",
+        "sha256": "c1540685a90c9777ae4605fbbb81990eba062f05a51d490408c90ad8971c92a7"
+      },
+      {
+        "path": "Validation/SixWheel/Screenshots/sixwheel-mud-ruts.png",
+        "sha256": "9e352653e7885c39438187655df48f0becd5159fa85815b12df6bc210099ecd0"
+      },
+      {
+        "path": "Validation/SixWheel/Screenshots/sixwheel-ev-drive-1.png",
+        "sha256": "d428edee1af07c324dba43a6afc32ca5b30b541dcb50fa99d76418acc9317cf5"
+      },
+      {
+        "path": "Validation/SixWheel/Screenshots/sixwheel-ev-drive-2.png",
+        "sha256": "3f0cf3890ae0aad94bac6cd65f0cd650d5ffb286ed12d4e91f85ae43fbaff520"
+      },
+      {
+        "path": "Validation/SixWheel/Screenshots/sixwheel-ev-drive-3.png",
+        "sha256": "26d66a3f49d1cb1a94192d06639c38cd0d89b8b85753e23d889193c0093662a8"
+      }
+    ],
+    "rolloverViewsReviewed": [
+      {
+        "path": "Validation/Rollover/Screenshots/native-rollover-v9-z0-m90.png",
+        "sha256": "f4d60fa1562a537e6bac558734058fae0eb1bb32f0248c8cff653d8a2357e0be"
+      },
+      {
+        "path": "Validation/Rollover/Screenshots/native-rollover-v9-z1-p180.png",
+        "sha256": "9f3f67572fdbcb3c88f511f62f8ed26772ddeb94c619a3af33bbfefd93ae68fc"
+      },
+      {
+        "path": "Validation/Rollover/Screenshots/native-rollover-v9-z0-p110.png",
+        "sha256": "df1dd554623484dcf7267ce26536b3c315e8f1f6ffc8530a526c05867e47c542"
+      }
+    ],
+    "referencePhotosReviewed": 9,
+    "findings": [
+      "All ten final six-wheeler garage views inspected, including front, rear, side, bed and roof views.",
+      "The rounded donor paint crescent visible in Candidate2 is absent in the final front/side views; the dark inner liner meets the boxed opening.",
+      "The full-height hoop, bent rear stays, connected tandem fenders and wheel/body placement follow the reviewed factory press photographs more closely.",
+      "No apparent tire/body intersection in the reviewed garage or five driving captures; source travel probes and native driving checks provide separate functional evidence.",
+      "Three selected side/roof/tilt captures inspected for body support and visible geometry; automated rollover results cover ten poses."
+    ],
+    "remainingLimits": [
+      "Dimensions are photographic estimates, not OEM CAD.",
+      "Shared cabin, small trim and lamp optics remain simplified; Epic oak veneer approximates the factory bamboo finish.",
+      "This manual review covers the listed 18 captures; it is not a manual review of every frame or all 116 captures from the three suites.",
+      "Fixed-clock capped checks do not measure uncapped FPS or long-session stability."
+    ]
+  },
+  "otherVehicleArt": {
+    "captures": 90,
+    "byteIdenticalToReviewedPass24": [
+      "native-vehicle-0-hero-0.png",
+      "native-vehicle-0-hero-1.png",
+      "native-vehicle-0-hero-2.png",
+      "native-vehicle-0-hero-3.png",
+      "native-vehicle-0-hero-4.png",
+      "native-vehicle-0-hero-5.png",
+      "native-vehicle-0-hero-6.png",
+      "native-vehicle-0-hero-7.png",
+      "native-vehicle-0-hero-8.png",
+      "native-vehicle-0-hero-9.png",
+      "native-vehicle-1-hero-0.png",
+      "native-vehicle-1-hero-1.png",
+      "native-vehicle-1-hero-2.png",
+      "native-vehicle-1-hero-3.png",
+      "native-vehicle-1-hero-4.png",
+      "native-vehicle-1-hero-5.png",
+      "native-vehicle-1-hero-6.png",
+      "native-vehicle-1-hero-7.png",
+      "native-vehicle-1-hero-8.png",
+      "native-vehicle-1-hero-9.png",
+      "native-vehicle-2-hero-0.png",
+      "native-vehicle-2-hero-1.png",
+      "native-vehicle-2-hero-2.png",
+      "native-vehicle-2-hero-3.png",
+      "native-vehicle-2-hero-4.png",
+      "native-vehicle-2-hero-5.png",
+      "native-vehicle-2-hero-6.png",
+      "native-vehicle-2-hero-7.png",
+      "native-vehicle-2-hero-8.png",
+      "native-vehicle-2-hero-9.png",
+      "native-vehicle-3-hero-0.png",
+      "native-vehicle-3-hero-2.png",
+      "native-vehicle-3-hero-3.png",
+      "native-vehicle-3-hero-4.png",
+      "native-vehicle-3-hero-5.png",
+      "native-vehicle-3-hero-6.png",
+      "native-vehicle-3-hero-7.png",
+      "native-vehicle-3-hero-8.png",
+      "native-vehicle-3-hero-9.png",
+      "native-vehicle-4-hero-0.png",
+      "native-vehicle-4-hero-1.png",
+      "native-vehicle-4-hero-3.png",
+      "native-vehicle-4-hero-4.png",
+      "native-vehicle-4-hero-5.png",
+      "native-vehicle-4-hero-6.png",
+      "native-vehicle-4-hero-7.png",
+      "native-vehicle-4-hero-8.png",
+      "native-vehicle-4-hero-9.png",
+      "native-vehicle-5-hero-0.png",
+      "native-vehicle-5-hero-1.png",
+      "native-vehicle-5-hero-2.png",
+      "native-vehicle-5-hero-3.png",
+      "native-vehicle-5-hero-4.png",
+      "native-vehicle-5-hero-5.png",
+      "native-vehicle-5-hero-6.png",
+      "native-vehicle-5-hero-7.png",
+      "native-vehicle-5-hero-8.png",
+      "native-vehicle-5-hero-9.png",
+      "native-vehicle-6-hero-0.png",
+      "native-vehicle-6-hero-1.png",
+      "native-vehicle-6-hero-2.png",
+      "native-vehicle-6-hero-3.png",
+      "native-vehicle-6-hero-4.png",
+      "native-vehicle-6-hero-5.png",
+      "native-vehicle-6-hero-6.png",
+      "native-vehicle-6-hero-7.png",
+      "native-vehicle-6-hero-8.png",
+      "native-vehicle-6-hero-9.png",
+      "native-vehicle-7-hero-0.png",
+      "native-vehicle-7-hero-1.png",
+      "native-vehicle-7-hero-2.png",
+      "native-vehicle-7-hero-4.png",
+      "native-vehicle-7-hero-5.png",
+      "native-vehicle-7-hero-6.png",
+      "native-vehicle-7-hero-7.png",
+      "native-vehicle-7-hero-8.png",
+      "native-vehicle-7-hero-9.png",
+      "native-vehicle-8-hero-0.png",
+      "native-vehicle-8-hero-3.png",
+      "native-vehicle-8-hero-4.png",
+      "native-vehicle-8-hero-5.png",
+      "native-vehicle-8-hero-6.png",
+      "native-vehicle-8-hero-7.png",
+      "native-vehicle-8-hero-8.png",
+      "native-vehicle-8-hero-9.png"
+    ],
+    "differentFromPass24": [
+      "native-vehicle-3-hero-1.png",
+      "native-vehicle-4-hero-2.png",
+      "native-vehicle-7-hero-3.png",
+      "native-vehicle-8-hero-1.png",
+      "native-vehicle-8-hero-2.png"
+    ],
+    "note": "No fresh manual appearance claim for changed-image captures of otherwise unchanged vehicles."
+  },
+  "preservation": {
+    "pass_": true,
+    "protected": 1929,
+    "browser": 1214,
+    "acquired": 715,
+    "players": 8,
+    "manifests": {
+      "source-frozen.json": 191,
+      "inputs-frozen.json": 319
+    },
+    "errors": []
+  },
+  "packagedContainers": [
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/global.ucas",
+      "bytes": 3199872,
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/global.utoc",
+      "bytes": 782,
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "bytes": 56798054,
+      "sha256": "7d9f3151c473575e53841151065e98da856b494da23403232aa4e68a5b0be2c8"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "bytes": 920146352,
+      "sha256": "bac87bc9381e52781bcba3cdbee5a5b3ea60e9d83c953879db874f6a26125d61"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "bytes": 774304,
+      "sha256": "248017df95ef0893b1a75911b2fceb015c0bb832158ffd814835d35c64fa60a4"
+    }
+  ],
+  "cleanup": {
+    "files": 166,
+    "bytes": 1771710906,
+    "freeSpaceDelta": 1772011520,
+    "targets": [
+      "TerraDriveUnreal\\Saved\\StagedBuilds",
+      "TerraDriveUnreal\\Saved\\Cooked",
+      "TerraDriveUnreal\\Saved\\Temp",
+      "TerraDriveUnreal\\Saved\\Pass25-2026-11-01T21-19-34Z\\Before\\SourceAssets\\mercedes_amg_g63_6x6_body.obj"
+    ],
+    "currentPackageUnchanged": true,
+    "localSymbolsRetained": true,
+    "rollback": "Saved/Rollback-E582",
+    "retained": "Current package, player files, browser, acquired packs, current generated inputs, all failed/current evidence, useful shader caches and one validated rollback"
+  },
+  "limits": [
+    "Photographic reconstruction with estimated panel/bar/stance dimensions and a simplified shared cabin.",
+    "Epic oak veneer substitutes for the factory bamboo finish.",
+    "Twelve convex coachwork sections approximate the open bed and roll bar.",
+    "Paced fixed20Hz isolated functional checks do not establish uncapped FPS or PC endurance stability."
+  ]
+}

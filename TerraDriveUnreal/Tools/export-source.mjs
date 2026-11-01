@@ -41,7 +41,7 @@ if(fs.existsSync(path.join(out,'import.json'))){
   previousMaterials.get(key).push(m.id);nextMaterial=Math.max(nextMaterial,Number(m.id.slice(2))+1);
  }
 }
-const automotiveRoles=new Set(['paint','carbon','black','rubber','metal','satinMetal','plastic','alcantara','wheel','rotor','brakeSteel']);
+const automotiveRoles=new Set(['paint','carbon','black','rubber','metal','satinMetal','plastic','alcantara','wheel','rotor','brakeSteel','wood']);
 function matId(m){
  if(m.userData.automotive&&!automotiveRoles.has(m.userData.automotive))throw new Error('Unmapped automotive finish: '+m.userData.automotive);
  if(matIds.has(m.uuid))return matIds.get(m.uuid);

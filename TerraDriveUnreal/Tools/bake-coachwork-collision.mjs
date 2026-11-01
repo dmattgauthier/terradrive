@@ -25,7 +25,10 @@ async function bodyPoints(file,spec,materials){
   if(line.startsWith('v ')){if(done){block=[];done=false;}const p=line.slice(2).trim().split(/\s+/).map(Number);assert.ok(p.length===3&&p.every(Number.isFinite));block.push([p[0],-p[1],p[2]]);total++;}
   else if(line.startsWith('usemtl ')&&!done){
    const m=materials.get(line.slice(7).trim());assert.ok(m,'Known exported material');
-   const solid=m.opacity>=.999&&!['glass','rubber','brake','reverse','sky'].includes(m.role)&&['paint','plastic','carbon','black',''].includes(m.automotive);
+   // The six-wheeler's stainless main hoop is structural coachwork. Include
+   // its explicitly tagged material while retaining cosmetic metal exclusions.
+   const structuralHoop=spec.bodyStyle==='g63six'&&m.role==='structural'&&m.automotiveOwner==='g63six';
+   const solid=m.opacity>=.999&&!['glass','rubber','brake','reverse','sky','wheelLiner'].includes(m.role)&&(['paint','plastic','carbon','black',''].includes(m.automotive)||structuralHoop);
    if(solid)for(const p of block){
     // Flexible mirror tips, antennae and spare-wheel hardware are not the
     // structural shell. Catalogue width/height bound those accessories.

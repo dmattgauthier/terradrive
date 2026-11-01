@@ -1,5 +1,6 @@
-param([ValidateSet('SixWheel','Art','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800)
+param([ValidateSet('SixWheel','Art','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,9)][int]$RolloverQuickVehicle=-1)
 $ErrorActionPreference='Stop'
+if($RolloverQuickVehicle -ge 0 -and $Mode -ne 'Rollover'){throw '-RolloverQuickVehicle requires Rollover mode.'}
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue){throw 'Close game/editor before native validation.'}
 if(!$OutputDirectory){$OutputDirectory=Join-Path $taskRoot ('Saved/FidelityValidation-'+$Mode+'-'+(Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH-mm-ssZ'))}
@@ -15,6 +16,7 @@ $taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX
  ('-TerraReport="'+$taskReport+'"'),('-TerraCaptureDir="'+$taskCaptures+'"'),('-TerraGarage="'+(Join-Path $taskOutput 'garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOutput 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $taskOutput 'controls.json')+'"'),('-UserDir="'+(Join-Path $taskOutput 'User')+'"'),('-abslog="'+(Join-Path $taskOutput 'game.log')+'"'),
  '-ini:Engine:[/Script/Engine.Engine]:bUseFixedFrameRate=True','-ini:Engine:[/Script/Engine.Engine]:FixedFrameRate=20.0')
 if($Mode -eq 'Rollover'){$taskArguments+='-TerraExpectCoachworkCollision'}
+if($RolloverQuickVehicle -ge 0){$taskArguments+=@('-TerraRolloverQuick',('-TerraRolloverQuickVehicle='+$RolloverQuickVehicle))}
 $taskStart=Get-Date
 $taskReceipt=[ordered]@{mode=$Mode;started=$taskStart.ToUniversalTime().ToString('o');executableSha256=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.ToLower();arguments=$taskArguments;simulationClock='paced fixed20Hz functional verification';pass=$false}
 $taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=$taskExe;$taskInfo.Arguments=$taskArguments -join ' ';$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
@@ -37,6 +39,12 @@ try{
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
  $taskExpected=@{SixWheel=35;Garden=10;Art=110;Interface=140;Mechanical=557;ElectricPressure=280;Rollover=513;Ruts=117}[$Mode]
+ if($RolloverQuickVehicle -ge 0){
+  $taskExpected=81
+  $taskPlan=Get-Content -LiteralPath (Join-Path $taskOutput 'rollover-fixtures.json') -Raw|ConvertFrom-Json
+  $taskKeys=@($taskPlan.cases|ForEach-Object {('{0}:{1}:{2}' -f $_.vehicle,$_.zone,$_.roll)}|Sort-Object -Unique)
+  if(!$taskPlan.quick -or $taskPlan.quickVehicle -ne $RolloverQuickVehicle -or $taskPlan.expectedChecks -ne 81 -or @($taskPlan.cases).Count -ne 10 -or $taskKeys.Count -ne 10 -or @($taskPlan.cases|Where-Object {$_.vehicle -ne $RolloverQuickVehicle}).Count){throw 'Focused rollover fixture coverage is incomplete.'}
+ }
  if($taskGame.ExitCode -ne 0 -or $taskResult.engine -ne '5.8.3' -or $taskFailed.Count -or $taskReceipt.checks -lt 1 -or ($taskExpected -and $taskReceipt.checks -ne $taskExpected)){throw 'Native acceptance failed; inspect preserved report'}
  $taskExpectedCaptures=@()
  if($Mode -eq 'SixWheel'){$taskExpectedCaptures=@('sixwheel-locked-motion.png','g63-squared-garage.png','sixwheel-mud-ruts.png','sixwheel-ev-drive-1.png','sixwheel-ev-drive-2.png','sixwheel-ev-drive-3.png')}

@@ -3,14 +3,14 @@
 import {T,box,mesh,surface,mappedPolygon,line,lerp,smooth} from './body-surface.mjs';
 import {gClassView,gClassRim} from './mercedes-gclass.mjs';
 import {geometryText,refineFactoryWheel} from './vehicle-fidelity.mjs';
+import {SIX_PICKUP,sixOpeningY,buildSixPickup,buildSixRoof} from './g63-six-pickup.mjs';
 
 // Selected dimension/axle envelopes. Unlike the retained modern-G donor
 // brochure, an inspectable first-party variant dimension table was not found;
 // these remain reference estimates rather than certified OEM measurements.
 export const G_VARIANTS=Object.freeze({
  squared:{height:2.250,width:2.100,wheelbase:2.890,bodyRise:.271,tireRadius:.45815,rimInches:22},
- six:{height:2.210,width:2.110,length:5.875,bodyRise:.231,axles:[2.100,-1.020,-2.120],tireRadius:.4699,rimInches:18,
-  cabRearZ:-.895,bedFrontZ:-.925,bedRearZ:-2.750}
+ six:SIX_PICKUP
 });
 const named=(o,n)=>{o.name=n;return o;};
 function rod(g,m,a,b,r=.012,n=12){const p=new T.Vector3(...a),q=new T.Vector3(...b),o=mesh(g,new T.CylinderGeometry(r,r,p.distanceTo(q),n),m,p.clone().add(q).multiplyScalar(.5).toArray());o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),q.sub(p).normalize());return o;}
@@ -20,10 +20,10 @@ function carbon(){return markMaterial(new T.MeshPhysicalMaterial({color:'#171d20
 
 // Cut triangles, not their bounding boxes: roof/cab side sheets cross the
 // pickup's rear wall and must terminate exactly at that wall without spikes.
-function clipCabAtZ(body,cut){
+function clipCabAtZ(body,cut,select=()=>true,keepField=null){
  body.updateWorldMatrix(true,true);const inverse=body.matrixWorld.clone().invert();
  body.traverse(o=>{
-  if(!o.isMesh)return;
+  if(!o.isMesh||!select(o))return;
   const g=o.geometry,p=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv,idx=g.index;
   const rel=inverse.clone().multiply(o.matrixWorld),back=rel.clone().invert(),P=[],N=[],UV=[],groups=[];
   const sample=i=>({p:new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(rel),n:new T.Vector3().fromBufferAttribute(n,i),uv:uv?[uv.getX(i),uv.getY(i)]:[0,0]});
@@ -31,7 +31,15 @@ function clipCabAtZ(body,cut){
   const push=v=>{const q=v.p.clone().applyMatrix4(back);P.push(...q.toArray());N.push(...v.n.toArray());UV.push(...v.uv);};
   for(let i=0;i<(idx?.count??p.count);i+=3){
    const polygon=[0,1,2].map(k=>sample(idx?idx.getX(i+k):i+k)),out=[];
-   for(let j=0;j<3;j++){const a=polygon[j],b=polygon[(j+1)%3],insideA=a.p.z>=cut,insideB=b.p.z>=cut;if(insideA)out.push(a);if(insideA!==insideB)out.push(mix(a,b,(cut-a.p.z)/(b.p.z-a.p.z)));}
+   for(let j=0;j<3;j++){
+    const a=polygon[j],b=polygon[(j+1)%3],da=keepField?keepField(a.p):a.p.z-cut,db=keepField?keepField(b.p):b.p.z-cut,insideA=da>=0,insideB=db>=0;
+    if(insideA)out.push(a);
+    if(insideA!==insideB){
+     let t=da/(da-db);
+     if(keepField){let lo=0,hi=1;for(let k=0;k<18;k++){const mid=(lo+hi)/2;if((keepField(a.p.clone().lerp(b.p,mid))>=0)===insideA)lo=mid;else hi=mid;}t=(lo+hi)/2;}
+     out.push(mix(a,b,t));
+    }
+   }
    if(out.length<3)continue;
    const start=P.length/3;for(let j=1;j<out.length-1;j++){push(out[0]);push(out[j]);push(out[j+1]);}
    const mat=g.groups.find(group=>i>=group.start&&i<group.start+group.count)?.materialIndex??0;
@@ -101,17 +109,36 @@ export function gClassSixView(spec){
  }
  // Retain the front double cab's formed skins, doors, seals, actual glazing
  // holes and cabin. The rear SUV closure/spare are removed, not buried.
- const drop=[];g.traverse(o=>{if(/gclass-(box-shouldered-fender|fender-upper-return|folded-arch-edge|closed-inner-wheelwell)|g63-panamericana-grille-bar|gclass-rear-roof-header/.test(o.name)||o.name==='gclass-rigid-star-badge'||o.name==='gclass-modern-widescreen-frame'||o.isMesh&&o.material===m.screen)drop.push(o);});
+ const drop=[];g.traverse(o=>{
+  if(/gclass-(box-shouldered-fender|fender-upper-return|folded-arch-edge|closed-inner-wheelwell)|g63-panamericana-grille-bar|gclass-rear-roof-header/.test(o.name)||['gclass-rounded-roof-crown','gclass-rigid-star-badge','gclass-modern-widescreen-frame'].includes(o.name)){drop.push(o);return;}
+  if(!o.isMesh)return;
+  o.geometry.computeBoundingBox();const b=o.geometry.boundingBox,roofInsert=!o.name&&b.min.y>1.93&&b.min.z>-.65&&b.max.z<.35;
+  if(roofInsert||o.material===m.screen)drop.push(o);
+ });
  for(const o of drop)o.removeFromParent();clipCabAtZ(g,-1.55);
- const cab=moveChildren(g,[0,.231,.655]);cab.name='g63-six-double-cab';g.position.set(0,-spec.cgHeight,0);
- const c=carbon(),trim=m.gTrim,metal=m.gSatin,paint=m.paint,red=m.red;
+ const cab=moveChildren(g,[0,SIX_PICKUP.bodyRise,.655]);cab.name='g63-six-double-cab';g.position.set(0,-spec.cgHeight,0);
+ // Discard the old SUV quarter's lower arch sheet; the replacement follows
+ // the shared tandem opening rather than overlapping a second wheel notch.
+ clipCabAtZ(g,-.30,o=>o.name.startsWith('gclass-drawn-lower-door-sheet-'));
+ // The front donor sheet still had a round cut-out behind the new boxed
+ // fender. Trim its actual triangles to the shared opening's upper fold,
+ // rather than leaving a bright crescent in the wheel well.
+ clipCabAtZ(g,0,o=>o.name.startsWith('gclass-drawn-lower-door-sheet-'),p=>Math.max(SIX_PICKUP.frontOpening[0][0]-p.z,p.z-SIX_PICKUP.frontOpening.at(-1)[0],p.y-sixOpeningY(p.z)-.095));
+ // The SUV donor also carried a full-width cabin floor and rear-quarter
+ // door-card slabs through the middle tire's travel. Keep the floor between
+ // the tires and terminate the inner cards at the actual rear-door edge.
+ g.updateWorldMatrix(true,true);const bodyInverse=g.matrixWorld.clone().invert();
+ g.traverse(o=>{
+  if(!o.isMesh)return;
+  const b=new T.Box3().setFromObject(o).applyMatrix4(bodyInverse);
+  if(o.material?.userData.vehicleInterior&&b.max.y<1&&b.min.x<-.80&&b.max.x>.80&&b.min.z<-.55&&b.max.z>.5){o.scale.x*=.82;o.name='g63-six-narrowed-cabin-floor';}
+  if(!o.name&&Math.abs((b.min.x+b.max.x)*.5)>.70&&b.min.y<1&&b.max.y<1.40&&b.min.z<-.55&&b.max.z>.5)o.name='g63-six-trimmed-inner-door-card';
+ });
+ clipCabAtZ(g,-.48,o=>o.name==='g63-six-trimmed-inner-door-card');
+ const trim=m.gTrim,metal=m.gSatin,paint=m.paint,red=m.red;
  // Factory front roof spoiler contains two recessed LED units. The housings
  // follow the leading roof edge without inflating the published roof height.
- for(const s of [-1,1]){
-  named(box(g,c,[s*.605,2.191,1.123],[.420,.034,.111],.014),'g63-six-roof-carbon-light-housing-'+s);
-  box(g,trim,[s*.605,2.190,1.183],[.355,.022,.009],.004);
-  for(let i=0;i<8;i++)box(g,m.drl,[s*.605+(i-3.5)*.040,2.190,1.189],[.031,.012,.004]);
- }
+ buildSixRoof(g,m);
  // The 2014 truck predates the full-width digital dashboard. Its two
  // circular analogue instruments and separate central tablet remain visibly
  // distinct through the actual cab glazing.
@@ -124,60 +151,28 @@ export function gClassSixView(spec){
  }
  named(box(g,trim,[.12,1.545,1.080],[.315,.180,.038],.014),'g63-six-separate-command-tablet');
  const screen=box(g,m.screen,[.12,1.545,1.057],[.286,.148,.004]);
- const front=G_VARIANTS.six.bedFrontZ,rear=G_VARIANTS.six.bedRearZ,wall=.895,top=1.285;
+ const wall=.895;
  // The pickup cab has a real rear wall and independent rear glazing.
- const window=[[-.665,1.494],[.665,1.494],[.665,2.040],[-.665,2.040]];
- named(mappedPolygon(g,paint,[[-.89,.755],[.89,.755],[.89,2.174],[-.89,2.174]],(x,y)=>[x,y,-wall],[window],true,6),'g63-six-closed-cab-rear-wall');
+ const window=[[-.665,1.544],[.665,1.544],[.665,2.090],[-.665,2.090]];
+ named(mappedPolygon(g,paint,[[-.89,1.397],[-.700,1.397],[-.700,.805],[.700,.805],[.700,1.397],[.89,1.397],[.89,2.224],[-.89,2.224]],(x,y)=>[x,y,-wall],[window],true,6),'g63-six-closed-cab-rear-wall');
  named(mappedPolygon(g,m.privacyGlass,window,(x,y)=>[x,y,-wall-.006],[],true,5),'g63-six-rear-cab-glass');
  line(g,trim,[...window,window[0]].map(([x,y])=>[x,y,-wall-.012]),.007);
  // Close the roof section created by the exact mesh cut, including its
  // narrow rounded header flange instead of leaving an open SUV cross section.
- box(g,paint,[0,2.185,-wall+.016],[1.73,.046,.060],.016);
- named(box(g,trim,[0,.855,(front+rear)/2],[1.825,.085,front-rear],.020),'g63-six-cargo-bed-floor');
- for(let i=-6;i<=6;i++)named(box(g,metal,[i*.116,.903,(front+rear)/2],[.022,.012,front-rear-.08]),'g63-six-longitudinal-bed-floor-rib');
- for(const s of [-1,1]){
-  // Formed double-wall bed rails and inner wheel tubs. Bed floor, front
-  // bulkhead and tailgate remain separate visible solids from above/rear.
-  named(box(g,paint,[s*.947,(.855+top)/2,(front+rear)/2],[.111,top-.855,front-rear],.026),'g63-six-formed-bed-side-'+s);
-  box(g,c,[s*.954,top+.008,(front+rear)/2],[.126,.029,front-rear+.012],.010);
-  for(const axle of G_VARIANTS.six.axles)wideArch(g,c,s,axle,.6284,.455,1.055,'g63-six-carbon-arch');
-  for(const axle of G_VARIANTS.six.axles.slice(1))box(g,trim,[s*.792,.947,axle],[.232,.185,.740],.073);
-  // Repair the old SUV rear-wheel notch inside the shortened rear door with
-  // a panel that follows the actual middle-axle clearance envelope.
-  surface(g,paint,36,10,(u,v)=>{const z=lerp(-.895,-.30,u),d=Math.abs(z+1.02),low=d<.50?.4699+Math.sqrt(.50*.50-d*d):.68;return[s*.910,lerp(Math.max(.68,low),1.226,v),z];},s>0).name='g63-six-cab-lower-rear-closure-'+s;
-  named(box(g,metal,[s*.972,.665,.60],[.170,.035,2.13],.010),'g63-six-double-cab-step-'+s);
-  rod(g,metal,[s*.725,top+.025,front-.13],[s*.725,1.695,front-.47],.043,20);
-  rod(g,metal,[s*.725,1.695,front-.47],[s*.725,top+.025,rear+.30],.043,20);
-  for(const z of [front-.18,rear+.28])box(g,metal,[s*.72,top+.030,z],[.15,.025,.17],.007);
- }
- rod(g,metal,[-.725,1.695,front-.47],[.725,1.695,front-.47],.043,20);
- box(g,paint,[0,1.063,front-.035],[1.80,.42,.075],.018);
- named(box(g,paint,[0,1.063,rear-.017],[1.80,.420,.069],.025),'g63-six-sculpted-tailgate');
- line(g,trim,[[-.858,.883,rear-.055],[-.858,1.255,rear-.055],[.858,1.255,rear-.055],[.858,.883,rear-.055]],.003);
- box(g,trim,[0,1.165,rear-.056],[.227,.033,.019],.006);
- for(const s of [-1,1]){
-  box(g,trim,[s*.892,.795,rear-.040],[.142,.295,.062],.025);
-  named(box(g,red,[s*.892,.844,rear-.076],[.115,.116,.015],.012),'g63-six-rear-brake-lamp-'+s);
-  box(g,m.reverse,[s*.892,.750,rear-.078],[.115,.043,.015],.007);
-  box(g,red,[s*.892,.684,rear-.078],[.115,.050,.015],.007);
-  for(const z of [front-.05,rear+.24])box(g,m.gReflector,[s*1.007,.93,z],[.012,.037,.070],.006);
- }
- named(box(g,trim,[0,.612,rear-.034],[1.92,.139,.163],.025),'g63-six-independent-rear-bumper');
- box(g,metal,[0,.618,rear-.122],[.543,.045,.030],.008);
- const plate=box(g,metal,[0,.757,rear-.071],[.405,.095,.012],.006);plate.name='g63-six-rear-license-plate';
- const label=geometryText(g,'G63 6X6',.32,.032,metal);label.position.set(-.48,1.160,rear-.057);label.rotation.y=Math.PI;
+ box(g,paint,[0,2.235,-wall+.016],[1.73,.046,.060],.016);
+ buildSixPickup(g,m);
  // Correct-era AMG twin-blade grille, replacing modern vertical bars.
- box(g,trim,[0,1.140,2.890],[.876,.285,.022],.025);
- for(const y of [1.100,1.191])named(box(g,metal,[0,y,2.907],[.846,.025,.025],.006),'g63-six-twin-blade-grille');
- const star=new T.Group();star.position.set(0,1.145,2.925);g.add(star);
+ box(g,trim,[0,1.190,2.890],[.876,.285,.022],.025);
+ for(const y of [1.150,1.241])named(box(g,metal,[0,y,2.907],[.846,.025,.025],.006),'g63-six-twin-blade-grille');
+ const star=new T.Group();star.name='g63-six-classic-star-badge';star.position.set(0,1.195,2.925);g.add(star);
  const ring=mesh(star,new T.TorusGeometry(.112,.006,8,64),metal);
  for(let i=0;i<3;i++){const a=Math.PI/2+i*2*Math.PI/3;rod(star,metal,[0,0,.002],[Math.cos(a)*.108,Math.sin(a)*.108,.002],.010);}
  for(const x of [-.595,.595])box(g,trim,[x,.665,-.15],[.10,.13,5.30],.010);
  for(const z of [1.60,.62,-.55,-1.55,-2.55])box(g,trim,[0,.645,z],[1.29,.080,.095],.009);
  while(view.wheels.length<6){const w=view._wheel();view.scene.add(w.root);view.wheels.push(w);}
- view.root.userData.nativeConstruction={version:4,bodySurfaceRevision:24,originalGeometry:true,importedManufacturerCAD:false,doubleCabPickup:true,closedCargoBed:true,threeAxleBody:true,frontAxleZ:2.10,middleAxleZ:-1.02,rearAxleZ:-2.12,openGlazing:true,formedBonnet:true,closedArchReturns:true};
- view.root.userData.visualModel={type:'Original reference reconstruction; not OEM CAD',version:24,modelYear:2014,variant:'G63 AMG 6x6',dimensions:G_VARIANTS.six,selectedEquipment:'37in mud tires / 18in beadlock wheels, twin-blade AMG grille, double cab, ribbed open bed and stainless rollover bar'};
- view.root.userData.bodyRefinement={version:24,variant:'g63six',wheelCount:6,closedDoubleCab:true,closedCargoBed:true,continuousDoorJoints:true};
+ view.root.userData.nativeConstruction={version:4,bodySurfaceRevision:25,originalGeometry:true,importedManufacturerCAD:false,doubleCabPickup:true,closedCargoBed:true,threeAxleBody:true,frontAxleZ:2.10,middleAxleZ:-1.02,rearAxleZ:-2.12,openGlazing:true,formedBonnet:true,closedArchReturns:true,joinedTandemFenders:true,fullHeightHoop:true};
+ view.root.userData.visualModel={type:'Original reference reconstruction; not OEM CAD',version:25,modelYear:2014,variant:'G63 AMG 6x6',dimensions:G_VARIANTS.six,selectedEquipment:'37in tires / 18in beadlock wheels, classic twin-blade grille, bamboo-lined open bed, joined tandem fenders and full-height stainless roll bar'};
+ view.root.userData.bodyRefinement={version:25,variant:'g63six',wheelCount:6,closedDoubleCab:true,closedCargoBed:true,continuousDoorJoints:true};
  return view;
 }
 

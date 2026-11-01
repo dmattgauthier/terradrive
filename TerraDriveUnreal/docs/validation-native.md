@@ -1,6 +1,30 @@
-# Current native acceptance — G-Class and fidelity pass24
+# Current native acceptance — 6×6 pickup correction, pass 25
 
-The current package passes **1,762 native checks** on one executable, plus **15,854 fresh portable checks**. It includes ten vehicles, six actual tire contacts on the G63 6×6 and bounded finer rock-garden geometry. [The current acceptance record](gclass-sixwheel-native-24.md) gives exact build/source hashes, visual-review coverage, cleanup and limits. Earlier results below are historical.
+The corrected G63 6×6 package passes **226 fresh native checks**: SixWheel 35,
+Art 110 and focused six-wheeler Rollover 81. All ten new 6×6 garage views, five
+driving captures and three selected rollover views were manually inspected.
+The [model correction guide](g63-sixwheel-proportions.md) and
+[exact evidence summary](g63-sixwheel-native-25.json) record the source/input
+freeze, executable and cooked-container hashes, review coverage and preservation.
+
+The 88 C++/Config/project producers and executable are byte-identical to accepted
+pass 24; all content was cooked again for this model. Source validation passes
+for all ten models, including 151 expedition/portal checks (95 portal checks
+are included in that total). The two changed mesh inputs are the 6×6 body and
+optional armor. Runs used isolated settings, 1600×900 offscreen rendering, a
+paced fixed 20 Hz clock and a 77°C cutoff. Peak sampled GPU temperature was
+61°C. This proves bounded function, rather than uncapped FPS or long-session
+thermal stability. Earlier results below retain their original artifact scope.
+
+---
+
+# Prior native acceptance — G-Class and fidelity pass 24
+
+The pass 24 package passed **1,762 native checks** on one executable, plus
+**15,854 fresh portable checks**. It introduced ten vehicles, six actual tire
+contacts on the G63 6×6 and bounded finer rock-garden geometry. Its
+[acceptance record](gclass-sixwheel-native-24.md) gives exact build/source
+hashes, visual-review coverage, cleanup and limits. Those are historical results.
 
 ---
 

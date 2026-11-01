@@ -747,10 +747,10 @@
             "vertices": 337935
           },
           {
-            "case": "roof height follows the selected reference envelope within one inch",
+            "case": "roof and roll bar follow the selected reference envelope within one inch",
             "pass": true,
             "actualM": 2.2655000005662442,
-            "referenceStatus": "Variant dimension estimate; first-party dimension sheet unavailable."
+            "referenceStatus": "Photo-based variant envelope; not a certified dimension drawing."
           },
           {
             "case": "body length follows the selected reference envelope",
@@ -857,9 +857,10 @@
             ]
           },
           {
-            "case": "every physical axle has two explicit outward fender faces",
+            "case": "front and rear fender exteriors are explicit closed surfaces",
             "pass": true,
-            "faces": 4
+            "faces": 4,
+            "joinedTandem": false
           },
           {
             "case": "fender exterior faces out g63-squared-carbon-extension-outer--1--1.445",
@@ -912,8 +913,8 @@
     },
     {
       "vehicle": "Mercedes-Benz G 63 AMG 6x6",
-      "vertices": 277460,
-      "normalizedFraction": 0.999978375261299,
+      "vertices": 294908,
+      "normalizedFraction": 0.9999796546719655,
       "visibility": [],
       "tire": {
         "revision": 24,
@@ -925,21 +926,21 @@
         "vehicle": "Mercedes-Benz G 63 AMG 6x6",
         "id": "mercedes-amg-g63-6x6",
         "style": "g63six",
-        "checks": 37,
+        "checks": 67,
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 277460,
-          "triangles": 414993,
+          "vertices": 294908,
+          "triangles": 443915,
           "bounds": [
             [
               -1.098000000026077,
-              0.48913052678108215,
-              -2.8869999996647238
+              0.5994999991059304,
+              -2.918499999806285
             ],
             [
               1.098000000026077,
-              2.210659914970398,
+              2.3259999752044678,
               2.9900000000474973
             ]
           ]
@@ -948,31 +949,31 @@
           {
             "case": "finite source positions and normals",
             "pass": true,
-            "vertices": 277460,
+            "vertices": 294908,
             "nonfinite": 0
           },
           {
             "case": "unit shading normals",
             "pass": true,
             "nonunit": 6,
-            "normalizedFraction": 0.999978375261299
+            "normalizedFraction": 0.9999796546719655
           },
           {
             "case": "bounded triangle budget without cab duplication",
             "pass": true,
-            "triangles": 414993,
-            "vertices": 277460
+            "triangles": 443915,
+            "vertices": 294908
           },
           {
-            "case": "roof height follows the selected reference envelope within one inch",
+            "case": "roof and roll bar follow the selected reference envelope within one inch",
             "pass": true,
-            "actualM": 2.210659914970398,
-            "referenceStatus": "Variant dimension estimate; first-party dimension sheet unavailable."
+            "actualM": 2.3259999752044678,
+            "referenceStatus": "Photo-based variant envelope; not a certified dimension drawing."
           },
           {
             "case": "body length follows the selected reference envelope",
             "pass": true,
-            "actualM": 5.876999999712221,
+            "actualM": 5.908499999853783,
             "referenceStatus": "Variant dimension estimate."
           },
           {
@@ -1017,7 +1018,7 @@
           {
             "case": "rear door -1 is actual first-hit glazing",
             "pass": true,
-            "firstDistanceM": 2.1400756911343732
+            "firstDistanceM": 2.140075691134373
           },
           {
             "case": "front door 1 is actual first-hit glazing",
@@ -1027,7 +1028,7 @@
           {
             "case": "rear door 1 is actual first-hit glazing",
             "pass": true,
-            "firstDistanceM": 2.1400756911343732
+            "firstDistanceM": 2.140075691134373
           },
           {
             "case": "windshield is actual first-hit glazing",
@@ -1055,14 +1056,14 @@
             "firstDistanceM": 0.3489999771118164
           },
           {
-            "case": "cargo bed is open over its ribbed floor -1.85",
+            "case": "cargo bed is open over its bamboo floor -1.85",
             "pass": true,
-            "firstSurfaceM": 0.9090000000521541
+            "firstSurfaceM": 0.973000000372529
           },
           {
-            "case": "cargo bed is open over its ribbed floor -2.35",
+            "case": "cargo bed is open over its bamboo floor -2.35",
             "pass": true,
-            "firstSurfaceM": 0.9090000000521541
+            "firstSurfaceM": 0.973000000372529
           },
           {
             "case": "pickup has distinct tailgate and closed cab back",
@@ -1070,6 +1071,10 @@
           },
           {
             "case": "classic AMG front uses twin blades instead of thirteen modern slats",
+            "pass": true
+          },
+          {
+            "case": "classic front has one emblem with no retained donor badge group",
             "pass": true
           },
           {
@@ -1100,62 +1105,284 @@
             "faces": 2
           },
           {
-            "case": "every physical axle has two explicit outward fender faces",
+            "case": "main hoop reaches above the cab instead of peaking halfway up the bed",
             "pass": true,
-            "faces": 6
+            "cabRoofM": 2.26,
+            "hoopTopM": 2.3259999752044678
           },
           {
-            "case": "fender exterior faces out g63-six-carbon-arch-outer--1-2.1",
+            "case": "main hoop is immediately behind the cab and spans the pickup shoulders",
             "pass": true,
-            "normal": [
-              -0.9932064414024353,
-              0.0033177330624312162,
-              -0.11631833016872406
+            "bounds": [
+              [
+                -0.7649999856948853,
+                2.259000062942505,
+                -1.128499984741211
+              ],
+              [
+                0.7649999856948853,
+                2.3259999752044678,
+                -1.0614999532699585
+              ]
             ]
           },
           {
-            "case": "fender exterior faces out g63-six-carbon-arch-outer--1--1.02",
+            "case": "native stock envelope includes the new bar and wider fenders",
             "pass": true,
-            "normal": [
-              -0.9932064414024353,
-              0.0033176548313349485,
-              -0.11631841212511063
+            "heightM": 2.326,
+            "widthM": 2.185
+          },
+          {
+            "case": "roll-bar upright mounts to the front bed shoulder -1",
+            "pass": true,
+            "bounds": [
+              [
+                -0.9834262132644653,
+                1.4508475065231323,
+                -1.1283081769943237
+              ],
+              [
+                -0.7649999856948853,
+                2.32580828666687,
+                -0.9716917872428894
+              ]
             ]
           },
           {
-            "case": "fender exterior faces out g63-six-carbon-arch-outer--1--2.12",
+            "case": "rear stay slopes from roof height and turns down to its rear foot -1",
             "pass": true,
-            "normal": [
-              -0.9932064414024353,
-              0.0033177335280925035,
-              -0.11631834506988525
+            "bounds": [
+              [
+                -0.9798902273178101,
+                1.4448877573013306,
+                -2.533175468444824
+              ],
+              [
+                -0.7950849533081055,
+                2.3212411403656006,
+                -1.0862282514572144
+              ]
             ]
           },
           {
-            "case": "fender exterior faces out g63-six-carbon-arch-outer-1-2.1",
+            "case": "stainless bar is explicitly structural for rollover collision -1",
+            "pass": true
+          },
+          {
+            "case": "one joined rear fender spans both actual tandem tire centres -1",
             "pass": true,
-            "normal": [
-              0.9932064414024353,
-              0.0033177330624312162,
-              -0.11631833016872406
+            "fenderZM": [
+              -2.7750000953674316,
+              -0.4300000071525574
+            ],
+            "axleZM": [
+              -1.02,
+              -2.12
             ]
           },
           {
-            "case": "fender exterior faces out g63-six-carbon-arch-outer-1--1.02",
+            "case": "front wheel opening contains no retained rounded donor paint crescent -1",
             "pass": true,
-            "normal": [
-              0.9932064414024353,
-              0.0033176548313349485,
-              -0.11631841212511063
+            "openingProbes": 27,
+            "oldPaint": 0
+          },
+          {
+            "case": "tire silhouette is clear of bed and cab sheets at axle 0 side -1",
+            "pass": true,
+            "probes": 62,
+            "blocked": 0,
+            "failures": []
+          },
+          {
+            "case": "tire silhouette is clear of bed and cab sheets at axle 1 side -1",
+            "pass": true,
+            "probes": 62,
+            "blocked": 0,
+            "failures": []
+          },
+          {
+            "case": "tire silhouette is clear of bed and cab sheets at axle 2 side -1",
+            "pass": true,
+            "probes": 62,
+            "blocked": 0,
+            "failures": []
+          },
+          {
+            "case": "upper sheet faces upward g63-six-carbon-front-arch-crown--1",
+            "pass": true,
+            "meanNormalY": 0.7406264281905858
+          },
+          {
+            "case": "upper sheet faces upward g63-six-carbon-tandem-arch-crown--1",
+            "pass": true,
+            "meanNormalY": 0.8525044069880933
+          },
+          {
+            "case": "upper sheet faces upward g63-six-painted-bed-rail--1",
+            "pass": true,
+            "meanNormalY": 0.9736835294592697
+          },
+          {
+            "case": "upper sheet faces upward g63-six-tandem-inner-tub-crown--1",
+            "pass": true,
+            "meanNormalY": 0.9227728403823072
+          },
+          {
+            "case": "roll-bar upright mounts to the front bed shoulder 1",
+            "pass": true,
+            "bounds": [
+              [
+                0.7649999856948853,
+                1.4508475065231323,
+                -1.1283081769943237
+              ],
+              [
+                0.9834262132644653,
+                2.32580828666687,
+                -0.9716917872428894
+              ]
             ]
           },
           {
-            "case": "fender exterior faces out g63-six-carbon-arch-outer-1--2.12",
+            "case": "rear stay slopes from roof height and turns down to its rear foot 1",
+            "pass": true,
+            "bounds": [
+              [
+                0.7950849533081055,
+                1.4448877573013306,
+                -2.533175468444824
+              ],
+              [
+                0.9798902273178101,
+                2.3212411403656006,
+                -1.0862282514572144
+              ]
+            ]
+          },
+          {
+            "case": "stainless bar is explicitly structural for rollover collision 1",
+            "pass": true
+          },
+          {
+            "case": "one joined rear fender spans both actual tandem tire centres 1",
+            "pass": true,
+            "fenderZM": [
+              -2.7750000953674316,
+              -0.4300000071525574
+            ],
+            "axleZM": [
+              -1.02,
+              -2.12
+            ]
+          },
+          {
+            "case": "front wheel opening contains no retained rounded donor paint crescent 1",
+            "pass": true,
+            "openingProbes": 27,
+            "oldPaint": 0
+          },
+          {
+            "case": "tire silhouette is clear of bed and cab sheets at axle 0 side 1",
+            "pass": true,
+            "probes": 62,
+            "blocked": 0,
+            "failures": []
+          },
+          {
+            "case": "tire silhouette is clear of bed and cab sheets at axle 1 side 1",
+            "pass": true,
+            "probes": 62,
+            "blocked": 0,
+            "failures": []
+          },
+          {
+            "case": "tire silhouette is clear of bed and cab sheets at axle 2 side 1",
+            "pass": true,
+            "probes": 62,
+            "blocked": 0,
+            "failures": []
+          },
+          {
+            "case": "upper sheet faces upward g63-six-carbon-front-arch-crown-1",
+            "pass": true,
+            "meanNormalY": 0.7406264281905858
+          },
+          {
+            "case": "upper sheet faces upward g63-six-carbon-tandem-arch-crown-1",
+            "pass": true,
+            "meanNormalY": 0.8525044069880933
+          },
+          {
+            "case": "upper sheet faces upward g63-six-painted-bed-rail-1",
+            "pass": true,
+            "meanNormalY": 0.9736835294592697
+          },
+          {
+            "case": "upper sheet faces upward g63-six-tandem-inner-tub-crown-1",
+            "pass": true,
+            "meanNormalY": 0.9227728403823072
+          },
+          {
+            "case": "classic pickup roof is solid painted metal instead of the donor panoramic glass",
+            "pass": true,
+            "mesh": "g63-six-longitudinal-roof-pressing-0"
+          },
+          {
+            "case": "rear lamps use the wide horizontal factory layout",
+            "pass": true
+          },
+          {
+            "case": "optional armor and outriggers clear all three moving tire volumes -1",
+            "pass": true,
+            "probes": 216,
+            "blocked": 0
+          },
+          {
+            "case": "optional armor and outriggers clear all three moving tire volumes 1",
+            "pass": true,
+            "probes": 216,
+            "blocked": 0
+          },
+          {
+            "case": "front and rear fender exteriors are explicit closed surfaces",
+            "pass": true,
+            "faces": 4,
+            "joinedTandem": true
+          },
+          {
+            "case": "fender exterior faces out g63-six-carbon-front-arch-outer--1",
             "pass": true,
             "normal": [
-              0.9932064414024353,
-              0.0033177335280925035,
-              -0.11631834506988525
+              -1,
+              -5.859261964502593e-10,
+              0
+            ]
+          },
+          {
+            "case": "fender exterior faces out g63-six-carbon-tandem-arch-outer--1",
+            "pass": true,
+            "normal": [
+              -1,
+              -1.431947538321765e-7,
+              0
+            ]
+          },
+          {
+            "case": "fender exterior faces out g63-six-carbon-front-arch-outer-1",
+            "pass": true,
+            "normal": [
+              1,
+              -5.859261964502593e-10,
+              0
+            ]
+          },
+          {
+            "case": "fender exterior faces out g63-six-carbon-tandem-arch-outer-1",
+            "pass": true,
+            "normal": [
+              1,
+              -1.431947538321765e-7,
+              0
             ]
           },
           {
@@ -1172,6 +1399,6 @@
       "pass": true
     }
   ],
-  "newExpeditionChecks": 121,
+  "newExpeditionChecks": 151,
   "pass": true
 }
