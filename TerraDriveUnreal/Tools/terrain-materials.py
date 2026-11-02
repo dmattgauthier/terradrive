@@ -143,7 +143,7 @@ def terrain_material(name, layers, biome, wetness, scales):
     return m
 
 terrain_specs = [
-    ('dirt',[mw_layer('Dirt','dry_ground_rocks'),source_layer('leafy_grass'),mw_layer('Stones','rocks_ground_05')],.32,[1.6,1.75,2.4]),
+    ('dirt',[mw_layer('Dirt','dry_ground_rocks'),mw_layer('Grass','leafy_grass'),mw_layer('Stones','rocks_ground_05')],.32,[1.6,1.35,2.4]),
     ('asphalt',[source_layer(s) for s in ['asphalt_02','gravel_ground_01','brown_mud_02']],.15,[2.1,2.7,1.55]),
     ('mud',[source_layer(s) for s in ['brown_mud_02','dry_riverbed_rock','forest_ground_04']],.8,[2.1,2.7,1.55]),
     ('wetland',[source_layer('brown_mud_02'),mw_layer('Grass','leafy_grass'),source_layer('forest_ground_04')],.95,[2.1,2.7,1.55]),

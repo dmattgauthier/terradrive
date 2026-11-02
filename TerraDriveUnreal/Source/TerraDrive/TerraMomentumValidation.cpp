@@ -25,7 +25,7 @@ struct FTrial {
   float Time=0,Span=0,Travel=0,LastSpeed=0,PeakLoss=0,MinimumSpeed=1000,
       PeakCompression=0,MinimumClearance=10000,PeakPitch=0,BrakeEntrySpeed=0,
       MinimumVisibleClearance=10000,RiseVisibleClearance=10000,PeakDeceleration=0;
-  float LoadedDistance[4]={};
+  float LoadedDistance[ATerraVehicle::MaxWheels]={};
   int PairMask=0,EncounteredMask=0;
   FVector Start=FVector::ZeroVector,Direction=FVector::ForwardVector,BumpCenter=FVector::ZeroVector,LastPosition=FVector::ZeroVector;
   TArray<FVector> BodyProbes[ATerraVehicle::VehicleCount];
@@ -159,7 +159,7 @@ void RecordMotion(ATerraVehicle *V,float Dt){
   ++State.Frames;
 }
 void RecordSuspension(ATerraVehicle *V){
-  for(int I=0;I<4;++I)if(V->WheelState[I].ContactValid)
+  for(int I=0;I<V->WheelCount();++I)if(V->WheelState[I].ContactValid)
     State.PeakCompression=FMath::Max(State.PeakCompression,
         (State.LoadedDistance[I]-V->WheelState[I].Distance)/V->BumpTravel(I<2));
   State.PeakPitch=FMath::Max(State.PeakPitch,FMath::Abs(V->GetActorRotation().Pitch));
@@ -228,8 +228,8 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
       State.Direction=FVector::ForwardVector;State.Name=FString::Printf(TEXT("vehicle %d"),Vehicle);
       Park(V,Vehicle,V->Terrain->Spawns[1],State.Direction);
     }else if(State.Phase==1&&State.Time>2){
-      for(int I=0;I<4;++I)State.LoadedDistance[I]=V->WheelState[I].Distance;
-      Check(State.Name+TEXT(" begins at supported ride height"),V->ContactCount==4&&FMath::Abs(V->GetActorLocation().Z-V->Terrain->Height(V->GetActorLocation().X,V->GetActorLocation().Y)-V->ExpectedRideHeight()*100)<12,V->ContactCount);
+      for(int I=0;I<V->WheelCount();++I)State.LoadedDistance[I]=V->WheelState[I].Distance;
+      Check(State.Name+TEXT(" begins at supported ride height"),V->ContactCount==V->WheelCount()&&FMath::Abs(V->GetActorLocation().Z-V->Terrain->Height(V->GetActorLocation().X,V->GetActorLocation().Y)-V->ExpectedRideHeight()*100)<12,V->ContactCount);
       Launch(V,8);
     }else if(State.Phase==2){
       RecordMotion(V,Dt);RecordSuspension(V);

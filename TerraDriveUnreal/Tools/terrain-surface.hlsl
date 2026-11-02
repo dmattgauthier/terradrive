@@ -100,6 +100,9 @@ float broad=lerp(.78,1.13,smoothstep(.16,.84,macro));
 float mineral=f.noise(p.xy*.012+p.z*.024);
 color*=broad*lerp(float3(.94,.98,1.02),float3(1.05,1.01,.91),mineral);
 float wet=smoothstep(.51,.77,patches)*Wetness;
+// The neighbouring wet cover also darkens sheltered fine soil between its
+// larger patches. Preserve dry raised grains and the original scan detail.
+if(Biome==0||Biome==5)wet=max(wet,saturate((Wetness-.34)*1.65)*(.45+.55*(1-grit)));
 color*=lerp(1,.61,wet);
 float packed=saturate(1-Wear);
 // Detailed soil supplies signed physical height and tire tangent. Coarse
@@ -138,6 +141,21 @@ Roughness=clamp(lerp(.66+rough*.31,.53,wet),.52,.99);
 if(Biome==2||Biome==3)Roughness=lerp(Roughness,.32+rough*.10,floorWear*.94*(1-churn*.15));
 if(Biome==0||Biome==2||Biome==3||Biome==5)Roughness=lerp(Roughness,.94,looseBank*.70);
 SurfaceNormal=normalize(n+relief*(Biome==0?.78:.48)*(1-floorWear*.70));
+if(Biome==2||Biome==3){
+  // Rolling exposes a pressed floor; sustained slip smears the wet clay.
+  // Banks keep their drier clod texture instead of sharing the glossy floor.
+  float smear=floorWear*churn*Wetness;
+  Roughness=lerp(Roughness,.23+rough*.08,smear*.75);
+  SurfaceNormal=normalize(lerp(SurfaceNormal,n,smear*.40));
+}
+if(Biome==5){
+  // Low wind-combed grain follows a gently wandering direction. Filter the
+  // fine ridges with the pixel footprint and erase them under loaded tires.
+  float windPhase=p.x*21+p.y*7+warp.x*5;
+  float ripple=cos(windPhase)*nearDetail*(1-packed)*.13;
+  SurfaceNormal=normalize(SurfaceNormal+float3(ripple,ripple*.32,0));
+  color*=1+sin(windPhase)*nearDetail*(1-packed)*.025;
+}
 if(Biome==4){
   // The garden's physical half-metre mesh carries the silhouette. The same
   // acquired scan layers now read at stone scale; low-contrast mineral

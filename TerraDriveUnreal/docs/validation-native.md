@@ -1,4 +1,39 @@
-# Current native acceptance — 6×6 pickup correction, pass 25
+# Current native acceptance — terrain, transitions and ruts, pass 26
+
+The final package passes **927 fresh native checks**: RutTransitions 64,
+Transitions 53, Detail 15, Ruts 117, Movement 120, Garden 10, Rollover 513 and
+SixWheel 35. All eight processes exit 0 on the same final executable and cooked
+containers. The content cook reports **0 errors and 0 warnings**. A separate
+fresh standalone simulation run passes **667 checks**. The
+[terrain guide](terrain-ruts-26.md) explains the behavior and
+[exact acceptance record](terrain-ruts-native-26.json) identifies the executable,
+193 source producers, 319 generated inputs, cook and raw result hashes.
+
+Visual review covers 50 focused terrain/rut frames and 12 selected suspension,
+garden, rollover and six-wheel frames. Of the terrain frames, 23 were inspected
+directly from the final run; 27 are byte-identical to inspected Candidate4
+frames. Both sets and their hashes are distinguished in the record. One wide
+snow view is partly obscured by a pine branch; other close and edge views cover
+the visible ground. Light-load sand and firm-soil tracks remain subtle.
+
+The new seven-boundary fixture confirms that a finite footprint presses both
+soft sides while hard substrates stay unchanged. Maximum sampled collider
+error is approximately **0.048 inches**, below the **0.197-inch** limit. Movement
+checks retain the original seven coast crossings and all ten rise/braking
+fixtures, measuring every wheel including all six on the G63. Full rollover
+coverage includes 64 vehicle/terrain/pose cases.
+
+Runs use isolated player settings, 1600×900 offscreen rendering, a paced fixed
+20 Hz clock, a 20 FPS cap and a sampled 77°C cutoff. Peak sampled GPU temperature
+is **54°C**. These are functional checks, not uncapped throughput, manual
+controller play or long-session stability evidence. The 185 before-build checks
+and failed/rejected candidates are retained separately and excluded from 927.
+All 307 mesh inputs and main terrain data are unchanged from the fresh baseline.
+Browser source, acquired originals and current player state are preserved.
+
+---
+
+# Prior native acceptance — 6×6 pickup correction, pass 25
 
 The corrected G63 6×6 package passes **226 fresh native checks**: SixWheel 35,
 Art 110 and focused six-wheeler Rollover 81. All ten new 6×6 garage views, five
