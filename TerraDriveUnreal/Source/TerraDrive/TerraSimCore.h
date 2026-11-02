@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cmath>
+#include <initializer_list>
 
 // SI-only functions shared by the actual Unreal simulation and the small
 // standalone regression executable. No engine or graphics dependency.
@@ -192,6 +193,20 @@ inline SoilBank SoilBankShape(int surface,float tireWidth,float depth,float loos
     if(surface==5)return {.74f,std::max(.17f,tireWidth*.70f)+depth*.30f,std::min(.13f,depth*.62f)};
     if(surface==0)return {.08f+std::clamp(loose,0.f,1.f)*.66f,.14f+depth*.40f,std::min(.11f,depth*.58f)};
     return {.80f,std::max(.16f,tireWidth*.58f)+depth*.30f,std::min(.09f,depth*.64f)};
+}
+inline SoilBank BlendedSoilBank(const float *coverage,float tireWidth,float depth,float loose,float slip) {
+    SoilBank result{0,0,0};float sum=0;
+    // Excavation already reflects the local layer thickness. Mix the loose
+    // material's repose/compaction properties across natural fringes as well,
+    // instead of switching the entire berm when the tire centre changes ID.
+    for(int surface:{0,2,3,5,6}){
+        const float w=std::max(0.f,coverage[surface]);
+        if(w<=0)continue;
+        const auto bank=SoilBankShape(surface,tireWidth,depth,loose,slip);
+        result.fraction+=w*bank.fraction;result.width+=w*bank.width;result.height+=w*bank.height;sum+=w;
+    }
+    if(sum>0){result.fraction/=sum;result.width/=sum;result.height/=sum;}
+    return result;
 }
 inline float SoilBankProfile(float lateral,float inner,float width) {
     const float t=(std::abs(lateral)-inner)/std::max(.05f,width);

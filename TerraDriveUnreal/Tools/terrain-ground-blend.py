@@ -32,7 +32,12 @@ if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
                 if key not in textures:textures[key]=(tex,'T'+str(len(textures)))
                 args.append(textures[key][1])
         vector=lambda values:'float3('+','.join(str(x) for x in values)+')'
-        wet_arg='saturate((1-w[6])*2.4)' if biome==6 else str(wetness)
+        wet_arg='saturate((1-naturalSnow)*2.0)' if biome==6 else str(wetness)
+        if biome==0:
+            # Damp soil continues beyond the visible mud or melting-snow
+            # patches instead of meeting them with a dry airbrushed edge.
+            wet_arg='max(.32,max(saturate(naturalWet*1.9)*.80,smoothstep(.04,.65,naturalSnow)*.72))'
+        if biome==5:wet_arg='max(.08,saturate(naturalWet*2)*.65)'
         # Match Material Shared:Wrap, including World-group anisotropic filtering.
         # The global trilinear sampler blurs scan detail at grazing angles.
         args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
@@ -41,12 +46,24 @@ if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
 float4 a=Texture2DSample(BlendA,GlobalTrilinearClampedSampler,uv);
 float3 b=Texture2DSample(BlendB,GlobalTrilinearClampedSampler,uv).rgb;
 float w[7]={a.r,a.g,a.b,a.a,b.r,b.g,b.b};float sum=0;float paved=saturate(w[1]*16);
+// Moisture follows the continuous physical cover, before visual competition.
+// A thin isolated snow patch is still slushy even when it wins this pixel;
+// exposed dirt between patches can remain damp even when snow loses it.
+float naturalSnow=w[6],naturalWet=w[2]+w[3];
 // Competitive coverage exposes patches of each original surface. Detail is
 // confined to mixed fringes; pavement keeps a quieter, narrow shoulder.
 [unroll]for(int i=0;i<7;i++){[branch]if(w[i]>0&&w[i]<1){
 float2 seed=float2(i*13.7,i*7.3);
 float grain=(f.noise(World.xy*.0025+seed)*.50+f.noise(World.xy*.011+seed*2.3)*.32+f.noise(World.xy*.041+seed*4.7)*.18)*2-1;
 w[i]=pow(w[i],lerp(3.2,1.5,paved))*exp2(grain*lerp(i==6?8.0:7.0,.35,paved));}sum+=w[i];}
+[unroll]for(int i=0;i<7;i++)w[i]/=max(sum,.0001);
+// Preserve identifiable patches inside the existing coverage fringe. Close
+// material contacts have narrow joins; distant pixels widen the join to
+// suppress sparkle. This changes shading only, never the traction weights.
+float dominant=0;[unroll]for(int i=0;i<7;i++)dominant=max(dominant,w[i]);
+float footprint=max(length(ddx(World.xy*.01)),length(ddy(World.xy*.01)));
+float join=min(.49,lerp(.34,.46,paved)+footprint*.22);sum=0;
+[unroll]for(int i=0;i<7;i++){w[i]=max(0,w[i]-dominant+join);sum+=w[i];}
 [unroll]for(int i=0;i<7;i++)w[i]/=max(sum,.0001);
 float3 color=0,normal=0;float rough=0;
 '''+ '\n'.join(calls)+'\nRoughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return color;'

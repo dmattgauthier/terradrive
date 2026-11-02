@@ -1,5 +1,9 @@
 # Continuous tire grooves and displaced shoulders
 
+This earlier refinement is extended by [pass 26](terrain-ruts-26.md), which adds
+cross-material footprints, blended banks and aperiodic world variation. Current
+package acceptance is recorded in [native validation](validation-native.md).
+
 The native proving ground now forms a rounded tire groove with low, broad banks of displaced material. The previous rectangular pressure target and narrow side Gaussian could produce abrupt walls. A small pile deposited in front of every ordinary rolling stamp was then cut by the next stamp; this repeatedly recycled material into pointed, alternating mounds, especially in snow.
 
 The revised cross-section has a loaded central floor and depth-dependent, rounded walls. A quintic transition reaches both the floor and undisturbed ground with zero first and second derivatives. The existing 2.46-inch physical grid, swept contacts, pressure-dependent footprint, load response and finite terrain cache remain. Tire contact, procedural collision and rendering use the same displaced heights.
@@ -40,8 +44,8 @@ The active mesh limit remains 768 tiles, with at most 8,192 cached offscreen sta
 
 `Tools/test-core.cmd` includes independent rounded-profile/bank-envelope checks, six-metre rolling strips, supported-load response checks, and short 3.94-inch patch sweeps at 4.5, 13.4 and 26.8 mph. These run at 20, 30, 60 and 120 simulation frames per second over three grid phases. `Tools/verify-ruts.ps1` exercises the packaged game, measures continuous grooves, banks, wall slopes, repeated passes, volume accounting and repair, and produces close/oblique captures. See the current native-validation report for accepted package results; source checks alone do not establish rendered quality.
 
-The complete Winter Expedition retains its authored, static landscape and road meshes. These proving-ground excavation changes do not replace or deform those authored collision surfaces. The soil model is a bounded height field, not a granular, liquid-flow or temperature-dependent snow simulation. Broad collapsing walls and tread normals improve its appearance without resolving individual grains or exact tire-lug geometry.
+Winter Expedition has since been retired; its acquired originals remain preserved locally. The active proving-ground soil model is a bounded height field, not a granular, liquid-flow or temperature-dependent snow simulation. Broad collapsing walls and tread normals improve its appearance without resolving individual grains or exact tire-lug geometry.
 
-## Current native acceptance
+## Historical native acceptance
 
 The current body-contours-11 package passes 684 native checks and 382 core checks, with 124 current captures inspected. It retains the earlier terrain/rut work and the other four vehicle bodies while revising the Civic and Urus end contours and the Civic A-pillars. Executable SHA-256: `a1157c61c74428e5f301772de2a8be2afa048b38074d6d421dd122e1bfc8a077`. See [validation-native.md](validation-native.md) for current evidence and limits.

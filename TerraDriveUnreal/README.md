@@ -1,5 +1,15 @@
 # Terra Drive native port
 
+The [terrain and rut refinement](docs/terrain-ruts-26.md) improves meadow scan
+detail, distinct terrain patches and damp mud/snow fringes. Tire footprints now
+deform both soft materials across a boundary, with blended compaction and
+aperiodic displaced banks. Pavement and rock remain rigid. The
+[pass 26 evidence](docs/terrain-ruts-native-26.json) records **927 fresh passing
+native checks**, **667 standalone simulation checks**, 50 focused terrain views
+and 12 selected behavior views reviewed. The current Windows game is
+`Build/Windows/TerraDrive.exe`. Capped functional checks establish behavior;
+uncapped performance and long-session thermal stability remain unverified.
+
 The [6×6 pickup correction](docs/g63-sixwheel-proportions.md) replaces the low
 triangular cargo bar with a full-height hoop and bent rear stays, joins the
 tandem fenders, deepens the wood-lined bed and corrects donor panels/steps that

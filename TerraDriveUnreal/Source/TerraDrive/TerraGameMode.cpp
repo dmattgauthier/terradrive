@@ -43,6 +43,7 @@
 #include "TerraMomentumValidation.h"
 #include "TerraInterfaceValidation.h"
 #include "TerraRutValidation.h"
+#include "TerraRutTransitionValidation.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
@@ -174,6 +175,10 @@ void ATerraGameMode::Tick(float Dt) {
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraSprayOnly"))){
     if(TerraSprayValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraRutTransitionOnly"))){
+    if(TerraRutTransitionValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRutOnly"))){

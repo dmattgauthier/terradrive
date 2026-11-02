@@ -233,7 +233,7 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
     const auto &Churn=T?T->Churn:Cached->Churn;
     S.Churn=U+V<=1?Churn[A]+(Churn[A+1]-Churn[A])*U+(Churn[A+Div+1]-Churn[A])*V:
       Churn[A+Div+2]+(Churn[A+Div+1]-Churn[A+Div+2])*(1-U)+(Churn[A+1]-Churn[A+Div+2])*(1-V);
-    S.Mu += S.Surface == 6 ? S.Packing * .23f : 0;
+    S.Mu += Blend.Weight[6]*S.Packing*.23f;
     S.Rolling *= 1 - S.Packing * .35f;
   }
   return S;
@@ -698,7 +698,8 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   const float Target=BodyContact?TerraSim::BodyImpressionDepth(S.Surface,S.MaxSink,Load,Width,Length):
       FMath::Min(S.MaxSink,S.MaxSink*FMath::Lerp(Ordinary,Churned,S.Churn)*CenterForm.Strength);
   const float GrooveOuter=BodyContact?HalfW+9.f:TerraSim::GrooveOuterHalfWidth(HalfW*.01f,Target)*100;
-  auto Bank=TerraSim::SoilBankShape(S.Surface,Width,Target,LooseDirt(P.X,P.Y),Slip);
+  const auto CenterBlend=SurfaceBlend(P.X,P.Y);
+  const auto Bank=TerraSim::BlendedSoilBank(CenterBlend.Weight,Width,Target,LooseDirt(P.X,P.Y),Slip);
   FVector2D Heading(F.X,F.Y);
   // A tire's imprint has the same tangent when the vehicle reverses. Select
   // one hemisphere before averaging, avoiding an artificial zero direction.
@@ -744,11 +745,15 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
           float U = FVector::DotProduct(D, F), V = FVector::DotProduct(D, Side);
           if (FMath::Abs(U) > HalfL + 20 || FMath::Abs(V) > SideReach)
             continue;
-          if (SurfaceAt(T->Vertices[A].X, T->Vertices[A].Y) != S.Surface)
-            continue;
+          const uint8 NodeSurface=SurfaceAt(T->Vertices[A].X,T->Vertices[A].Y);
+          // A real footprint spans both soft materials at a blended fringe.
+          // The old centre-ID test cut it in half at an invisible categorical
+          // edge. Cached local limits keep snow finite and hard substrates
+          // intact, without sampling seven coverages in this inner loop.
+          if(NodeSurface==1||NodeSurface==4||T->SinkLimit[A]<=0)continue;
           const float Along=TerraSim::FootprintCoverage(U,HalfL,CellReach);
           const float CanonicalV=FVector::DotProduct(D,CanonicalSide);
-          const auto Form=TerraSoil::Variation(T->Vertices[A].X,T->Vertices[A].Y,S.Surface,CanonicalV,Slip,S.Churn);
+          const auto Form=TerraSoil::Variation(T->Vertices[A].X,T->Vertices[A].Y,NodeSurface,CanonicalV,Slip,S.Churn);
           const float Core=HalfW*.64f,Outer=GrooveOuter*Form.Wall;
           const float Across=1-TerraSim::SmoothSoilEdge((FMath::Abs(V)-Core)/FMath::Max(1.f,Outer-Core));
           if (Along>0&&Across>0) {
@@ -828,7 +833,7 @@ void ATerraWorld::Deform(FVector P, FVector F, float Load, float Pressure,
   for(int I=0;I<BodyMarks.Num();++I)if(FVector::DistSquared2D(BodyMarks[I].Point,P)<FMath::Square(Radius+BodyMarks[I].Length)){
     DirtyBodyMarkChunks.Add(I/32);BodyMarksDirty=true;
   }
-  if(S.Surface==0||S.Surface==3)CrushPlants(P,F,HalfW,HalfL,FMath::Clamp(Load/3500.f,0.f,1.f));
+  if(CenterBlend.Weight[0]+CenterBlend.Weight[3]>.001f)CrushPlants(P,F,HalfW,HalfL,FMath::Clamp(Load/3500.f,0.f,1.f));
   for(int X=FMath::FloorToInt((P.X-Radius)/TileCM)-1;X<=FMath::FloorToInt((P.X+Radius)/TileCM);++X)
     for(int Y=FMath::FloorToInt((P.Y-Radius)/TileCM)-1;Y<=FMath::FloorToInt((P.Y+Radius)/TileCM);++Y){
       auto *T=Detail.Find({X,Y});auto *Cached=T?nullptr:SoilCache.Find({X,Y});if(!T&&!Cached)continue;

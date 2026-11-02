@@ -3,6 +3,7 @@
 #include "../Source/TerraDrive/TerraContact.h"
 #include "../Source/TerraDrive/TerraUnits.h"
 #include "../Source/TerraDrive/TerraDriving.h"
+#include "../Source/TerraDrive/TerraSoilVariation.h"
 #include <array>
 #include <cstdlib>
 #include <iostream>
@@ -315,6 +316,41 @@ int main(){
     const auto snowBank=TerraSim::SoilBankShape(6,.32f,.18f,.8f,.08f),sandBank=TerraSim::SoilBankShape(5,.32f,.18f,.8f,.08f);
     check(snowBank.fraction<sandBank.fraction*.4f&&snowBank.height<sandBank.height,"snow compacts pore volume and leaves lower banks than displaced sand");
     check(TerraSim::SoilBankShape(0,.32f,.02f,0,0).fraction<TerraSim::SoilBankShape(0,.32f,.02f,1,0).fraction,"firm dirt compresses with a light trail while loose dirt bunches sideways");
+    for(int surface:{0,2,3,5,6}){
+        float w[7]={};w[surface]=1;
+        const auto a=TerraSim::SoilBankShape(surface,.32f,.09f,.65f,.9f),b=TerraSim::BlendedSoilBank(w,.32f,.09f,.65f,.9f);
+        check(a.fraction==b.fraction&&a.width==b.width&&a.height==b.height,"pure terrain keeps its own compaction budget and bank dimensions");
+    }
+    for(int other:{2,3,5,6}){
+        bool bounded=true,continuous=true;TerraSim::SoilBank last{};
+        const auto a=TerraSim::SoilBankShape(0,.32f,.09f,.65f,.9f),b=TerraSim::SoilBankShape(other,.32f,.09f,.65f,.9f);
+        for(int i=0;i<=100;++i){float w[7]={};w[0]=1-i*.01f;w[other]=i*.01f;
+            const auto bank=TerraSim::BlendedSoilBank(w,.32f,.09f,.65f,.9f);
+            bounded&=bank.fraction>=std::min(a.fraction,b.fraction)-.00001f&&bank.fraction<=std::max(a.fraction,b.fraction)+.00001f&&bank.height>0&&bank.height<.1016f;
+            if(i)continuous&=std::abs(bank.fraction-last.fraction)<.0081f&&std::abs(bank.width-last.width)<.002f&&std::abs(bank.height-last.height)<.001f;
+            last=bank;
+        }
+        check(bounded,"mixed shoulders cannot create a larger displacement budget than either loose material");
+        check(continuous,"compaction and repose vary continuously through each dirt to soft-terrain fringe");
+    }
+    float rigidCover[7]={};rigidCover[1]=.4f;rigidCover[4]=.6f;
+    const auto rigidBank=TerraSim::BlendedSoilBank(rigidCover,.32f,.09f,.65f,.9f);
+    check(rigidBank.fraction==0&&rigidBank.width==0&&rigidBank.height==0,"hard substrate contributes no loose displaced soil");
+    bool formsBounded=true,formsContinuous=true,formsReproducible=true,formsCrossMaterials=true;
+    float rangeMin=10,rangeMax=-10;
+    for(int i=0;i<1400;++i){const float x=-39975.f+i*57.13f,y=std::sin(i*1.71f)*39000.f;
+        const auto a=TerraSoil::Variation(x,y,0,1,.9f,.3f),b=TerraSoil::Variation(x+.125f,y,0,1,.9f,.3f),c=TerraSoil::Variation(x,y,0,1,.9f,.3f);
+        formsBounded&=a.Strength>=.93f&&a.Strength<=1.07f&&a.BankWidth>=.74f&&a.BankWidth<=1.26f&&a.Height>=.66f&&a.Height<=.98f&&a.Weight>=.58f&&a.Weight<=1.42f&&a.Lobe>=0&&a.Lobe<=1;
+        formsContinuous&=std::abs(a.Strength-b.Strength)<.001f&&std::abs(a.BankWidth-b.BankWidth)<.003f;
+        formsReproducible&=a.Strength==c.Strength&&a.BankWidth==c.BankWidth&&a.Lobe==c.Lobe;
+        for(int s:{2,3,5,6}){const auto d=TerraSoil::Variation(x,y,s,1,.9f,.3f);formsCrossMaterials&=a.Strength==d.Strength&&a.Wall==d.Wall&&a.BankWidth==d.BankWidth&&a.Height==d.Height&&a.Weight==d.Weight;}
+        rangeMin=std::min(rangeMin,a.BankWidth);rangeMax=std::max(rangeMax,a.BankWidth);
+    }
+    check(formsBounded,"aperiodic bank and floor fields retain their physical amplitude bounds");
+    check(formsContinuous,"immutable world fields have no short grid-scale floor or shoulder jumps");
+    check(formsReproducible,"same soil work repeats exactly without per-stamp random height");
+    check(formsCrossMaterials,"soft material boundaries do not restart the floor or shoulder spatial phase");
+    check(rangeMax-rangeMin>.25f,"physical shoulder width has visible coherent variation across the world");
     for(float frameStep:{1.f/20,1.f/30,1.f/60,1.f/120})for(float phase:{0.f,.021f,.046f}){
         // Independent sampled strip: a continuously rolling contact crosses
         // grid phases at four simulation rates. This does not assert the

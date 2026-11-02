@@ -1,0 +1,659 @@
+{
+  "revision": "terrain-ruts-26",
+  "engine": "5.8.3",
+  "verifiedUTC": "2026-11-02T01:52:43.384776+00:00",
+  "nativeChecks": 927,
+  "portableChecks": 667,
+  "executableSha256": "a9c196c22c2e151a1b18c9a4af6e81ba5eb68de8a521ea3df3774fc84115441a",
+  "sourceProducers": 193,
+  "sourceManifestSha256": "20ae9a7c983dd22b770f6e8090353911d9ea55354a8e3151c01262c431ce8bf6",
+  "generatedInputs": 319,
+  "inputManifestSha256": "57a99b976b4b5871ae91cc7be71564596c46b7092ce7db70aa49a0269d83aec9",
+  "unchangedGeneratedInputsFromBaseline": 319,
+  "unchangedMeshInputs": 307,
+  "codeOnlyFixtureStage": {
+    "pass": true,
+    "executableSha256": "a9c196c22c2e151a1b18c9a4af6e81ba5eb68de8a521ea3df3774fc84115441a",
+    "previousExecutableSha256": "d922861c0cf26120ee64a645b82470d2d0e590c6692ceb5e9d5795554c6b3df6",
+    "changedProducer": "Source/TerraDrive/TerraMomentumValidation.cpp",
+    "unchangedProducers": 192,
+    "unchangedGeneratedInputs": 319,
+    "containers": [
+      {
+        "path": "Build/Windows/TerraDrive/Content/Paks/global.ucas",
+        "bytes": 3199872,
+        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+      },
+      {
+        "path": "Build/Windows/TerraDrive/Content/Paks/global.utoc",
+        "bytes": 782,
+        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+      },
+      {
+        "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+        "bytes": 56798054,
+        "sha256": "275c1c8735c51474bbc7a7604d87ae8f2335540ce59055dbde8eda7ddbd351e6"
+      },
+      {
+        "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+        "bytes": 920146336,
+        "sha256": "a7323f5e2d2595bd7442bc7acc8828324a0cf3fab86881be8708032f5d341998"
+      },
+      {
+        "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+        "bytes": 774304,
+        "sha256": "bd710db9843595e692412b890509661e52c159822d6e7c1a127cb1564d6551a6"
+      }
+    ],
+    "fullCookSource": "Candidate4/package.log",
+    "note": "Only the guarded momentum fixture uses the actual contact count and measures every wheel. Game target rebuilt and staged; all five containers from the new full cook remain byte-identical. Final native checks must run on this executable."
+  },
+  "fullContentCook": {
+    "source": "Candidate4",
+    "packageLogSha256": "fc138203c90d0f7672f75df460dcf588e0a4dbef477575f5137bafdf254cd12c",
+    "cookSummaries": [
+      {
+        "errors": 0,
+        "warnings": 0
+      }
+    ],
+    "shaderCodeSha256": "ce9656c4c4f22de871eaf277848dcc06d0047bdb4cc0d817a05b7ff978802513",
+    "materialBindings": {
+      "version": 1,
+      "signature": "bd9f06bf912d7840ea44402147d956c28dd727561087ed25e5fd89f8e379c021",
+      "material": "/Game/Materials/Terrain_GroundBlend",
+      "coverageTextures": [
+        "/Game/Textures/TerrainBlendA.TerrainBlendA",
+        "/Game/Textures/TerrainBlendB.TerrainBlendB"
+      ],
+      "biomes": 7,
+      "sharedSamplers": true
+    }
+  },
+  "runs": [
+    {
+      "mode": "RutTransitions",
+      "checks": 64,
+      "captures": 14,
+      "peakTemperatureC": 51.0,
+      "elapsedSeconds": 35.7362201,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "21e5a0d613793fb1bc77df1809801078df20047f8020a3140ccacd622abf7447",
+      "resultSha256": "87d3e386345ee2a8eb9bd402f33103b0ecd617e776535a20d8161ca36bc4eafc",
+      "logSha256": "0ef7993bcc67b6d5766c242c8b599d43a89b035bb4a48db424c1c695a1335525"
+    },
+    {
+      "mode": "Transitions",
+      "checks": 53,
+      "captures": 14,
+      "peakTemperatureC": 53.0,
+      "elapsedSeconds": 52.8998442,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "ed175403c00dd51af8115a12deb57afff0bcae9cb8323b5a46ba4058130cbd7a",
+      "resultSha256": "7d95a2c17b10aee05cbbf121b1315200ee784714063c05dbbfe9f0d8768c0da8",
+      "logSha256": "605045ab5b4233ac716f1d017610b85968132b387c575318b5be2aee86dfd173"
+    },
+    {
+      "mode": "Detail",
+      "checks": 15,
+      "captures": 6,
+      "peakTemperatureC": 54.0,
+      "elapsedSeconds": 30.5661953,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "af69c07ad0dfe5717cfa964961ca681632f30e7da9aea48d22de5d12a17e4a57",
+      "resultSha256": "97ce405056c9ca37b4df02f98f74537f6b6af43d666f211a3c7dbf3aa8ba4a6d",
+      "logSha256": "a5b6fae2cfa9bb05ed20ab8da1edb51cb28a632f2db1db054c47adf234aee040"
+    },
+    {
+      "mode": "Ruts",
+      "checks": 117,
+      "captures": 16,
+      "peakTemperatureC": 53.0,
+      "elapsedSeconds": 59.8230506,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "5c333b73def35a6b66b0a2fe2fb87d3a87a4aa59446fca8d91d9ec4124279fd9",
+      "resultSha256": "1d9e77d5eeb8cea62f12f4e8c1ebdf78d018f114048817f51cb96c26fa34c149",
+      "logSha256": "051b8cc6a1e16dedd4ad9da3774d5ff292f944f4dfd698fac132a9eef2412303"
+    },
+    {
+      "mode": "Movement",
+      "checks": 120,
+      "captures": 17,
+      "peakTemperatureC": 54.0,
+      "elapsedSeconds": 140.194651,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "4994ac88a703ca8865404fbbd1077f99e3cb56404ad2f64c188ad131acd8dc28",
+      "resultSha256": "3b99a6fc82e677ad44f7f8d621c576e76bc247b5c19318cb755165e05ed3a4b7",
+      "logSha256": "d41fd4953c86febfef7ccf99c398ac72bcd5071f1d2ff4442f63afb26a421ea3"
+    },
+    {
+      "mode": "Garden",
+      "checks": 10,
+      "captures": 5,
+      "peakTemperatureC": 53.0,
+      "elapsedSeconds": 24.6503061,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "9b435f7185f5717670729a9e9f4a1f2c5ec1cdee32c8a2fe50a9664f91e7bc23",
+      "resultSha256": "328cb5b259a1a214c40112ce2767779b151660cdd411d95264a7df2ede6fb0de",
+      "logSha256": "40255fc4283812b44f4d3878de29b02f8c07e3bee3525186313e36f837395e80"
+    },
+    {
+      "mode": "Rollover",
+      "checks": 513,
+      "captures": 64,
+      "peakTemperatureC": 54.0,
+      "elapsedSeconds": 631.3308826,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "775ba0a1e4d6e1e1dfbf42998961c9c8dfbe4ab2376d963e24cc99403ef3a3fa",
+      "resultSha256": "b516814ec72bc2d727fbba80a73dfefb6dbc8d846268b5c4f0eb02ef4512ebfa",
+      "logSha256": "ba749c429673be280360d841832685bf761d21ec04bb37009a997b383180fd5e"
+    },
+    {
+      "mode": "SixWheel",
+      "checks": 35,
+      "captures": 6,
+      "peakTemperatureC": 54.0,
+      "elapsedSeconds": 57.8069633,
+      "clock": "paced fixed20Hz functional verification",
+      "receiptSha256": "da084d631357ce11c8485a052327f3d50f22c4a322d0bec4baa196eec28fe5de",
+      "resultSha256": "03f577d4dbb1aa7d9baf1c928955281853800fb1503f0b60348c1506f04a3a7f",
+      "logSha256": "bf52d8ad73d3283ba8065c379472fc6b898f46de4f78c51f00e10173713cc7b5"
+    }
+  ],
+  "core": {
+    "checks": 667,
+    "exitCode": 0,
+    "verifiedUTC": "2026-11-02T01:48:22.674780+00:00",
+    "executableSha256": "af0d556de02ec2b36d0da552d180bbebf4f7779f6757f6ef99a47d78632ba26d",
+    "stdoutSha256": "3a057303bd9e238b176f04e09287402e3b3823c744bf76431a06a1699a068248",
+    "sources": [
+      {
+        "path": "Tools/test-core.cpp",
+        "sha256": "8289e23bbd3ca38a1e86ece8980bebc55c45180da5f0520770337ae8fbda9a92"
+      },
+      {
+        "path": "Source/TerraDrive/TerraSimCore.h",
+        "sha256": "80c3f23ef06bfd6b183fec54b561b0a829b6ce6bebfb6f71fc1fc5aa09aaaaad"
+      },
+      {
+        "path": "Source/TerraDrive/TerraUpgrades.h",
+        "sha256": "0924ef262dffc90f11b7551e972462ee04f3d54109ff9e62926d11cb0183f92d"
+      },
+      {
+        "path": "Source/TerraDrive/TerraContact.h",
+        "sha256": "745e05266411c70a256acfcc5f59ab0dfb2e4cff5913ede3389a510020a52f13"
+      },
+      {
+        "path": "Source/TerraDrive/TerraUnits.h",
+        "sha256": "253f36297c9a94020eb6c5556042b05b2433e8e7d8ba2a3b2f72828dc1488914"
+      },
+      {
+        "path": "Source/TerraDrive/TerraDriving.h",
+        "sha256": "08021cbaec0290be8c886dc39feeb79d4ebe6fc67d10545021f35a9f2616f3d5"
+      },
+      {
+        "path": "Source/TerraDrive/TerraSoilVariation.h",
+        "sha256": "ab59d2f62f7824887377ca5e263bd059725b72279c5f2e4d43e5fc60acb209ac"
+      }
+    ],
+    "note": "Fresh execution of the matching existing standalone binary after all packaged native suites finished; no recompilation. This is simulation-core, not Unreal rendering evidence.",
+    "pass": true
+  },
+  "visualReview": {
+    "accepted": true,
+    "reviewedUTC": "2026-11-02T01:48:22.322458+00:00",
+    "terrainViewsReviewed": [
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-snow-oblique.png",
+        "sha256": "c14d9feaa446a3ff9c468d7f1f4a2d695fb4c33620e8898d537075252b09bab9",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-asphalt-oblique.png",
+        "sha256": "6682663cd1de7221d28e4b659e7c66a5123e0aa7eadde3c1b8d770209f7bb6ab",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-asphalt-profile.png",
+        "sha256": "b597f1bb17c6bd45d20ecc054334a8987b5830365fdc01c74c559394fb3b94d9",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-rock-oblique.png",
+        "sha256": "602ea90545fdb3320e86027dd18a5efe4dc95b3699e399db6ee486d3c307c510",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-rock-profile.png",
+        "sha256": "82b02d072f88a1409c8d60cf217eed0d05e1adcf862d006d2493527bd64cde58",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-sand-oblique.png",
+        "sha256": "aea745359a892362420010a61e2d83f53ac4e8b6cf7ddb715275d614295b2a38",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-sand-profile.png",
+        "sha256": "a0d643be52e492dbb442c4684005702ce17e33d1bee0b8546cdf32e0f8183b4f",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-wetland-oblique.png",
+        "sha256": "a1c55c39c323d594821534c612dc4ab4a70648fd09b52492196d0e72e3e838cf",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-wetland-profile.png",
+        "sha256": "e3ddbd4f8a47946debd2bbd62d25e9d5eb12643e217fb39293b1887c4184a7e3",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-mud-rock-oblique.png",
+        "sha256": "752ca06b84c98c14f435fcab13b2725e61a0e8ccd4d27ab3b48a4f54dd362ec4",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-mud-rock-profile.png",
+        "sha256": "8ee72d4f2f78de3dc3a179ce93047dd055e5f40f510daab27fc610e73145e36e",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-asphalt-view-0.png",
+        "sha256": "9b069d21c6429758ba0b9976b275b5d4621e034202cd9a9a9786d99f441b2892",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-asphalt-view-1.png",
+        "sha256": "e6040a69c85ca95ec87872d803366386ff943319a62fc147e07999648d0c5460",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-mud-view-0.png",
+        "sha256": "5b663faf0be03cf2e50060314ae2de978ee656c02ebf0a994955968aae18fc48",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-mud-view-1.png",
+        "sha256": "51d9e2768a725fd344f79b3f12ed3b42c1a5ce0b802b5cf07bf3400bb1721e44",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-rock-view-0.png",
+        "sha256": "0bb82e85b68b91f94c11235710e1ccf9f366fbff1694daa4b6b713b9d93c60d5",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-rock-view-1.png",
+        "sha256": "052f05006c27e5df5ff5d6e7099fe8ef566c1d9bd7218b0f5d00642f789503b3",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-sand-view-1.png",
+        "sha256": "22eb0983a10a71d8670bc9f16238462c2d13b221d34912dd2cb1c59f6542ed20",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-snow-view-0.png",
+        "sha256": "659d7183dab5660694dfba37ab8122991b43eb903da45944571c3fabe2fcd2e3",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-wetland-view-0.png",
+        "sha256": "0f5e5b10462bc646c0b91a467cad5596b6c571b8f54a6858ece198e31c68cbb8",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-wetland-view-1.png",
+        "sha256": "0f95a3d34fb7b73cfce891b6ffd97ed85ff3dd24db5595a31e20dbf6d773db5d",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-mud-rock-view-0.png",
+        "sha256": "d00ef98808a5d8aac3b22ff1e36e4b3e63f2dad1b05435dcd7c3ea17d728f04f",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-mud-rock-view-1.png",
+        "sha256": "862db648e1ad91a95e651d5dd319aead1115abd756b06fa928fb22de9b6f626f",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-loose-dirt-oblique.png",
+        "sha256": "9ac340c1c9d00fda6d716e27963f06eb3384fa7418a31406cf57d3cd75bf5795",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-loose-dirt-profile.png",
+        "sha256": "7480e6b6012ab4bcddcf2a91def1cdfefc1d3a76ddd3803c31047b572b59b55c",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-driven-snow-oblique.png",
+        "sha256": "6e6ade0bd367e56c08c8661a2f688a024602d1166bcee378072f35ae73550d0b",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-driven-snow-profile.png",
+        "sha256": "1b6e8c05932ab1e73c354a8e1f86ca7b87508f56f6db435e0b3d3b8b43caefb0",
+        "reviewedEquivalentCandidate": "Candidate4",
+        "method": "Final PNG byte-identical to manually inspected Candidate4 PNG"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-snow-profile.png",
+        "sha256": "78561c6f002fa1ec941433a1f669a14e8fec8417ad1c5e5f226afdc52aad7d15"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-mud-profile.png",
+        "sha256": "c9826b72f19f9e3ea11caec500fbc05638c40dce498f5f306d69800a6bc87a32"
+      },
+      {
+        "path": "Validation/RutTransitions/Screenshots/native-rut-transition-dirt-mud-oblique.png",
+        "sha256": "7a00e1e443cd3aa092ba941b85fc36bcf8fec9b9edd1fdab412509b0e24e4683"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-sand-view-0.png",
+        "sha256": "2eb4e2256c73caf2feae52a113954d89387da1efff6b4d8946f4a172e65a2238"
+      },
+      {
+        "path": "Validation/Transitions/Screenshots/native-transition-dirt-snow-view-1.png",
+        "sha256": "3259c08bded17af08a9ad5eef9687e4fd03a2c1253b343d6fc828a50187e3bd7"
+      },
+      {
+        "path": "Validation/Detail/Screenshots/native-detail-meadow-wide.png",
+        "sha256": "410c095835d552ffa8717315d1cfab56f9d44b9554cb20bc68454238e9c16926"
+      },
+      {
+        "path": "Validation/Detail/Screenshots/native-detail-meadow-close.png",
+        "sha256": "7f541886e534230b96f716596127318d82ba53c18851ff6a07d789df47995bd4"
+      },
+      {
+        "path": "Validation/Detail/Screenshots/native-detail-snow-drifts-wide.png",
+        "sha256": "c39a907a51941e443299d123efd9bc47e5846280eb048118d314626f7dd0ab34"
+      },
+      {
+        "path": "Validation/Detail/Screenshots/native-detail-snow-scan-close.png",
+        "sha256": "c234e8d3093fe79e125d25723e7f0267834fbba233bb770f59cf48ab2e6bd319"
+      },
+      {
+        "path": "Validation/Detail/Screenshots/native-detail-snow-slush-edge.png",
+        "sha256": "c356b529c6e4d2369ec8a697f42666dcb32747c98e519b79af4f790eac61e2f4"
+      },
+      {
+        "path": "Validation/Detail/Screenshots/native-detail-snowbanks.png",
+        "sha256": "4c6d74069344a5d0752afa1b34bef568b3d0321f0df2a54984c09cfd58e0f213"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-firm-dirt-oblique.png",
+        "sha256": "a9134169feddaee3e85a423ec92ff3a7531d0548e6f526ca4ba8566d2725a8f3"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-firm-dirt-profile.png",
+        "sha256": "7c00343e94cd477081cf55cdc52218ed018f01751566f144c3e20f0441f1451a"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-mud-oblique.png",
+        "sha256": "64492c1862cd608250aff41de2e6dfa3183682dc2cc186bde3efbbe4d0166c81"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-mud-profile.png",
+        "sha256": "cc7b4d6b5cb24b80d6131ff9464c6b808f935a3c13b53b1b5810805c2f9d43eb"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-snow-oblique.png",
+        "sha256": "ac2357f4ee5fdb179060a7d65e32f8322aa5c6b961bf5b3f5d8ecba5e2a4d35c"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-snow-profile.png",
+        "sha256": "4d182d6f6d75690c7cca1022dd4affb62d3be3a1677058db2fadad2f16d1c614"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-wet-grass-oblique.png",
+        "sha256": "80a3332d392dd5d45144f48de6f81f4adec362dda80873cef800eaa1da43ba1a"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-wet-grass-profile.png",
+        "sha256": "c335d6d60cbd36e8bac39b6781565b841884cb7117762a3b54664384f0aa2e56"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-sand-oblique.png",
+        "sha256": "26bbefd93cbb0e7f52dde9e8810179dffbd3bb6c910c79d1cbeeceab46ec46c1"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-sand-profile.png",
+        "sha256": "c4ff443c2776c0ec48b3f68075cdac3391d6d0b41cc181ba2c72ad6a2bef6677"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-driven-mud-oblique.png",
+        "sha256": "2e0323b8ecc8fc089e07c60acd509150369b559ec9caf1fd6c37b856250f1e75"
+      },
+      {
+        "path": "Validation/Ruts/Screenshots/native-rut-driven-mud-profile.png",
+        "sha256": "d1526b39642c4280e21e44626bce07d9e91a4031571ae3fb998a6754719206db"
+      }
+    ],
+    "behaviorViewsReviewed": [
+      {
+        "path": "Validation/Movement/Screenshots/native-suspension-rise-9.png",
+        "sha256": "d473d2b7ce7c85723e906ace1fb2b19802bb766302836e3cfed17ff79f79b3c4"
+      },
+      {
+        "path": "Validation/Garden/Screenshots/garden-main-outcrop.png",
+        "sha256": "cf6928f3af8fecb7e2487948f0f307e43cddb724ce58e7f5fd6e0c84767da5b4"
+      },
+      {
+        "path": "Validation/Garden/Screenshots/garden-stone-close.png",
+        "sha256": "c876b1d2f903e6d29550f1d8322ec3865a650963022c406a59901d971c7c9459"
+      },
+      {
+        "path": "Validation/Garden/Screenshots/garden-articulation-line.png",
+        "sha256": "61be6d6c2a4a4b75c546b95633adb49ddc6e833e9fecdbb2404842359943c3c4"
+      },
+      {
+        "path": "Validation/Garden/Screenshots/garden-detached-blocks.png",
+        "sha256": "ce28bfa3f3da299a9ec48fb8ac943cb3b1b7bc04779b127da4bef8a3860bd381"
+      },
+      {
+        "path": "Validation/Garden/Screenshots/garden-ledge-silhouette.png",
+        "sha256": "ead7c193fd1edcc7ceb9fae8aaa741b3265cbb2bc112c0461fed423f7750df37"
+      },
+      {
+        "path": "Validation/Rollover/Screenshots/native-rollover-v9-z0-p90.png",
+        "sha256": "cfbc5ec7c1f4a9c2abc8f751220c8306425420edd1402af09458dfe0fece3ab2"
+      },
+      {
+        "path": "Validation/Rollover/Screenshots/native-rollover-v9-z1-p180.png",
+        "sha256": "649780092effdda805b86529644c68e2f92e083bb43db7359dd9771a0b5b2511"
+      },
+      {
+        "path": "Validation/Rollover/Screenshots/native-rollover-v5-z0-p90.png",
+        "sha256": "15413a09f096cfe7f53e26ebaf9bbb9aca2b4898740be2be447a26933fa55dbf"
+      },
+      {
+        "path": "Validation/Rollover/Screenshots/native-rollover-v5-z0-p180.png",
+        "sha256": "3028fbff8de177ea68612fcc995208f798d380080a8e0155f8a7c36d94892996"
+      },
+      {
+        "path": "Validation/SixWheel/Screenshots/sixwheel-mud-ruts.png",
+        "sha256": "dc2994e2419773b128ded09dec757c4ea7e91f805a18d8cacd5ec858625155e2"
+      },
+      {
+        "path": "Validation/SixWheel/Screenshots/sixwheel-locked-motion.png",
+        "sha256": "d6fa1dc10f3baa2582070aa226f01f01cbcb430f33c3d7ed2299f003e08a1602"
+      }
+    ],
+    "beforeViewsReviewed": 6,
+    "coverage": {
+      "focusedTerrainViews": 50,
+      "finalFramesInspectedDirectly": 23,
+      "finalFramesByteIdenticalToInspectedCandidate4": 27,
+      "selectedBehaviorViews": 12
+    },
+    "findings": [
+      "Meadow close and wide views show richer grass/root texture from the installed MW scan.",
+      "Mixed fringes retain recognisable material patches; damp dirt continues between wet and melting-snow patches.",
+      "Mud and snow show depressed loaded paths and low shoulders, with coherent unequal bank spread rather than repeated lobes.",
+      "Soft boundary profiles remain continuous and retain terrain colour; no black off-road rubber ribbon appears in the inspected rut views.",
+      "Selected final six-wheel, suspension, garden and rollover views retain solid ground coverage and supported body poses."
+    ],
+    "remainingLimits": [
+      "The snow-drifts-wide frame has a foreground pine branch across part of the view; snow-scan-close, snow-slush-edge and transition views provide other visible ground angles.",
+      "Light-load sand, firm dirt and grassy-soil tracks remain visually subtle at these camera angles; mud and snow have the clearest relief.",
+      "Finite photographic ground layers and procedural foliage remain visible as game assets; this is an incremental fidelity pass.",
+      "Only the 50 focused terrain frames and 12 selected behavior views listed here were manually reviewed. Automated capture counts are not manual review counts.",
+      "Bounded offscreen fixed-clock checks establish function, not manual controller play, uncapped FPS or long-session thermal stability."
+    ]
+  },
+  "beforePackage": {
+    "sourceCommit": "ea96a9eea7f40f1541da1db7f918439b2aac155d",
+    "checks": 185,
+    "runs": [
+      {
+        "mode": "Transitions",
+        "checks": 53,
+        "captures": 14,
+        "executableSha256": "140b976cbe874c8eb8af407e9eb62e175dcf9e1fb68d97ec0b0c1ef7f0e633a0",
+        "peakTemperatureC": 50.0,
+        "elapsedSeconds": 60.0178828,
+        "receiptSha256": "458048a2df02ea99f66c2916386bb5b59ff5363cb6c6ba4666ce8e26409c1576",
+        "resultSha256": "7d95a2c17b10aee05cbbf121b1315200ee784714063c05dbbfe9f0d8768c0da8"
+      },
+      {
+        "mode": "Detail",
+        "checks": 15,
+        "captures": 6,
+        "executableSha256": "140b976cbe874c8eb8af407e9eb62e175dcf9e1fb68d97ec0b0c1ef7f0e633a0",
+        "peakTemperatureC": 51.0,
+        "elapsedSeconds": 34.3452366,
+        "receiptSha256": "77cfbcf21d4d7ff8ad063f64e0e9503c78b416e4a6405611f5fdb0923bfd9379",
+        "resultSha256": "97ce405056c9ca37b4df02f98f74537f6b6af43d666f211a3c7dbf3aa8ba4a6d"
+      },
+      {
+        "mode": "Ruts",
+        "checks": 117,
+        "captures": 16,
+        "executableSha256": "140b976cbe874c8eb8af407e9eb62e175dcf9e1fb68d97ec0b0c1ef7f0e633a0",
+        "peakTemperatureC": 52.0,
+        "elapsedSeconds": 58.5793738,
+        "receiptSha256": "a34954f8856252deaa1bd0bfc45b0291a30c7b5486cf0650216e9802d7886496",
+        "resultSha256": "e878a38ddc4906f852ff0fdb5fbc8e8f5d59591b90f5cd086c2f01d58277ebf3"
+      }
+    ],
+    "note": "Historical before build, separate from the 927 final checks; six before captures manually reviewed."
+  },
+  "preservation": {
+    "pass_": true,
+    "protected": 1929,
+    "browser": 1214,
+    "acquired": 715,
+    "players": 8,
+    "manifests": {
+      "source-frozen.json": 193,
+      "inputs-frozen.json": 319
+    },
+    "generatedInputsUnchangedFromBaseline": 319,
+    "coreInputsMatch": true,
+    "executableSha256": "a9c196c22c2e151a1b18c9a4af6e81ba5eb68de8a521ea3df3774fc84115441a",
+    "errors": []
+  },
+  "packagedContainers": [
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/global.ucas",
+      "bytes": 3199872,
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/global.utoc",
+      "bytes": 782,
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "bytes": 56798054,
+      "sha256": "275c1c8735c51474bbc7a7604d87ae8f2335540ce59055dbde8eda7ddbd351e6"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "bytes": 920146336,
+      "sha256": "a7323f5e2d2595bd7442bc7acc8828324a0cf3fab86881be8708032f5d341998"
+    },
+    {
+      "path": "Build/Windows/TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "bytes": 774304,
+      "sha256": "bd710db9843595e692412b890509661e52c159822d6e7c1a127cb1564d6551a6"
+    }
+  ],
+  "cleanup": {
+    "filesRemoved": 215,
+    "bytesRemoved": 3104011853,
+    "freeSpaceDelta": 3103952896,
+    "rollback": "Saved/Rollback-P25",
+    "rollbackFilesVerified": 49,
+    "movedFrom": "Saved/Pass26-2026-11-02T00-15-11Z/BeforeRuntime",
+    "currentPackageUnchanged": true,
+    "playerFilesStillMatch": true,
+    "retained": "Current game, browser, saves/settings/upgrades, acquired originals, all before/failed/final records and captures, native input assets, local symbols, useful compile/shader caches and one validated pass25 rollback"
+  },
+  "failedEvidence": [
+    {
+      "candidate": "Candidate1",
+      "stage": "Editor compilation",
+      "issue": "Missing UBoxComponent include in new validation fixture; original full UBT diagnostics/source retained.",
+      "diagnosticSha256": "28848da993de5e43f95b964b7753d94ef141c3d69a53633fc335cae4c12896f0"
+    },
+    {
+      "candidate": "Candidate2",
+      "stage": "Static fixture review",
+      "issue": "Final screenshot needed a wait before camera destruction/exit; corrected before native acceptance. Full new cook/source/hash evidence retained."
+    },
+    {
+      "candidate": "Candidate3",
+      "stage": "Visual review",
+      "checks": 64,
+      "accepted": false,
+      "viewsReviewed": 2,
+      "issue": "Moisture followed sharpened coverage, leaving thin snow islands too clean white; revised to natural continuous coverage.",
+      "visualReviewSha256": "246a1634ee724b9ac1e8fc0985f84c8e8ef571876b7f95762e84a6b1cf09575f"
+    },
+    {
+      "candidate": "Candidate4",
+      "stage": "Movement fixture",
+      "checks": 120,
+      "passed": 119,
+      "accepted": false,
+      "issue": "Six-wheeler had six valid supported contacts; stale fixture required exactly four. Final fixture requires actual wheel count and measures all six without changing height/travel/braking limits.",
+      "failureSha256": "e8b97a1154b9d40973f75b2dd3a81eda37463227b4771b8f5eb18695b9d2d077"
+    }
+  ],
+  "limits": [
+    "Bounded height-field compaction and volume redistribution, not fluid or individual-grain simulation.",
+    "Fine tread and wind grain are material normals rather than extra collision geometry.",
+    "Paced fixed20Hz capped isolated runs establish function, not uncapped throughput or long-session PC stability."
+  ]
+}
