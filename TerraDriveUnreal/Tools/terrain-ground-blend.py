@@ -63,7 +63,10 @@ w[i]=pow(w[i],lerp(3.2,1.5,paved))*exp2(grain*lerp(i==6?8.0:7.0,.35,paved));}sum
 float dominant=0;[unroll]for(int i=0;i<7;i++)dominant=max(dominant,w[i]);
 float footprint=max(length(ddx(World.xy*.01)),length(ddy(World.xy*.01)));
 float join=min(.49,lerp(.34,.46,paved)+footprint*.22);sum=0;
-[unroll]for(int i=0;i<7;i++){w[i]=max(0,w[i]-dominant+join);sum+=w[i];}
+// A wide join may exceed the dominant weight in a multi-biome mix. Never
+// add coverage to absent biomes; only subtract a nonnegative threshold.
+float threshold=max(0,dominant-join);
+[unroll]for(int i=0;i<7;i++){w[i]=max(0,w[i]-threshold);sum+=w[i];}
 [unroll]for(int i=0;i<7;i++)w[i]/=max(sum,.0001);
 float3 color=0,normal=0;float rough=0;
 '''+ '\n'.join(calls)+'\nRoughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return color;'
