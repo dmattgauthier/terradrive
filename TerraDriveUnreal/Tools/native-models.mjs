@@ -1,6 +1,7 @@
 // Native additions only. Every mesh is generated from inspectable geometry.
 import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {inQuarry} from './offroad-courses.mjs';
+import {SIX_PICKUP} from './g63-six-pickup.mjs';
 const hash=(i,s=0)=>{const v=Math.sin(i*127.1+s*311.7)*43758.5453;return v-Math.floor(v);};
 const steel=new THREE.MeshStandardMaterial({color:'#343d40',metalness:.72,roughness:.48});
 const rubber=new THREE.MeshStandardMaterial({color:'#22282a',roughness:.91});
@@ -18,11 +19,17 @@ export function vehicleAdditions(spec){
   // Folded belly plate, fasteners, tubular rock sliders and three outriggers.
   box(armor,steel,[0,low,-.15+offset],[spec.bodyStyle==='g63six'?1.39:half*1.48,.045,spec.wheelbase*.72]);
   for(const side of [-1,1]){
-    const x=side*(half+.035),a=-spec.wheelbase*.34+offset,b=spec.wheelbase*.33+offset;
-    rod(armor,steel,[x,low+.12,a],[x,low+.12,b],spec.bodyStyle==='sedan'?.028:.043);
-    // Tandem tires occupy the former SUV rear-outrigger station. Place its
-    // optional slider brackets in the clear space between front/middle axles.
-    for(const z of (spec.bodyStyle==='g63six'?[-.30,.55,1.18]:[a+.15,(a+b)/2,b-.15]))rod(armor,steel,[side*half*.62,low,z],[x,low+.12,z],.024);
+    const six=spec.bodyStyle==='g63six';
+    const x=side*(half+.035);
+    const a=six?SIX_PICKUP.stepRearZ+.035:-spec.wheelbase*.34+offset;
+    const b=six?SIX_PICKUP.stepFrontZ-.035:spec.wheelbase*.33+offset;
+    const rail=rod(armor,steel,[x,low+.12,a],[x,low+.12,b],spec.bodyStyle==='sedan'?.028:.043);
+    if(six)rail.name='g63-six-armor-slider-'+side;
+    // Keep both ends and all mounts within the wheel-to-wheel opening.
+    for(const z of [a+.15,(a+b)/2,b-.15]){
+      const mount=rod(armor,steel,[side*half*.62,low,z],[x,low+.12,z],.024);
+      if(six)mount.name='g63-six-armor-slider-mount-'+side;
+    }
     for(const z of [a,b])add(armor,new THREE.CylinderGeometry(.018,.018,.014,6),chrome,[side*half*.55,low-.03,z]);
   }
   const bash=box(armor,chrome,[0,low+.17,front-.29],[half*1.22,.045,.38]);bash.rotation.x=-.35;

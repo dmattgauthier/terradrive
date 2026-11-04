@@ -110,6 +110,7 @@ export function gClassSixView(spec){
  // Retain the front double cab's formed skins, doors, seals, actual glazing
  // holes and cabin. The rear SUV closure/spare are removed, not buried.
  const drop=[];g.traverse(o=>{
+  if(o.userData.gClassRunningBoard){drop.push(o);return;}
   if(/gclass-(box-shouldered-fender|fender-upper-return|folded-arch-edge|closed-inner-wheelwell)|g63-panamericana-grille-bar|gclass-rear-roof-header/.test(o.name)||['gclass-rounded-roof-crown','gclass-rigid-star-badge','gclass-modern-widescreen-frame'].includes(o.name)){drop.push(o);return;}
   if(!o.isMesh)return;
   o.geometry.computeBoundingBox();const b=o.geometry.boundingBox,roofInsert=!o.name&&b.min.y>1.93&&b.min.z>-.65&&b.max.z<.35;
