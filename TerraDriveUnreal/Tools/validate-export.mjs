@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Terrain} from './native-terrain.mjs';
+import {makePerimeterTrail,perimeterMask} from './perimeter-trail.mjs';
 import {validateGardenGeology} from './garden-geology.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const gardenGeology=validateGardenGeology(path.join(root,'Content/NativeData'));
@@ -32,11 +33,13 @@ assert.ok(data.fabScenery.groups.filter(g=>g.kind==='grass').reduce((n,g)=>n+g.i
 assert.ok(data.fabScenery.groups.reduce((sum,g)=>sum+g.instances.length,0)>100);
 assert.equal(b.readUInt32LE(0),0x54445256);assert.equal(b.readUInt32LE(4),1601);
 assert.equal(b.length,16+1601*1601*9);
-const terrain=new Terrain();let maxError=0;
+const terrain=new Terrain(),perimeter=makePerimeterTrail((x,y)=>terrain.heightAt(-y,x));let maxError=0;
+const expectedHeightAt=(x,y,at)=>perimeter.grade(x,y,terrain.heightAt(-y,x),b[at+8],b.readFloatLE(at+4));
 for(let i=0;i<1000;i++){
  const row=(i*383+19)%1601,col=(i*701+31)%1601,offset=16+(row*1601+col)*9;
  const x=400-col*.5,z=-400+row*.5,s=terrain.sample(x,z);
- maxError=Math.max(maxError,Math.abs(b.readFloatLE(offset)-s.height));
+ const expectedHeight=perimeter.grade(z,-x,s.height,b[offset+8],s.waterDepth);
+ maxError=Math.max(maxError,Math.abs(b.readFloatLE(offset)-expectedHeight));
  assert.equal(data.surfaces[b[offset+8]],s.surface);
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
@@ -60,7 +63,32 @@ assert.equal(six.features.frontLocker,true);assert.equal(six.features.rearLocker
 assert.equal(six.factoryTireAirStage,3);assert.ok(six.factoryPortalLiftM>.1&&six.clearance>.4);
 assert.ok(Math.abs(six.tireRadius-.4699)<1e-7);assert.equal(six.rimDiameterInches,18);
 assert.equal(six.gears.length,7);assert.equal(six.nativeModel.construction.threeAxleBody,true);
-assert.equal(data.routes.length,13);assert.equal(data.constructed.length,2);
+assert.equal(data.routes.length,14);assert.equal(data.constructed.length,2);
+const expedition=data.perimeterTrail,expeditionRoute=data.routes[expedition.routeIndex];
+assert.equal(expedition.routeIndex,13);
+assert.equal(expeditionRoute.name,'Perimeter Expedition');
+assert.equal(expedition.sectors.length,11);
+assert.equal(expeditionRoute.gates.length,Math.ceil((expedition.samples.length-1)/10));
+assert.equal(expeditionRoute.gates.length,expeditionRoute.gateHeadings.length);
+assert.equal(expeditionRoute.gates.length,expeditionRoute.gateNotes.length);
+assert.ok(expeditionRoute.gateHeadings.every(Number.isFinite));
+assert.deepEqual(expeditionRoute.gates.at(-1),expeditionRoute.spawn);
+assert.ok(expedition.lengthM>3700&&expedition.lengthM<4050);
+assert.ok(expedition.changedHeightCells>200000);
+const expeditionSurfaces=new Set(),rimCorners=new Set();
+for(const p of expedition.samples){
+ const row=Math.round((p.x+400)*2),col=Math.round((p.y+400)*2),at=16+(row*1601+col)*9;
+ const x=-400+row*.5,y=-400+col*.5;
+ assert.ok(Math.max(Math.abs(p.x),Math.abs(p.y))<369);
+ assert.equal(p.z,b.readFloatLE(at));
+ assert.ok(Math.abs(p.z-expectedHeightAt(x,y,at))<1e-4,'staged expedition grade');
+ assert.ok(perimeterMask(perimeter.locate,p.x,p.y)>75);
+ expeditionSurfaces.add(data.surfaces[b[at+8]]);
+ if(Math.abs(p.x)>270&&Math.abs(p.y)>270)rimCorners.add(`${Math.sign(p.x)},${Math.sign(p.y)}`);
+}
+assert.equal(rimCorners.size,4,'expedition reaches all four perimeter corners');
+assert.deepEqual([...expeditionSurfaces].sort(),[...data.surfaces].sort());
+assert.equal(perimeterMask(perimeter.locate,390,390),0);
 assert.ok(data.quarryTrail.lengthM>280&&data.quarryTrail.lengthM<420);
 assert.equal(data.quarryTrail.routeIndex,8);assert.equal(data.routes[8].gates.length,20);
 assert.ok(data.quarryTrail.assetCounts.grass>2000);
@@ -80,7 +108,7 @@ let gradedSamples=0;
 for(const p of data.quarryTrail.samples)for(const side of [-2,0,2]){
  const row=Math.round((p.x-p.ty*side+400)*2),col=Math.round((p.y+p.tx*side+400)*2);
  const ux=-400+row*.5,uy=-400+col*.5,offset=16+(row*1601+col)*9;
- assert.ok(Math.abs(b.readFloatLE(offset)-terrain.heightAt(-uy,ux))<1e-4,'staged quarry grade');
+ assert.ok(Math.abs(b.readFloatLE(offset)-expectedHeightAt(ux,uy,offset))<1e-4,'staged quarry grade');
  gradedSamples++;
 }
 assert.equal(data.routes[0].gateDirections[2],-1);assert.ok(data.routes[0].gates[2][2]>4400);
@@ -93,8 +121,8 @@ const zoneSamples=data.zones.map(zone=>{
  const row=Math.round((ux+400)/.5),col=Math.round((uy+400)/.5);
  const offset=16+(row*1601+col)*9,reference=terrain.sample(x,z);
  assert.equal(data.surfaces[b[offset+8]],reference.surface,zone.name+' surface');
- assert.ok(Math.abs(b.readFloatLE(offset)-reference.height)<1e-4,zone.name+' height');
- return {name:zone.name,unrealXM:ux,unrealYM:uy,surface:reference.surface,heightM:reference.height};
+ assert.ok(Math.abs(b.readFloatLE(offset)-expectedHeightAt(-400+row*.5,-400+col*.5,offset))<1e-4,zone.name+' height');
+ return {name:zone.name,unrealXM:ux,unrealYM:uy,surface:reference.surface,heightM:b.readFloatLE(offset)};
 });
 for(const a of data.assets){const obj=fs.readFileSync(path.join(root,'SourceAssets',a.name+'.obj'));assert.ok(obj.length>50);assert.ok(/^f /m.test(obj.toString()),a.name+' contains renderable triangles');assert.ok(!/\b(?:NaN|Infinity)\b/.test(obj.toString()),a.name+' has finite geometry');assert.ok(a.slots.length>0,a.name+' has material slots');assert.equal(crypto.createHash('sha256').update(obj).digest('hex'),a.sha256);for(const slot of a.slots)assert.ok(data.materials.some(m=>m.id===slot));}
 for(const group of data.placements)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
@@ -136,5 +164,6 @@ for(const group of data.nativeDetails)for(const i of group.instances){assert.ok(
 const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};
 report.vehicleTopology=data.vehicles.map(v=>({id:v.id,wheels:v.wheelCount??4,axles:v.axleCount??2,referenceCraftRevision:v.nativeModel.referenceCraftRevision}));
 report.gradedTrailSamples=gradedSamples;report.terrainGrade=data.terrainGrade;
+report.perimeterTrail={lengthM:expedition.lengthM,sectors:expedition.sectors.length,gates:expeditionRoute.gates.length,terrainCells:expedition.changedHeightCells,surfaces:[...expeditionSurfaces]};
 report.gardenGeology=gardenGeology;
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});fs.writeFileSync(path.join(root,'docs/export-validation.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

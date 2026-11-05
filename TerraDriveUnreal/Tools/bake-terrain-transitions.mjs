@@ -1,12 +1,16 @@
 // Native-only coverage masks. The browser and original collision/surface field stay immutable.
 import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
+import {perimeterMask,trailLookup} from './perimeter-trail.mjs';
 const root=path.resolve(import.meta.dirname,'..'),source=path.join(root,'SourceAssets'),data=path.join(root,'Content/NativeData');
 const bytes=fs.readFileSync(path.join(data,'terrain.bin')),n=bytes.readUInt32LE(4),step=bytes.readFloatLE(8),origin=bytes.readFloatLE(12),count=n*n;
 if(bytes.readUInt32LE(0)!==0x54445256||n!==1601)throw Error('Unexpected source field');
 const names=['dirt','asphalt','mud','wetland','rock','sand','snow'];
 // Half-width in metres: pavement keeps an identifiable edge; natural cover has broader fringes.
 const widths=[[0,.65,3.5,5,4,6,7],[.65,0,.65,.65,.65,.65,.65],[3.5,.65,0,3,.8,3,4],[5,.65,3,0,2,4,4],[4,.65,.8,2,0,4,6],[6,.65,3,4,4,0,5],[7,.65,4,4,6,5,0]];
-const hash=crypto.createHash('sha256').update(bytes).update(fs.readFileSync(import.meta.filename)).digest('hex');
+const trail=JSON.parse(fs.readFileSync(path.join(data,'world.json'))).perimeterTrail;
+const locate=trail?trailLookup(trail.samples):()=>null;
+const hash=crypto.createHash('sha256').update(bytes).update(fs.readFileSync(import.meta.filename))
+ .update(fs.readFileSync(new URL('./perimeter-trail.mjs',import.meta.url))).update(JSON.stringify(trail??null)).digest('hex');
 const reportFile=path.join(root,'Saved/terrain-transitions.json');
 if(fs.existsSync(reportFile)&&JSON.parse(fs.readFileSync(reportFile)).signature===hash&&['TerrainBlendA.tga','TerrainBlendB.tga'].every(f=>fs.existsSync(path.join(source,f)))&&['terrain-blend.bin','terrain-transitions.json'].every(f=>fs.existsSync(path.join(data,f)))){console.log('Terrain transition masks unchanged');process.exit(0);}
 const surfaces=new Uint8Array(count);for(let i=0;i<count;i++)surfaces[i]=bytes[16+i*9+8];
@@ -39,7 +43,12 @@ for(let r=0;r<n;r++)for(let c=0;c<n;c++){
 fs.mkdirSync(source,{recursive:true});fs.mkdirSync(path.join(root,'Saved'),{recursive:true});
 for(let group=0;group<2;group++){
  const tga=Buffer.alloc(18+count*4);tga[2]=2;tga.writeUInt16LE(n,12);tga.writeUInt16LE(n,14);tga[16]=32;tga[17]=0x28;
- for(let i=0;i<count;i++){const at=18+i*4,base=group*4;const w=k=>base+k<7?coverage[i*7+base+k]:0;tga[at]=w(2);tga[at+1]=w(1);tga[at+2]=w(0);tga[at+3]=w(3);}
+ for(let i=0;i<count;i++){
+  const at=18+i*4,base=group*4;
+  tga[at]=coverage[i*7+base+2];tga[at+1]=coverage[i*7+base+1];tga[at+2]=coverage[i*7+base];
+  // Blend B has three physical channels. Use its spare alpha for the trail.
+  tga[at+3]=group?perimeterMask(locate,origin+Math.floor(i/n)*step,origin+i%n*step):coverage[i*7+3];
+ }
  fs.writeFileSync(path.join(source,group?'TerrainBlendB.tga':'TerrainBlendA.tga'),tga);
 }
 const native=Buffer.alloc(16+coverage.length);native.writeUInt32LE(0x54425731);native.writeUInt32LE(n,4);native.writeFloatLE(step,8);native.writeFloatLE(origin,12);coverage.copy(native,16);fs.writeFileSync(path.join(data,'terrain-blend.bin'),native);

@@ -1,4 +1,4 @@
-param([ValidateSet('SixWheel','Art','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,9)][int]$RolloverQuickVehicle=-1)
+param([ValidateSet('SixWheel','Art','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,9)][int]$RolloverQuickVehicle=-1)
 $ErrorActionPreference='Stop'
 if($RolloverQuickVehicle -ge 0 -and $Mode -ne 'Rollover'){throw '-RolloverQuickVehicle requires Rollover mode.'}
 $taskRoot=Split-Path $PSScriptRoot -Parent
@@ -12,6 +12,7 @@ New-Item -ItemType Directory -Path $taskCaptures -Force | Out-Null
 $taskExe=Join-Path $taskRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'
 $taskFlags=@{SixWheel='-TerraSixWheelOnly';Art='-TerraModelHeroOnly';Interface='-TerraInterfaceOnly';Mechanical='-TerraMechanicalOnly';ElectricPressure='-TerraElectricPressureOnly';Rollover='-TerraRolloverOnly';Ruts='-TerraRutOnly';Garden='-TerraGardenOnly';Transitions='-TerraTransitionsOnly';Detail='-TerraTerrainDetailOnly';Movement='-TerraMomentumOnly'}
 $taskFlags.RutTransitions='-TerraRutTransitionOnly'
+$taskFlags.Perimeter='-TerraPerimeterOnly'
 $taskQuality=if($Mode -in @('Art','Garden','Ruts','Transitions','Detail','RutTransitions')){2}else{0}
 $taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-NoTrace','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraGraphicsMode='+$taskQuality),$taskFlags[$Mode],
  ('-TerraReport="'+$taskReport+'"'),('-TerraCaptureDir="'+$taskCaptures+'"'),('-TerraGarage="'+(Join-Path $taskOutput 'garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOutput 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $taskOutput 'controls.json')+'"'),('-UserDir="'+(Join-Path $taskOutput 'User')+'"'),('-abslog="'+(Join-Path $taskOutput 'game.log')+'"'),
@@ -39,7 +40,7 @@ try{
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=110;Interface=140;Mechanical=557;ElectricPressure=280;Rollover=513;Ruts=117;Transitions=53;Detail=15;Movement=120;RutTransitions=64}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=110;Interface=140;Mechanical=557;ElectricPressure=280;Rollover=513;Ruts=117;Transitions=53;Detail=15;Movement=120;RutTransitions=64;Perimeter=5}[$Mode]
  if($RolloverQuickVehicle -ge 0){
   $taskExpected=81
   $taskPlan=Get-Content -LiteralPath (Join-Path $taskOutput 'rollover-fixtures.json') -Raw|ConvertFrom-Json
@@ -50,6 +51,10 @@ try{
  $taskExpectedCaptures=@()
  if($Mode -eq 'SixWheel'){$taskExpectedCaptures=@('sixwheel-locked-motion.png','g63-squared-garage.png','sixwheel-mud-ruts.png','sixwheel-ev-drive-1.png','sixwheel-ev-drive-2.png','sixwheel-ev-drive-3.png')}
  if($Mode -eq 'Garden'){$taskExpectedCaptures=@('garden-main-outcrop.png','garden-detached-blocks.png','garden-ledge-silhouette.png','garden-stone-close.png','garden-articulation-line.png')}
+ if($Mode -eq 'Perimeter'){
+  $taskExpectedCaptures=@('perimeter-finish.png')
+  foreach($taskSector in 0..10){$taskExpectedCaptures+=('perimeter-sector-{0:00}.png' -f $taskSector)}
+ }
  if($Mode -eq 'Art'){foreach($taskVehicle in 0..9){foreach($taskView in 0..9){$taskExpectedCaptures+=('native-vehicle-'+$taskVehicle+'-hero-'+$taskView+'.png')}}}
  if($Mode -eq 'Ruts'){
   foreach($taskSurface in @('firm-dirt','mud','snow','wet-grass','sand','loose-dirt','driven-mud','driven-snow')){foreach($taskView in @('oblique','profile')){$taskExpectedCaptures+=('native-rut-'+$taskSurface+'-'+$taskView+'.png')}}

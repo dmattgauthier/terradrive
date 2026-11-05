@@ -9,7 +9,7 @@
       "unrealXM": -44,
       "unrealYM": 3,
       "surface": "dirt",
-      "heightM": 3.189868927001953
+      "heightM": 3.2754757404327393
     },
     {
       "name": "Tarmac Straight",
@@ -23,28 +23,28 @@
       "unrealXM": 42,
       "unrealYM": -112,
       "surface": "rock",
-      "heightM": 7.3324785232543945
+      "heightM": 7.283155918121338
     },
     {
       "name": "Rutted Hollow",
       "unrealXM": -163,
       "unrealYM": -48,
       "surface": "mud",
-      "heightM": 3.332014560699463
+      "heightM": 3.251710891723633
     },
     {
       "name": "Willow Marsh",
       "unrealXM": 77,
       "unrealYM": 24,
       "surface": "dirt",
-      "heightM": 4.690649509429932
+      "heightM": 4.689425468444824
     },
     {
       "name": "Copper Dunes",
       "unrealXM": -178,
       "unrealYM": -195,
       "surface": "sand",
-      "heightM": 11.039977312088013
+      "heightM": 11.039977073669434
     },
     {
       "name": "Summit Challenge Park",
@@ -58,24 +58,24 @@
       "unrealXM": 230,
       "unrealYM": 218,
       "surface": "snow",
-      "heightM": 7.0382914543151855
+      "heightM": 7.862632751464844
     },
     {
       "name": "Granite Trials Arena",
       "unrealXM": 126,
       "unrealYM": -281,
       "surface": "dirt",
-      "heightM": 12.272045612335205
+      "heightM": 12.272045135498047
     }
   ],
   "meshSources": 307,
   "constructedGroups": 2,
-  "challengeRoutes": 13,
+  "challengeRoutes": 14,
   "quarryDeckHeightM": 26.172911834716796,
-  "trees": 409,
-  "placements": 10948,
-  "detailInstances": 12717,
-  "solidDetailInstances": 1875,
+  "trees": 386,
+  "placements": 10613,
+  "detailInstances": 12609,
+  "solidDetailInstances": 1748,
   "tintedMaterials": 37,
   "preservedInstanceColors": true,
   "pass": true,
@@ -143,6 +143,21 @@
   ],
   "gradedTrailSamples": 363,
   "terrainGrade": "slate-rim-heightfield-1",
+  "perimeterTrail": {
+    "lengthM": 3805.490112423413,
+    "sectors": 11,
+    "gates": 191,
+    "terrainCells": 255400,
+    "surfaces": [
+      "dirt",
+      "sand",
+      "snow",
+      "asphalt",
+      "wetland",
+      "rock",
+      "mud"
+    ]
+  },
   "gardenGeology": {
     "samples": 4096,
     "vertices": 492929,

@@ -899,6 +899,10 @@ void ATerraWorld::LoadScenery() {
     const TArray<TSharedPtr<FJsonValue>> *Directions = nullptr;
     if (O->TryGetArrayField(TEXT("gateDirections"),Directions))
       for (auto D : *Directions) R.GateDirections.Add(D->AsNumber()<0?-1:1);
+    if (O->TryGetArrayField(TEXT("gateHeadings"),Directions))
+      for (auto D : *Directions) R.GateHeadings.Add(D->AsNumber());
+    if (O->TryGetArrayField(TEXT("gateNotes"),Directions))
+      for (auto D : *Directions) R.GateNotes.Add(D->AsString());
     Routes.Add(R);
   }
   if (Spawns.IsValidIndex(8) && Routes.IsValidIndex(4)) Spawns[8] = Routes[4].Spawn;
@@ -1043,6 +1047,7 @@ void ATerraWorld::LoadScenery() {
     C->SetupAttachment(RootComponent);
     C->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+O->GetStringField(TEXT("asset")))));
     const bool Solid=O->GetBoolField(TEXT("solid"));
+    bool CanCrush=!Solid;O->TryGetBoolField(TEXT("crushable"),CanCrush);
     C->SetCollisionProfileName(Solid?TEXT("BlockAll"):TEXT("NoCollision"));
     C->SetNumCustomDataFloats(3);
     C->SetMobility(EComponentMobility::Movable);
@@ -1054,7 +1059,7 @@ void ATerraWorld::LoadScenery() {
       auto A=I->AsObject();const auto Q=A->GetArrayField(TEXT("q"));
       const FVector Position=Vec(A->GetArrayField(TEXT("p")));
       FVector Scale=Vec(A->GetArrayField(TEXT("s")));
-      if(!Solid&&SurfaceBlend(Position.X,Position.Y).Weight[6]>.65f)Scale=FVector::ZeroVector;
+      if(CanCrush&&SurfaceBlend(Position.X,Position.Y).Weight[6]>.65f)Scale=FVector::ZeroVector;
       FTransform Placement(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Position,Scale);
       bool SnapBoulder=false;O->TryGetBoolField(TEXT("snapBoulder"),SnapBoulder);
       if(SnapBoulder&&C->GetStaticMesh()){
@@ -1075,7 +1080,6 @@ void ATerraWorld::LoadScenery() {
       }
       const int Index=C->AddInstance(Placement);
       const auto Color=A->GetArrayField(TEXT("color"));
-      bool CanCrush=!Solid;O->TryGetBoolField(TEXT("crushable"),CanCrush);
       if(CanCrush)RegisterCrushable(C,Index);
       for(int Channel=0;Channel<3;++Channel)C->SetCustomDataValue(Index,Channel,Color[Channel]->AsNumber());
       ++DetailInstanceCount;if(Solid)++SolidDetailCount;

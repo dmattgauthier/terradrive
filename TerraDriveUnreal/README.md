@@ -180,7 +180,7 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 | C | Near/far chase camera |
 | 1–9 | Trail, tarmac, rock, mud, marsh, sand, Summit park, snow, Granite Trials |
 
-| J | Cycle nine challenge routes |
+| J | Cycle challenge routes, including [Perimeter Expedition](docs/perimeter-expedition.md) |
 | V | Open vehicle selection while stopped |
 | T | Equip/remove flotation tracks while stopped; Civic excluded |
 | F / L | Available four-wheel high drive / low range; change near a stop |
