@@ -1,7 +1,7 @@
 # Real-time terrain performance comparison; requires the packaged native build.
 param([ValidatePattern('^[a-z0-9-]+$')][string]$Name='quarry',
  [ValidateRange(10,45)][int]$Cap=30,[ValidateRange(0,2)][int]$Quality=0,[switch]$Legacy,[switch]$Trace,
- [ValidateRange(1280,1920)][int]$Width=1280,[ValidateRange(720,1080)][int]$Height=720,[string]$OutputRoot='')
+ [ValidateRange(1280,1920)][int]$Width=1280,[ValidateRange(720,1080)][int]$Height=720,[string]$OutputRoot='',[string]$PackageDirectory='')
 $ErrorActionPreference='Stop'
 $project22=Split-Path $PSScriptRoot -Parent
 # Each invocation keeps its own receipts, isolated settings and captures.
@@ -11,7 +11,8 @@ if(@(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,ShaderCompileWor
 $out22=Join-Path $root22 $Name
 if(Test-Path -LiteralPath $out22){throw 'Preserve existing evidence and use another name'}
 New-Item -ItemType Directory -Path (Join-Path $out22 'Screenshots') -Force|Out-Null
-$exe22=Join-Path $project22 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'
+if(!$PackageDirectory){$PackageDirectory=Join-Path $project22 'Build/Windows'}
+$exe22=Join-Path (Resolve-Path -LiteralPath $PackageDirectory).ProviderPath 'TerraDrive/Binaries/Win64/TerraDrive.exe'
 $args22=@('-unattended','-windowed','-ForceRes','-RenderOffscreen',('-ResX='+$Width),('-ResY='+$Height),'-NoSound',
  '-TerraValidate','-TerraQuarryPerformanceOnly','-TerraCapture',('-TerraTestFPS='+$Cap),('-TerraGraphicsMode='+$Quality),
  ('-UserDir="'+(Join-Path $out22 'User')+'"'),('-TerraReport="'+(Join-Path $out22 'result.json')+'"'),
