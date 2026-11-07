@@ -8,6 +8,36 @@ const beds=[
   {from:74,to:104,side:-1,offset:8.7},
   {from:111,to:129,side:1,offset:8.8},
 ];
+const sections=[
+  {
+    name:'Upper Cut',from:130,to:186,downhill:-1,fanWidth:10,fanDensity:.51,grassDensity:20,
+    cuts:[
+      {from:133,to:153,side:1,offset:8.8,height:1.1},
+      {from:158,to:184,side:1,offset:9.9,height:1.2},
+    ],
+  },
+  {
+    name:'Articulation Bench',from:186,to:243,downhill:1,fanWidth:8,fanDensity:.32,grassDensity:19,
+    cuts:[
+      {from:188,to:199,side:1,offset:9.4,height:.54},
+      {from:206,to:222,side:-1,offset:9,height:.66},
+      {from:229,to:239,side:-1,offset:10.1,height:.58},
+    ],
+  },
+  {
+    name:'Spoil Fans',from:243,to:292,downhill:1,fanWidth:15,fanDensity:.88,grassDensity:13,
+    cuts:[
+      {from:245,to:266,side:-1,offset:9.7,height:.88},
+      {from:272,to:285,side:-1,offset:9.4,height:.62},
+    ],
+  },
+  {
+    name:'Reclaimed Exit',from:292,to:Infinity,downhill:1,fanWidth:12,fanDensity:.3,grassDensity:36,
+    cuts:[
+      {from:299,to:311,side:-1,offset:9,height:.47},
+    ],
+  },
+];
 const stones=[0,1,2,4,6,8,9,10,12,14,16,17];
 const mix=(a,b,t)=>a+(b-a)*t;
 const saturate=x=>Math.min(1,Math.max(0,x));
@@ -68,6 +98,55 @@ export function slateRimCoverage(samples){
   };
 }
 
+export function slateRimExtensionCoverage(samples){
+  const last=samples.at(-1).d;
+  const local=samples.filter(p=>p.d>=end-4),edges=segments(local);
+  if(!edges.length||last<=sections.at(-1).from)
+    throw Error('Slate Rim extension requires the complete quarry trail');
+  const pilot=slateRimCoverage(samples),reach=21;
+  const xmin=Math.min(...local.map(p=>p.x))-reach,xmax=Math.max(...local.map(p=>p.x))+reach;
+  const ymin=Math.min(...local.map(p=>p.y))-reach,ymax=Math.max(...local.map(p=>p.y))+reach;
+  return (x,y)=>{
+    if(x<xmin||x>xmax||y<ymin||y>ymax)return null;
+    const p=nearest(edges,x,y);
+    if(p.d<=end||p.d>=last||p.distance>=reach||pilot(x,y))return null;
+    const side=Math.sign(p.side),offset=Math.abs(p.side);
+    const weight=smooth(end,end+4,p.d)*(1-smooth(last-8,last,p.d));
+    const verge=smooth(3.55,5.2,offset)*(1-smooth(12,18,offset));
+    let shelf=0,fan=0,drainage=0;
+    for(const section of sections){
+      const fade=Number.isFinite(section.to)?1-smooth(section.to-5,section.to+5,p.d):1;
+      const band=smooth(section.from-5,section.from+5,p.d)*fade;
+      if(!band)continue;
+      for(const cut of section.cuts){
+        if(side!==cut.side)continue;
+        const lip=beddingOffset(cut,p.d);
+        const face=pulse(cut.from,cut.to,p.d,3)*(1-smooth(1.3,4.3,Math.abs(offset-lip)));
+        shelf=Math.max(shelf,face*mix(.54,1,saturate(cut.height)));
+      }
+      const downhill=side===section.downhill;
+      const toe=downhill?section.fanWidth:section.fanWidth*.65;
+      const branching=.5+.5*Math.sin(p.d*.28-offset*.46+.9*Math.sin(p.d*.62+offset*.31));
+      const apron=smooth(3.7,5.7,offset)*(1-smooth(toe-1,toe+5,offset));
+      fan+=band*section.fanDensity*apron*mix(.38,1,branching)*(downhill?1:.46);
+      if(downhill){
+        const rills=Math.pow(.5+.5*Math.sin(p.d*.48-offset*.58+.9*Math.sin(offset*.42)),5);
+        drainage+=band*rills*smooth(3.7,5.2,offset)*(1-smooth(toe,toe+4,offset));
+      }
+    }
+    return {...p,shelf,fan,drainage,weight,
+      rock:weight*saturate(verge*.21+shelf*.59+fan*.56+drainage*.24),
+      wornLane:1-weight*.45*(1-smooth(1.85,3.75,offset))};
+  };
+}
+
+export function slateRimVisualCoverage(world){
+  const pilot=world.slateRimPilot?.visualCoverage?slateRimCoverage(world.quarryTrail.samples):()=>null;
+  if(!world.slateRimExtension?.visualCoverage)return pilot;
+  const extension=slateRimExtensionCoverage(world.quarryTrail.samples);
+  return (x,y)=>pilot(x,y)??extension(x,y);
+}
+
 function terrainHeight(field){
   const n=field.readUInt32LE(4),step=field.readFloatLE(8),origin=field.readFloatLE(12);
   const index=v=>Math.max(0,Math.min(n-1,Math.round((v-origin)/step)));
@@ -104,13 +183,18 @@ export function slateRimRouteClearance(world){
 // each instance to the ground. Asset bounds are also checked by the fixture.
 export const slateRimStoneRadius=([x,y,z])=>Math.hypot(1.03*x,1.03*y,1.35*z);
 
+function scanGroups(native){
+  const dry=stones.map(i=>native.find(g=>g.asset==='scan_native_boulder_'+String(i).padStart(2,'0')));
+  const grasses=native.filter(g=>/^scan_grass_medium_01_(3|4|5|11|12|13|14|15|16)$/.test(g.asset));
+  if(dry.some(g=>!g?.solid||!g.snapBoulder)||grasses.length!==9)throw Error('Slate Rim scan groups are incomplete');
+  return {dry,grasses};
+}
+
 export function applySlateRimPilot(world,field){
   if(world.slateRimPilot)throw Error('Slate Rim pilot is already applied. Run node Tools/export-source.mjs from TerraDriveUnreal to regenerate placements.');
   const samples=world.quarryTrail.samples, coverage=slateRimCoverage(samples);
   const clear=slateRimRouteClearance(world),height=terrainHeight(field);
-  const native=world.nativeDetails, dry=stones.map(i=>native.find(g=>g.asset==='scan_native_boulder_'+String(i).padStart(2,'0')));
-  const grasses=native.filter(g=>/^scan_grass_medium_01_(3|4|5|11|12|13|14|15|16)$/.test(g.asset));
-  if(dry.some(g=>!g?.solid||!g.snapBoulder)||grasses.length!==9)throw Error('Slate Rim scan groups are incomplete');
+  const native=world.nativeDetails,{dry,grasses}=scanGroups(native);
   const counts={shelves:0,scree:0,grass:0,retiredScatter:0};
 
   // Break the broad scatter distribution only inside the pilot. Keep the
@@ -179,4 +263,105 @@ export function applySlateRimPilot(world,field){
   world.slateRimPilot={version:1,startM:start,endM:end,counts,
     minimumClearanceM:+minClearance.toFixed(3),visualCoverage:true};
   return world.slateRimPilot;
+}
+
+export function applySlateRimExtension(world,field){
+  if(!world.slateRimPilot)throw Error('Apply the Slate Rim pilot before adding its extension');
+  if(world.slateRimExtension)throw Error('Slate Rim extension is already applied. Use export-source.mjs to regenerate placements.');
+  const samples=world.quarryTrail.samples, last=samples.at(-1).d;
+  const coverage=slateRimExtensionCoverage(samples), clear=slateRimRouteClearance(world), height=terrainHeight(field);
+  const native=world.nativeDetails,{dry,grasses}=scanGroups(native);
+  const counts={shelves:0,scree:0,grass:0,retiredScatter:0},reportSections=[];
+  const shelves=[],scree=[];
+  let minClearance=Infinity;
+  let sectionCounts;
+
+  // Keep the original pilot, installed Fab groups and existing articulation
+  // stones. Pull generic native scatter back only at a new rock face or fan.
+  for(const group of native){
+    const rock=group.snapBoulder&&/^scan_native_boulder_/.test(group.asset);
+    if(!rock&&!grasses.includes(group))continue;
+    group.instances=group.instances.filter(instance=>{
+      if(instance.slateRimPilot)return true;
+      const [x,y]=instance.p.map(v=>v/100),p=coverage(x,y);
+      if(!p||Math.abs(p.side)<=5.65)return true;
+      const selected=rock
+        ? clear(x,y)>Math.max(1.55,slateRimStoneRadius(instance.s)+.15)&&p.rock>.21
+        : p.shelf>.29||p.fan>.43;
+      if(selected)counts.retiredScatter++;
+      return !selected;
+    });
+  }
+
+  function put(group,point,scale,kind,yaw,color){
+    const room=kind==='grass'?Infinity:clear(point.x,point.y)-slateRimStoneRadius(scale);
+    if(room<.15||!coverage(point.x,point.y))return;
+    const z=height(point.x,point.y);
+    group.instances.push({p:[point.x*100,point.y*100,z*100],
+      q:[0,0,Math.sin(yaw/2),Math.cos(yaw/2)],s:scale,color,slateRimExtension:kind});
+    minClearance=Math.min(minClearance,room);
+    counts[kind]++;
+    sectionCounts[kind]++;
+    if(kind==='shelves')shelves.push(point);
+    if(kind==='scree')scree.push(point);
+  }
+
+  // Break each exposed strike into separate faces with gaps. Set a second
+  // tier only where the actual hillside rises behind the exposed front.
+  for(const [j,section] of sections.entries()){
+    sectionCounts={shelves:0,scree:0,grass:0};
+    const to=Math.min(last,section.to);
+    for(const [k,cut] of section.cuts.entries()){
+      for(let d=cut.from+1,i=0;d<cut.to-.4;d+=2.7+random(i++,j*11+k+40)*1.6){
+        const n=j*113+k*29+i,offset=beddingOffset(cut,d),point=anchor(samples,d,cut.side*offset);
+        const scale=[mix(.76,1.52,random(n,41)),mix(1.35,2.13,random(n,42)),cut.height*mix(.68,1.13,random(n,43))];
+        const color=mix(.71,.89,random(n,44));
+        put(dry[(n*7+j+k)%dry.length],point,scale,'shelves',point.yaw-Math.PI/2+mix(-.16,.16,random(n,45)),
+          [color*.94,color,color*1.04]);
+        if(cut.height>=.85&&i%3!==1&&d+1.45<cut.to){
+          const higher=anchor(samples,d+1.45,cut.side*(offset+3.3));
+          if(height(higher.x,higher.y)>height(point.x,point.y)+.5)
+            put(dry[(n*7+j+k+4)%dry.length],higher,[1.35,1.76,cut.height*.84],'shelves',
+              higher.yaw-Math.PI/2,[.73,.77,.8]);
+        }
+      }
+    }
+
+    // Spoil spreads into the downslope side in irregular lobes. Thin the
+    // fragments toward the wheel line and undercut drainage between lobes.
+    const trials=Math.round(44+section.fanDensity*71);
+    for(let i=0;i<trials;i++){
+      const n=j*131+i,d=mix(section.from+1.4,to-2,random(n,51));
+      const side=random(n,52)<.72?section.downhill:-section.downhill;
+      const across=random(n,53),offset=mix(5.9,section.fanWidth+2.4,across);
+      const point=anchor(samples,d,side*offset),p=coverage(point.x,point.y);
+      if(!p||p.fan+Math.min(.1,p.shelf*.19)<mix(.12,.36,random(n,54))+p.drainage*.13||
+        shelves.some(s=>Math.hypot(s.x-point.x,s.y-point.y)<1.45)||
+        scree.some(s=>Math.hypot(s.x-point.x,s.y-point.y)<.46))continue;
+      const size=mix(.13,.5,Math.pow(across,.63))*mix(.74,1.32,random(n,55));
+      const color=mix(.76,.96,random(n,56));
+      put(dry[(n*5+j)%dry.length],point,[size*.76,size,size*mix(.47,.76,random(n,57))],
+        'scree',point.yaw+mix(-1.3,1.3,random(n,58)),[color,color*.99,color*.94]);
+    }
+
+    // Plant clumps at quieter edges and let the reclaimed exit close in
+    // gradually. Fresh faces, eroded channels and stone toes remain bare.
+    for(let i=0;i<section.grassDensity;i++){
+      const n=j*41+i,cluster=i%5,d=mix(section.from+3,to-4,(cluster+1)/6)+mix(-2,2,random(n,61));
+      const side=cluster%2?section.downhill:-section.downhill;
+      const offset=(cluster%3?12.1:6.6)+mix(-1.5,2.2,random(n,62));
+      const point=anchor(samples,d,side*offset),p=coverage(point.x,point.y);
+      if(!p||p.fan>.34||p.drainage>.48||clear(point.x,point.y)<.75||
+        shelves.some(s=>Math.hypot(s.x-point.x,s.y-point.y)<1.9)||
+        scree.some(s=>Math.hypot(s.x-point.x,s.y-point.y)<.46))continue;
+      const size=mix(.43,1.1,random(n,63));
+      put(grasses[n%grasses.length],point,[size,size,size*.82],'grass',random(n,64)*Math.PI*2,[.81,.82,.67]);
+    }
+    reportSections.push({name:section.name,fromM:section.from,toM:to,counts:sectionCounts});
+  }
+  if(!Number.isFinite(minClearance)||counts.shelves<30||counts.scree<35||counts.grass<35)
+    throw Error('Slate Rim extension did not fit the authored corridor');
+  world.slateRimExtension={version:1,startM:end,endM:last,counts,sections:reportSections,
+    minimumClearanceM:+minClearance.toFixed(3),visualCoverage:true};
+  return world.slateRimExtension;
 }

@@ -1132,13 +1132,25 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>1.5f){if(FParse::Param(FCommandLine::Get(),TEXT("TerraVisualOnly")))FinishValidation();else Next(61);}
   }else if(Stage==61){
     if(!Captured){
+      const auto &WorldData=V->Terrain->Data;
+      const auto UrusBody=WorldData->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"));
+      if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarrySurvey"))){
+        double ArtPilot=0,ExtensionVersion=0;
+        const TSharedPtr<FJsonObject>* Extension=nullptr;
+        const bool CurrentHood=UrusBody->TryGetNumberField(TEXT("artPilot"),ArtPilot)&&ArtPilot==3;
+        const bool CurrentQuarry=WorldData->TryGetObjectField(TEXT("slateRimExtension"),Extension)&&
+          (*Extension)->TryGetNumberField(TEXT("version"),ExtensionVersion)&&ExtensionVersion==1;
+        Check(TEXT("quarry survey requires the current Urus hood art"),CurrentHood,ArtPilot);
+        Check(TEXT("quarry survey requires the Slate Rim extension"),CurrentQuarry,ExtensionVersion);
+        if(!CurrentHood||!CurrentQuarry){FinishValidation();return;}
+      }
       V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(8);
       V->TestDriverInput=false;V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;
       TrailClosestSample=0;TrailMaximumError=0;Captured=true;
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.IsValidIndex(8)&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==12);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),UrusBody->GetIntegerField(TEXT("version"))==12);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){
@@ -1189,16 +1201,42 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("stock Urus drives the entire Slate Rim trail through every gate"),V->GateIndex==20,V->GateIndex);
       Check(TEXT("Urus quarry drive stays upright with a controlled trail line"),V->GetActorUpVector().Z>.7f&&TrailMaximumError<450,TrailMaximumError);
       Check(TEXT("native quarry drive covers more than 700 feet without teleporting"),V->RouteTime>25&&TrailClosestSample>115,TrailClosestSample);
-      V->TestThrottle=0;V->TestSteer=0;V->TestBrake=1;Next(63);
+      V->TestThrottle=0;V->TestSteer=0;V->TestBrake=1;ModelView=0;Next(63);
     }
   }else if(Stage==63){
     if(!SoilCamera)SoilCamera=GetWorld()->SpawnActor<ACameraActor>();
     if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(SoilCamera);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;}
-    const auto S=V->Terrain->Data->GetObjectField(TEXT("quarryTrail"))->GetArrayField(TEXT("samples"))[40]->AsObject();
-    const FVector Target(S->GetNumberField(TEXT("x"))*100,S->GetNumberField(TEXT("y"))*100,S->GetNumberField(TEXT("z"))*100+180),Eye=Target+FVector(-2500,2200,1000);
-    SoilCamera->GetCameraComponent()->SetFieldOfView(58);SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
-    if(StageTime>1&&!Captured){Capture(TEXT("native-slate-rim-trail.png"));Captured=true;}
-    if(StageTime>1.6f)Next(64);
+    const bool Survey=FParse::Param(FCommandLine::Get(),TEXT("TerraQuarrySurvey"));
+    // Retain the original comparison camera, then survey the latter two-thirds
+    // at fixed trail samples so the same ground is visible in each build.
+    constexpr int SurveySamples[]={40,57,68,79,90,101,114};
+    const auto &Samples=V->Terrain->Data->GetObjectField(TEXT("quarryTrail"))->GetArrayField(TEXT("samples"));
+    const int SampleIndex=SurveySamples[ModelView];
+    if(!Samples.IsValidIndex(SampleIndex)){
+      Check(TEXT("Slate Rim survey station exists"),false,SampleIndex);
+      FinishValidation();
+      return;
+    }
+    const auto S=Samples[SampleIndex]->AsObject();
+    const FVector Target(S->GetNumberField(TEXT("x"))*100,S->GetNumberField(TEXT("y"))*100,S->GetNumberField(TEXT("z"))*100+180);
+    FVector Eye=Target+FVector(-2500,2200,1000);
+    if(ModelView>0){
+      const FVector Along(S->GetNumberField(TEXT("tx")),S->GetNumberField(TEXT("ty")),0);
+      const FVector Across(-Along.Y,Along.X,0);
+      Eye=Target-Along*1550+Across*(ModelView%2?1100:-1100)+FVector(0,0,740);
+      Eye.Z=FMath::Max(Eye.Z,V->Terrain->Height(Eye.X,Eye.Y)+550);
+    }
+    SoilCamera->GetCameraComponent()->SetFieldOfView(58);
+    SoilCamera->SetActorLocationAndRotation(Eye,(Target-Eye).Rotation());
+    if(StageTime>1&&!Captured){
+      const FString Name=ModelView==0?TEXT("native-slate-rim-trail.png"):FString::Printf(TEXT("native-slate-rim-sector-%02d.png"),ModelView);
+      if(ModelView>0)Check(FString::Printf(TEXT("Slate Rim survey camera %d clears ground"),ModelView),Eye.Z>V->Terrain->Height(Eye.X,Eye.Y)+500,SampleIndex);
+      Capture(*Name);Captured=true;
+    }
+    if(StageTime>1.6f){
+      if(Survey&&++ModelView<UE_ARRAY_COUNT(SurveySamples))Next(63);
+      else Next(64);
+    }
   }else if(Stage==64){
     if(!Captured){
       const bool AllModels=FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"));
@@ -1242,7 +1280,7 @@ void ATerraGameMode::Tick(float Dt) {
       Capture(*Name);Captured=true;
     }
     if(StageTime>2.5f){
-      const int PhotoViews=AllModels?10:6;
+      const int PhotoViews=AllModels?10:(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarrySurvey"))?7:6);
       if(++ModelView==PhotoViews){
         if(AllModels){if(++ModelVehicle==ATerraVehicle::VehicleCount)FinishValidation();else Next(64);}
         else if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);

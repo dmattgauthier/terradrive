@@ -49,7 +49,7 @@ for(const spec of VEHICLES){
   assert.ok(view.root.userData.visualModel.camberedClosedSpoiler&&view.root.userData.visualModel.crownedGreenhouse&&view.root.userData.visualModel.sculptedDoorCups,'Urus compound coachwork revision');
   // Above the vent's center, the first solid surface is below the bonnet
   // skin. This fails for the former opaque hood with a black patch on top.
-  const ventRay=new geo.THREE.Raycaster(view.body.localToWorld(new geo.THREE.Vector3(.647,1.6,1.6)),new geo.THREE.Vector3(0,-1,0),0,1);
+  const ventRay=new geo.THREE.Raycaster(view.body.localToWorld(new geo.THREE.Vector3(.69,1.6,1.6)),new geo.THREE.Vector3(0,-1,0),0,1);
   const ventHit=ventRay.intersectObject(view.body,true).find(h=>!h.object.material.transparent);
   assert.ok(ventHit,'bonnet vent has an inset floor');const ventDepth=view.body.worldToLocal(ventHit.point.clone()).y;
   assert.ok(ventDepth<1.102,'bonnet vent is a genuine recess');visibility.push({pane:'bonnet vent',firstSurfaceYM:ventDepth});
@@ -66,29 +66,26 @@ for(const spec of VEHICLES){
   const waist=firstSolid([1.4,.65,0],[-1,0,0]),shoulder=firstSolid([1.4,.98,0],[-1,0,0]);
   assert.ok(shoulder.x-waist.x>.025,'Urus door sheet has a pronounced shoulder-to-waist section');
   visibility.push({pane:'sculpted door',shoulderOutsetM:shoulder.x-waist.x});
-  let handles=0,returns=0;
+  let handles=0,grilleBlades=0;
   view.body.traverse(object=>{
    if(object.name==='urus-sculpted-door-handle'){
     const bounds=new geo.THREE.Box3().setFromObject(object),centre=bounds.getCenter(new geo.THREE.Vector3()),side=Math.sign(centre.x),origin=centre.clone();origin.x=side*2;
     const hit=new geo.THREE.Raycaster(origin,new geo.THREE.Vector3(-side,0,0),0,3).intersectObject(object,true)[0],edge=side>0?bounds.max.x:bounds.min.x;
     assert.ok(hit&&Math.abs(edge-hit.point.x)<.006,'Urus handle outer shell faces outward');handles++;
    }
-   if(object.name==='urus-intake-return'){
-    const p=object.geometry.attributes.position,n=object.geometry.attributes.normal,i=2*13+6,point=new geo.THREE.Vector3().fromBufferAttribute(p,i),normal=new geo.THREE.Vector3().fromBufferAttribute(n,i),centre=object.userData.apertureCentre;
-    assert.ok(normal.dot(new geo.THREE.Vector3(centre[0]-point.x,centre[1]-point.y,0).normalize())>.20,'Urus return faces the open duct');returns++;
-   }
-  });assert.equal(handles,4);assert.equal(returns,24);
+   if(object.name==='urus-swept-grille-blade')grilleBlades++;
+  });assert.equal(handles,4);assert.equal(grilleBlades,3);
   let carbonProbes=0;
-  for(const [z,half]of [[.80,.52],[1.0,.52],[1.2,.52],[1.4,.50],[1.6,.48],[1.8,.47],[2.0,.40],[2.2,.30],[2.26,.16],[2.28,.07]])for(let i=-4;i<=4;i++){
+  for(const [z,half]of [[.80,.60],[1.0,.58],[1.2,.57],[1.4,.56],[1.6,.54],[1.8,.54],[2.0,.53],[2.14,.50],[2.20,.35],[2.245,.20]])for(let i=-4;i<=4;i++){
    const x=half*i/4,hit=firstSolid([x,2,z],[0,-1,0]);assert.equal(hit.material.userData.automotive,'carbon','Urus carbon bonnet contains no painted overlap');carbonProbes++;
   }
-  for(const side of [-1,1])for(const [x,y]of [[.70,.70],[.70,.65],[.73,.60],[.76,.54],[.80,.46]]){
+  for(const side of [-1,1])for(const [x,y]of [[.71,.742],[.70,.65],[.76,.60],[.80,.54],[.78,.438]]){
    const hit=firstSolid([side*x,y,3],[0,0,-1]);assert.notEqual(hit.material,view.materials.paint,'Urus side intake contains no painted triangle');
   }
-  for(const side of [-1,1])for(const [x,z]of [[.65,1.4],[.65,1.6],[.63,1.8],[.59,1.88]]){
+  for(const side of [-1,1])for(const [x,z]of [[.72,1.20],[.70,1.40],[.69,1.60],[.675,1.82]]){
    const hit=firstSolid([side*x,2,z],[0,-1,0]);assert.notEqual(hit.material,view.materials.paint,'Urus bonnet cooling aperture contains no painted fill');
   }
-  visibility.push({pane:'partitioned bonnet and open intakes',carbonProbes,handles,returns,paintedIntakeProbes:10});
+  visibility.push({pane:'partitioned bonnet and open intake',carbonProbes,handles,grilleBlades,paintedIntakeProbes:10});
  }else assert.equal(view.root.userData.nativeConstruction.version,3);
  if(spec.bodyStyle==='sedan'){
   const detail=view.root.userData.coachworkDetail;assert.ok(detail.openHexMeshCells>100,'Civic molded open mesh cells');

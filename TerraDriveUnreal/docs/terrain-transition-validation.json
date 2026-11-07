@@ -2,18 +2,19 @@
   "pass": true,
   "n": 1601,
   "coverageSamples": 2563201,
-  "mixedPixels": 102577,
+  "mixedPixels": 101951,
   "pureInteriorPixels": [
     2126819,
     29233,
-    26577,
+    27203,
     40391,
     61498,
     100675,
     75431
   ],
-  "maskChannelParity": true,
-  "sourceTerrainSHA256": "de00eb99f691f1756a19fd706ce3b11fd7421790cd75308434f6ef9d07cc38ee",
+  "visualMaskValidated": true,
+  "slateRimVisualPixels": 43814,
+  "sourceTerrainSHA256": "04febae6063ca385d27e5843cdfe65fe72690942dd2cd4126c146745d313bd20",
   "lines": [
     {
       "surfacePair": "dirt-asphalt",
@@ -53,8 +54,8 @@
     },
     {
       "surfacePair": "mud-rock",
-      "mixedSamples": 95,
-      "maxJump": 0.019450980392194617,
+      "mixedSamples": 113,
+      "maxJump": 0.0183529411765061,
       "pass": true
     }
   ]

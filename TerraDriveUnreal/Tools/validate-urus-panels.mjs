@@ -6,11 +6,12 @@ import {T} from './body-surface.mjs';
 import {urusView} from './urus-body.mjs';
 import {URUS} from './native-vehicles.mjs';
 import {bodyRefinement} from './body-refinement.mjs';
-const openings=[
- [[-.443,.850],[-.354,.883],[.354,.883],[.443,.850],[.402,.736],[-.402,.736]],
- [[-.438,.616],[-.337,.694],[.337,.694],[.438,.616],[.614,.347],[-.614,.347]],
- [[-.918,.798],[-.562,.812],[-.479,.669],[-.739,.378],[-.896,.346],[-.951,.486]],
- [[.918,.798],[.562,.812],[.479,.669],[.739,.378],[.896,.346],[.951,.486]]
+// Insets sample each region of the connected mouth without grazing its rim.
+const mouthRegions=[
+ [[-.35,.831],[.35,.831],[.43,.748],[-.43,.748]],
+ [[-.44,.625],[.44,.625],[.39,.302],[-.39,.302]],
+ [[-.89,.811],[-.54,.786],[-.49,.64],[-.77,.418],[-.882,.404],[-.918,.493]],
+ [[.89,.811],[.54,.786],[.49,.64],[.77,.418],[.882,.404],[.918,.493]]
 ];
 const inside=(polygon,x,y)=>{
  let hit=false;for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
@@ -21,24 +22,59 @@ const edgeDistance=(polygon,x,y)=>Math.min(...polygon.map((a,i)=>{
  const b=polygon[(i+1)%polygon.length],dx=b[0]-a[0],dy=b[1]-a[1],u=T.MathUtils.clamp(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1);
  return Math.hypot(x-a[0]-dx*u,y-a[1]-dy*u);
 }));
-const view=urusView(URUS);bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);let fascia;
-view.body.traverse(object=>{if(object.name==='urus-perforated-front-fascia')fascia=object;});assert.ok(fascia);
+const view=urusView(URUS);bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);
+const fascia=view.body.getObjectByName('urus-perforated-front-fascia'),frame=view.body.getObjectByName('urus-lower-composite-intake-frame');
+assert.ok(fascia&&frame);
 const counts=[0,0,0,0];
-for(let row=0;row<=24;row++)for(let col=0;col<=76;col++){
- const x=-.95+col*.025,y=.34+row*.025,index=openings.findIndex(h=>inside(h,x,y)&&edgeDistance(h,x,y)>.008);if(index<0)continue;
+for(let row=0;row<=30;row++)for(let col=0;col<=95;col++){
+ const x=-.95+col*.020,y=.30+row*.020,index=mouthRegions.findIndex(h=>inside(h,x,y)&&edgeDistance(h,x,y)>.008);if(index<0)continue;
  const origin=view.body.localToWorld(new T.Vector3(x,y,3)),direction=new T.Vector3(0,0,-1).transformDirection(view.body.matrixWorld);
- const hits=new T.Raycaster(origin,direction,0,2).intersectObject(fascia,true);
- assert.equal(hits.length,0,`painted triangle intrudes into intake ${index} at ${x},${y}`);counts[index]++;
+ const hits=new T.Raycaster(origin,direction,0,2).intersectObjects([fascia,frame],true);
+ assert.equal(hits.length,0,`solid outer skin intrudes into the intake at ${x},${y}`);counts[index]++;
 }
-assert.ok(counts.every(n=>n>80),'all four intake apertures sampled densely');
+assert.ok(counts.every(n=>n>65),`all four regions of the intake sampled densely: ${counts}`);
 const paintMeshes=[];view.body.traverse(object=>{if(object.isMesh&&object.material===view.materials.paint)paintMeshes.push(object);});
+// The broad ray grid misses inverted faces at the narrow leading corners.
+const bonnet=view.body.getObjectByName('urus-partitioned-carbon-bonnet');
+assert.ok(bonnet,'the carbon bonnet is a separate mesh');
+const {attributes:{position,normal},index}=bonnet.geometry;
+const vertex=new T.Vector3(),edgeA=new T.Vector3(),edgeB=new T.Vector3();
+let bonnetMinFaceNormalY=1,bonnetMinVertexNormalY=1;
+for(let i=0;i<index.count;i+=3){
+ vertex.fromBufferAttribute(position,index.getX(i));
+ edgeA.fromBufferAttribute(position,index.getX(i+1)).sub(vertex);
+ edgeB.fromBufferAttribute(position,index.getX(i+2)).sub(vertex);
+ const up=edgeA.cross(edgeB).normalize().y;
+ assert.ok(up>0,`carbon bonnet triangle ${i/3} must face up, got ${up}`);
+ bonnetMinFaceNormalY=Math.min(bonnetMinFaceNormalY,up);
+}
+for(let i=0;i<normal.count;i++){
+ const up=normal.getY(i);
+ assert.ok(up>0,`carbon bonnet vertex normal ${i} must face up, got ${up}`);
+ bonnetMinVertexNormalY=Math.min(bonnetMinVertexNormalY,up);
+}
 let bonnetGridProbes=0;
-for(const [z,half]of [[.80,.52],[1.0,.52],[1.2,.52],[1.4,.50],[1.6,.48],[1.8,.47],[2.0,.40],[2.2,.30],[2.26,.16],[2.28,.07]])for(let i=-4;i<=4;i++){
+for(const [z,half]of [[.80,.60],[1.0,.58],[1.2,.57],[1.4,.56],[1.6,.54],[1.8,.54],[2.0,.53],[2.14,.50],[2.20,.35],[2.245,.20]])for(let i=-4;i<=4;i++){
  const x=half*i/4,origin=view.body.localToWorld(new T.Vector3(x,2,z)),direction=new T.Vector3(0,-1,0).transformDirection(view.body.matrixWorld);
  const paintHits=new T.Raycaster(origin,direction,0,2).intersectObjects(paintMeshes,true).filter(h=>view.body.worldToLocal(h.point.clone()).y>.94);
  assert.equal(paintHits.length,0,`hidden painted bonnet overlaps carbon at ${x},${z}`);bonnetGridProbes++;
 }
 const probe=(start,dir,target=view.body)=>new T.Raycaster(view.body.localToWorld(new T.Vector3(...start)),new T.Vector3(...dir).transformDirection(view.body.matrixWorld),0,1.25).intersectObject(target,true);
+const firstSolid=(start,dir)=>probe(start,dir).find(h=>!h.object.material.transparent)?.object;
+const paint=view.materials.paint;
+assert.equal(firstSolid([0,2,2.285],[0,-1,0])?.material,paint,'body-color panel closes the leading nose beyond the exposed carbon');
+assert.equal(firstSolid([.12,.36,3],[0,0,-1])?.name,'urus-main-intake-back','the lower opening exposes a recessed backing behind the beam');
+assert.equal(firstSolid([.46,.69,3],[0,0,-1])?.name,'urus-swept-grille-blade','a continuous blade crosses the old inlet divider');
+const duct=view.body.getObjectByName('urus-open-vent-bonnet');
+for(const s of [-1,1]){
+ for(const [x,z] of [[.72,1.20],[.70,1.40],[.69,1.60],[.675,1.82]]){
+  assert.equal(probe([s*x,2,z],[0,-1,0],duct).length,0,'both cooling outlets are cut out of the bonnet skin');
+  assert.ok(firstSolid([s*x,2,z],[0,-1,0])?.name.startsWith('urus-bonnet-vent-'),'the cooling opening has a physical return');
+ }
+ for(const [x,y] of [[.55,.55],[.70,.40],[.90,.38]])assert.equal(firstSolid([s*x,y,3],[0,0,-1])?.name,'urus-painted-chin-hook','the colored chin hook is uninterrupted on each side');
+ assert.equal(firstSolid([s*.938,.70,3],[0,0,-1])?.name,'urus-air-curtain-upright','vertical air curtain wraps the side intake');
+ assert.equal(firstSolid([s*.165,.36,3],[0,0,-1])?.name,'urus-splitter-vertical-strake','splitter fins have a closed front edge');
+}
 const hatch=view.body.getObjectByName('urus-sculpted-hatch-sheet'),diffuser=view.body.getObjectByName('urus-open-outlet-diffuser');
 assert.ok(hatch&&diffuser,'painted hatch and diffuser are independently formed');
 const opticalDepthM=[],exhaustDepthM=[];
@@ -61,5 +97,6 @@ for(const s of [-1,1]){
   assert.ok(Math.abs(halfWidth-URUS.width*.5)<.007,`finished flare matches factory half-width within 7 mm: ${halfWidth}`);
  }
 }
-const report={kind:'source-geometry',nativeAcceptance:false,revision:12,artPilot:1,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perOpening:counts,bonnetGridProbes,paintedIntrusions:0,opticalDepthM,exhaustDepthM,pass:true};
+const {version:revision,artPilot}=view.root.userData.visualModel;
+const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();

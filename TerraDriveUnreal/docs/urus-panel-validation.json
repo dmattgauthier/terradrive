@@ -2,15 +2,19 @@
   "kind": "source-geometry",
   "nativeAcceptance": false,
   "revision": 12,
-  "artPilot": 1,
-  "intakeGridProbes": 1134,
-  "perOpening": [
-    165,
-    511,
-    229,
-    229
+  "artPilot": 3,
+  "intakeGridProbes": 1316,
+  "perRegion": [
+    148,
+    608,
+    280,
+    280
   ],
   "bonnetGridProbes": 90,
+  "bonnetTriangles": 8640,
+  "bonnetVertexNormals": 4453,
+  "bonnetMinFaceNormalY": 0.7276106073519225,
+  "bonnetMinVertexNormalY": 0.7576823234558105,
   "paintedIntrusions": 0,
   "opticalDepthM": [
     0.0063514584893473724,

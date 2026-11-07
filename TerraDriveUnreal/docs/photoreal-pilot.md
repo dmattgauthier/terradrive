@@ -118,6 +118,9 @@ performance measurements above are the original pilot evidence.
 
 ## Rollout
 
+The [Urus front and Slate Rim follow-up](urus-quarry-fidelity.md) records the
+completed hood and bumper work and the quarry extension to the finish.
+
 1. Refine the Urus front bumper and bonnet against matched-angle photographs,
    then build the next vehicle from a trim-specific reference sheet. Capture
    straight-on and three-quarter views under controlled light before adding
