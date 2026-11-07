@@ -1,5 +1,6 @@
 param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,9)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='')
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'staged-package-content.ps1')
 if($RolloverQuickVehicle -ge 0 -and $Mode -ne 'Rollover'){throw '-RolloverQuickVehicle requires Rollover mode.'}
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue){throw 'Close game/editor before native validation.'}
@@ -10,7 +11,8 @@ New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
 $taskReport=Join-Path $taskOutput 'result.json';$taskCaptures=Join-Path $taskOutput 'Screenshots'
 New-Item -ItemType Directory -Path $taskCaptures -Force | Out-Null
 if(!$PackageDirectory){$PackageDirectory=Join-Path $taskRoot 'Build/Windows'}
-$taskExe=Join-Path (Resolve-Path -LiteralPath $PackageDirectory).ProviderPath 'TerraDrive/Binaries/Win64/TerraDrive.exe'
+$taskPackage=(Resolve-Path -LiteralPath $PackageDirectory).ProviderPath
+$taskExe=Join-Path $taskPackage 'TerraDrive/Binaries/Win64/TerraDrive.exe'
 $taskFlags=@{SixWheel='-TerraSixWheelOnly';Art='-TerraModelHeroOnly';UrusArt='-TerraHeroOnly';Quarry='-TerraTrailOnly';Interface='-TerraInterfaceOnly';Mechanical='-TerraMechanicalOnly';ElectricPressure='-TerraElectricPressureOnly';Rollover='-TerraRolloverOnly';Ruts='-TerraRutOnly';Garden='-TerraGardenOnly';Transitions='-TerraTransitionsOnly';Detail='-TerraTerrainDetailOnly';Movement='-TerraMomentumOnly'}
 $taskFlags.RutTransitions='-TerraRutTransitionOnly'
 $taskFlags.Perimeter='-TerraPerimeterOnly'
@@ -20,8 +22,12 @@ $taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX
  '-ini:Engine:[/Script/Engine.Engine]:bUseFixedFrameRate=True','-ini:Engine:[/Script/Engine.Engine]:FixedFrameRate=20.0')
 if($Mode -eq 'Rollover'){$taskArguments+='-TerraExpectCoachworkCollision'}
 if($RolloverQuickVehicle -ge 0){$taskArguments+=@('-TerraRolloverQuick',('-TerraRolloverQuickVehicle='+$RolloverQuickVehicle))}
+$taskExecutableHash=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$taskContent=@(Get-StagedPackageContent -PackageDirectory $taskPackage)
 $taskStart=Get-Date
-$taskReceipt=[ordered]@{mode=$Mode;started=$taskStart.ToUniversalTime().ToString('o');executableSha256=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.ToLower();arguments=$taskArguments;simulationClock='paced fixed20Hz functional verification';pass=$false}
+$taskReceipt=[ordered]@{mode=$Mode;started=$taskStart.ToUniversalTime().ToString('o');
+ packageDirectory=$taskPackage;executableSha256=$taskExecutableHash;stagedContent=$taskContent;
+ arguments=$taskArguments;simulationClock='paced fixed20Hz functional verification';pass=$false}
 $taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=$taskExe;$taskInfo.Arguments=$taskArguments -join ' ';$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
 $taskGame=[Diagnostics.Process]::new();$taskGame.StartInfo=$taskInfo
 $taskStarted=$false

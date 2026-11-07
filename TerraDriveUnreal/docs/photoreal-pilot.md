@@ -46,13 +46,20 @@ byte-identical. The routes and their gates match the previous data. The pilot
 uses the existing playable elevation field. Regional elevation data remains
 available for the later horizon and landform pass.
 
-The full source exporter includes the pilot. For a placement-only update on
-an existing export, run `node Tools/refresh-slate-rim-pilot.mjs` and
-`node Tools/bake-terrain-transitions.mjs`, then rebuild the ground material
-and cook. `Tools/validate-slate-rim-pilot.mjs` also accepts a baseline directory
+Run `node Tools/export-source.mjs` after editing the placement recipe, then
+bake the masks with `node Tools/bake-terrain-transitions.mjs`, rebuild the ground
+material, and cook. `Tools/refresh-slate-rim-pilot.mjs` can apply the pilot once
+to a matching pair of pre-pilot manifests. It stops if the pilot is already
+applied. The full export rebuilds the original scatter before applying the new
+recipe. `Tools/validate-slate-rim-pilot.mjs` also accepts a baseline directory
 to check scene, route, and terrain differences. Run `verify-fidelity.ps1` with
-`-Mode Quarry` for the stock Urus route and close views. Both verification
-scripts accept `-PackageDirectory` for an isolated Windows package.
+`-Mode Quarry` for the stock Urus route and close views.
+
+Both verification scripts accept `-PackageDirectory` for an isolated Windows
+package. Each receipt records the resolved package path, executable SHA-256,
+and SHA-256 for each staged game content file, including cooked containers and
+any loose native data. The performance receipt's `source` entries describe the
+checkout identified by `verifierSourceDirectory`.
 
 ## Packaged Windows verification
 
@@ -86,6 +93,24 @@ and run receipts are stored under `Candidate`.
 Two older source fixtures still report the same out-of-range measurements
 on both baseline and pilot. These are the Urus bonnet ridge and the
 G63 4×4² headlamp surround. The focused Urus panel and terrain checks pass.
+
+## Review follow-up verification
+
+A copy of the pre-pilot manifests regenerated the existing placement output
+exactly. A second refresh exited with full-export instructions and left both
+manifests and the heightfield byte-identical. The Slate Rim baseline comparison
+and the terrain mask check across 2,563,201 samples passed.
+
+The receipt check reused the retained candidate Windows package. Its five
+content hashes matched the staged files. The baseline shared the candidate's
+executable SHA-256 but had different `.pak`, `.ucas`, and `.utoc` hashes for
+the TerraDrive containers. The 1080p Cool benchmark passed 14 guards with
+a 30 FPS cap and a peak GPU temperature of 58 °C. The fixed-clock Quarry run
+passed 16 checks, cleared all 20 gates, and produced eight captures at a peak
+of 63 °C. Both receipts recorded the same candidate hashes. Two earlier
+launches crashed during startup with restricted Windows access. The local
+evidence retains those attempts alongside the successful runs. The matched
+performance measurements above are the original pilot evidence.
 
 ## Rollout
 

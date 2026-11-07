@@ -1,5 +1,5 @@
-// Refresh the quarry scene and mask inputs from an existing native export.
-// Use the full export when the body meshes or the heightfield need rebuilding.
+// Apply the pilot to a native export that still has its original scatter.
+// Use the full exporter to regenerate an already-applied pilot.
 import fs from 'node:fs';
 import path from 'node:path';
 import {applySlateRimPilot} from './slate-rim-pilot.mjs';

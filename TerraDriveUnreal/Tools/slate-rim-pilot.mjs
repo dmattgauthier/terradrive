@@ -105,8 +105,7 @@ export function slateRimRouteClearance(world){
 export const slateRimStoneRadius=([x,y,z])=>Math.hypot(1.03*x,1.03*y,1.35*z);
 
 export function applySlateRimPilot(world,field){
-  if(world.slateRimPilot?.version===1)return world.slateRimPilot;
-  if(world.slateRimPilot)throw Error('Regenerate the base export for this Slate Rim pilot version');
+  if(world.slateRimPilot)throw Error('Slate Rim pilot is already applied. Run node Tools/export-source.mjs from TerraDriveUnreal to regenerate placements.');
   const samples=world.quarryTrail.samples, coverage=slateRimCoverage(samples);
   const clear=slateRimRouteClearance(world),height=terrainHeight(field);
   const native=world.nativeDetails, dry=stones.map(i=>native.find(g=>g.asset==='scan_native_boulder_'+String(i).padStart(2,'0')));
