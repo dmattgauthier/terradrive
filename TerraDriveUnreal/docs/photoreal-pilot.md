@@ -55,6 +55,10 @@ recipe. `Tools/validate-slate-rim-pilot.mjs` also accepts a baseline directory
 to check scene, route, and terrain differences. Run `verify-fidelity.ps1` with
 `-Mode Quarry` for the stock Urus route and close views.
 
+The standalone refresh accepts matching manifests from before Perimeter
+Expedition. It protects the Slate Rim spline and the other routes present
+in the input, and also protects the expedition spline when present.
+
 Both verification scripts accept `-PackageDirectory` for an isolated Windows
 package. Each receipt records the resolved package path, executable SHA-256,
 and SHA-256 for each staged game content file, including cooked containers and

@@ -89,13 +89,16 @@ export function makePerimeterTrail(heightAt) {
     if (!p || surface===1 || inQuarry(x,y,0) || (x>-204&&x<172&&y>141&&y<256) ||
         deepMudWeight(x,y)>.01 || water>.06) return original;
     const side=p.side, s=p.d, mask=1-smoothstep(p.distance,2.8,reach);
-    const ripple=Math.sin(s*.23+Math.sin(s*.044));
-    let shape=-.022*Math.abs(side)+.06*ripple;
-    if (p.sector===1) shape+=.26*Math.sin(s*.30+side*.23)+.12*Math.sin(s*.53-side*.3);
-    if (p.sector===0||p.sector===3) shape+=.34*Math.sin(s*.13)*Math.sin(s*.045)+side*.07*Math.sin(s*.19);
-    if (p.sector===4) shape+=.33*smoothstep(Math.abs(side),2.6,5.4)*(.7+.3*Math.sin(s*.19));
-    if (p.sector===7||p.sector===9) shape+=.31*Math.sin(s*.57)*Math.sin(side*.76)*(.65+.35*Math.cos(s*.19));
-    const edge = .17*Math.exp(-((p.distance-4.6)**2)/2.6)*(.65+.35*Math.sin(s*.39));
+    // The distance phases wrap at the trailhead. Fade them out on both
+    // approaches while keeping the underlying grade and crossfall continuous.
+    const phase=smoothstep(Math.min(s,lengthM-s),0,12);
+    let relief=.06*Math.sin(s*.23+Math.sin(s*.044));
+    if (p.sector===1) relief+=.26*Math.sin(s*.30+side*.23)+.12*Math.sin(s*.53-side*.3);
+    if (p.sector===0||p.sector===3) relief+=.34*Math.sin(s*.13)*Math.sin(s*.045)+side*.07*Math.sin(s*.19);
+    if (p.sector===4) relief+=.33*smoothstep(Math.abs(side),2.6,5.4)*(.7+.3*Math.sin(s*.19));
+    if (p.sector===7||p.sector===9) relief+=.31*Math.sin(s*.57)*Math.sin(side*.76)*(.65+.35*Math.cos(s*.19));
+    const shape=-.022*Math.abs(side)+phase*relief;
+    const edge = .17*Math.exp(-((p.distance-4.6)**2)/2.6)*(.65+.35*phase*Math.sin(s*.39));
     return original+mask*clamp(p.grade+shape+edge-original,-1.4,1.4);
   }
   return {samples,lengthM,locate,grade};
@@ -103,7 +106,7 @@ export function makePerimeterTrail(heightAt) {
 
 // Uses the existing terrain field. Keep its surface IDs and wet crossings;
 // the new relief feeds the same triangles used for rendering and tire support.
-export function addPerimeterTrail(world, field, baseHeight) {
+export function addPerimeterTrail(world, field, baseHeight, landmarks) {
   if (world.perimeterTrail) throw Error('Perimeter trail already baked. Start from a fresh base export.');
   const n=field.readUInt32LE(4), step=field.readFloatLE(8), origin=field.readFloatLE(12);
   const offset=(i,j)=>16+(i*n+j)*9;
@@ -123,15 +126,13 @@ export function addPerimeterTrail(world, field, baseHeight) {
 
   const within=(p,r)=> (route.locate(p[0]/100,p[1]/100)?.distance??Infinity)<r;
   const shift=p=>{p[2]+=100*cut[index(p[0]/100)*n+index(p[1]/100)];return p;};
-  function shiftQuarryMarker(p) {
-    // Keep the authored embedment by sampling the cut on Slate Rim's
-    // one-metre collision triangles, including between heightfield nodes.
-    const x=p[0]/100, y=p[1]/100, ix=Math.floor(x), iy=Math.floor(y);
+  function metreGradeDelta(x,y) {
+    // Sample the cut on the native one-metre collision triangles.
+    const ix=Math.floor(x), iy=Math.floor(y);
     const u=x-ix, v=y-iy;
     const delta=(x,y)=>cut[index(x)*n+index(y)];
     const a=delta(ix,iy), b=delta(ix+1,iy), c=delta(ix,iy+1), d=delta(ix+1,iy+1);
-    const change=u+v<=1?a+(b-a)*u+(c-a)*v:d+(c-d)*(1-u)+(b-d)*(1-v);
-    p[2]+=100*change;
+    return u+v<=1?a+(b-a)*u+(c-a)*v:d+(c-d)*(1-u)+(b-d)*(1-v);
   }
   const removedParts=new Map(), treeIds=new Set();
   world.trees=world.trees.filter(t=>{
@@ -144,14 +145,23 @@ export function addPerimeterTrail(world, field, baseHeight) {
     return false;
   });
   world.obstacles=world.obstacles.filter(o=>!treeIds.has(o.id));
+  const landmarkParts=new Set();
+  for(const {x,y,parts,colliders} of landmarks){
+    const delta=metreGradeDelta(x,y);
+    for(const part of parts){
+      part.p[2]+=delta*100;
+      landmarkParts.add(part);
+    }
+    for(const box of colliders)box.center.y+=delta;
+  }
   world.placements.forEach((g,i)=>{
     g.instances=g.instances.filter(p=>!removedParts.get(i)?.has(p.index)&&!(g.crushable&&within(p.p,2.9)));
-    for(const p of g.instances)shift(p.p);
+    for(const p of g.instances)if(!landmarkParts.has(p))shift(p.p);
   });
   for(const g of [...world.nativeDetails,...world.fabScenery.groups]){
     if(g.asset==='native_deep_mud_water')continue;
     if(g.asset==='quarry_trail_stake'||g.asset==='quarry_trail_sign'){
-      for(const p of g.instances)shiftQuarryMarker(p.p);
+      for(const {p} of g.instances)p[2]+=100*metreGradeDelta(p[0]/100,p[1]/100);
       continue;
     }
     g.instances=g.instances.filter(p=>{

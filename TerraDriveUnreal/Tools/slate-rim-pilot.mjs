@@ -83,14 +83,14 @@ function anchor(samples,d,offset){
 }
 
 export function slateRimRouteClearance(world){
-  // Preserve both spline alignments rather than treating the gates as the
-  // centreline. Other courses retain their authored gate widths.
+  // Use the spline alignments when present. Other courses retain their
+  // authored gate widths, including exports from before the expedition.
   const quarry=segments(world.quarryTrail.samples);
-  const perimeter=segments(world.perimeterTrail.samples);
-  const others=world.routes.filter((_,i)=>i!==world.quarryTrail.routeIndex&&i!==world.perimeterTrail.routeIndex)
+  const perimeter=world.perimeterTrail?segments(world.perimeterTrail.samples):[];
+  const others=world.routes.filter((_,i)=>i!==world.quarryTrail.routeIndex&&i!==world.perimeterTrail?.routeIndex)
     .map(r=>({edges:segments([r.spawn,...r.gates].map(([x,y],i)=>({x:x/100,y:y/100,d:i}))),margin:Math.max(4.1,r.gateWidth/2)}));
   return (x,y)=>{
-    let available=Math.min(nearest(quarry,x,y).distance,nearest(perimeter,x,y).distance)-4.1;
+    let available=Math.min(nearest(quarry,x,y).distance,nearest(perimeter,x,y)?.distance??Infinity)-4.1;
     for(const r of others){
       const point=nearest(r.edges,x,y);
       if(point)available=Math.min(available,point.distance-r.margin);
