@@ -82,14 +82,14 @@ export function urusView(spec){
  function opening(contour,map,depth,lip=.005,kind='intake'){
   const inner=inset(contour,.935);
   const reverseReturn=contour.reduce((area,p,i)=>{const q=contour[(i+1)%contour.length];return area+p[0]*q[1]-q[0]*p[1];},0)<0;
-  const apertureCentre=contour.reduce((a,p)=>a.map((n,k)=>n+p[k]/contour.length),[0,0]);
-  mappedPolygon(g,dark,inner,(x,y)=>{const p=map(x,y);p[2]-=depth;return p;},[],false,12);
+  mappedPolygon(g,dark,inner,(x,y)=>map(x,y,-depth),[],false,8).name='urus-'+kind+'-back';
   const lipPoints=[];
   for(let j=0;j<contour.length;j++){
    const a=contour[j],b=contour[(j+1)%contour.length],c=inner[j],d=inner[(j+1)%inner.length];
-   const wall=surface(g,carbon,12,5,(u,v)=>{const p=map(lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v));p[2]-=depth*(v*.32+v*v*.68);return p;},reverseReturn);
-   wall.name='urus-'+kind+'-return';wall.userData.apertureCentre=apertureCentre;
-   for(let k=0;k<24;k++)lipPoints.push(map(lerp(a[0],b[0],k/24),lerp(a[1],b[1],k/24)));
+   const divisions=Math.max(2,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.013));
+   const wall=surface(g,carbon,divisions,5,(u,v)=>{const p=map(lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v));p[2]-=depth*(v*.32+v*v*.68);return p;},reverseReturn);
+   wall.name='urus-'+kind+'-return';
+   for(let k=0;k<divisions;k++)lipPoints.push(map(lerp(a[0],b[0],k/divisions),lerp(a[1],b[1],k/divisions)));
   }
   line(g,black,[...lipPoints,lipPoints[0]],lip);
  }
@@ -218,90 +218,113 @@ export function urusView(spec){
  mappedPolygon(g,frit,rearAperture,(u,z)=>canopy(u,z,.005),[rearSightline],true,10);
  for(let j=0;j<8;j++)curve(g,rubber,Array.from({length:24},(_,k)=>canopy(lerp(.145+j*.003,.855-j*.003,k/23),-2.04+j*.105,.002)),.0005);
  curve(g,black,[canopy(.49,-2.05,.011),canopy(.37,-2.01,.013),canopy(.24,-1.95,.013)],.005);
- // Bonnet: deep outer cooling apertures, raised fender ridges and a pointed
- // central carbon panel; the perimeter is crowned rather than a flat plane.
+ // The exposed carbon runs out of the windscreen into a broad, round-ended
+ // field. Its diverging press lines are part of the same surface as the paint.
  const hoodRows=[[.72,1.156,.81],[1.08,1.125,.849],[1.50,1.091,.870],[1.93,1.055,.844],[2.27,1.017,.762],[2.48,.976,.64]];
  const hood=(x,z,off=0)=>{
-  const t=x/station(hoodRows,z,2),fade=smooth(z,.72,.94)*(1-smooth(z,2.25,2.48));
-  const blade=.030*gauss(Math.abs(t),.81,.120)-.008*gauss(Math.abs(t),.60,.14);
-  const shoulder=.010*gauss(Math.abs(t),.98,.13)*fade;
-  // Sweep the leading corners back around the central nose. Carbon and
-  // painted domains, cooling-duct returns and seams all use this same map.
+  const t=x/station(hoodRows,z,2),a=Math.abs(t),fade=smooth(z,.72,1.03)*(1-smooth(z,2.05,2.40));
+  const ridge=.42+.24*smooth(z,.75,2.15);
+  const blade=.029*gauss(a,ridge,.044)-.008*gauss(a,ridge+.078,.055);
+  const shoulder=.034*gauss(a,.86,.075)+.008*gauss(a,.98,.13);
   const sweep=.122*smooth(z,1.84,2.48)*Math.abs(t)**1.85;
-  return[x,station(hoodRows,z,1)+.039*(1-t*t)+fade*blade+shoulder+off,z-sweep];
+  return[x,station(hoodRows,z,1)+.039*(1-t*t)+fade*(blade+shoulder)+off,z-sweep];
  };
- const ventOutline=[[.613,1.27],[.752,1.34],[.691,1.83],[.575,1.96],[.552,1.87]];
+ const ventOutline=roundContour([[.710,1.00],[.784,1.085],[.746,1.54],[.674,1.905],[.627,1.827],[.646,1.465],[.672,1.116]],.023,3);
  // The cooling ducts are holes in the bonnet. A black patch above an intact
  // hood cannot provide the shadowed return or the visible depth of the vents.
  const bonnetVents=[-1,1].map(s=>ventOutline.map(([x,z])=>[s*x,z]));
- const carbonWidth=z=>station([[.75,.598],[1.22,.584],[1.82,.523],[2.14,.426],[2.25,.324],[2.30,.05]],z,1);
- const panelZ=[...Array.from({length:65},(_,i)=>lerp(.75,2.30,i/64)),1.22,1.82,2.14,2.25].sort((a,b)=>a-b);
- const carbonBoundary=[...panelZ.map(z=>[-carbonWidth(z),z]),...panelZ.slice().reverse().map(z=>[carbonWidth(z),z])];
- // Disjoint parameter domains replace the intact painted bonnet plus a
- // near-coplanar carbon overlay. Every shared edge uses the same hood map.
- // Strong bonnet sculpture can then never push yellow triangles through a
- // differently tessellated carbon sheet, including beside cooling apertures.
- mappedPolygon(g,carbon,carbonBoundary,(x,z)=>hood(x,z),[],true,8).name='urus-partitioned-carbon-bonnet';
- for(const s of [-1,1]){
-  const band=[...panelZ.map(z=>[s*station(hoodRows,z,2),z]),...panelZ.slice().reverse().map(z=>[s*carbonWidth(z),z])];
-  const vent=bonnetVents[s<0?0:1];
-  mappedPolygon(g,m.paint,band,(x,z)=>hood(x,z),[vent],true,8).name='urus-open-vent-bonnet';
- }
- for(const [z0,z1,cw]of [[.72,.75,carbonWidth(.75)],[2.30,2.48,carbonWidth(2.30)]])for(let region=0;region<3;region++){
-  surface(g,m.paint,8,12,(u,v)=>{
-   const z=lerp(z0,z1,v),w=station(hoodRows,z,2),edges=[-w,-cw,cw,w];return hood(lerp(edges[region],edges[region+1],u),z);
-  },true).name='urus-bonnet-painted-end';
- }
+ const carbonSides=[[.730,.665],[1.05,.644],[1.44,.618],[1.90,.594],[2.265,.572]];
+ const carbonPanel=(u,v)=>{
+  const t=2*u-1,a=Math.abs(t),z=lerp(.730,2.265-.148*a**8,v);
+  return[t*(station(carbonSides,z,1)-.035*v**6*a**16),z];
+ };
+ const carbonNu=72,carbonNv=60;
+ const carbonBoundary=[...Array.from({length:carbonNv+1},(_,i)=>carbonPanel(0,i/carbonNv)),
+  ...Array.from({length:carbonNu-1},(_,i)=>carbonPanel((i+1)/carbonNu,1)),
+  ...Array.from({length:carbonNv+1},(_,i)=>carbonPanel(1,1-i/carbonNv))];
+ const bonnetSides=Array.from({length:61},(_,i)=>{const z=lerp(.72,2.48,i/60);return[station(hoodRows,z,2),z];});
+ const bonnetNose=Array.from({length:37},(_,i)=>[lerp(-.64,.64,i/36),2.48]);
+ const bonnetOutline=[...bonnetSides.map(([x,z])=>[-x,z]),...bonnetNose.slice(1,-1),...bonnetSides.slice().reverse()];
+ // Shared sampled boundaries divide the body-color and exposed-carbon finish.
+ // The carbon and both cooling outlets are cut directly out of the paint sheet.
+ surface(g,carbon,carbonNu,carbonNv,(u,v)=>hood(...carbonPanel(u,v)),true).name='urus-partitioned-carbon-bonnet';
+ mappedPolygon(g,m.paint,bonnetOutline,hood,[carbonBoundary,...bonnetVents],true,12).name='urus-open-vent-bonnet';
  for(const s of [-1,1]){
   surface(g,m.paint,110,12,(u,v)=>{const z=lerp(.72,2.48,u),a=hood(s*station(hoodRows,z,2),z),b=sidePoint(s,z,belt(z));return a.map((n,k)=>lerp(n,b[k],v));},s<0).name='urus-bonnet-shoulder-sheet-'+s;
   curve(g,dark,Array.from({length:65},(_,i)=>{const z=lerp(.74,2.34,i/64);return hood(s*(station(hoodRows,z,2)-.014),z,.002);}),.0014);
   const outline=ventOutline,inner=inset(outline,.966),vent=outline.map(([x,z])=>hood(s*x,z,.0005));
-  mappedPolygon(g,carbon,outline,(x,z)=>hood(s*x,z,.001),[inner],s>0,12).name='urus-bonnet-vent-lip';
-  mappedPolygon(g,dark,inner,(x,z)=>hood(s*x,z,-.024),[],s>0,12).name='urus-bonnet-vent-floor';
-  for(let j=0;j<inner.length;j++)surface(g,carbon,16,4,(u,v)=>{const a=outline[j],b=outline[(j+1)%outline.length],c=inner[j],d=inner[(j+1)%inner.length];return hood(s*lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v),lerp(.0005,-.024,v));},s<0).name='urus-bonnet-vent-nested-return';
+  mappedPolygon(g,carbon,outline,(x,z)=>hood(s*x,z,.001),[inner],s>0,7).name='urus-bonnet-vent-lip';
+  mappedPolygon(g,dark,inner,(x,z)=>hood(s*x,z,-.039),[],s>0,8).name='urus-bonnet-vent-floor';
+  for(let j=0;j<inner.length;j++)surface(g,carbon,7,3,(u,v)=>{const a=outline[j],b=outline[(j+1)%outline.length],c=inner[j],d=inner[(j+1)%inner.length];return hood(s*lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v),lerp(.0005,-.039,v));},s<0).name='urus-bonnet-vent-nested-return';
   line(g,black,[...vent,vent[0]],.0013);
   // Section each louver against the actual aperture instead of fixed spans
   // that could protrude through its rim. All blade vertices sit below skin.
   const span=z=>{const xs=[];for(let k=0;k<inner.length;k++){const a=inner[k],b=inner[(k+1)%inner.length];if((a[1]<=z&&b[1]>z)||(b[1]<=z&&a[1]>z))xs.push(lerp(a[0],b[0],(z-a[1])/(b[1]-a[1])));}return[Math.min(...xs)+.003,Math.max(...xs)-.003];};
-  for(let j=0;j<9;j++){const z=1.37+j*.052,[a,b]=span(z),[c,d]=span(z+.016);quad(grille,hood(s*a,z,-.016),hood(s*b,z,-.016),hood(s*d,z+.016,-.009),hood(s*c,z+.016,-.009),8,2,s>0).name='urus-bonnet-vent-recessed-louver';}
+  for(let j=0;j<7;j++){const z=1.10+j*.109,[a,b]=span(z),[c,d]=span(z+.037);quad(grille,hood(s*a,z,-.032),hood(s*b,z,-.032),hood(s*d,z+.037,-.008),hood(s*c,z+.037,-.008),8,3,s>0).name='urus-bonnet-vent-recessed-louver';}
  }
- // Wrapped front fascia. Real apertures, a broad splitter and boxed air
- // curtains replace the old flat hexagons and tubular bumper guard.
+ // The original Performante has one continuous black intake field below the
+ // painted brow, with an exposed splitter and upswept body-color corner blades.
  const face=(x,y,d=0)=>[x,y,frontSurface(x,y)+d];
  // The nose closes on the same shoulder boundary as sidePoint(). Raising
  // only the fascia to accommodate an oversized lamp contour left proud ears
  // and a gap at the bonnet corners in the native overhead close-up.
- const crestStations=[[0,.977],[.46,1.026],[.843,1.016]];
+ const crestStations=[[0,.997],[.138,.982],[.46,1.026],[.843,1.016]];
  const fasciaCrest=x=>{const a=Math.abs(x);for(let i=1;i<crestStations.length;i++)if(a<=crestStations[i][0]){const p=crestStations[i-1],q=crestStations[i];return lerp(p[1],q[1],clamp((a-p[0])/(q[0]-p[0]),0,1));}return crestStations.at(-1)[1];};
- const outline=[[-.977,.44],[-.955,.883],...crestStations.slice(1).reverse().map(([x,y])=>[-x,y]),crestStations[0],...crestStations.slice(1),[.955,.883],[.977,.44],[.89,.261],[.53,.258],[.42,.309],[-.42,.309],[-.53,.258],[-.89,.261]];
- const openings=[[[-.443,.850],[-.354,.883],[.354,.883],[.443,.850],[.402,.736],[-.402,.736]],
-  [[-.438,.616],[-.337,.694],[.337,.694],[.438,.616],[.614,.347],[-.614,.347]],
-  [[-.918,.798],[-.562,.812],[-.479,.669],[-.739,.378],[-.896,.346],[-.951,.486]],
-  [[.918,.798],[.562,.812],[.479,.669],[.739,.378],[.896,.346],[.951,.486]]];
+ const across=(half)=>[...half.slice(1).reverse().map(([x,y])=>[-x,y]),...half];
+ const browLower=across([[0,.856],[.368,.869],[.397,.866],[.458,.816],[.482,.811],[.710,.827],[.907,.854],[.955,.883]]);
+ const browOutline=[...across(crestStations),...browLower.slice().reverse()];
+ const lowerOutline=[...browLower,[.977,.44],[.89,.261],[.53,.258],[0,.251],[-.53,.258],[-.89,.261],[-.977,.44]];
+ const ductTop=across([[0,.848],[.368,.861],[.397,.856],[.458,.807],[.482,.803],[.710,.819],[.904,.846],[.929,.840]]);
+ const ductBottom=across([[0,.275],[.452,.283],[.593,.319],[.747,.310],[.902,.337],[.945,.415],[.956,.483],[.945,.685]]);
+ const intake=roundContour([...ductTop,...ductBottom.slice().reverse()],.008,2);
  const lampContour=[[.434,.959],[.488,1.005],[.835,1.005],[.894,.943],[.856,.918],[.511,.922]];
  const lampHoles=[-1,1].map(s=>lampContour.map(([x,y])=>[s*x,y]));
- mappedPolygon(g,m.paint,outline,face,[...openings,...lampHoles],false,12).name='urus-perforated-front-fascia';
- for(const contour of openings)opening(contour,face,.105,.004);
+ mappedPolygon(g,m.paint,browOutline,face,lampHoles,false,12).name='urus-perforated-front-fascia';
+ mappedPolygon(g,carbon,lowerOutline,face,[intake],false,10).name='urus-lower-composite-intake-frame';
+ opening(intake,face,.118,.0014,'main-intake');
  for(const contour of lampHoles)opening(contour,face,.042,.002,'headlamp');
- // Thin real horizontal bars over a recessed cellular radiator.
- for(let j=0;j<4;j++)quad(grille,face(-.36,.407+j*.065,-.060),face(.36,.407+j*.065,-.060),face(.36,.416+j*.065,-.062),face(-.36,.416+j*.065,-.062),30,2);
- for(const s of [-1,1])for(let j=0;j<4;j++)quad(black,face(s*.60,.465+j*.074,-.045),face(s*.883,.485+j*.070,-.045),face(s*.883,.498+j*.070,-.046),face(s*.60,.478+j*.074,-.046),20,2);
- for(let y=.40;y<.63;y+=.035)for(let x=-.31;x<.32;x+=.040){const cell=Array.from({length:7},(_,i)=>face(x+.018*Math.cos(i*Math.PI/3),y+.017*Math.sin(i*Math.PI/3),-.09));line(g,grille,cell,.0011);}
- // Performante's broad airfoil connects the three lower intakes, and the
- // angular radar housing interrupts the center instead of a featureless slot.
- surface(g,black,112,5,(u,v)=>{const x=(u*2-1)*.895,y=.695+.025*(1-(x/.895)**2);return face(x,y+v*.013,-.020-.029*Math.sin(v*Math.PI));},true).name='urus-intake-crossblade';
- const radar=[[-.086,.750],[-.047,.787],[.047,.787],[.086,.750],[.049,.705],[-.049,.705]];
- mappedPolygon(g,black,radar,(x,y)=>face(x,y,-.010),[],false,8);
- line(g,grille,[...radar,radar[0]].map(([x,y])=>face(x,y,-.006)),.0023);
- const radarLens=mesh(g,new T.CircleGeometry(.029,32),black,face(0,.746,.001));radarLens.name='urus-radar-aperture';
- surface(g,carbon,90,8,(u,v)=>{const x=(u*2-1)*.965,y=.246+.025*Math.abs(x)/.965;const a=face(x,y,.028),b=face(x,y+.012,-.18);return a.map((n,k)=>lerp(n,b[k],v));},true);
+ // The three swept grille blades sit in front of distinct cooling packs.
+ for(const y0 of [.777,.695,.608])surface(g,black,72,7,(u,v)=>{
+  const x=(u*2-1)*.918,y=y0+.058*smooth(Math.abs(x),.50,.94);
+  return face(x,y+lerp(-.011,.011,v),-.039+.017*Math.sin(Math.PI*v));
+ }).name='urus-swept-grille-blade';
+ for(const s of [-1,1]){
+  for(let j=0;j<20;j++){
+   const x=.556+j*.017,y=.449+.044*smooth(x,.56,.89);
+   quad(grille,face(s*x,y,-.112),face(s*(x+.003),y,-.111),face(s*(x+.003),.787,-.111),face(s*x,.787,-.112),1,8,s<0).name='urus-side-radiator-fin';
+  }
+  const curtain=roundContour([[.904,.830],[.939,.843],[.951,.694],[.972,.491],[.941,.437],[.925,.482],[.918,.658]],.010,3);
+  mappedPolygon(g,black,curtain,(x,y)=>face(s*x,y,.008+.019*gauss(x,.938,.020)),[],s<0,8).name='urus-air-curtain-upright';
+  const corner=roundContour([[.974,.489],[.941,.409],[.799,.392],[.565,.592],[.530,.572],[.513,.545],[.744,.329],[.784,.319],[.953,.354],[.984,.419]],.013,3);
+  const blade=(x,y)=>face(s*x,y,.014+.019*gauss(y,.388,.080));
+  mappedPolygon(g,m.paint,corner,blade,[],s<0,10).name='urus-painted-chin-hook';
+  for(let j=0;j<corner.length;j++)surface(g,m.paint,6,3,(u,v)=>{
+   const a=corner[j],b=corner[(j+1)%corner.length],p=blade(lerp(a[0],b[0],u),lerp(a[1],b[1],u));p[2]-=.034*v;return p;
+  },s<0);
+  const wing=[[.506,.443],[.548,.450],[.743,.287],[.863,.296],[.943,.351],[.946,.315],[.881,.270],[.731,.263]];
+  mappedPolygon(g,carbon,wing,(x,y)=>face(s*x,y,.017+.009*smooth(x,.51,.88)),[],s<0,9).name='urus-splitter-corner-wing';
+ }
+ const radar=[[-.090,.796],[-.056,.835],[.056,.835],[.090,.796],[.059,.753],[-.059,.753]];
+ mappedPolygon(g,black,radar,(x,y)=>face(x,y,-.015),[],false,8).name='urus-grille-camera-housing';
+ line(g,grille,[...radar,radar[0]].map(([x,y])=>face(x,y,-.010)),.0016);
+ const beam=roundContour([[-.566,.478],[-.499,.538],[.499,.538],[.566,.478],[.485,.417],[-.485,.417]],.016,3);
+ mappedPolygon(g,carbon,beam,(x,y)=>face(x,y,.008-.017*(x/.57)**2),[],false,11).name='urus-front-crash-beam-cover';
+ for(const x of [-.165,.165]){
+  for(const side of [-1,1])surface(g,carbon,14,8,(u,v)=>{
+   const y=lerp(.254,.428,u);return face(x+side*.007,y,lerp(.011,-.112,v)-.034*u);
+  },side>0).name='urus-splitter-strake-side';
+  surface(g,carbon,4,14,(u,v)=>face(lerp(x-.007,x+.007,u),lerp(.254,.428,v),.011-.034*v),false).name='urus-splitter-vertical-strake';
+ }
+ const splitter=(u,v)=>{const t=u*2-1,x=t*.974,y=.246+.029*Math.abs(t)**2;return face(x,y+.012*v,lerp(.026,-.176,v));};
+ surface(g,carbon,88,12,splitter).name='urus-splitter-cambered-deck';
+ surface(g,carbon,88,4,(u,v)=>{const p=splitter(u,0);p[1]-=.015*v;p[2]-=.004*v;return p;},true).name='urus-splitter-closed-leading-edge';
  // Keep the endpoint fixed while interpolating. Varying it with v made the
  // strip's outer edge bow away from the straight shoulder edge between two
  // matching corners, leaving a visible gap despite correct endpoints.
  // Include every fascia station in this boundary's sampling grid. Smooth
  // station interpolation or a grid that omits a corner cannot close against
  // the actual polygon boundary of the adjoining fascia sheet.
- const crownX=u=>{const t=(u*2-1),a=Math.abs(t);return Math.sign(t)*(a<=.5?lerp(0,.46,a*2):lerp(.46,.843,(a-.5)*2));};
+ const crownX=u=>{const t=u*2-1,a=Math.abs(t)*3,i=Math.min(2,Math.floor(a));return Math.sign(t)*lerp(crestStations[i][0],crestStations[i+1][0],a-i);};
  surface(g,m.paint,72,10,(u,v)=>{const x=crownX(u),a=hood((u*2-1)*.64,2.48),b=face(x,fasciaCrest(x));return a.map((n,k)=>lerp(n,b[k],v));},true).name='urus-bonnet-to-fascia-crown';
  for(const s of [-1,1]){
   const outline=lampContour;
@@ -320,11 +343,9 @@ export function urusView(spec){
    surface(g,m.lens,32,10,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.0178*Math.cos(a)*r,cy+.0085*Math.sin(a)*r,-.009+.0035*(1-r*r));},true).name='urus-convex-projector-lens';
   }
   mappedPolygon(g,m.lens,inset(outline,.98),(x,y)=>face(s*x,y,.004+.003*(1-((x-.70)/.27)**2)),[],s<0,12).name='urus-formed-clear-headlamp-cover';
-  // Long air curtain wraps around the outside of each side intake.
-  mappedPolygon(g,carbon,[[.941,.818],[.987,.764],[.994,.441],[.921,.315],[.902,.374],[.953,.504]],(x,y)=>face(s*x,y,.006),[],s<0,12);
  }
+ const radarLens=mesh(g,new T.CircleGeometry(.028,32),m.lens,face(0,.796,-.008));radarLens.name='urus-grille-camera-lens';
  polygon(g,m.badge,[face(-.024,.944,.008),face(.024,.944,.008),face(.020,.908,.008),face(0,.891,.008),face(-.020,.908,.008)]);
- box(g,black,face(0,.800,.007),[.073,.027,.012],.003);
  // The hatch and diffuser meet on the same boundary. Optical and exhaust
  // chambers are cutouts in their respective sheets, with molded returns.
  const tail=(x,y,d=0)=>[x,y,rearSurface(x,y)+d];
@@ -419,5 +440,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:12,artPilot:1,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,formedCarbonFlares:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:12,artPilot:2,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,formedCarbonFlares:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

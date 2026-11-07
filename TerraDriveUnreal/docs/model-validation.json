@@ -104,8 +104,8 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 804216,
-      "normalizedFraction": 0.999636913466034,
+      "vertices": 847205,
+      "normalizedFraction": 0.9996246481076009,
       "visibility": [
         {
           "pane": "windshield",
@@ -113,11 +113,11 @@
         },
         {
           "pane": "hatch",
-          "clearDepthM": 0.3430328424642908
+          "clearDepthM": 0.33807887929465785
         },
         {
           "pane": "bonnet vent",
-          "firstSurfaceYM": 1.0963473430026283
+          "firstSurfaceYM": 1.075374458364992
         },
         {
           "pane": "hatch plate well",
@@ -134,13 +134,13 @@
         },
         {
           "pane": "sculpted door",
-          "shoulderOutsetM": 0.04530107452589349
+          "shoulderOutsetM": 0.06542347369729085
         },
         {
-          "pane": "partitioned bonnet and open intakes",
+          "pane": "partitioned bonnet and open intake",
           "carbonProbes": 90,
           "handles": 4,
-          "returns": 24,
+          "grilleBlades": 3,
           "paintedIntakeProbes": 10
         }
       ],
@@ -913,8 +913,8 @@
     },
     {
       "vehicle": "Mercedes-Benz G 63 AMG 6x6",
-      "vertices": 294908,
-      "normalizedFraction": 0.9999796546719655,
+      "vertices": 292620,
+      "normalizedFraction": 0.9999794955915522,
       "visibility": [],
       "tire": {
         "revision": 24,
@@ -926,12 +926,12 @@
         "vehicle": "Mercedes-Benz G 63 AMG 6x6",
         "id": "mercedes-amg-g63-6x6",
         "style": "g63six",
-        "checks": 67,
+        "checks": 72,
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 294908,
-          "triangles": 443915,
+          "vertices": 292620,
+          "triangles": 439115,
           "bounds": [
             [
               -1.098000000026077,
@@ -949,20 +949,20 @@
           {
             "case": "finite source positions and normals",
             "pass": true,
-            "vertices": 294908,
+            "vertices": 292620,
             "nonfinite": 0
           },
           {
             "case": "unit shading normals",
             "pass": true,
             "nonunit": 6,
-            "normalizedFraction": 0.9999796546719655
+            "normalizedFraction": 0.9999794955915522
           },
           {
             "case": "bounded triangle budget without cab duplication",
             "pass": true,
-            "triangles": 443915,
-            "vertices": 294908
+            "triangles": 439115,
+            "vertices": 292620
           },
           {
             "case": "roof and roll bar follow the selected reference envelope within one inch",
@@ -1105,6 +1105,11 @@
             "faces": 2
           },
           {
+            "case": "pickup carries only the dedicated running boards",
+            "pass": true,
+            "donorStepParts": 0
+          },
+          {
             "case": "main hoop reaches above the cab instead of peaking halfway up the bed",
             "pass": true,
             "cabRoofM": 2.26,
@@ -1131,6 +1136,12 @@
             "pass": true,
             "heightM": 2.326,
             "widthM": 2.185
+          },
+          {
+            "case": "running board clears both adjacent tire profiles through travel -1",
+            "pass": true,
+            "middleGapM": 0.1019823965218617,
+            "frontGapM": 0.07072111060140696
           },
           {
             "case": "roll-bar upright mounts to the front bed shoulder -1",
@@ -1226,6 +1237,12 @@
             "case": "upper sheet faces upward g63-six-tandem-inner-tub-crown--1",
             "pass": true,
             "meanNormalY": 0.9227728403823072
+          },
+          {
+            "case": "running board clears both adjacent tire profiles through travel 1",
+            "pass": true,
+            "middleGapM": 0.1019823965218617,
+            "frontGapM": 0.07072111060140696
           },
           {
             "case": "roll-bar upright mounts to the front bed shoulder 1",
@@ -1332,10 +1349,22 @@
             "pass": true
           },
           {
+            "case": "optional slider and mounts clear both tire profiles in side view -1",
+            "pass": true,
+            "middleGapM": 0.13698242274790562,
+            "frontGapM": 0.10572113682745088
+          },
+          {
             "case": "optional armor and outriggers clear all three moving tire volumes -1",
             "pass": true,
             "probes": 216,
             "blocked": 0
+          },
+          {
+            "case": "optional slider and mounts clear both tire profiles in side view 1",
+            "pass": true,
+            "middleGapM": 0.13698242274790562,
+            "frontGapM": 0.10572113682745088
           },
           {
             "case": "optional armor and outriggers clear all three moving tire volumes 1",
@@ -1399,6 +1428,6 @@
       "pass": true
     }
   ],
-  "newExpeditionChecks": 151,
+  "newExpeditionChecks": 156,
   "pass": true
 }

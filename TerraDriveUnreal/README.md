@@ -1,5 +1,11 @@
 # Terra Drive native port
 
+The [Urus front and Slate Rim follow-up](docs/urus-quarry-fidelity.md)
+rebuilds the Urus Performante hood and front bumper and extends the quarry
+art through the finish. The stock Urus cleared all 20 gates in the packaged
+Windows build. The record includes six later trail views and the matched
+1080p performance comparisons.
+
 The [Urus and Slate Rim art pilot](docs/photoreal-pilot.md) reshapes the Urus
 side and rear panels and adds scanned stone shelves and scree to a 400-foot
 stretch of the quarry. The Windows package passed 306 checks, including the

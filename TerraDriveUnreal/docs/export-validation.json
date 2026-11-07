@@ -74,8 +74,8 @@
   "quarryDeckHeightM": 26.172911834716796,
   "trees": 386,
   "placements": 10613,
-  "detailInstances": 12609,
-  "solidDetailInstances": 1748,
+  "detailInstances": 12375,
+  "solidDetailInstances": 1806,
   "tintedMaterials": 37,
   "preservedInstanceColors": true,
   "pass": true,
@@ -143,11 +143,21 @@
   ],
   "gradedTrailSamples": 363,
   "terrainGrade": "slate-rim-heightfield-1",
+  "shiftedQuarryMarkers": 1,
+  "landmarkBoxes": {
+    "checked": 28,
+    "shifted": 9
+  },
+  "finishGrade": {
+    "joinJumpM": 0.0006318766506829832,
+    "climbM": 0.22153275471224987,
+    "originalClimbM": 0.28023751813628195
+  },
   "perimeterTrail": {
     "lengthM": 3805.490112423413,
     "sectors": 11,
     "gates": 191,
-    "terrainCells": 255400,
+    "terrainCells": 255402,
     "surfaces": [
       "dirt",
       "sand",

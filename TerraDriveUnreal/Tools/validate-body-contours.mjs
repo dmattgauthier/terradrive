@@ -72,7 +72,9 @@ for(const index of [2,5]){
   add('Civic trunk deck has a transverse crown',deckMiddle.y-deckFlank.y>inch*.35,(deckMiddle.y-deckFlank.y)/inch);
   assert.equal(view.root.userData.coachworkDetail.straightAPillarEdges,true);
  }else{
-  const crest=ray([.70,2,1.30],[0,-1,0]),trough=ray([.55,2,1.30],[0,-1,0]);
+  // Both rays stay on the carbon sheet. The previous outer shoulder probe
+  // would intersect the relocated cooling outlet rather than the pressing.
+  const crest=ray([.495,2,1.60],[0,-1,0]),trough=ray([.585,2,1.60],[0,-1,0]);
   add('Urus bonnet ridge rises above its adjacent drawn channel',crest.y-trough.y>inch*1.2,(crest.y-trough.y)/inch);
   const recess=ray([.55,.85,-3],[0,0,1]),shoulder=ray([.55,1.0,-3],[0,0,1]);
   add('Urus hatch has a formed recess below the lamp shoulder',recess.z-shoulder.z>inch*1.5,(recess.z-shoulder.z)/inch);

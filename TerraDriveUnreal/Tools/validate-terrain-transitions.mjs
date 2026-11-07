@@ -1,6 +1,6 @@
 import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';import assert from 'node:assert/strict';
 import {perimeterMask,trailLookup} from './perimeter-trail.mjs';
-import {slateRimCoverage} from './slate-rim-pilot.mjs';
+import {slateRimVisualCoverage} from './slate-rim-pilot.mjs';
 const root=path.resolve(import.meta.dirname,'..'),read=p=>fs.readFileSync(path.join(root,p)),report=JSON.parse(read('Saved/terrain-transitions.json'));
 const raw=read('Content/NativeData/terrain-blend.bin'),terrain=read('Content/NativeData/terrain.bin'),n=raw.readUInt32LE(4),step=raw.readFloatLE(8),origin=raw.readFloatLE(12);
 assert.equal(raw.readUInt32LE(0),0x54425731);assert.equal(raw.length,16+n*n*7);assert.equal(n,1601);
@@ -10,7 +10,7 @@ for(let i=0;i<n*n;i++){let sum=0,active=0;for(let s=0;s<7;s++){const w=raw[16+i*
 assert.equal(mixed,report.boundaryPixels);assert.ok(pure.every(x=>x>1000),'all seven interiors remain identifiable');
 const world=JSON.parse(read('Content/NativeData/world.json'));
 const locate=world.perimeterTrail?trailLookup(world.perimeterTrail.samples):()=>null;
-const quarry=world.slateRimPilot?.visualCoverage?slateRimCoverage(world.quarryTrail.samples):()=>null;
+const quarry=slateRimVisualCoverage(world);
 const masks=['A','B'].map(c=>read('SourceAssets/TerrainBlend'+c+'.tga'));
 for(const mask of masks){assert.equal(mask.readUInt16LE(12),n);assert.equal(mask[17],0x28);}
 let visualOverrides=0;

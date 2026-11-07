@@ -1,7 +1,7 @@
 // Native-only coverage masks. The browser and original collision/surface field stay immutable.
 import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
 import {perimeterMask,trailLookup} from './perimeter-trail.mjs';
-import {slateRimCoverage} from './slate-rim-pilot.mjs';
+import {slateRimVisualCoverage} from './slate-rim-pilot.mjs';
 const root=path.resolve(import.meta.dirname,'..'),source=path.join(root,'SourceAssets'),data=path.join(root,'Content/NativeData');
 const bytes=fs.readFileSync(path.join(data,'terrain.bin')),n=bytes.readUInt32LE(4),step=bytes.readFloatLE(8),origin=bytes.readFloatLE(12),count=n*n;
 if(bytes.readUInt32LE(0)!==0x54445256||n!==1601)throw Error('Unexpected source field');
@@ -11,10 +11,11 @@ const widths=[[0,.65,3.5,5,4,6,7],[.65,0,.65,.65,.65,.65,.65],[3.5,.65,0,3,.8,3,
 const world=JSON.parse(fs.readFileSync(path.join(data,'world.json')));
 const trail=world.perimeterTrail;
 const locate=trail?trailLookup(trail.samples):()=>null;
-const quarry=world.slateRimPilot?.visualCoverage?slateRimCoverage(world.quarryTrail.samples):()=>null;
+const quarry=slateRimVisualCoverage(world);
 const hash=crypto.createHash('sha256').update(bytes).update(fs.readFileSync(import.meta.filename))
  .update(fs.readFileSync(new URL('./perimeter-trail.mjs',import.meta.url))).update(JSON.stringify(trail??null))
  .update(fs.readFileSync(new URL('./slate-rim-pilot.mjs',import.meta.url))).update(JSON.stringify(world.slateRimPilot??null))
+ .update(JSON.stringify(world.slateRimExtension??null))
  .update(JSON.stringify(world.quarryTrail?.samples??null)).digest('hex');
 const reportFile=path.join(root,'Saved/terrain-transitions.json');
 if(fs.existsSync(reportFile)&&JSON.parse(fs.readFileSync(reportFile)).signature===hash&&['TerrainBlendA.tga','TerrainBlendB.tga'].every(f=>fs.existsSync(path.join(source,f)))&&['terrain-blend.bin','terrain-transitions.json'].every(f=>fs.existsSync(path.join(data,f)))){console.log('Terrain transition masks unchanged');process.exit(0);}
