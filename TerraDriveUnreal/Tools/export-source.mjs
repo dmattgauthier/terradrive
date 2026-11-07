@@ -15,6 +15,7 @@ import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
 import {quarryTrail} from './quarry-trail.mjs';
 import {addPerimeterTrail,trailLookup} from './perimeter-trail.mjs';
+import {applySlateRimPilot} from './slate-rim-pilot.mjs';
 import {refineRockPlacements} from './rock-fidelity.mjs';
 import {DEEP_MUD,deepMudWaterAsset,adventureRoutes} from './deep-mud.mjs';
 import {OffroadWorld} from '../../TerraDrive-v1.13/dist/src/world.js';
@@ -190,6 +191,7 @@ manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.w
  assetCounts:{cliffs:0,boulders:environment.placements.filter(g=>g.snapBoulder).flatMap(g=>g.instances).filter(p=>trailDistance(p.p)<3000).length,grass:trail.assetCounts.grass},
  retiredOpenCliffPlacements:trail.assetCounts.cliffs,routeIndex:8};
 addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x));
+applySlateRimPilot(manifest,field);
 fs.writeFileSync(path.join(data,'terrain.bin'),field);
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));

@@ -1,7 +1,8 @@
 {
   "kind": "source-geometry",
   "nativeAcceptance": false,
-  "revision": 11,
+  "revision": 12,
+  "artPilot": 1,
   "intakeGridProbes": 1134,
   "perOpening": [
     165,
@@ -11,5 +12,15 @@
   ],
   "bonnetGridProbes": 90,
   "paintedIntrusions": 0,
+  "opticalDepthM": [
+    0.0063514584893473724,
+    0.0063533234704071795
+  ],
+  "exhaustDepthM": [
+    0.061120499280207685,
+    0.061199975996613976,
+    0.061176846584839684,
+    0.06119914389771175
+  ],
   "pass": true
 }

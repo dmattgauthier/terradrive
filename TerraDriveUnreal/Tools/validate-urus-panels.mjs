@@ -1,4 +1,4 @@
-// Independent projected-hole coverage checks for the reconstructed front face.
+// Independent projected coverage checks for the reconstructed coachwork.
 // This is source geometry evidence, not a substitute for the cooked art review.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -38,5 +38,28 @@ for(const [z,half]of [[.80,.52],[1.0,.52],[1.2,.52],[1.4,.50],[1.6,.48],[1.8,.47
  const paintHits=new T.Raycaster(origin,direction,0,2).intersectObjects(paintMeshes,true).filter(h=>view.body.worldToLocal(h.point.clone()).y>.94);
  assert.equal(paintHits.length,0,`hidden painted bonnet overlaps carbon at ${x},${z}`);bonnetGridProbes++;
 }
-const report={kind:'source-geometry',nativeAcceptance:false,revision:11,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perOpening:counts,bonnetGridProbes,paintedIntrusions:0,pass:true};
+const probe=(start,dir,target=view.body)=>new T.Raycaster(view.body.localToWorld(new T.Vector3(...start)),new T.Vector3(...dir).transformDirection(view.body.matrixWorld),0,1.25).intersectObject(target,true);
+const hatch=view.body.getObjectByName('urus-sculpted-hatch-sheet'),diffuser=view.body.getObjectByName('urus-open-outlet-diffuser');
+assert.ok(hatch&&diffuser,'painted hatch and diffuser are independently formed');
+const opticalDepthM=[],exhaustDepthM=[];
+for(const s of [-1,1]){
+ for(const x of [.12,.28,.46,.61,.70,.82])assert.equal(probe([s*x,1.08,-3],[0,0,1],hatch).length,0,'paint is cut away throughout the rear light bridge');
+ const optics=probe([s*.70,1.08,-3],[0,0,1]),cover=optics.find(h=>h.object.name==='urus-moulded-tail-lamp-cover'),emitter=optics.find(h=>h.object.material===view.materials.red),housing=optics.find(h=>h.object.name==='urus-recessed-full-width-lamp-housing');
+ assert.ok(cover&&emitter&&housing&&cover.distance<emitter.distance&&emitter.distance<housing.distance,'each Y guide is recessed behind its lens and in front of a closed housing');
+ opticalDepthM.push(emitter.distance-cover.distance);
+ for(const x of [.647,.799]){
+  assert.equal(probe([s*x,.421,-3],[0,0,1],diffuser).length,0,'each exhaust throat is open through the diffuser skin');
+  const bore=probe([s*x,.421,-3],[0,0,1])[0],rim=probe([s*x,.463,-3],[0,0,1]).find(h=>h.object.name==='urus-oval-titanium-tip-rim');
+  assert.ok(bore&&rim&&bore.distance-rim.distance>.040,'oval rolled tips have visible depth to their backing');
+  exhaustDepthM.push(bore.distance-rim.distance);
+ }
+ for(const axle of [-1.503,1.503]){
+  const flare=probe([s*1.6,URUS.tireRadius+.460,axle],[-s,0,0])[0];
+  assert.equal(flare?.object.name,'urus-formed-carbon-wheel-arch','each flare faces outward and is fitted to its wheel well');
+  const bounds=new T.Box3().setFromBufferAttribute(flare.object.geometry.attributes.position);
+  const halfWidth=s<0?-bounds.min.x:bounds.max.x;
+  assert.ok(Math.abs(halfWidth-URUS.width*.5)<.007,`finished flare matches factory half-width within 7 mm: ${halfWidth}`);
+ }
+}
+const report={kind:'source-geometry',nativeAcceptance:false,revision:12,artPilot:1,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perOpening:counts,bonnetGridProbes,paintedIntrusions:0,opticalDepthM,exhaustDepthM,pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();
