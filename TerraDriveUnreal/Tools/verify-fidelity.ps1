@@ -50,7 +50,7 @@ try{
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
  $taskExpected=@{SixWheel=35;Garden=10;Art=110;UrusArt=7;Quarry=16;Interface=140;Mechanical=557;ElectricPressure=280;Rollover=513;Ruts=117;Transitions=53;Detail=15;Movement=120;RutTransitions=64;Perimeter=5}[$Mode]
- if($QuarrySurvey){$taskExpected+=7}
+ if($QuarrySurvey){$taskExpected+=9}
  if($RolloverQuickVehicle -ge 0){
   $taskExpected=81
   $taskPlan=Get-Content -LiteralPath (Join-Path $taskOutput 'rollover-fixtures.json') -Raw|ConvertFrom-Json

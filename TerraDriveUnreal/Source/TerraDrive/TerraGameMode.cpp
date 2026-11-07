@@ -1132,13 +1132,25 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>1.5f){if(FParse::Param(FCommandLine::Get(),TEXT("TerraVisualOnly")))FinishValidation();else Next(61);}
   }else if(Stage==61){
     if(!Captured){
+      const auto &WorldData=V->Terrain->Data;
+      const auto UrusBody=WorldData->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"));
+      if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarrySurvey"))){
+        double ArtPilot=0,ExtensionVersion=0;
+        const TSharedPtr<FJsonObject>* Extension=nullptr;
+        const bool CurrentHood=UrusBody->TryGetNumberField(TEXT("artPilot"),ArtPilot)&&ArtPilot==3;
+        const bool CurrentQuarry=WorldData->TryGetObjectField(TEXT("slateRimExtension"),Extension)&&
+          (*Extension)->TryGetNumberField(TEXT("version"),ExtensionVersion)&&ExtensionVersion==1;
+        Check(TEXT("quarry survey requires the current Urus hood art"),CurrentHood,ArtPilot);
+        Check(TEXT("quarry survey requires the Slate Rim extension"),CurrentQuarry,ExtensionVersion);
+        if(!CurrentHood||!CurrentQuarry){FinishValidation();return;}
+      }
       V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(8);
       V->TestDriverInput=false;V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;
       TrailClosestSample=0;TrailMaximumError=0;Captured=true;
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.IsValidIndex(8)&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==12);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),UrusBody->GetIntegerField(TEXT("version"))==12);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){

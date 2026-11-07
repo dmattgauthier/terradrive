@@ -34,6 +34,25 @@ for(let row=0;row<=30;row++)for(let col=0;col<=95;col++){
 }
 assert.ok(counts.every(n=>n>65),`all four regions of the intake sampled densely: ${counts}`);
 const paintMeshes=[];view.body.traverse(object=>{if(object.isMesh&&object.material===view.materials.paint)paintMeshes.push(object);});
+// The broad ray grid misses inverted faces at the narrow leading corners.
+const bonnet=view.body.getObjectByName('urus-partitioned-carbon-bonnet');
+assert.ok(bonnet,'the carbon bonnet is a separate mesh');
+const {attributes:{position,normal},index}=bonnet.geometry;
+const vertex=new T.Vector3(),edgeA=new T.Vector3(),edgeB=new T.Vector3();
+let bonnetMinFaceNormalY=1,bonnetMinVertexNormalY=1;
+for(let i=0;i<index.count;i+=3){
+ vertex.fromBufferAttribute(position,index.getX(i));
+ edgeA.fromBufferAttribute(position,index.getX(i+1)).sub(vertex);
+ edgeB.fromBufferAttribute(position,index.getX(i+2)).sub(vertex);
+ const up=edgeA.cross(edgeB).normalize().y;
+ assert.ok(up>0,`carbon bonnet triangle ${i/3} must face up, got ${up}`);
+ bonnetMinFaceNormalY=Math.min(bonnetMinFaceNormalY,up);
+}
+for(let i=0;i<normal.count;i++){
+ const up=normal.getY(i);
+ assert.ok(up>0,`carbon bonnet vertex normal ${i} must face up, got ${up}`);
+ bonnetMinVertexNormalY=Math.min(bonnetMinVertexNormalY,up);
+}
 let bonnetGridProbes=0;
 for(const [z,half]of [[.80,.60],[1.0,.58],[1.2,.57],[1.4,.56],[1.6,.54],[1.8,.54],[2.0,.53],[2.14,.50],[2.20,.35],[2.245,.20]])for(let i=-4;i<=4;i++){
  const x=half*i/4,origin=view.body.localToWorld(new T.Vector3(x,2,z)),direction=new T.Vector3(0,-1,0).transformDirection(view.body.matrixWorld);
@@ -78,5 +97,6 @@ for(const s of [-1,1]){
   assert.ok(Math.abs(halfWidth-URUS.width*.5)<.007,`finished flare matches factory half-width within 7 mm: ${halfWidth}`);
  }
 }
-const report={kind:'source-geometry',nativeAcceptance:false,revision:12,artPilot:2,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,paintedIntrusions:0,opticalDepthM,exhaustDepthM,pass:true};
+const {version:revision,artPilot}=view.root.userData.visualModel;
+const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();

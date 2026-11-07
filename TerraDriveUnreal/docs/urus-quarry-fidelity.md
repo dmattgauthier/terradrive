@@ -94,3 +94,41 @@ The next art milestone can use this workflow for another trim-specific body
 and terrain region. The Urus remains a photo-based reconstruction, with
 lighting optics and small body details still estimated. Distant ridgelines
 remain a separate landscape task.
+
+## PR review fixes
+
+The leading-corner taper now spreads across more of the carbon hood. The
+new winding test reproduced a downward-facing triangle on the original PR
+mesh. The corrected mesh passed all 8,640 face and 4,453 vertex normal
+checks, with minimum upward components of 0.728 and 0.758, respectively.
+[Source geometry results](urus-panel-validation.json)
+
+The optional quarry survey now requires Urus art pilot revision 3 and Slate
+Rim extension revision 1 in the staged world data before it starts driving.
+The revised executable rejected the merged baseline package (hood revision 1,
+no extension) and the earlier PR package (hood revision 2, extension revision
+1). Both runs stopped after the two asset checks and produced zero captures.
+The verifier reads the failed checks from the report even though the Windows
+process exit code was zero in these two runs.
+The separate non-survey quarry mode continues to use its original checks.
+
+Only the Urus body mesh input changed. The collision bake regenerated four
+front hull sections. The lower-body probe positions stayed identical, as did
+the other vehicles' baked data. The world data changed only in the hood art
+revision field.
+
+The fresh Windows cook passed all 25 quarry survey checks at the fixed 20 Hz
+test clock and cleared all 20 gates upright. It saved 15 captures and peaked
+at 61 °C. The two front three-quarter views and hood close-up show a continuous
+carbon-to-paint edge at both leading corners. The hood ridge highlights still
+show some rippling. The same package passed all 81 focused Urus rollover
+checks across ten poses, with a peak of 60 °C. The run receipts and captures are in
+`Saved/UrusQuarryReviewFixes`.
+
+| Tested file | SHA-256 |
+| --- | --- |
+| `Tools/urus-body.mjs` | `47efb225db10ff10957904b24e2d75ca174545412352e1247ba76ad8cd05b8c5` |
+| `Source/TerraDrive/TerraGameMode.cpp` | `fcd9f8d32e6690c8d230b139952c018e074aafff42b86b001211e8b11b3f8842` |
+| `TerraDrive.exe` in all three survey runs | `ddcdee22e19f6b41faceb46dd637b05846c902ffb3340afbc45c0dd422da0465` |
+| Fresh `TerraDrive-Windows.pak` | `e5cffb79e09013fbc2a3edb0e7de8fe8ad895a8f0a5bfcd3bed82448af863c76` |
+| Fresh `TerraDrive-Windows.ucas` | `578b529c3b884efef7002d6874bb12db288e691a1dbc56b1219d5bb19364a873` |

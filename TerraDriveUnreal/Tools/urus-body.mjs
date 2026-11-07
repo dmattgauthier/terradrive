@@ -236,7 +236,8 @@ export function urusView(spec){
  const carbonSides=[[.730,.665],[1.05,.644],[1.44,.618],[1.90,.594],[2.265,.572]];
  const carbonPanel=(u,v)=>{
   const t=2*u-1,a=Math.abs(t),z=lerp(.730,2.265-.148*a**8,v);
-  return[t*(station(carbonSides,z,1)-.035*v**6*a**16),z];
+  // Spread the taper so neighboring columns keep their order at the nose.
+  return[t*(station(carbonSides,z,1)-.035*v**6*a**8),z];
  };
  const carbonNu=72,carbonNv=60;
  const carbonBoundary=[...Array.from({length:carbonNv+1},(_,i)=>carbonPanel(0,i/carbonNv)),
@@ -440,5 +441,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:12,artPilot:2,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,formedCarbonFlares:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:12,artPilot:3,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,formedCarbonFlares:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }
