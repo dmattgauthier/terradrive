@@ -339,10 +339,14 @@ void ATerraVehicle::UpdateRoute(float Dt) {
     // Curving trails cross gate planes along their own tangent. Historical
     // loop gates retain their explicitly authored +/-X direction.
     FVector GateForward(GateDirection,0,0);
-    if(RouteIndex==8){const FVector Previous=GateIndex>0?Route.Gates[GateIndex-1]:Route.Spawn;GateForward=(G-Previous).GetSafeNormal2D();}
+    if(Route.GateHeadings.IsValidIndex(GateIndex))GateForward=FRotator(0,Route.GateHeadings[GateIndex],0).Vector();
+    else if(RouteIndex==8){const FVector Previous=GateIndex>0?Route.Gates[GateIndex-1]:Route.Spawn;GateForward=(G-Previous).GetSafeNormal2D();}
     const FVector GateSide(-GateForward.Y,GateForward.X,0);
     if (FVector::DotProduct(PreviousRoutePosition-G,GateForward)<0 && FVector::DotProduct(P-G,GateForward)>=0 &&
-        FMath::Abs(FVector::DotProduct(P-G,GateSide)) < Route.GateWidth*50 && FMath::Abs(P.Z-G.Z)<300) ++GateIndex;
+        FMath::Abs(FVector::DotProduct(P-G,GateSide)) < Route.GateWidth*50 && FMath::Abs(P.Z-G.Z)<300) {
+      ++GateIndex;
+      if(GateIndex==Route.Gates.Num()&&!Route.GateNotes.IsEmpty())Notice=TEXT("Perimeter Expedition complete");
+    }
     PreviousRoutePosition = P;
   }
   RouteStatus = FString::Printf(TEXT("%s | Gate %d/%d | %.1f s%s"), *Route.Name,

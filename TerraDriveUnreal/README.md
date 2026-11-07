@@ -1,5 +1,11 @@
 # Terra Drive native port
 
+The [Urus and Slate Rim art pilot](docs/photoreal-pilot.md) reshapes the Urus
+side and rear panels and adds scanned stone shelves and scree to a 400-foot
+stretch of the quarry. The Windows package passed 306 checks, including the
+full 20-gate route. Matched 1080p Cool and Balanced results are in the pilot
+notes.
+
 The [terrain and rut refinement](docs/terrain-ruts-26.md) improves meadow scan
 detail, distinct terrain patches and damp mud/snow fringes. Tire footprints now
 deform both soft materials across a boundary, with blended compaction and
@@ -180,7 +186,7 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 | C | Near/far chase camera |
 | 1–9 | Trail, tarmac, rock, mud, marsh, sand, Summit park, snow, Granite Trials |
 
-| J | Cycle nine challenge routes |
+| J | Cycle challenge routes, including [Perimeter Expedition](docs/perimeter-expedition.md) |
 | V | Open vehicle selection while stopped |
 | T | Equip/remove flotation tracks while stopped; Civic excluded |
 | F / L | Available four-wheel high drive / low range; change near a stop |

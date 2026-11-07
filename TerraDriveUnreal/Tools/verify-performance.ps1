@@ -1,8 +1,9 @@
 # Real-time terrain performance comparison; requires the packaged native build.
 param([ValidatePattern('^[a-z0-9-]+$')][string]$Name='quarry',
  [ValidateRange(10,45)][int]$Cap=30,[ValidateRange(0,2)][int]$Quality=0,[switch]$Legacy,[switch]$Trace,
- [ValidateRange(1280,1920)][int]$Width=1280,[ValidateRange(720,1080)][int]$Height=720,[string]$OutputRoot='')
+ [ValidateRange(1280,1920)][int]$Width=1280,[ValidateRange(720,1080)][int]$Height=720,[string]$OutputRoot='',[string]$PackageDirectory='')
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'staged-package-content.ps1')
 $project22=Split-Path $PSScriptRoot -Parent
 # Each invocation keeps its own receipts, isolated settings and captures.
 if(!$OutputRoot){$OutputRoot=Join-Path $project22 ('Saved/Performance/'+[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH-mm-ssZ'))}
@@ -11,7 +12,9 @@ if(@(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,ShaderCompileWor
 $out22=Join-Path $root22 $Name
 if(Test-Path -LiteralPath $out22){throw 'Preserve existing evidence and use another name'}
 New-Item -ItemType Directory -Path (Join-Path $out22 'Screenshots') -Force|Out-Null
-$exe22=Join-Path $project22 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'
+if(!$PackageDirectory){$PackageDirectory=Join-Path $project22 'Build/Windows'}
+$package22=(Resolve-Path -LiteralPath $PackageDirectory).ProviderPath
+$exe22=Join-Path $package22 'TerraDrive/Binaries/Win64/TerraDrive.exe'
 $args22=@('-unattended','-windowed','-ForceRes','-RenderOffscreen',('-ResX='+$Width),('-ResY='+$Height),'-NoSound',
  '-TerraValidate','-TerraQuarryPerformanceOnly','-TerraCapture',('-TerraTestFPS='+$Cap),('-TerraGraphicsMode='+$Quality),
  ('-UserDir="'+(Join-Path $out22 'User')+'"'),('-TerraReport="'+(Join-Path $out22 'result.json')+'"'),
@@ -28,9 +31,12 @@ foreach($relative22 in @('Saved/garage-builds.json','Saved/graphics-settings.jso
  $file22=Join-Path $project22 $relative22
  $player22[$relative22]=if(Test-Path -LiteralPath $file22){(Get-FileHash -LiteralPath $file22 -Algorithm SHA256).Hash}else{$null}
 }
+$executableHash22=(Get-FileHash -LiteralPath $exe22 -Algorithm SHA256).Hash.ToLowerInvariant()
+$content22=@(Get-StagedPackageContent -PackageDirectory $package22)
 $start22=[DateTime]::UtcNow
 $receipt22=[ordered]@{purpose='Real-time stock Urus quarry benchmark with functional guards';started=$start22.ToString('o');
- executableSha256=(Get-FileHash -LiteralPath $exe22 -Algorithm SHA256).Hash.ToLower();arguments=$args22;source=$source22;
+ packageDirectory=$package22;executableSha256=$executableHash22;stagedContent=$content22;arguments=$args22;
+ verifierSourceDirectory=(Join-Path $project22 'Source');source=$source22;
  cap=$Cap;quality=$Quality;resolution=@($Width,$Height);trace=[bool]$Trace;legacyLayout=[bool]$Legacy;fixedClock=$false;pass=$false}
 $pi22=[Diagnostics.ProcessStartInfo]::new();$pi22.FileName=$exe22;$pi22.Arguments=$args22 -join ' '
 $pi22.WorkingDirectory=Split-Path $exe22 -Parent;$pi22.UseShellExecute=$false;$pi22.CreateNoWindow=$true;$pi22.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden

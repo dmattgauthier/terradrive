@@ -14,6 +14,8 @@ import {bodyRefinement} from './body-refinement.mjs';
 import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
 import {quarryTrail} from './quarry-trail.mjs';
+import {addPerimeterTrail,trailLookup} from './perimeter-trail.mjs';
+import {applySlateRimPilot} from './slate-rim-pilot.mjs';
 import {refineRockPlacements} from './rock-fidelity.mjs';
 import {DEEP_MUD,deepMudWaterAsset,adventureRoutes} from './deep-mud.mjs';
 import {OffroadWorld} from '../../TerraDrive-v1.13/dist/src/world.js';
@@ -108,6 +110,17 @@ if(!fs.existsSync(path.join(data,'terrain.bin'))){let offset=16;for(let row=0;ro
 // Rewrite only the native trail's height band, including its feathered edges.
 // Existing surfaces/water and all samples outside this band remain unchanged.
 const field=fs.readFileSync(path.join(data,'terrain.bin'));
+// A subsequent export can start from an already cooked height field. Restore
+// the previous corridor before laying out a revised trail, so old cuts vanish.
+const priorWorld=path.join(data,'world.json');
+const priorTrail=fs.existsSync(priorWorld)?JSON.parse(fs.readFileSync(priorWorld)).perimeterTrail:null;
+if(priorTrail){
+ const oldCorridor=trailLookup(priorTrail.samples);
+ for(let row=0;row<n;row++)for(let col=0;col<n;col++){
+  const x=-400+row*step,y=-400+col*step;
+  if(oldCorridor(x,y))field.writeFloatLE(terrain.heightAt(-y,x),16+(row*n+col)*9);
+ }
+}
 for(let row=940;row<=1400;row++)for(let col=50;col<=520;col++){
  const ux=-400+row*.5,uy=-400+col*.5;
  field.writeFloatLE(terrain.heightAt(-uy,ux),16+(row*n+col)*9);
@@ -177,6 +190,9 @@ manifest.terrainGrade=terrain.gradeVersion;
 manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,
  assetCounts:{cliffs:0,boulders:environment.placements.filter(g=>g.snapBoulder).flatMap(g=>g.instances).filter(p=>trailDistance(p.p)<3000).length,grass:trail.assetCounts.grass},
  retiredOpenCliffPlacements:trail.assetCounts.cliffs,routeIndex:8};
+addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x));
+applySlateRimPilot(manifest,field);
+fs.writeFileSync(path.join(data,'terrain.bin'),field);
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));

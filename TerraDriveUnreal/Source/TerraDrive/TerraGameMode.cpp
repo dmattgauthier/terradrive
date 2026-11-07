@@ -44,6 +44,7 @@
 #include "TerraInterfaceValidation.h"
 #include "TerraRutValidation.h"
 #include "TerraRutTransitionValidation.h"
+#include "TerraPerimeterValidation.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
@@ -123,6 +124,10 @@ void ATerraGameMode::Tick(float Dt) {
   };
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraPerimeterOnly"))){
+    if(TerraPerimeterValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"))){
@@ -311,7 +316,7 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("tire tread rejects rigid support outside its width"),!Narrow.Hit&&Wide.Hit&&Wide.Constructed);
       Edge->DestroyComponent();
     }
-    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==13,V->Terrain->ConstructedMeshCount);
+    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==14,V->Terrain->ConstructedMeshCount);
     const auto LoopFrames=V->Terrain->Data->GetArrayField(TEXT("loopFrames"));
     for(int I=0;I<5;++I){
       const auto Frame=LoopFrames[I*6]->AsObject();
@@ -1132,7 +1137,7 @@ void ATerraGameMode::Tick(float Dt) {
       TrailClosestSample=0;TrailMaximumError=0;Captured=true;
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
-      Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.Num()==13&&V->Terrain->Routes[8].Gates.Num()==20);
+      Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.IsValidIndex(8)&&V->Terrain->Routes[8].Gates.Num()==20);
       Check(TEXT("Urus body uses the new surface and cabin revision"),V->Terrain->Data->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"))->GetIntegerField(TEXT("version"))==12);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);

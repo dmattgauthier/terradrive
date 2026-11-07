@@ -44,7 +44,7 @@ if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
         calls.append('[branch] if(w[%d]>.0005){float rr;float3 nn;float3 cc=f.evaluate(%s);color+=cc*w[%d];rough+=rr*w[%d];normal+=nn*w[%d];}'%(biome,','.join(args),biome,biome,biome))
     code=library+'''float2 uv=(World.yx*.01+400.0)/800.5+(.25/800.5);
 float4 a=Texture2DSample(BlendA,GlobalTrilinearClampedSampler,uv);
-float3 b=Texture2DSample(BlendB,GlobalTrilinearClampedSampler,uv).rgb;
+float4 b=Texture2DSample(BlendB,GlobalTrilinearClampedSampler,uv);
 float w[7]={a.r,a.g,a.b,a.a,b.r,b.g,b.b};float sum=0;float paved=saturate(w[1]*16);
 // Moisture follows the continuous physical cover, before visual competition.
 // A thin isolated snow patch is still slushy even when it wins this pixel;
@@ -69,7 +69,12 @@ float threshold=max(0,dominant-join);
 [unroll]for(int i=0;i<7;i++){w[i]=max(0,w[i]-threshold);sum+=w[i];}
 [unroll]for(int i=0;i<7;i++)w[i]/=max(sum,.0001);
 float3 color=0,normal=0;float rough=0;
-'''+ '\n'.join(calls)+'\nRoughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return color;'
+'''+ '\n'.join(calls)+'''
+// Exposed soil in the wheel lanes, with the original scan detail and rut relief.
+float track=b.a*(1-w[1])*(1-w[4])*(1-w[6]*.55);
+color=lerp(color,color*float3(1.09,1.025,.92)+float3(.026,.013,.004),track*.68);
+Roughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return color;
+'''
     custom=edit.create_material_expression(m,unreal.MaterialExpressionCustom,0,0);custom.set_editor_property('code',code);custom.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     all_inputs=['World','GeoNormal','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection','BlendA','BlendB']+[pin for tex,pin in textures.values()]
     inputs=[]

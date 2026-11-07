@@ -33,6 +33,8 @@ struct FTerraRoute {
   int Zone = 6;
   TArray<FVector> Gates;
   TArray<int> GateDirections;
+  TArray<float> GateHeadings;
+  TArray<FString> GateNotes;
 };
 struct FTerraTile {
   UProceduralMeshComponent *Mesh = nullptr;
