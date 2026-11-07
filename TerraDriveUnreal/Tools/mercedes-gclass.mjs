@@ -341,9 +341,13 @@ export function buildGClass(view,spec=view.spec){
         named(surface(g,paint,18,6,(u,v)=>{const y=lerp(.623,.833,u);return[side*lerp(.903,.966,Math.sin(v*Math.PI/2)),y,lerp(-.882,-.962,v)-.015*Math.sin(u*Math.PI)];},side>0),'g580-rounded-air-curtain-fairing-'+side);
       }
     }
-    box(g,trim,[side*.946,.427,-.08],[.115,.068,2.005],.015);
-    box(g,metal,[side*.965,.467,-.08],[.145,.018,1.957],.006);
-    for(let i=0;i<5;i++)box(g,trim,[side*(.925+i*.023),.478,-.08],[.007,.003,1.883],.001);
+    const boardBase=box(g,trim,[side*.946,.427,-.08],[.115,.068,2.005],.015);
+    const boardPlate=box(g,metal,[side*.965,.467,-.08],[.145,.018,1.957],.006);
+    boardBase.userData.gClassRunningBoard=boardPlate.userData.gClassRunningBoard=true;
+    for(let i=0;i<5;i++){
+      const tread=box(g,trim,[side*(.925+i*.023),.478,-.08],[.007,.003,1.883],.001);
+      tread.userData.gClassRunningBoard=true;
+    }
     if(!ev){
       for(const z of [-.963,-1.077]){
         const tail=mesh(g,new T.CylinderGeometry(.037,.037,.19,24,true),metal,[side*1.00,.414,z]);tail.rotation.z=Math.PI/2;tail.name='amg-functional-side-exhaust-tip';

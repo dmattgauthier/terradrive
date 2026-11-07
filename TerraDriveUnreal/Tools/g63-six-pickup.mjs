@@ -7,6 +7,7 @@ export const SIX_PICKUP=Object.freeze({
  revision:25,height:2.326,width:2.185,length:5.875,bodyRise:.281,cabRoofY:2.260,
  axles:Object.freeze([2.100,-1.020,-2.120]),tireRadius:.4699,rimInches:18,
  cabRearZ:-.895,bedFrontZ:-.925,bedRearZ:-2.750,bedTopY:1.515,bedFloorY:.985,
+ stepRearZ:-.390,stepFrontZ:1.465,
  mainHoopRadius:.0335,braceRadius:.030,hoopTopY:2.2925,hoopTopZ:-1.095,
  // The original rounded arches falsely suggested three small wheel openings.
  // A long, joined rear pressing follows both real tandem tire centres.
@@ -81,7 +82,15 @@ export function buildSixPickup(g,m){
   // Straight lower cabin repair matches the *new* tandem opening, without
   // the old SUV notch/paint triangle between the middle tire and rear door.
   named(surface(g,paint,64,10,(u,v)=>{const z=lerp(-.895,-.30,u),low=Math.max(.731,sixOpeningY(z)+.096);return[s*.910,lerp(low,1.566,v),z];},s>0),'g63-six-cab-lower-rear-closure-'+s);
-  named(box(g,metal,[s*.972,.715,.52],[.170,.035,1.90],.010),'g63-six-double-cab-step-'+s);
+  // Fit the closed running board between the two wheel openings, with
+  // room for the larger garage tires to move vertically past its ends.
+  const step=new T.Group();step.name='g63-six-double-cab-step-'+s;g.add(step);
+  const stepLength=r.stepFrontZ-r.stepRearZ,stepCenter=(r.stepFrontZ+r.stepRearZ)/2;
+  box(step,metal,[s*.965,.718,stepCenter],[.165,.057,stepLength],.016);
+  box(step,trim,[s*.961,.747,stepCenter],[.128,.009,stepLength-.072],.004);
+  for(let i=0;i<4;i++){
+   box(step,trim,[s*(.920+i*.027),.753,stepCenter],[.008,.005,stepLength-.130],.002);
+  }
   // The bed/cab molding now continues across the pickup side.
   named(box(g,trim,[s*.960,1.362,(front+rear)/2],[.019,.044,front-rear-.045],.006),'g63-six-bed-protective-molding-'+s);
   for(const z of [-1.85,-2.40])box(g,m.gReflector,[s*.966,1.085,z],[.010,.032,.065],.005);

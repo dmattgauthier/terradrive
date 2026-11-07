@@ -48,11 +48,26 @@ export function inspectGVariant(view,spec,parts){
   for(const s of [-1,1]){const o=view.body.getObjectByName('g63-six-cab-lower-rear-closure-'+s),n=o.geometry.attributes.normal;let facing=0;for(let i=0;i<n.count;i++)facing+=n.getX(i)*s;check('lower cab repair faces outward '+s,facing/n.count>.95,{meanNormalX:facing/n.count});}
   let face=0;parts.rim.traverse(o=>{if(o.name==='g63-six-beadlock-perforated-face')face++;});check('both faces have original perforated beadlock wheel plates',face===2,{faces:face});
   const localBounds=o=>new T.Box3().setFromObject(o).applyMatrix4(view.body.matrixWorld.clone().invert());
+  let donorStepParts=0;
+  view.body.traverse(o=>{if(o.userData.gClassRunningBoard)donorStepParts++;});
+  check('pickup carries only the dedicated running boards',donorStepParts===0,{donorStepParts});
+  // The largest selectable tire has 12% more radius and 21% more width.
+  // Compare full side projections irrespective of travel height or track width.
+  // A steered front tire fits within the conservative diagonal bound.
+  const largestRadius=Math.max(tire.y,tire.z)*.5*1.12;
+  const largestFrontReach=Math.hypot(largestRadius,tire.x*.5*1.21);
+  const rearTireFront=spec.axleOffsetsM[1]+largestRadius;
+  const frontTireRear=spec.axleOffsetsM[0]-largestFrontReach;
+  const longitudinalClearance=b=>({middleGapM:b.min.z-rearTireFront,frontGapM:frontTireRear-b.max.z});
+  const clear=c=>c.middleGapM>.05&&c.frontGapM>.05;
   const hoop=view.body.getObjectByName('g63-six-transverse-main-hoop'),hoopBox=localBounds(hoop),hoopTop=hoopBox.max.y;
   check('main hoop reaches above the cab instead of peaking halfway up the bed',hoopTop>SIX_PICKUP.cabRoofY+.025&&hoopTop<SIX_PICKUP.cabRoofY+.10,{cabRoofM:SIX_PICKUP.cabRoofY,hoopTopM:hoopTop});
   check('main hoop is immediately behind the cab and spans the pickup shoulders',hoopBox.min.z<SIX_PICKUP.cabRearZ-.10&&hoopBox.max.z>SIX_PICKUP.cabRearZ-.25&&hoopBox.max.x-hoopBox.min.x>1.50,{bounds:[hoopBox.min.toArray(),hoopBox.max.toArray()]});
   check('native stock envelope includes the new bar and wider fenders',spec.height>=hoopTop-.002&&Math.abs(spec.width-SIX_PICKUP.width)<1e-6,{heightM:spec.height,widthM:spec.width});
   for(const s of [-1,1]){
+   const step=view.body.getObjectByName('g63-six-double-cab-step-'+s);
+   const stepClearance=longitudinalClearance(localBounds(step));
+   check('running board clears both adjacent tire profiles through travel '+s,clear(stepClearance),stepClearance);
    const upright=view.body.getObjectByName('g63-six-hoop-upright-'+s),stay=view.body.getObjectByName('g63-six-rear-stay-'+s),u=localBounds(upright),b=localBounds(stay);
    check('roll-bar upright mounts to the front bed shoulder '+s,u.min.y<1.50&&u.max.y>2.28&&u.max.z<-.95,{bounds:[u.min.toArray(),u.max.toArray()]});
    check('rear stay slopes from roof height and turns down to its rear foot '+s,b.min.z< -2.48&&b.max.z> -1.13&&b.max.y>2.27&&b.min.y<1.49,{bounds:[b.min.toArray(),b.max.toArray()]});
@@ -87,6 +102,12 @@ export function inspectGVariant(view,spec,parts){
   check('rear lamps use the wide horizontal factory layout',[-1,1].every(s=>{const b=localBounds(view.body.getObjectByName('g63-six-horizontal-rear-lamp-housing-'+s));return b.max.x-b.min.x>1.8*(b.max.y-b.min.y);}),{});
   const {armor}=vehicleAdditions(spec);view.root.add(armor);view.root.updateMatrixWorld(true);
   for(const s of [-1,1]){
+   const rail=armor.getObjectByName('g63-six-armor-slider-'+s);
+   const mounts=armor.getObjectsByProperty('name','g63-six-armor-slider-mount-'+s);
+   const sliderBounds=localBounds(rail);
+   for(const mount of mounts)sliderBounds.union(localBounds(mount));
+   const sliderClearance=longitudinalClearance(sliderBounds);
+   check('optional slider and mounts clear both tire profiles in side view '+s,mounts.length===3&&clear(sliderClearance),sliderClearance);
    let blocked=0,probes=0;
    for(const z0 of spec.axleOffsetsM)for(const bump of [0,.10])for(let deg=0;deg<360;deg+=10){
     const a=deg*Math.PI/180,y=spec.tireRadius+bump+Math.sin(a)*spec.tireRadius,z=z0+Math.cos(a)*spec.tireRadius;
