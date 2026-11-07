@@ -38,12 +38,13 @@ checks route closure, perimeter coverage, all seven surface types and the
 exported collision grade. After packaging, use `Tools/verify-fidelity.ps1
 -Mode Perimeter -TimeoutSeconds 1500` for the continuous driving check.
 
-The final Unreal 5.8.3 Windows package passed the five perimeter checks.
+The original Unreal 5.8.3 Windows package passed the five perimeter checks.
 An upgraded Wrangler Rubicon drove all 191 gates in a single lap with no
-teleports after the trailhead. It encountered all seven surfaces and stayed
-upright, within 11.1 ft of the sampled trail center. The test aired down in
-the snow and used low range and the rear locker in Blackwater. It captured
-all 11 sectors and the finish. The lap took 615.4 seconds on the simulation
+teleports after the trailhead. It stayed upright, within 11.1 ft of the sampled
+trail center. The original surface check sampled beneath the chassis origin.
+The test aired down in the snow and used low range and the rear locker in
+Blackwater. It captured all 11 sectors and the finish. The lap took 615.4
+seconds on the simulation
 clock and the test process took 750.9 seconds in real time, including load.
 The fixed 20 Hz run checked driving behavior on this Jeep configuration.
 On the same executable, 117 rut checks, 64 rut-transition checks and 81
@@ -64,3 +65,39 @@ side-step assets from PR #7, which are reviewed separately.
 | Cooked asset UCAS | `b2318a6960b5d7fc23c06e2397797e4f296391e8af2ad61e8932b55934ae063a` |
 | Source file hash manifest | `187e5c9eb4d7b6eda9838c5e13910a4e1f846fb15e86f1f614c8c922a7d06074` |
 | Generated input hash manifest | `085a8099b5e97ee80be2341f956bc34b07f201f99ac3d999aa684f1a11cb132b` |
+
+## Review fixes
+
+The HUD now keeps the upcoming gate's sector tip visible alongside transient
+notices. The lap verifier records resolved surfaces at loaded tire contacts,
+including the surface assigned to constructed supports. The expedition bake
+keeps the authored Slate Rim sign grounded by shifting it with the one-metre
+collision triangles.
+
+The refreshed export moved the sign up 47.6 cm. The terrain binary, masks and
+remaining export data matched the merged photoreal pilot, and all 307 mesh
+inputs passed the export validator. The pilot's merged transition validator
+checks Blend B alpha alongside the authored quarry texture changes and
+validates the seven physical coverage channels separately. The merged
+validator passed all 2,563,201 atlas samples, including 16,415 quarry
+overrides, and passed the pre-expedition fixture. Deliberate mask corruption
+and the original unadjusted sign failed their respective checks.
+
+The combined Unreal 5.8.3 Windows package passed 267 checks. The upgraded
+Wrangler completed all 191 gates upright, stayed within 11.1 ft of the trail
+center and registered all seven surfaces at loaded tires. The lap took 615.4
+seconds on the simulation clock and 628.6 seconds of real process time
+including load. Captures showed the sector guidance, grounded sign and finish
+notice. The same package passed 117 rut checks, 64 rut-transition checks and
+81 focused Jeep rollover checks. These were fixed 20 Hz functional runs
+with an isolated player profile. Peak sampled GPU temperature was 59°C.
+
+| Tested item | SHA-256 |
+| --- | --- |
+| Packaged game executable | `b402d7e166fb34c790c18fe359e9045c462b57cdd4cdb922bd3927ddd7f39445` |
+| Cooked data PAK | `21b11e08fc93aab6b14cd053c7cad0499d079ab5a5c7084ad763ccc5e820adbc` |
+| Cooked asset UCAS | `cc0e16137cc820682dd8a0ebb36b39290ae6e52dfc62aa5ab7dbfede198cdbcd` |
+| Source file hash manifest | `8b2d70258bfe5d7533697a5febb39a311813bbd7c06587ad5be0803fcd2ee171` |
+| Runtime world input | `953823e202f14f6b8aec5e8b6a0f0ccd214ec38f4c0f70a731fd0ea31fcea0a9` |
+
+Local receipts and captures are under `Saved/PerimeterReview/CombinedValidation`.

@@ -123,6 +123,16 @@ export function addPerimeterTrail(world, field, baseHeight) {
 
   const within=(p,r)=> (route.locate(p[0]/100,p[1]/100)?.distance??Infinity)<r;
   const shift=p=>{p[2]+=100*cut[index(p[0]/100)*n+index(p[1]/100)];return p;};
+  function shiftQuarryMarker(p) {
+    // Keep the authored embedment by sampling the cut on Slate Rim's
+    // one-metre collision triangles, including between heightfield nodes.
+    const x=p[0]/100, y=p[1]/100, ix=Math.floor(x), iy=Math.floor(y);
+    const u=x-ix, v=y-iy;
+    const delta=(x,y)=>cut[index(x)*n+index(y)];
+    const a=delta(ix,iy), b=delta(ix+1,iy), c=delta(ix,iy+1), d=delta(ix+1,iy+1);
+    const change=u+v<=1?a+(b-a)*u+(c-a)*v:d+(c-d)*(1-u)+(b-d)*(1-v);
+    p[2]+=100*change;
+  }
   const removedParts=new Map(), treeIds=new Set();
   world.trees=world.trees.filter(t=>{
     if(!within(t.p,4.25+t.radius/100)){shift(t.p);return true;}
@@ -139,7 +149,11 @@ export function addPerimeterTrail(world, field, baseHeight) {
     for(const p of g.instances)shift(p.p);
   });
   for(const g of [...world.nativeDetails,...world.fabScenery.groups]){
-    if(g.asset==='native_deep_mud_water'||g.asset==='quarry_trail_stake'||g.asset==='quarry_trail_sign')continue;
+    if(g.asset==='native_deep_mud_water')continue;
+    if(g.asset==='quarry_trail_stake'||g.asset==='quarry_trail_sign'){
+      for(const p of g.instances)shiftQuarryMarker(p.p);
+      continue;
+    }
     g.instances=g.instances.filter(p=>{
       const scale=Math.max(...p.s);
       // Keep Slate Rim's deliberate low articulation stones.

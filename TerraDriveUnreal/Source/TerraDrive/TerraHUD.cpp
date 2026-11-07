@@ -87,9 +87,20 @@ void ATerraHUD::DrawHUD() {
   if(V->WinchAttached)Details+=FString::Printf(TEXT("   /   WINCH %.0f lbf ["),TerraUnits::PoundsForce(V->WinchTension))+V->ControlLabel(A::WinchReel)+TEXT("]");
   Text(Details,White,20*S,LastStatusBottom+10*S,.83f,Canvas->SizeX-40*S);
   if(!V->RouteStatus.IsEmpty())Text(V->RouteStatus,Muted,20*S,LastStatusBottom+30*S,.8f,Canvas->SizeX-40*S);
+  float NoticeY=LastStatusBottom+50*S;
+  if(V->Terrain&&V->Terrain->Routes.IsValidIndex(V->RouteIndex)){
+    const auto& Route=V->Terrain->Routes[V->RouteIndex];
+    if(Route.Gates.IsValidIndex(V->GateIndex)&&Route.GateNotes.IsValidIndex(V->GateIndex)){
+      const auto& Tip=Route.GateNotes[V->GateIndex];
+      if(!Tip.IsEmpty()){
+        Text(Tip,Mint,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
+        NoticeY+=20*S;
+      }
+    }
+  }
   const double Now=GetWorld()->GetRealTimeSeconds();
   if(LastNotice!=V->Notice){LastNotice=V->Notice;NoticeChangedAt=Now;}
   FString Notice=V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):!V->HasPropulsionEnergy()?
       TEXT("EMPTY  /  Stop, then charge or refuel [")+V->ControlLabel(A::Garage)+TEXT("] or Esc"):(Now-NoticeChangedAt<5?LastNotice:FString());
-  if(!Notice.IsEmpty())Text(Notice,Amber,20*S,LastStatusBottom+50*S,.9f,Canvas->SizeX-40*S);
+  if(!Notice.IsEmpty())Text(Notice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
 }

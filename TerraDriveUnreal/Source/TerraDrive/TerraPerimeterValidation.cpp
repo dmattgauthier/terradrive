@@ -71,7 +71,11 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   }
   if(Closest>Run.Closest){Run.Closest=Closest;Run.LastProgress=Run.Time;}
   Run.WorstError=FMath::Max(Run.WorstError,float(FMath::Sqrt(Best)));
-  if(V->ContactCount>=2)Run.SurfaceMask|=1<<Terrain->Sample(P).Surface;
+  for(int I=0;I<V->WheelCount();++I){
+    const auto& Wheel=V->WheelState[I];
+    if(Wheel.ContactValid&&Wheel.Load>50&&Wheel.Ground.Surface<7)
+      Run.SurfaceMask|=1<<Wheel.Ground.Surface;
+  }
 
   const auto& Here=Run.Samples[Run.Closest];
   if(Here.Sector!=Run.LastSector){

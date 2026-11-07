@@ -305,7 +305,6 @@ void ATerraVehicle::TeleportRoute(int Index) {
   // phrases at display time so preserved terrain data follows custom controls.
   Notice = Route.Hint.Replace(TEXT("Shift+W"),*(ControlLabel(TerraControls::Action::Crawl)+TEXT("+")+ControlLabel(TerraControls::Action::Forward)))
       .Replace(TEXT("K descent assist"),*(ControlLabel(TerraControls::Action::DescentAssist)+TEXT(" descent assist")));
-  if(Route.GateNotes.IsValidIndex(0))Notice=Route.GateNotes[0];
 }
 void ATerraVehicle::ToggleLocker(bool Front) {
   bool &Locked = Front ? FrontLocked : RearLocked;
@@ -346,8 +345,7 @@ void ATerraVehicle::UpdateRoute(float Dt) {
     if (FVector::DotProduct(PreviousRoutePosition-G,GateForward)<0 && FVector::DotProduct(P-G,GateForward)>=0 &&
         FMath::Abs(FVector::DotProduct(P-G,GateSide)) < Route.GateWidth*50 && FMath::Abs(P.Z-G.Z)<300) {
       ++GateIndex;
-      if(Route.GateNotes.IsValidIndex(GateIndex))Notice=Route.GateNotes[GateIndex];
-      else if(!Route.GateNotes.IsEmpty())Notice=TEXT("Perimeter Expedition complete");
+      if(GateIndex==Route.Gates.Num()&&!Route.GateNotes.IsEmpty())Notice=TEXT("Perimeter Expedition complete");
     }
     PreviousRoutePosition = P;
   }

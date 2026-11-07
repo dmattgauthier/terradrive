@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Terrain} from './native-terrain.mjs';
 import {makePerimeterTrail,perimeterMask} from './perimeter-trail.mjs';
+import {inQuarry} from './offroad-courses.mjs';
 import {validateGardenGeology} from './garden-geology.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const gardenGeology=validateGardenGeology(path.join(root,'Content/NativeData'));
@@ -111,6 +112,32 @@ for(const p of data.quarryTrail.samples)for(const side of [-2,0,2]){
  assert.ok(Math.abs(b.readFloatLE(offset)-expectedHeightAt(ux,uy,offset))<1e-4,'staged quarry grade');
  gradedSamples++;
 }
+// Original Slate Rim markers keep their embedment as the collision mesh moves.
+// The quarry deck itself is excluded from expedition grading.
+function quarryGradeDelta(x,y){
+ const ix=Math.floor(x),iy=Math.floor(y),u=x-ix,v=y-iy;
+ const delta=(sx,sy)=>{
+  const row=(sx+400)*2,col=(sy+400)*2;
+  return b.readFloatLE(16+(row*1601+col)*9)-terrain.heightAt(-sy,sx);
+ };
+ const alongX=delta(ix+1,iy),alongY=delta(ix,iy+1);
+ return u+v<=1
+  ? delta(ix,iy)*(1-u-v)+alongX*u+alongY*v
+  : delta(ix+1,iy+1)*(u+v-1)+alongX*(1-v)+alongY*(1-u);
+}
+let shiftedQuarryMarkers=0;
+for(const [asset,embed] of [['quarry_trail_stake',6],['quarry_trail_sign',12]]){
+ const markers=data.nativeDetails.filter(g=>g.asset===asset&&g.solid).flatMap(g=>g.instances);
+ if(asset==='quarry_trail_sign')assert.equal(markers.length,1,'Slate Rim sign preserved');
+ for(const {p:[px,py,z]} of markers){
+  const x=px/100,y=py/100;
+  if(inQuarry(x,y,0))continue;
+  const delta=quarryGradeDelta(x,y);
+  assert.ok(Math.abs(z-((terrain.heightAt(-y,x)+delta)*100-embed))<.01,asset+' remains grounded');
+  if(Math.abs(delta)>.01)shiftedQuarryMarkers++;
+ }
+}
+assert.ok(shiftedQuarryMarkers>0,'fixture exercises moved Slate Rim markers');
 assert.equal(data.routes[0].gateDirections[2],-1);assert.ok(data.routes[0].gates[2][2]>4400);
 for(const route of data.routes){assert.ok(route.spawn.every(Number.isFinite));assert.ok(route.gates.length>=3);assert.ok(route.gates.every(g=>g.every(Number.isFinite)));}
 for(const id of ['loop','tabletop','gap-launch','gap-landing'])assert.ok(data.challengeFeatures.some(f=>f.id===id&&f.triangles>0),id);
@@ -164,6 +191,7 @@ for(const group of data.nativeDetails)for(const i of group.instances){assert.ok(
 const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};
 report.vehicleTopology=data.vehicles.map(v=>({id:v.id,wheels:v.wheelCount??4,axles:v.axleCount??2,referenceCraftRevision:v.nativeModel.referenceCraftRevision}));
 report.gradedTrailSamples=gradedSamples;report.terrainGrade=data.terrainGrade;
+report.shiftedQuarryMarkers=shiftedQuarryMarkers;
 report.perimeterTrail={lengthM:expedition.lengthM,sectors:expedition.sectors.length,gates:expeditionRoute.gates.length,terrainCells:expedition.changedHeightCells,surfaces:[...expeditionSurfaces]};
 report.gardenGeology=gardenGeology;
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});fs.writeFileSync(path.join(root,'docs/export-validation.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
