@@ -112,19 +112,48 @@ for(const p of data.quarryTrail.samples)for(const side of [-2,0,2]){
  assert.ok(Math.abs(b.readFloatLE(offset)-expectedHeightAt(ux,uy,offset))<1e-4,'staged quarry grade');
  gradedSamples++;
 }
-// Original Slate Rim markers keep their embedment as the collision mesh moves.
-// The quarry deck itself is excluded from expedition grading.
-function quarryGradeDelta(x,y){
+function metreHeight(x,y,vertex){
  const ix=Math.floor(x),iy=Math.floor(y),u=x-ix,v=y-iy;
- const delta=(sx,sy)=>{
-  const row=(sx+400)*2,col=(sy+400)*2;
-  return b.readFloatLE(16+(row*1601+col)*9)-terrain.heightAt(-sy,sx);
- };
- const alongX=delta(ix+1,iy),alongY=delta(ix,iy+1);
+ const alongX=vertex(ix+1,iy),alongY=vertex(ix,iy+1);
  return u+v<=1
-  ? delta(ix,iy)*(1-u-v)+alongX*u+alongY*v
-  : delta(ix+1,iy+1)*(u+v-1)+alongX*(1-v)+alongY*(1-u);
+  ? vertex(ix,iy)*(1-u-v)+alongX*u+alongY*v
+  : vertex(ix+1,iy+1)*(u+v-1)+alongX*(1-v)+alongY*(1-u);
 }
+const originalVertex=(x,y)=>terrain.heightAt(-y,x);
+const bakedVertex=(x,y)=>b.readFloatLE(16+((x+400)*2*1601+(y+400)*2)*9);
+const gradeDelta=(x,y)=>metreHeight(x,y,(sx,sy)=>bakedVertex(sx,sy)-originalVertex(sx,sy));
+const start=expedition.samples[0];
+const finishPoint=(along,side)=>[start.x+start.tx*along-start.ty*side,start.y+start.ty*along+start.tx*side];
+const finishGrade=(along,side)=>{
+ const [x,y]=finishPoint(along,side),s=terrain.sample(-y,x);
+ return perimeter.grade(x,y,s.height,data.surfaces.indexOf(s.surface),s.waterDepth);
+};
+const finishJoinJumpM=Math.max(...[-2,0,2].map(side=>Math.abs(finishGrade(-.001,side)-finishGrade(.001,side))));
+assert.ok(finishJoinJumpM<.01,'start and finish share a continuous grade across the lane');
+const finishClimb=vertex=>metreHeight(...finishPoint(0,0),vertex)-metreHeight(...finishPoint(-.75,0),vertex);
+const finishClimbM=finishClimb(bakedVertex);
+assert.ok(finishClimbM<finishClimb(originalVertex)+.05,'finish approach avoids an added collision ledge');
+
+// Compare the exported collider centers with the original landmark layout
+// and with the corresponding visible box centers in the same export.
+const landmarkBoxes=data.obstacles.filter(o=>o.type==='sign'||o.type==='building');
+const signBoards=new Map(landmarkBoxes.filter(o=>o.id.endsWith('-board')).map(o=>[o.id,o.center]));
+const visiblePlacements=data.placements.flatMap(g=>g.instances.map(i=>i.p));
+let shiftedLandmarkBoxes=0;
+assert.ok(signBoards.size>=data.zones.length-1&&landmarkBoxes.length===signBoards.size*3+1);
+for(const box of landmarkBoxes){
+ const {id,center,halfExtents,type}=box;
+ const anchor=type==='sign'?signBoards.get(id.replace(/-(left|right)$/,'-board')):center;
+ const localY=type==='building'?halfExtents.y:id.endsWith('-board')?halfExtents.y*1.93/.62:halfExtents.y*.98/.985;
+ const delta=gradeDelta(anchor.z,-anchor.x);
+ assert.ok(Math.abs(center.y-(originalVertex(anchor.z,-anchor.x)+localY+delta))<1e-4,id+' shares its landmark anchor');
+ const p=[center.z*100,-center.x*100,center.y*100];
+ assert.ok(visiblePlacements.some(v=>v.every((c,k)=>Math.abs(c-p[k])<.01)),id+' collider follows its mesh');
+ if(Math.abs(delta)>.01)shiftedLandmarkBoxes++;
+}
+assert.ok(shiftedLandmarkBoxes>0,'fixture exercises moved landmark colliders');
+
+// Original Slate Rim markers keep their embedment outside the quarry deck.
 let shiftedQuarryMarkers=0;
 for(const [asset,embed] of [['quarry_trail_stake',6],['quarry_trail_sign',12]]){
  const markers=data.nativeDetails.filter(g=>g.asset===asset&&g.solid).flatMap(g=>g.instances);
@@ -132,7 +161,7 @@ for(const [asset,embed] of [['quarry_trail_stake',6],['quarry_trail_sign',12]]){
  for(const {p:[px,py,z]} of markers){
   const x=px/100,y=py/100;
   if(inQuarry(x,y,0))continue;
-  const delta=quarryGradeDelta(x,y);
+  const delta=gradeDelta(x,y);
   assert.ok(Math.abs(z-((terrain.heightAt(-y,x)+delta)*100-embed))<.01,asset+' remains grounded');
   if(Math.abs(delta)>.01)shiftedQuarryMarkers++;
  }
@@ -192,6 +221,8 @@ const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:da
 report.vehicleTopology=data.vehicles.map(v=>({id:v.id,wheels:v.wheelCount??4,axles:v.axleCount??2,referenceCraftRevision:v.nativeModel.referenceCraftRevision}));
 report.gradedTrailSamples=gradedSamples;report.terrainGrade=data.terrainGrade;
 report.shiftedQuarryMarkers=shiftedQuarryMarkers;
+report.landmarkBoxes={checked:landmarkBoxes.length,shifted:shiftedLandmarkBoxes};
+report.finishGrade={joinJumpM:finishJoinJumpM,climbM:finishClimbM,originalClimbM:finishClimb(originalVertex)};
 report.perimeterTrail={lengthM:expedition.lengthM,sectors:expedition.sectors.length,gates:expeditionRoute.gates.length,terrainCells:expedition.changedHeightCells,surfaces:[...expeditionSurfaces]};
 report.gardenGeology=gardenGeology;
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});fs.writeFileSync(path.join(root,'docs/export-validation.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

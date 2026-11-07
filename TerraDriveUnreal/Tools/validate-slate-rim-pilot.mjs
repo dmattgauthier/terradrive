@@ -17,6 +17,11 @@ assert.equal(pilot.version,1);
 assert.equal(pilot.endM-pilot.startM,122);
 const coverage=slateRimCoverage(world.quarryTrail.samples);
 const clear=slateRimRouteClearance(world);
+const {perimeterTrail,...legacyWorld}=world;
+legacyWorld.routes=world.routes.filter((_,i)=>i!==perimeterTrail?.routeIndex);
+const legacyClear=slateRimRouteClearance(legacyWorld);
+const quarryStart=world.quarryTrail.samples[0];
+assert.ok(legacyClear(quarryStart.x,quarryStart.y)<=-4.1,'legacy refresh still protects the quarry spline');
 const placed={shelves:0,scree:0,grass:0},meshes=new Set();
 let minimum=Infinity;
 for(const group of world.nativeDetails)for(const instance of group.instances){

@@ -148,6 +148,20 @@ world.scene.traverse(obj=>{if(!obj.isMesh||!obj.visible)return;if(obj.name==='br
  instances.push({index:i,p:[p.z*100,-p.x*100,p.y*100],q:[-q.z,q.x,-q.y,q.w],s:[s.z,s.x,s.y],color:color.toArray()});}
  const id=placements.length;obj.userData.nativeGroup=id;placements.push({asset,crushable:/grass|sedges|tussock|cattail/.test(obj.name),instances:instances.filter(i=>!inQuarry(i.p[0]/100,i.p[1]/100))});
 });
+// Keep each rigid landmark's mesh parts and collision boxes on one anchor.
+function landmark(group,colliders){
+ const parts=[];
+ group.traverse(obj=>{
+  const placement=placements[obj.userData.nativeGroup];
+  if(placement)parts.push(...placement.instances);
+ });
+ return {x:group.position.z,y:-group.position.x,parts,colliders};
+}
+const landmarks=world.signRecords.map(sign=>landmark(sign.group,sign.obstacles.map(({obstacle})=>obstacle)));
+const station=terrain.obstacles.find(o=>o.id==='building-field-station');
+const stationGroup=world.scene.children.find(obj=>obj.isGroup&&obj.position.x===station.x&&obj.position.z===station.z);
+if(!stationGroup)throw Error('Field Station mesh group is missing');
+landmarks.push(landmark(stationGroup,[station]));
 const trees=(world.treeRecords||[]).filter(t=>!inQuarry(t.z,-t.x)).map(t=>({id:t.id,p:[t.z*100,-t.x*100,terrain.heightAt(t.x,t.z)*100],radius:t.obstacle.radius*100,height:t.height*100,parts:Object.values(t.meshes).filter(m=>m?.isMesh).map(m=>({group:m.userData.nativeGroup,index:t.meshes.index}))}));
 const course=createChallengeCourse(),view=createChallengeView(course),quarry=buildRockCourses(terrain);
 const constructed=[
@@ -190,7 +204,7 @@ manifest.terrainGrade=terrain.gradeVersion;
 manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.widthM,
  assetCounts:{cliffs:0,boulders:environment.placements.filter(g=>g.snapBoulder).flatMap(g=>g.instances).filter(p=>trailDistance(p.p)<3000).length,grass:trail.assetCounts.grass},
  retiredOpenCliffPlacements:trail.assetCounts.cliffs,routeIndex:8};
-addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x));
+addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x),landmarks);
 applySlateRimPilot(manifest,field);
 fs.writeFileSync(path.join(data,'terrain.bin'),field);
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));

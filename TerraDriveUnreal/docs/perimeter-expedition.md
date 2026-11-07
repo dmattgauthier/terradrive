@@ -101,3 +101,45 @@ with an isolated player profile. Peak sampled GPU temperature was 59°C.
 | Runtime world input | `953823e202f14f6b8aec5e8b6a0f0ccd214ec38f4c0f70a731fd0ea31fcea0a9` |
 
 Local receipts and captures are under `Saved/PerimeterReview/CombinedValidation`.
+
+## Terrain follow-up
+
+Landmark meshes and collision boxes now move together from a shared ground
+anchor. The full export check matched all 28 collision boxes to visible mesh
+centers. Nine boxes across three signs moved, including a 9.7 cm drop for
+each box of the Boreal Snow Basin sign.
+
+The grade fades the distance-driven relief through the start and finish.
+At three offsets across the lane, the largest source grade difference
+between points 1 mm on either side of the join was 0.63 mm. On the native
+one-metre collision triangles, the final 75 cm climbed 22.2 cm after the fix, compared
+with 50.0 cm in the previous expedition export. The change affected 1,855
+height cells within 15.5 m of the join. Water depths and surface IDs matched
+at all 2,563,201 cells. The blend data and texture masks matched byte for
+byte, and all 13 prior routes matched.
+
+The standalone Slate Rim refresh succeeded on a pre-expedition export that
+previously threw an error. The refreshed import and runtime manifests agreed,
+and the terrain field and 13 routes were preserved. A repeat refresh
+requested a full export and left the inputs intact.
+
+The Windows package was recooked with the regenerated native data, the
+previously built executable from identical native source and the existing
+imported art. The cooked art container matched the prior package byte for
+byte. The fresh fixed-20 Hz lap completed all 191 gates, including the
+regraded finish. The upgraded Wrangler stayed upright within 11.1 ft of the
+trail center and registered all seven surfaces at loaded tires. The lap
+took 614.9 seconds on the simulation clock and 761.2 seconds of real process
+time including load. The package passed all 267 functional checks across
+the lap, ruts, rut transitions and focused Jeep rollover. Runs used an
+isolated player profile and peaked at a sampled GPU temperature of 58°C.
+
+| Tested item | SHA-256 |
+| --- | --- |
+| Packaged game executable | `b402d7e166fb34c790c18fe359e9045c462b57cdd4cdb922bd3927ddd7f39445` |
+| Cooked data PAK | `c69ec763eb9114bce5021827740b2ccc14367c87c935f231f2a2bb8f705d02e7` |
+| Cooked asset UCAS | `cc0e16137cc820682dd8a0ebb36b39290ae6e52dfc62aa5ab7dbfede198cdbcd` |
+| Source file hash manifest | `2d824c1fd5dfd5dde75ce31fcfb54280d7b66b2b7595d212833aad812c1cee20` |
+| Native data hash manifest | `5011208697bd97019c0185994b4023a3834309e17379901a8823ef38f7e8f781` |
+
+Local receipts and captures are under `Saved/PerimeterFollowUp/Validation`.
