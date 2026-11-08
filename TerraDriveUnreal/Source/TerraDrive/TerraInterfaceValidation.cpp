@@ -219,6 +219,8 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     UE_LOG(LogTemp,Display,TEXT("TERRA_PAUSE_SAMPLE sample=%d intervalSeconds=%.9f positionDeltaCM=%.9f velocityDeltaCMPS=%.9f position=%s velocity=%s worldTime=%.9f routeTime=%.9f paused=%d"),
       State.PausedSamples,State.Time,PositionDelta,VelocityDelta,*Position.ToString(),*Velocity.ToString(),V->GetWorld()->GetTimeSeconds(),V->RouteTime,UGameplayStatics::IsGamePaused(V));
     if(State.Time>.7f){
+      const auto Recover=Menu.IsValid()?Menu->RecoverButton():nullptr;
+      Check(TEXT("Recover Here is available in the driving pause menu"),Recover.IsValid()&&Recover->IsEnabled());
       Check(TEXT("pause freezes actual chassis position throughout fully paused frames"),State.PausedSamples>=2&&State.MaximumPausedPositionDelta<=.01f,State.MaximumPausedPositionDelta);
       Check(TEXT("pause freezes actual chassis rotation"),State.PausedRotationStable);
       Check(TEXT("pause preserves stored linear momentum throughout fully paused frames"),State.PausedSamples>=2&&State.MaximumPausedVelocityDelta<=.01f,State.MaximumPausedVelocityDelta);
@@ -311,6 +313,10 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   case 26:if(State.Time>.5f){Capture(TEXT("native-interface-pause-from-garage.png"));Next(27);}break;
   case 27:if(State.Time>.25f){
     Menu=V->GetPauseMenuWidget();if(!Menu.IsValid()){Check(TEXT("exit action has a valid pause menu"),false);Restore(V);return true;}
+    const auto Recover=Menu->RecoverButton();
+    if(Recover.IsValid())Recover->SimulateClick();
+    Check(TEXT("Recover Here is disabled in the garage and leaves the pause menu open"),
+      Recover.IsValid()&&!Recover->IsEnabled()&&V->Garage&&V->PauseMenuOpen&&UGameplayStatics::IsGamePaused(V));
     Menu->RequestExit();
     Check(TEXT("Exit Game button uses an explicit quit action"),Menu->ExitWasRequested());
     Check(TEXT("validation suppresses actual quit until results can be written"),V->AutoTest&&V->PauseMenuOpen&&UGameplayStatics::IsGamePaused(V));

@@ -235,7 +235,10 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     const auto Soil=V->Terrain->Sample(S.Sentinel);const int Marks=V->Terrain->BodyMarkCount();
     S.Recovered=V->RecoverInPlace();const FVector After=V->GetActorLocation();
     Test(TEXT("returns the expected success or obstruction result"),S.FixtureValid&&(S.Recovered==(S.Trial!=3)),S.Recovered?1:0);
-    Test(TEXT("preserves XY or leaves the entire trapped pose unchanged"),S.Recovered?FVector::Dist2D(Before,After)<.1f&&V->GetActorUpVector().Z>.999f:Before.Equals(After,.001f)&&BeforeQ.Equals(V->GetActorQuat(),.00001f),FVector::Dist2D(Before,After));
+    const double YawError=FMath::Abs(FMath::FindDeltaAngleDegrees(BeforeQ.GetForwardVector().Rotation().Yaw,V->GetActorRotation().Yaw));
+    Test(TEXT("preserves XY and heading or leaves the entire trapped pose unchanged"),
+      S.Recovered?FVector::Dist2D(Before,After)<.1f&&V->GetActorUpVector().Z>.999f&&YawError<.1:
+        Before.Equals(After,.001f)&&BeforeQ.Equals(V->GetActorQuat(),.00001f),FVector::Dist2D(Before,After));
     Test(TEXT("retains route gate and elapsed challenge time"),V->RouteIndex==0&&V->GateIndex==1&&V->RouteTime==38.25f,V->RouteTime);
     Test(TEXT("retains visible damage and both energy reserves"),V->Damage==DamageAmount&&V->StructuralDamage.Zones==Damage.Zones&&V->StructuralDamage.Events==Damage.Events&&V->DamageEventCount==7&&V->FuelFraction==.43f&&V->BatterySOC==.37f,V->Damage);
     Test(TEXT("does not reset soil deformation or existing body marks"),SameSoil(Soil,V->Terrain->Sample(S.Sentinel))&&V->Terrain->BodyMarkCount()==Marks,Marks);
@@ -253,7 +256,19 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     RemovePost();S.Next(6);
   }else if(S.Phase==6&&S.Time>3){
     Test(TEXT("finishes supported upright or safely remains rolled after rejection"),S.Recovered?V->GetActorUpVector().Z>.9f&&V->ContactCount>=3:V->Overturned,V->ContactCount);
-    if(++S.Trial>=CaseCount){RemovePost();Check(TEXT("local recovery removes all runtime obstruction fixtures"),!S.PostActor.IsValid()&&!S.Post.IsValid(),0);return true;}
+    if(++S.Trial>=CaseCount){
+      RemovePost();Check(TEXT("local recovery removes all runtime obstruction fixtures"),!S.PostActor.IsValid()&&!S.Post.IsValid(),0);
+      // Request recovery before physics changes this steep, inverted pose.
+      // The nose has a heading even though the right-vector fallback is reversed.
+      constexpr double Heading=37;
+      const FVector Before=V->GetActorLocation()+FVector(0,0,400);
+      V->SetActorLocationAndRotation(Before,FRotator(85,Heading,180),false,nullptr,ETeleportType::TeleportPhysics);
+      const bool Recovered=V->RecoverInPlace();
+      const double YawError=FMath::Abs(FMath::FindDeltaAngleDegrees(Heading,V->GetActorRotation().Yaw));
+      Check(TEXT("local recovery preserves the projected heading of a steep inverted vehicle"),
+        Recovered&&YawError<.1&&FVector::Dist2D(Before,V->GetActorLocation())<.1&&V->GetActorUpVector().Z>.999,YawError);
+      return true;
+    }
     S.Next(0);
   }
   return false;

@@ -3,7 +3,9 @@
 #include "TerraTireProbeValidation.h"
 #include "TerraWorld.h"
 #include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Misc/App.h"
 #include "Misc/CommandLine.h"
@@ -121,7 +123,14 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
     State.Phase=1;State.PhaseStarted=Now;return false;
   }
-  if(State.Phase==1&&Now-State.PhaseStarted>1){Place(V,C);State.Phase=2;State.PhaseStarted=Now;return false;}
+  if(State.Phase==1&&Now-State.PhaseStarted>1){
+    if(!TerraTireProbeValidation::Matches(V)){
+      Check(Label+TEXT(" requires exact witness profiles for the fitted tire meshes"),false,V->UpgradeStage(TerraSim::Tires));
+      return true;
+    }
+    UE_LOG(LogTemp,Display,TEXT("TERRA_PERF_TIRE_MESH case=%s asset=%s"),*Label,*V->Wheels[0]->GetStaticMesh()->GetName());
+    Place(V,C);State.Phase=2;State.PhaseStarted=Now;return false;
+  }
   State.Finite&=!V->GetActorLocation().ContainsNaN()&&!V->Chassis->GetPhysicsLinearVelocity().ContainsNaN();
   State.PoseSeen|=C.Roll==0?V->GetActorUpVector().Z>.9f:C.Roll==90?FMath::Abs(V->GetActorUpVector().Z)<.35f:V->GetActorUpVector().Z<-.7f;
   // Include the real drop/settling interval after a brief transform-update

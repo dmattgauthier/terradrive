@@ -101,9 +101,10 @@ all twelve wheel designs and four brake/caliper meshes. The 32 sampled Subaru
 panel junctions have a worst adjoining-triangle gap of 0.433 mm; all 15 parcel-
 shelf rays are occluded. These are source checks rather than a native FPS claim.
 
-Candidate 5 remains unpromoted following its park side-roll tire-clearance
-failure. The candidate 7 correction and final performance acceptance remain
-pending in [the fidelity verification record](expanded-roster-fidelity.md).
+Candidate 5 was held after its park side-roll tire-clearance failure.
+Candidate 7 corrected the buried ramp support issue, passed the final
+native checks, and was installed. The [fidelity verification record](expanded-roster-fidelity.md)
+preserves both outcomes.
 
 The [original Subaru release](https://www.subaru.co.jp/news/archives/98_1_3/3_16_1.html)
 also confirms the 15.85-US-gallon fuel tank, all five transmission ratios and

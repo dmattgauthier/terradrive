@@ -190,6 +190,33 @@ The unchanged old build also reaches 44.96 FPS on repeat, while the new build re
 
 Sequential large-tire test captures retain earlier vehicles’ pavement marks. Repeated tight burnouts, particularly with the monster truck, can produce hard-edged overlapping skid ribbons. The same pattern occurs in C4/C7 and is a remaining mark-rendering limitation, not corrupted tire geometry or shadows.
 
+## PR #12 review follow-up
+
+The review fixes passed on a separate UE 5.8.3 Windows Development package.
+The C7 results above describe the earlier installed release.
+
+| Suite | Passing checks | Coverage |
+| --- | ---: | --- |
+| Recovery | 48 | Settled and obstructed recoveries, including heading at 85° pitch and 180° roll |
+| Energy verifier, Interface mode | 156 | Recover Here enabled in driving pause and disabled in garage pause |
+| Standalone mechanical verifier | 707 | 12 vehicles, four portal stages per vehicle, save migration, and 36 track and tire-kit checks |
+| Energy verifier, Mechanical mode | 707 | Same mechanical plan through the alternate entry point |
+| Real-time rollover, Civic compound III | 59 | Nine poses with the exact `civic_sport_tire_3` mesh, minimum tire clearance −1.71 cm against the −4 cm limit |
+| Fixed-clock rollover, Civic 50-inch kit | 91 | Nine poses with the maximum diameter kit |
+
+All six runs had zero runtime errors. Peak sampled GPU temperature was
+62.42°C. The bake audit matched 3,202 witnesses to vertices in 36 exported
+compound meshes and confirmed that all 48 prior size profiles were identical.
+
+The tested executable SHA-256 is
+`36b5cb250a9b2dc22617f50e94589a1ab9ffd83e0661845785fe9e6ea58b0e4a`.
+The Git trees for the tested `TerraDriveUnreal/Source` and `TerraDriveUnreal/Tools`
+are `0619c8c98b3418b91f299ef8ff39664240d78442` and
+`58a861947006fd43eb3fc450754dee8591f5fe5f`. The staged tire probe JSON SHA-256 is
+`b7c801deb763f0330f9a4cef4cab09ce542f7e7cdad28f931ab7133eef99d4f5`.
+Local receipts and the initial AutomationTool log-permission failure are under
+`Saved/PR12-ReviewFixes/run-01`. The subsequent cook and staging succeeded.
+
 The Urus ridge highlights are smoother in the reviewed hood views; separate vent-lip noise remains. Granite Trials now has a broken mixed ground apron instead of a straight material cut. The final stock Urus completes all 20 quarry gates upright. Six survey sectors are captured; 04 and 06 are heavily occluded by conifers, so only their visible peripheral ground was judged.
 
 Grave Digger and the 22B are original photo-based models. Grave Digger artwork is a simplified paint interpretation; Subaru fascia, vents, lamps, mirrors and interior still need refinement. The roster remains below the photorealism target. Source documentation records the references, measured geometry and remaining visual limits.

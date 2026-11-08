@@ -118,8 +118,8 @@ and Urus bonnet remain unchanged.
 
 Candidate 4's Subaru views accept the corrected joins, formed pillars and
 opaque parcel shelf. Candidate 5's Grave Digger art fixture passes 11 checks.
-The complete build remains unpromoted: a later real-time park rollover failed
-its tire-clearance guard because a buried ramp underside was interpreted as
-inverted support. Candidate 7 correction and final performance acceptance are
-pending in the [fidelity record](expanded-roster-fidelity.md). The source and
-art passes do not turn that failed runtime result into a release pass.
+Candidate 5 was held after a real-time park rollover failed its tire-clearance
+guard because a buried ramp underside was interpreted as inverted support.
+Candidate 7 corrected that support test, passed the final native verification,
+and was installed. The [fidelity record](expanded-roster-fidelity.md) documents
+the original failure and the passing rerun separately.

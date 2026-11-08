@@ -33,9 +33,9 @@ These witnesses are sampled source evidence, not a native collision log. They di
 
 ## Independent rollover tire witnesses
 
-`Tools/bake-tire-probes.mjs` reads the actual exported tire OBJ meshes and writes `Content/NativeData/vehicle-tire-probes.json` for native clearance/drop fixtures. The twelve-vehicle bake contains 48 size profiles from 45 unique meshes; Grave Digger reuses its stock 66-inch mesh for all size selections. Each source file is SHA-256 checked against the export manifest. Each profile has at most 96 deduplicated witnesses selected from real mesh vertices: crown/shoulder/sidewall support directions around twelve azimuths, plus inner sidewall/bead-band samples outside 40% of the tire radius.
+`Tools/bake-tire-probes.mjs` reads the actual exported tire OBJ meshes and writes `Content/NativeData/vehicle-tire-probes.json` for native clearance and drop fixtures. The twelve-vehicle bake contains 48 size profiles and 36 factory-diameter compound profiles from 81 unique meshes. Grave Digger reuses its stock 66-inch mesh for all size selections. Each source file is SHA-256 checked against the export manifest. Each profile has at most 96 deduplicated witnesses selected from real mesh vertices across the crown, shoulders and sidewalls, plus inner sidewall and bead samples outside 40% of the tire radius.
 
-The points use the actual Unreal-imported tire-local centimeter basis `(OBJ X, -OBJ Y, OBJ Z)` and retain their original vertex indices. The native fixture must apply the wheel component's real transform, including width and rear-tire scaling. These samples are deliberately independent of the analytic rollover support formula; they are not generated from its equations. `build-native.ps1` bakes them before import and requires the resulting metadata for packaging.
+The points use the Unreal-imported tire-local centimeter basis `(OBJ X, -OBJ Y, OBJ Z)` and retain their original vertex indices. The native fixture checks the exact mesh on each wheel and applies its component transform, including width and rear-tire scaling. The samples are independent of the analytic rollover support formula. `build-native.ps1` bakes the profiles before import and requires them for packaging. To verify a copied garage build, pass `-SavedBuild` in `verify-fidelity.ps1 -Mode RolloverPerformance`.
 
 The exported Grave Digger tire has a 571.272 mm axial half-width and an 838.200 mm radius. At its 2.72 m stock track, its outer sidewall reaches 1.93127 m from the vehicle center—far beyond the approximately 1 m body half-width. This explains why body-only ground support cannot prevent those tires from passing through the ground during a roll. Width upgrades can extend that half-width to 691.239 mm. At the 50-inch/maximum-width Urus setting, the actual front/rear tire half-widths are 227.711/259.670 mm. These source envelope measurements explain the required support area; native results are recorded below.
 
@@ -63,7 +63,6 @@ track-pod/tire-kit installation orders. Those passes cover the tested poses;
 they do not replace the later real-time park check, which failed a tire-
 clearance guard when buried ramp geometry was treated as inverted support.
 
-The build is not promoted. Candidate 7's support correction and final native
-performance checks remain pending. See the
-[consolidated native record](expanded-roster-native.json) for exact source/build
-identity, retained failures and the eventual release decision.
+Candidate 7 corrected the buried-ramp support and passed the real-time
+rollover checks before installation. The [consolidated native record](expanded-roster-native.json)
+contains the exact source and build identities and retains the C5 failure.

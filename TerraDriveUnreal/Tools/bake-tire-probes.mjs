@@ -60,11 +60,19 @@ for(const spec of manifest.vehicles){
   const radiusM=stage===0||largerStock?spec.tireRadius:tireDiameterInches(spec.tireRadius,stage)*.0127;
   stages.push({stage,...await readTire(asset,radiusM)});
  }
- vehicles.push({id:spec.id,stages});
- console.log(JSON.stringify({tireProbes:spec.id,stages:stages.map(s=>({stage:s.stage,points:s.pointsCm.length,maxAxialHalfWidthM:s.maxAxialHalfWidthM,maxRadialM:s.maxRadialM}))}));
+ const compounds=[];
+ for(let stage=1;stage<=3;stage++){
+  const assetName=spec.asset+'_tire_'+stage,asset=assets.get(assetName);
+  assert.ok(asset,'exported compound tire exists: '+assetName);
+  compounds.push({stage,...await readTire(asset,spec.tireRadius)});
+ }
+ vehicles.push({id:spec.id,stages,compounds});
+ console.log(JSON.stringify({tireProbes:spec.id,stages:stages.map(s=>({stage:s.stage,points:s.pointsCm.length,maxAxialHalfWidthM:s.maxAxialHalfWidthM,maxRadialM:s.maxRadialM})),
+  compounds:compounds.map(s=>({stage:s.stage,asset:s.asset,points:s.pointsCm.length}))}));
 }
-const data={version:1,coordinateSystem:'Unreal imported tire-local centimeters (OBJ X,-Y,Z)',
+const data={version:2,coordinateSystem:'Unreal imported tire-local centimeters (OBJ X,-Y,Z)',
  method:'Actual exported vertex witnesses: 7 support directions x 12 radial sectors plus 12 inner sidewall/bead samples, deduplicated; excludes radius <= 40 percent of physical tire radius',
  nativeAcceptance:false,vehicles};
 fs.writeFileSync(path.join(root,'Content','NativeData','vehicle-tire-probes.json'),JSON.stringify(data));
-console.log(JSON.stringify({vehicles:vehicles.length,stages:vehicles.length*4,uniqueMeshes:cached.size,maxProbes:Math.max(...vehicles.flatMap(v=>v.stages.map(s=>s.pointsCm.length)))}));
+console.log(JSON.stringify({vehicles:vehicles.length,stages:vehicles.length*4,compounds:vehicles.length*3,
+ uniqueMeshes:cached.size,maxProbes:Math.max(...vehicles.flatMap(v=>[...v.stages,...v.compounds].map(s=>s.pointsCm.length)))}));

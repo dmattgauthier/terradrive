@@ -1,9 +1,10 @@
-param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter','Expanded','Recovery','RolloverPerformance')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,11)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey,[ValidateRange(0,11)][int]$PerformanceVehicle=10,[ValidateRange(0,3)][int]$TireSizeStage=0,[switch]$LegacyRolledTires,[switch]$ContactDiagnostics,[ValidateRange(-1,11)][int]$ArtVehicle=-1)
+param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter','Expanded','Recovery','RolloverPerformance')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,11)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey,[ValidateRange(0,11)][int]$PerformanceVehicle=10,[ValidateRange(0,3)][int]$TireSizeStage=0,[switch]$LegacyRolledTires,[switch]$ContactDiagnostics,[ValidateRange(-1,11)][int]$ArtVehicle=-1,[string]$SavedBuild='')
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'staged-package-content.ps1')
 if($RolloverQuickVehicle -ge 0 -and $Mode -ne 'Rollover'){throw '-RolloverQuickVehicle requires Rollover mode.'}
 if($ArtVehicle -ge 0 -and $Mode -ne 'Art'){throw '-ArtVehicle requires Art mode.'}
 if($QuarrySurvey -and $Mode -ne 'Quarry'){throw '-QuarrySurvey requires Quarry mode.'}
+if($SavedBuild -and $Mode -ne 'RolloverPerformance'){throw '-SavedBuild requires RolloverPerformance mode.'}
 if(($TireSizeStage -gt 0 -or $LegacyRolledTires) -and $Mode -notin @('Rollover','RolloverPerformance')){throw 'Tire rollover options require a rollover mode.'}
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue){throw 'Close game/editor before native validation.'}
@@ -27,6 +28,7 @@ $taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX
  ('-TerraReport="'+$taskReport+'"'),('-TerraCaptureDir="'+$taskCaptures+'"'),('-TerraGarage="'+(Join-Path $taskOutput 'garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOutput 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $taskOutput 'controls.json')+'"'),('-UserDir="'+(Join-Path $taskOutput 'User')+'"'),('-abslog="'+(Join-Path $taskOutput 'game.log')+'"'),
  '-ini:Engine:[/Script/Engine.Engine]:bUseFixedFrameRate=True','-ini:Engine:[/Script/Engine.Engine]:FixedFrameRate=20.0')
 if($Mode -eq 'RolloverPerformance'){$taskArguments=@($taskArguments|Where-Object {$_ -notlike '-ini:Engine:*'});$taskArguments+=('-TerraPerfVehicle='+$PerformanceVehicle)}
+if($SavedBuild){$taskArguments+=('-TerraPerfBuild="'+(Resolve-Path -LiteralPath $SavedBuild).ProviderPath+'"')}
 if($QuarrySurvey){$taskArguments+='-TerraQuarrySurvey'}
 if($ArtVehicle -ge 0){$taskArguments+=('-TerraModelHeroVehicle='+$ArtVehicle)}
 if($Mode -in @('Rollover','RolloverPerformance')){$taskArguments+=('-TerraRolloverTireSize='+$TireSizeStage)}
@@ -68,7 +70,7 @@ try{
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=154;Mechanical=707;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=138;RutTransitions=64;Perimeter=5;Expanded=278;Recovery=47;RolloverPerformance=59}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=156;Mechanical=707;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=138;RutTransitions=64;Perimeter=5;Expanded=278;Recovery=48;RolloverPerformance=59}[$Mode]
  if($QuarrySurvey){$taskExpected+=9}
  if($ArtVehicle -ge 0){$taskExpected=11}
  if($Mode -eq 'Rollover'){

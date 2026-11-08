@@ -302,7 +302,9 @@ bool ATerraVehicle::RecoverInPlace() {
   if(!Terrain||!Spec.IsValid()||Garage)return false;
   const FVector Old=GetActorLocation();
   FVector Forward=GetActorForwardVector();Forward.Z=0;
-  if(Forward.SizeSquared()<.01f){Forward=GetActorRightVector().Cross(FVector::UpVector);Forward.Z=0;}
+  // A rolled vehicle's right vector can point the opposite way. Use it only
+  // when the nose is effectively vertical and has no horizontal heading.
+  if(Forward.IsNearlyZero())Forward=GetActorRightVector().Cross(FVector::UpVector);
   const FRotator Upright(0,Forward.Rotation().Yaw,0);
   const FQuat Rotation=Upright.Quaternion();
   FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraLocalRecovery),true,this);
