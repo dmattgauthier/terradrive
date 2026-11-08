@@ -27,9 +27,9 @@ $taskResult=Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json
 $taskPlanPath=Join-Path $taskOut 'mechanical-fixtures.json'
 if(!(Test-Path -LiteralPath $taskPlanPath) -or (Get-Item -LiteralPath $taskPlanPath).LastWriteTime -lt $taskStart){throw 'No fresh mechanical fixture plan'}
 $taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw | ConvertFrom-Json
-$taskRoster=Get-Content -LiteralPath (Join-Path $taskRoot 'Content/NativeData/vehicle-ground-probes.json') -Raw | ConvertFrom-Json
-$taskVehicleCount=@($taskRoster.vehicles).Count
-$taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 3 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and
+# Pin the supported roster independently of the package's reported plan.
+$taskVehicleCount=12
+$taskPlanValid=$taskPlan.version -eq 1 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and
  $taskPlan.partCount -eq 14 -and $taskPlan.portalStages -eq 4 -and $taskPlan.migrationChecks -eq 8 -and $taskPlan.persistenceChecks -eq 3 -and
  $taskPlan.capabilityChecksPerVehicle -eq 8 -and $taskPlan.growthChecksPerVehicle -eq 3 -and $taskPlan.spinChecksPerVehicle -eq 4 -and
  $taskPlan.stationaryChecksPerTrial -eq 10 -and @($taskPlan.trials).Count -eq $taskVehicleCount*$taskPlan.portalStages -and
@@ -42,7 +42,7 @@ foreach($taskTrial in $taskPlan.trials){
 $taskExpected=[int]$taskPlan.migrationChecks+[int]$taskPlan.persistenceChecks+
  $taskVehicleCount*([int]$taskPlan.capabilityChecksPerVehicle+[int]$taskPlan.growthChecksPerVehicle+[int]$taskPlan.spinChecksPerVehicle)+
  @($taskPlan.trials).Count*[int]$taskPlan.stationaryChecksPerTrial+[int]$taskPlan.trackCapableVehicles*[int]$taskPlan.trackTireChecksPerVehicle
-if(!$taskPlanValid -or $taskCoverage.Count -ne $taskVehicleCount*$taskPlan.portalStages -or $taskPlan.expectedChecks -ne $taskExpected){throw 'Mechanical fixture plan does not cover the complete generated roster and portal-stage matrix'}
+if(!$taskPlanValid -or $taskCoverage.Count -ne $taskVehicleCount*$taskPlan.portalStages -or $taskPlan.expectedChecks -ne $taskExpected){throw 'Mechanical fixture plan does not cover the expected roster and portal-stage matrix'}
 $taskFailures=@($taskResult.tests | Where-Object {!$_.pass});$taskErrors=@(Select-String -LiteralPath $taskLog -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
 if($taskExit -ne 0 -or $taskFailures.Count -or $taskErrors.Count -or $taskResult.tests.Count -ne $taskExpected){$taskFailures | Select-Object case,value,pass | Format-Table -AutoSize | Out-String | Write-Output;throw ('Mechanical check failed: '+$taskReport+'; exit '+$taskExit+'; checks '+$taskResult.tests.Count+'/'+$taskExpected)}
 Write-Output ('PASS '+$taskResult.tests.Count+' native mechanical checks; exit 0')

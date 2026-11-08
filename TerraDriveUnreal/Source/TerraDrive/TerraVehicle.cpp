@@ -165,13 +165,17 @@ void ATerraVehicle::BeginPlay() {
     PC->bShowMouseCursor = false;
   }
 }
-void ATerraVehicle::SelectVehicle(int Index) {
+void ATerraVehicle::SelectVehicle(int Index, bool StoreCurrentProfile) {
   if (!Terrain || !Terrain->Data)
     return;
   auto &List = Terrain->Data->GetArrayField(TEXT("vehicles"));
   const int PreviousRoute = RouteIndex;
   Terrain->BreakTireMarks();
-  if(Spec.IsValid()&&Initialized){PressureProfiles[VehicleIndex]=PressureTarget;BatteryProfiles[VehicleIndex]=BatterySOC;FuelProfiles[VehicleIndex]=FuelFraction;}
+  if(StoreCurrentProfile&&Spec.IsValid()&&Initialized){
+    PressureProfiles[VehicleIndex]=PressureTarget;
+    BatteryProfiles[VehicleIndex]=BatterySOC;
+    FuelProfiles[VehicleIndex]=FuelFraction;
+  }
   VehicleIndex = (Index + List.Num()) % List.Num();
   Spec = List[VehicleIndex]->AsObject();
   ResizeWheelComponents();

@@ -26,6 +26,7 @@ struct FState {
   TArray<FVector> Probes[ATerraVehicle::VehicleCount];
   TArray<FCase> Cases;TArray<TSharedPtr<FJsonValue>> Reports;
   TArray<float> Frames;int Trial=0,Phase=0;double PhaseStarted=0,Previous=0;
+  bool UsingSavedBuild=false;
   bool Finite=true,PoseSeen=false;float MinimumTireClearance=10000;int MaximumCandidates=0,MaximumTraces=0,TireSize=0;FString Region,Directory;
 } State;
 FString Name(const FCase& C){return FString::Printf(TEXT("roll-perf-v%d-z%d-r%d"),C.Vehicle,C.Zone,C.Roll);}
@@ -41,7 +42,10 @@ bool Load(ATerraVehicle* V){
   FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverTireSize="),State.TireSize);
   if(State.TireSize<0||State.TireSize>3)return false;
   FString Build;FParse::Value(FCommandLine::Get(),TEXT("TerraPerfBuild="),Build);
-  if(!Build.IsEmpty()&&!V->LoadGarage(Build))return false;
+  if(!Build.IsEmpty()){
+    if(!V->LoadGarage(Build))return false;
+    State.UsingSavedBuild=true;
+  }
   int Vehicle=6;FParse::Value(FCommandLine::Get(),TEXT("TerraPerfVehicle="),Vehicle);
   const bool All=FParse::Param(FCommandLine::Get(),TEXT("TerraPerfAllVehicles"));
   for(int I=0;I<ATerraVehicle::VehicleCount;++I)if(All||I==Vehicle)
@@ -119,7 +123,20 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   if(State.Trial>=State.Cases.Num())return true;
   const auto C=State.Cases[State.Trial];const auto Label=Name(C);
   if(State.Phase==0){
-    V->SetGarage(true);V->SelectVehicle(C.Vehicle);if(State.TireSize>0)V->SetUpgrade(TerraSim::TireSize,State.TireSize,false);V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;
+    const float SavedPressure=V->PressureProfiles[C.Vehicle],SavedCharge=V->BatteryProfiles[C.Vehicle],SavedFuel=V->FuelProfiles[C.Vehicle];
+    V->SetGarage(true);
+    // Start each copied-build pose from the same loaded profile.
+    V->SelectVehicle(C.Vehicle,!State.UsingSavedBuild);
+    if(State.TireSize>0)V->SetUpgrade(TerraSim::TireSize,State.TireSize,false);
+    V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;
+    if(State.UsingSavedBuild){
+      const float ExpectedPressure=SavedPressure>0?SavedPressure:V->SpecValue(TEXT("stockPSIFront"),V->SpecValue(TEXT("stockPSI"),35));
+      const bool Matches=V->Pressure==ExpectedPressure&&V->PressureTarget==ExpectedPressure&&V->BatterySOC==SavedCharge&&V->FuelFraction==SavedFuel;
+      Check(Label+TEXT(" starts with the copied tire pressure, battery charge and fuel"),Matches,V->Pressure);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_PERF_SAVED_PROFILE case=%s pressurePSI=%.3f battery=%.6f fuel=%.6f match=%d"),
+        *Label,V->Pressure,V->BatterySOC,V->FuelFraction,Matches);
+      if(!Matches)return true;
+    }
     V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
     State.Phase=1;State.PhaseStarted=Now;return false;
   }

@@ -59,7 +59,7 @@ public:
   virtual void BeginPlay() override;
   virtual void Tick(float Dt) override;
   virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-  void SelectVehicle(int Index);
+  void SelectVehicle(int Index, bool StoreCurrentProfile = true);
   void TeleportZone(int Index);
   void TeleportRoute(int Index);
   void ToggleLocker(bool Front);

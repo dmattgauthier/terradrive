@@ -190,6 +190,14 @@ The unchanged old build also reaches 44.96 FPS on repeat, while the new build re
 
 Sequential large-tire test captures retain earlier vehicles’ pavement marks. Repeated tight burnouts, particularly with the monster truck, can produce hard-edged overlapping skid ribbons. The same pattern occurs in C4/C7 and is a remaining mark-rendering limitation, not corrupted tire geometry or shadows.
 
+The Urus ridge highlights are smoother in the reviewed hood views; separate vent-lip noise remains. Granite Trials now has a broken mixed ground apron instead of a straight material cut. The final stock Urus completes all 20 quarry gates upright. Six survey sectors are captured; 04 and 06 are heavily occluded by conifers, so only their visible peripheral ground was judged.
+
+Grave Digger and the 22B are original photo-based models. Grave Digger artwork is a simplified paint interpretation; Subaru fascia, vents, lamps, mirrors and interior still need refinement. The roster remains below the photorealism target. Source documentation records the references, measured geometry and remaining visual limits.
+
+Final preservation verifies 1,251 browser/player files and 715 acquired asset files unchanged. The promotion step copies the current playable build's Saved files byte-for-byte and retains the prior PR #11 package as the sole rollback. Cleanup removes superseded generated package payloads while retaining logs, reports and current evidence.
+
+The accepted package is installed at `Build/Windows/TerraDrive.exe`. Promotion preserves all 37 current player files byte-for-byte. Cleanup removes 19.457 GiB of superseded generated build payloads, retaining the prior PR #11 rollback and all current reports, logs and verification captures.
+
 ## PR #12 review follow-up
 
 The review fixes passed on a separate UE 5.8.3 Windows Development package.
@@ -202,7 +210,7 @@ The C7 results above describe the earlier installed release.
 | Standalone mechanical verifier | 707 | 12 vehicles, four portal stages per vehicle, save migration, and 36 track and tire-kit checks |
 | Energy verifier, Mechanical mode | 707 | Same mechanical plan through the alternate entry point |
 | Real-time rollover, Civic compound III | 59 | Nine poses with the exact `civic_sport_tire_3` mesh, minimum tire clearance −1.71 cm against the −4 cm limit |
-| Fixed-clock rollover, Civic 50-inch kit | 91 | Nine poses with the maximum diameter kit |
+| Fixed-clock rollover, Civic 50-inch kit | 91 | Ten poses with the maximum diameter kit, including four oblique drops |
 
 All six runs had zero runtime errors. Peak sampled GPU temperature was
 62.42°C. The bake audit matched 3,202 witnesses to vertices in 36 exported
@@ -217,10 +225,27 @@ are `0619c8c98b3418b91f299ef8ff39664240d78442` and
 Local receipts and the initial AutomationTool log-permission failure are under
 `Saved/PR12-ReviewFixes/run-01`. The subsequent cook and staging succeeded.
 
-The Urus ridge highlights are smoother in the reviewed hood views; separate vent-lip noise remains. Granite Trials now has a broken mixed ground apron instead of a straight material cut. The final stock Urus completes all 20 quarry gates upright. Six survey sectors are captured; 04 and 06 are heavily occluded by conifers, so only their visible peripheral ground was judged.
+### Copied profiles and external package validation
 
-Grave Digger and the 22B are original photo-based models. Grave Digger artwork is a simplified paint interpretation; Subaru fascia, vents, lamps, mirrors and interior still need refinement. The roster remains below the photorealism target. Source documentation records the references, measured geometry and remaining visual limits.
+The follow-up Windows Development executable reused the verified cook from
+the first review run. The staged content hashes matched the earlier package.
 
-Final preservation verifies 1,251 browser/player files and 715 acquired asset files unchanged. The promotion step copies the current playable build's Saved files byte-for-byte and retains the prior PR #11 package as the sole rollback. Cleanup removes superseded generated package payloads while retaining logs, reports and current evidence.
+| Suite | Passing checks | Coverage |
+| --- | ---: | --- |
+| Real-time rollover, Wrangler copied build | 68 | All nine poses started at 29 PSI, 42% charge and 29% fuel with energy usage enabled |
+| Standalone mechanical verifier, external package | 707 | The verifier ran from a source-only layout without a generated `Content` directory |
+| Fixed-clock rollover, Civic 50-inch kit | 91 | Ten poses, including four oblique drops |
 
-The accepted package is installed at `Build/Windows/TerraDrive.exe`. Promotion preserves all 37 current player files byte-for-byte. Cleanup removes 19.457 GiB of superseded generated build payloads, retaining the prior PR #11 rollback and all current reports, logs and verification captures.
+All three runs had zero runtime errors and a peak sampled GPU temperature of
+62.02°C. The Wrangler used a synthetic version 9 save with stock upgrades,
+and the input hash matched before and after the run. The mechanical plan
+check also rejected an undersized roster, a duplicate portal trial, and
+incomplete track coverage.
+
+The tested executable SHA-256 is
+`9ac71308dda3cc114149442d1c1caf5072dbdfbb979b348ae518c4038ec46fdf`.
+The tested `TerraDriveUnreal/Source` and `TerraDriveUnreal/Tools` Git trees are
+`62906715fd1758a9f53303561a01b86b5ae3851c` and
+`0396f540796e3659f971e1373e06626bebf58c3e`. The build logs and receipts are
+under `Saved/PR12-ReviewFixes/run-02`, including the first build wrapper's
+lock wait and the successful direct UnrealBuildTool invocation.
