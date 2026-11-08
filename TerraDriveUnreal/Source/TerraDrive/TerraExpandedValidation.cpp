@@ -1,4 +1,5 @@
 #include "TerraExpandedValidation.h"
+#include "TerraContact.h"
 #include "TerraVehicle.h"
 #include "TerraTireProbeValidation.h"
 #include "TerraGameMode.h"
@@ -12,7 +13,10 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/PlayerController.h"
+#include "Materials/MaterialInterface.h"
+#include "Math/Plane.h"
 #include "Misc/Paths.h"
+#include "StaticMeshResources.h"
 namespace TerraExpandedValidation {
 namespace {
 bool TireUpgradeRowVisible(const TSharedPtr<STerraGarage>& Garage){
@@ -27,6 +31,154 @@ bool TireUpgradeRowVisible(const TSharedPtr<STerraGarage>& Garage){
   return R.GetLocalSize().X>0&&R.GetLocalSize().Y>0&&S.GetLocalSize().Y>0&&
       RT.X>=ST.X-1&&RB.X<=SB.X+1&&RT.Y>=ST.Y-1&&RB.Y<=SB.Y+1&&
       RT.X>=GT.X-1&&RB.X<=GB.X+1&&RT.Y>=GT.Y-1&&RB.Y<=GB.Y+1;
+}
+
+struct FBodyTriangle { FVector A,B,C; };
+constexpr double StockClearanceCM=.5;
+
+bool IntersectsTireSweep(const FBodyTriangle& Triangle,TConstArrayView<FPlane> Planes){
+  TArray<FVector,TInlineAllocator<8>> Polygon{Triangle.A,Triangle.B,Triangle.C},Clipped;
+  for(const FPlane& Plane:Planes){
+    Clipped.Reset();
+    FVector Previous=Polygon.Last();
+    double PreviousDistance=Plane.PlaneDot(Previous);
+    for(const FVector& Point:Polygon){
+      const double Distance=Plane.PlaneDot(Point);
+      if((Distance>0)!=(PreviousDistance>0)){
+        Clipped.Add(FMath::Lerp(Previous,Point,PreviousDistance/(PreviousDistance-Distance)));
+      }
+      if(Distance<=0)Clipped.Add(Point);
+      Previous=Point;
+      PreviousDistance=Distance;
+    }
+    if(Clipped.IsEmpty())return false;
+    Swap(Polygon,Clipped);
+  }
+  return true;
+}
+
+bool StockWheelClears(const ATerraVehicle* V,int WheelIndex,const TArray<FBodyTriangle>& Body,
+    const TerraTireProbeValidation::FMeshEnvelope& Envelope,double BumpCM,double ReboundCM,bool ExhaustOnly){
+  const auto* Wheel=V->Wheels[WheelIndex].Get();
+  const FVector Center=V->GetActorTransform().InverseTransformPosition(Wheel->GetComponentLocation());
+  const FVector Scale=Wheel->GetComponentTransform().GetScale3D().GetAbs();
+  const FBox TireBounds=Wheel->GetStaticMesh()->GetBoundingBox().TransformBy(
+    FTransform(FQuat::Identity,FVector::ZeroVector,Scale));
+  const FVector Extent=TireBounds.Min.GetAbs().ComponentMax(TireBounds.Max.GetAbs());
+  const double Radius=FMath::Max(FMath::Max3(double(V->TireDiameter())*1.27,Extent.X,Extent.Z),
+    Envelope.RadiusCM*FMath::Max(Scale.X,Scale.Z));
+  const double HalfWidth=FMath::Max(Extent.Y,Envelope.HalfWidthCM*Scale.Y);
+  const bool Front=WheelIndex<2;
+  const float Span=V->AxleOffsetM(0)-V->AxleOffsetM(1);
+  const float FrontLock=FMath::DegreesToRadians(ATerraVehicle::SteeringLockDegrees);
+  const float RearLock=ExhaustOnly?FrontLock*ATerraVehicle::MonsterRearSteerRatio:0;
+  const float AxleLock=Front?FrontLock:RearLock,OtherLock=Front?RearLock:FrontLock;
+  const float LateralOffset=Center.Y*.01f,SignedSpan=Front?Span:-Span;
+  const float Left=TerraSim::AckermannAngle(-AxleLock,-OtherLock,LateralOffset,SignedSpan);
+  const float Right=TerraSim::AckermannAngle(AxleLock,OtherLock,LateralOffset,SignedSpan);
+  const float MinAngle=FMath::Min(Left,Right),MaxAngle=FMath::Max(Left,Right);
+  const int Steps=FMath::CeilToInt(FMath::RadiansToDegrees(MaxAngle-MinAngle));
+  const double Step=Steps?(MaxAngle-MinAngle)/Steps:0;
+  const double Reach=FMath::Sqrt(FMath::Square(Radius)+FMath::Square(HalfWidth));
+  // Bound the displacement between steering samples as well as the clearance.
+  const double Padding=StockClearanceCM+2*Reach*FMath::Sin(Step/4);
+  const double XY=FMath::Sqrt(FMath::Square((Radius+Padding)/FMath::Cos(UE_DOUBLE_PI/32))+
+    FMath::Square(HalfWidth+Padding));
+  const FVector Start=Center-FVector::UpVector*ReboundCM;
+  const double TravelCM=ReboundCM+BumpCM;
+  const FBox Zone(Start-FVector(XY,XY,Radius+Padding),Start+FVector(XY,XY,Radius+Padding+TravelCM));
+  TArray<const FBodyTriangle*> Nearby;
+  for(const auto& Triangle:Body){
+    FBox Bounds(ForceInit);
+    Bounds+=Triangle.A;Bounds+=Triangle.B;Bounds+=Triangle.C;
+    if(Zone.Intersect(Bounds))Nearby.Add(&Triangle);
+  }
+  if(!ExhaustOnly&&Nearby.IsEmpty())return false;
+
+  for(int I=0;I<=Steps;++I){
+    const double Angle=MinAngle+Step*I;
+    const FVector Forward(FMath::Cos(Angle),FMath::Sin(Angle),0);
+    const FVector Axle(-Forward.Y,Forward.X,0);
+    TArray<FPlane,TInlineAllocator<34>> Sweep;
+    Sweep.Emplace(Axle,FVector::DotProduct(Axle,Start)+HalfWidth+Padding);
+    Sweep.Emplace(-Axle,FVector::DotProduct(-Axle,Start)+HalfWidth+Padding);
+    // Tangent planes enclose the cylinder throughout the vertical sweep.
+    for(int J=0;J<32;++J){
+      const double Phase=2*UE_DOUBLE_PI*J/32;
+      const FVector Normal=Forward*FMath::Cos(Phase)+FVector::UpVector*FMath::Sin(Phase);
+      Sweep.Emplace(Normal,FVector::DotProduct(Normal,Start)+Radius+Padding+FMath::Max(0.,Normal.Z*TravelCM));
+    }
+    for(const auto* Triangle:Nearby){
+      if(IntersectsTireSweep(*Triangle,Sweep)){
+        UE_LOG(LogTemp,Display,TEXT("TERRA_STOCK_TIRE_OVERLAP wheel=%d steerDeg=%.2f centerCm=%s radiusCm=%.3f halfWidthCm=%.3f triangleCm=[%s; %s; %s]"),
+          WheelIndex,FMath::RadiansToDegrees(Angle),*Center.ToString(),Radius,HalfWidth,
+          *Triangle->A.ToString(),*Triangle->B.ToString(),*Triangle->C.ToString());
+        return false;
+      }
+    }
+  }
+  UE_LOG(LogTemp,Display,TEXT("TERRA_STOCK_TIRE_CLEARANCE target=%s wheel=%d reboundMm=%.3f bumpMm=%.3f minimumMm=%.1f steerDeg=[%.2f,%.2f] poses=%d nearbyTriangles=%d"),
+    ExhaustOnly?TEXT("exhaust"):TEXT("body"),WheelIndex,ReboundCM*10,BumpCM*10,StockClearanceCM*10,
+    FMath::RadiansToDegrees(MinAngle),FMath::RadiansToDegrees(MaxAngle),Steps+1,Nearby.Num());
+  return true;
+}
+
+void CheckStockTireClearance(ATerraVehicle* V,const FJsonObject& Spec,bool ExhaustOnly,
+    TFunctionRef<void(const FString&,bool,float)> Check){
+  TSet<FName> ExhaustSlots,MatchedSlots;
+  const TArray<TSharedPtr<FJsonValue>>* Slots=nullptr;
+  if(ExhaustOnly&&Spec.TryGetArrayField(TEXT("exhaustSlots"),Slots)){
+    for(const auto& Slot:*Slots)ExhaustSlots.Add(FName(*Slot->AsString()));
+  }
+  const UStaticMesh* Mesh=V->Body->GetStaticMesh();
+  const auto* Render=Mesh&&Mesh->bAllowCPUAccess?Mesh->GetRenderData():nullptr;
+  TArray<FBodyTriangle> Triangles;
+  if(Render&&Render->LODResources.IsValidIndex(0)){
+    const auto& LOD=Render->LODResources[0];
+    const auto& Positions=LOD.VertexBuffers.PositionVertexBuffer;
+    const auto Indices=LOD.IndexBuffer.GetArrayView();
+    const FTransform BodyToActor=V->Body->GetComponentTransform().GetRelativeTransform(V->GetActorTransform());
+    const auto Point=[&](int Index){return BodyToActor.TransformPosition(FVector(Positions.VertexPosition(Indices[Index])));};
+    const auto AddTriangles=[&](uint32 First,uint32 Count){
+      const uint64 End=uint64(First)+uint64(Count)*3;
+      if(End>uint64(Indices.Num()))return false;
+      for(uint32 I=First;I<End;I+=3)Triangles.Add({Point(I),Point(I+1),Point(I+2)});
+      return Count>0;
+    };
+    if(ExhaustOnly){
+      const auto& Materials=Mesh->GetStaticMaterials();
+      for(const auto& Section:LOD.Sections){
+        if(!Section.NumTriangles||!Materials.IsValidIndex(Section.MaterialIndex))continue;
+        const auto& Material=Materials[Section.MaterialIndex];
+        for(const FName Slot:ExhaustSlots){
+          // Automotive material instances retain the exported slot ID as their suffix.
+          if(Material.MaterialSlotName!=Slot&&(!Material.MaterialInterface||
+            !Material.MaterialInterface->GetName().EndsWith(TEXT("_")+Slot.ToString())))continue;
+          if(AddTriangles(Section.FirstIndex,Section.NumTriangles))MatchedSlots.Add(Slot);
+          break;
+        }
+      }
+      UE_LOG(LogTemp,Display,TEXT("TERRA_EXHAUST_CLEARANCE_SECTIONS matched=%d triangles=%d"),MatchedSlots.Num(),Triangles.Num());
+    }else{
+      Triangles.Reserve(Indices.Num()/3);
+      AddTriangles(0,Indices.Num()/3);
+    }
+  }
+  const bool FactoryTires=V->Garage&&!V->Tracks&&V->UpgradeStage(TerraSim::TireSize)==0&&
+    V->UpgradeStage(TerraSim::Tires)==0&&V->UpgradeStage(TerraSim::Wheels)==0&&
+    V->UpgradeStage(TerraSim::Suspension)==0&&TerraTireProbeValidation::Load()&&TerraTireProbeValidation::Matches(V);
+  const auto Envelope=TerraTireProbeValidation::MeshEnvelope(V);
+  const bool CookedTargetReady=!Triangles.IsEmpty()&&(!ExhaustOnly||
+    (ExhaustSlots.Num()==2&&MatchedSlots.Num()==2&&Envelope.RadiusCM>0&&Envelope.HalfWidthCM>0));
+  for(int I=ExhaustOnly?2:0;I<4;++I){
+    const double BumpCM=V->BumpTravel(I<2)*100;
+    const double ReboundCM=ExhaustOnly?V->ReboundTravel(I/2)*100:0;
+    const bool Pass=FactoryTires&&CookedTargetReady&&BumpCM>0&&(!ExhaustOnly||ReboundCM>0)&&
+      StockWheelClears(V,I,Triangles,Envelope,BumpCM,ReboundCM,ExhaustOnly);
+    const FString Label=ExhaustOnly?FString::Printf(TEXT("stock Grave Digger rear tire %d clears cooked exhaust by 5 mm through full travel and steering"),I):
+      FString::Printf(TEXT("stock 22B tire %d clears cooked body by 5 mm through full compression and steering"),I);
+    Check(Label,Pass,(BumpCM+ReboundCM)*10);
+  }
 }
 }
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
@@ -76,6 +228,9 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   }else if(Phase==1){
     V->SelectVehicle(Model);V->ResetUpgrades(false);V->SetNearCamera(true);
     const auto Spec=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[Model]->AsObject();
+    const FString Id=Spec->GetStringField(TEXT("id"));
+    const bool GraveDigger=Id==TEXT("grave-digger");
+    if(GraveDigger||Id==TEXT("subaru-22b-sti"))CheckStockTireClearance(V,*Spec,GraveDigger,Check);
     const TArray<TSharedPtr<FJsonValue>>* FitRows=nullptr;
     Test(TEXT("vehicle has exact body-derived tire-kit fits or factory monster tires"),Model==10||(Spec->TryGetArrayField(TEXT("tireFits"),FitRows)&&FitRows->Num()==3));
     Test(TEXT("body and independent rim meshes are cooked"),V->Body->GetStaticMesh()&&V->Rims[0]->GetStaticMesh());

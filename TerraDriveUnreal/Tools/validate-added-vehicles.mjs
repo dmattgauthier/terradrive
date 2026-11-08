@@ -6,6 +6,35 @@ import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
 import {tireDiameterInches,resizeTireObj} from './tire-size-geometry.mjs';
 export const addedReferenceStyle=s=>['monster','subaru22b'].includes(s.bodyStyle);
+
+function* projectedTriangles(mesh,sideView=false){
+ const {index,attributes:{uv,position}}=mesh.geometry;
+ const point=i=>sideView?new T.Vector2(position.getZ(i),position.getY(i)):new T.Vector2().fromBufferAttribute(uv,i);
+ for(let i=0;i<index.count;i+=3)yield [0,1,2].map(j=>point(index.getX(i+j)));
+}
+
+function insideContour(point,contour){
+ let inside=false;
+ for(let i=0,j=contour.length-1;i<contour.length;j=i++){
+  const a=contour[j],b=contour[i];
+  if((a.y>point.y)!==(b.y>point.y)&&point.x<a.x+(b.x-a.x)*(point.y-a.y)/(b.y-a.y))inside=!inside;
+ }
+ return inside;
+}
+
+// A separating edge excludes contact along the cut edge itself. The
+// tolerance is for the float32 UVs of the generated render triangles.
+function overlapsConvex(a,b){
+ for(const polygon of [a,b])for(let i=0;i<polygon.length;i++){
+  const p=polygon[i],q=polygon[(i+1)%polygon.length];
+  const normal=new T.Vector2(p.y-q.y,q.x-p.x).normalize();
+  if(!normal.lengthSq())continue;
+  const pa=a.map(v=>v.dot(normal)),pb=b.map(v=>v.dot(normal));
+  if(Math.min(Math.max(...pa),Math.max(...pb))-Math.max(Math.min(...pa),Math.min(...pb))<=1e-6)return false;
+ }
+ return true;
+}
+
 export function inspectAddedReference(view,spec,parts){
  const checks=[];const test=(name,pass,data={})=>{checks.push({name,pass,...data});assert.ok(pass,spec.id+': '+name+' '+JSON.stringify(data));};
  const meshes=[];view.body.traverse(o=>{if(o.isMesh)meshes.push(o);});view.root.updateMatrixWorld(true);
@@ -30,8 +59,17 @@ export function inspectAddedReference(view,spec,parts){
   const paint=meshes.filter(o=>o.material===view.materials.paint);
   for(const z of [-1.26,1.26])for(const side of [-1,1])test('real wheel opening '+z+'/'+side,cast([side*1.1,.48,z],[-side,0,0],paint,.28).length===0);
   for(const name of ['22b-crowned-bonnet','22b-open-scoop-roof','22b-adjustable-rear-wing','22b-gold-ten-paired-spoke-17in-wheel'])test(name+' present',!!view.body.getObjectByName(name)||!!parts.rim.getObjectByName(name));
-  const roof=cast([0,2,-.3],[0,-1,0])[0],flank=cast([.6,2,-.3],[0,-1,0])[0];test('roof is crowned within exact height',roof&&flank&&roof.point.y-flank.point.y>.016&&roof.point.y-flank.point.y<.045);
-  const scoop=view.body.getObjectByName('22b-open-scoop-roof'),b=new T.Box3().setFromObject(scoop);test('scoop stands above bonnet',b.max.y+spec.cgHeight>.95&&b.max.y+spec.cgHeight<1.1,{topM:b.max.y+spec.cgHeight});
+  const roofPanel=view.body.getObjectByName('22b-crowned-short-coupe-roof');
+  const roofHalfWidth=new T.Box3().setFromObject(roofPanel).max.x;
+  const roof=cast([0,2,-.3],[0,-1,0],[roofPanel])[0];
+  const flank=cast([roofHalfWidth*.92,2,-.3],[0,-1,0],[roofPanel])[0];
+  test('roof is crowned within exact height',roof&&flank&&roof.point.y-flank.point.y>.016&&roof.point.y-flank.point.y<.045);
+  const scoop=view.body.getObjectByName('22b-open-scoop-roof');
+  const bonnet=view.body.getObjectByName('22b-crowned-bonnet');
+  const crown=cast([0,2,1.399],[0,-1,0],[scoop])[0];
+  const beneath=cast([0,2,1.399],[0,-1,0],[bonnet])[0];
+  const scoopRise=crown&&beneath?crown.point.y-beneath.point.y:0;
+  test('stock low scoop rises 45 to 80 mm above the bonnet',scoopRise>.045&&scoopRise<.080,{riseM:scoopRise});
   test('two coupe window openings each side',meshes.filter(o=>o.name==='reference-open-window').length===6);
   for(const boundary of view.root.userData.endClosureSamples??[]){
    const closure=view.body.getObjectByName(boundary.front?'22b-perforated-curved-front-bumper':'22b-formed-rear-closure');
@@ -47,6 +85,20 @@ export function inspectAddedReference(view,spec,parts){
    test((boundary.front?'front':'rear')+' curved closure meets side shell and crowned upper panel',gap<.0004&&adjoiningGap<.0004,{maximumClosureGapM:gap,maximumAdjoiningPanelGapM:adjoiningGap,probes:boundary.side.length+boundary.upper.length});
   }
   test('both end closure boundaries are covered',view.root.userData.endClosureSamples?.length===2);
+  const fascia=view.body.getObjectByName('22b-perforated-curved-front-bumper');
+  const outline=fascia.userData.contours.outline.map(p=>new T.Vector2(...p));
+  const openings=fascia.userData.contours.openings.map(loop=>loop.map(p=>new T.Vector2(...p)));
+  const area=polygon=>Math.abs(T.ShapeUtils.area(polygon));
+  const outsideVertices=openings.flat().filter(point=>!insideContour(point,outline)).length;
+  let coveredArea=0,strayTriangles=0,blockedTriangles=0;
+  for(const triangle of projectedTriangles(fascia)){
+   const center=triangle[0].clone().add(triangle[1]).add(triangle[2]).multiplyScalar(1/3);
+   coveredArea+=area(triangle);
+   if(!insideContour(center,outline))strayTriangles++;
+   if(openings.some(hole=>overlapsConvex(triangle,hole)))blockedTriangles++;
+  }
+  const areaError=Math.abs(coveredArea-(area(outline)-openings.reduce((total,hole)=>total+area(hole),0)));
+  test('fascia triangulates with all openings inside the panel and free of paint',outsideVertices===0&&strayTriangles===0&&blockedTriangles===0&&areaError<1e-6,{outsideVertices,strayTriangles,blockedTriangles,areaErrorM2:areaError});
   // Check actual triangle boundaries of both adjoining sheets. Named-patch
   // existence alone cannot catch an open strip or a mismatched roof edge.
   const triangleCache=new Map(),vector=new T.Vector3();
@@ -54,10 +106,11 @@ export function inspectAddedReference(view,spec,parts){
   const trianglesFor=name=>{if(!triangleCache.has(name)){const o=meshByName(name),p=o.geometry.attributes.position,ix=o.geometry.index,out=[];
    for(let i=0;i<ix.count;i+=3)out.push(new T.Triangle(...[0,1,2].map(j=>new T.Vector3().fromBufferAttribute(p,ix.getX(i+j)))));
    triangleCache.set(name,out);}return triangleCache.get(name);};
-  const seam=(from,edge,to,tolerance=.0006)=>{const o=meshByName(from),p=o.geometry.attributes.position,uv=o.geometry.attributes.uv,pts=[];
+  const seam=(from,edge,to,tolerance=.0006,closed=false)=>{const o=meshByName(from),p=o.geometry.attributes.position,uv=o.geometry.attributes.uv,pts=[];
    for(let i=0;i<p.count;i++)if(edge(uv.getX(i),uv.getY(i)))pts.push(new T.Vector3().fromBufferAttribute(p,i));
    const unique=[...new Map(pts.map(p=>[p.toArray().map(v=>v.toFixed(7)).join(','),p])).values()];
-   const bounds=new T.Box3().setFromPoints(unique),extent=bounds.getSize(new T.Vector3()),axis=['x','y','z'].sort((a,b)=>extent[b]-extent[a])[0];unique.sort((a,b)=>a[axis]-b[axis]);
+   if(closed&&unique.length)unique.push(unique[0]);
+   else{const bounds=new T.Box3().setFromPoints(unique),extent=bounds.getSize(new T.Vector3()),axis=['x','y','z'].sort((a,b)=>extent[b]-extent[a])[0];unique.sort((a,b)=>a[axis]-b[axis]);}
    const step=Math.max(1,Math.floor(unique.length/48)),probes=unique.filter((_,i)=>i%step===0);
    // Probe edge interiors too: coincident corners can conceal a bowed gap.
    for(let i=1;i<unique.length;i+=step)for(const t of [.25,.5,.75])probes.push(unique[i-1].clone().lerp(unique[i],t));
@@ -66,6 +119,7 @@ export function inspectAddedReference(view,spec,parts){
    test(from+' closes against '+to,probes.length>=2&&worst<tolerance,{probes:probes.length,maximumActualTriangleGapM:worst});};
   const near=(a,b)=>Math.abs(a-b)<1e-6;
   for(const side of [-1,1]){
+   seam('22b-rounded-mirror-shell-'+side,(u,v)=>near(v,1),'22b-crowned-mirror-cap-'+side,.00015,true);
    const shoulder='22b-rounded-quarter-shoulder-'+side,frame='22b-stamped-side-window-frame-'+side;
    for(const [patch,panel]of [['22b-bonnet-edge-return-','22b-crowned-bonnet'],['22b-boot-edge-return-','22b-rounded-trunk-deck']]){
     seam(patch+side,(u,v)=>near(v,0),shoulder);seam(patch+side,(u,v)=>near(v,1),panel);
@@ -95,11 +149,23 @@ export function inspectAddedReference(view,spec,parts){
    const o=meshByName(name),p=o.geometry.attributes.position,n=o.geometry.attributes.normal,ix=o.geometry.index;let minimumExteriorNormal=1,minimumWinding=1;
    for(let i=0;i<n.count;i++)minimumExteriorNormal=Math.min(minimumExteriorNormal,new T.Vector3().fromBufferAttribute(n,i)[axis]*sign);
    for(let i=0;i<ix.count;i+=3){const ids=[0,1,2].map(j=>ix.getX(i+j)),v=ids.map(j=>new T.Vector3().fromBufferAttribute(p,j)),face=v[1].sub(v[0]).cross(v[2].sub(v[0])).normalize(),normal=ids.reduce((sum,j)=>sum.add(new T.Vector3().fromBufferAttribute(n,j)),new T.Vector3()).normalize();minimumWinding=Math.min(minimumWinding,face.dot(normal));}
-   test(name+' is opaque and outward facing',!o.material.transparent&&minimumExteriorNormal>.45&&minimumWinding>.85,{minimumExteriorNormal,minimumWinding});
+   // The 22B's backlight is shallow in profile. Check its upward/outward
+   // cone as well as winding instead of using the front glass's Z cutoff.
+   let exterior=minimumExteriorNormal>.45;
+   if(name==='22b-formed-rear-window-surround'){
+    let minimumUpward=1;
+    for(let i=0;i<n.count;i++)minimumUpward=Math.min(minimumUpward,n.getY(i));
+    exterior=minimumExteriorNormal>.36&&minimumUpward>.68;
+   }
+   test(name+' is opaque and outward facing',!o.material.transparent&&exterior&&minimumWinding>.85,{minimumExteriorNormal,minimumWinding});
   }
 
 
  }else{
+  const exhaust=meshes.filter(o=>o.material.userData.nativeRole==='exhaust');
+  const headers=exhaust.filter(o=>o.name==='grave-exhaust-header'&&o.geometry.type==='TubeGeometry').length;
+  const outlets=exhaust.filter(o=>o.name==='grave-exhaust-outlet'&&o.geometry.type==='CylinderGeometry').length;
+  test('all eight exhaust pipes and outlets are tagged for the cooked clearance check',headers===8&&outlets===8&&exhaust.length===16,{headers,outlets});
   const headlights=meshes.filter(o=>o.name==='monster-constant-red-headlight');test('constant red headlights stay separate from brake circuit',headlights.length===2&&headlights.every(o=>!o.material.userData.nativeRole&&o.material.emissiveIntensity>.8));
   test('official monster class scale',Math.abs(spec.tireRadius*2/.0254-66)<1e-6&&Math.abs(spec.tireWidth/.0254-43)<1e-6&&Math.abs(spec.suspension.travel/.0254-30)<1e-6);
   test('stock monster tires are not shrunk to upgrade limit',tireDiameterInches(spec.tireRadius,3)>65.99);
@@ -132,6 +198,15 @@ export function inspectAddedReference(view,spec,parts){
   }
   test('livery stays a thin painted layer above curved panels',paintMeshes>100&&paintSamples>1000&&minGap>.0001&&maxGap<.002,{meshes:paintMeshes,samples:paintSamples,minGapM:minGap,maxGapM:maxGap});
   test('painted livery triangles face outward without degeneracy',badPaint===0&&minWinding>.85,{badTriangles:badPaint,minimumWinding:minWinding});
+  const window=view.body.getObjectByName('grave-digger-panel-wagon-side').userData.windowContour.map(p=>new T.Vector2(...p));
+  const trails=meshes.filter(o=>o.name==='grave-painted-spectral-trail');
+  const sideBases=new Set(trails.map(o=>o.userData.gravePaint.base));
+  let windowOverlaps=0,sidePaintTriangles=0;
+  for(const o of meshes.filter(o=>sideBases.has(o.userData.gravePaint?.base)))for(const triangle of projectedTriangles(o,true)){
+   sidePaintTriangles++;
+   if(overlapsConvex(triangle,window))windowOverlaps++;
+  }
+  test('both side windows stay clear of the side livery',trails.length===12&&sideBases.size===2&&sidePaintTriangles>1000&&windowOverlaps===0,{trails:trails.length,sidePaintTriangles,windowOverlaps});
   const hood=view.body.getObjectByName('grave-digger-domed-narrow-bonnet'),roof=view.body.getObjectByName('grave-digger-domed-wagon-roof');test('panel wagon has distinct low narrow bonnet',new T.Box3().setFromObject(roof).max.y-new T.Box3().setFromObject(hood).max.y>.55);
  }
  return {id:spec.id,checks:checks.length,vertices,bodySizeM:bodySize.toArray(),results:checks,pass:true};

@@ -202,7 +202,10 @@ for(const t of data.trees)for(const p of t.parts){assert.ok(data.placements[p.gr
 assert.equal(data.displayUnits,'imperial');
 for(const v of data.vehicles)for(const part of ['armor','equipment'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
 for(const v of data.vehicles){
- assert.equal(v.nativeModel.version,v.bodyStyle==='g63six'||v.gClassVariant==='squared'?4:3);assert.equal(v.nativeModel.splitTireAndRim,true);assert.equal(v.nativeModel.beveledTread,true);
+ const refined=['g63six','monster','subaru22b'].includes(v.bodyStyle)||v.gClassVariant==='squared';
+ assert.equal(v.nativeModel.version,refined?4:3);
+ assert.equal(v.nativeModel.splitTireAndRim,true);
+ assert.equal(v.nativeModel.beveledTread,true);
  for(const part of ['tire','rim'])assert.ok(data.assets.some(a=>a.name===v.asset+'_'+part));
  const rimRadius=Number(v.tireSize.match(/R(\d+)/)[1])*.0254*.5*100;
  const vertices=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_rim.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));

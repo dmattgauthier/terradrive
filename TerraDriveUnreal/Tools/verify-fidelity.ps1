@@ -70,7 +70,7 @@ try{
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=156;Mechanical=707;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=138;RutTransitions=64;Perimeter=5;Expanded=278;Recovery=48;RolloverPerformance=59}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=156;Mechanical=707;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=138;RutTransitions=64;Perimeter=5;Expanded=284;Recovery=48;RolloverPerformance=59}[$Mode]
  if($SavedBuild){$taskExpected+=9} # One saved-profile check per real-time pose.
  if($QuarrySurvey){$taskExpected+=9}
  if($ArtVehicle -ge 0){$taskExpected=11}

@@ -1,0 +1,170 @@
+{
+  "basePr": 12,
+  "baseCommit": "826eab99feed7e0acce5399116e1ef3a77e76781",
+  "engine": "5.8.3",
+  "package": {
+    "executableSha256": "c1664da1f12f8a56eff1840d31a843ae338ba8236ce8fa43e5b51fd3ca8ff133",
+    "stagedContent": [
+      {
+        "path": "TerraDrive/Content/Paks/global.ucas",
+        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/global.utoc",
+        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+        "sha256": "d9bd4e68e28da86ddb629f7339b3302cb9fce48bc61c8321ef16f268ff8ddf4a"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+        "sha256": "e6478e88d19645daa9d763d6631c2162289495e8790959bf76e2a345c33fe269"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+        "sha256": "e76b95202bef6db3470d2a5339b6ab47f7d7fbdc847442437e47ceca3d42395a"
+      }
+    ],
+    "importedMeshes": [
+      {
+        "name": "grave_digger_body",
+        "index": 110,
+        "oldSha256": "b1cf02a81d9744a5b503a9568fcda3950de892a2ffb19974e62c5791bfda79bb",
+        "sha256": "8b7ca0767d32e22494ce1734a3b958f0ae3921aed2e29d8535e8146024b884b2"
+      },
+      {
+        "name": "subaru_22b_sti_body",
+        "index": 118,
+        "oldSha256": "4736c3b4222fb8ddc4e252c34035af55971f89b75d6edfeaf3fe2e0c1887ca6e",
+        "sha256": "d678ecc933e3db5f32d820bc4e5c5c6cc92b8b84f7b2be8c0f624400a7aec29a"
+      }
+    ],
+    "cookSeconds": 95.16,
+    "sourceInputCount": 220
+  },
+  "sourceInputsSha256": "a86c4efe2b769436402359348c1e1e0d3f7cf36ef54a2dee7f1d62d391ef4a4e",
+  "sourceFileCount": 220,
+  "nativeChecks": 450,
+  "suites": {
+    "Art-Grave-Digger": {
+      "checks": 11,
+      "captures": 10,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 61.39,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/ModelPhotoPass/Candidate2/Native/Art-Grave-Digger/receipt.json"
+    },
+    "Art-Subaru-22B": {
+      "checks": 11,
+      "captures": 10,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 61.85,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/ModelPhotoPass/Candidate2/Native/Art-Subaru-22B/receipt.json"
+    },
+    "RolloverPerformance-Grave": {
+      "checks": 59,
+      "captures": 9,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 57.95,
+      "clock": "real elapsed time; 20 FPS render cap; normal physics",
+      "receipt": "Saved/ModelPhotoPass/Candidate2/Native/RolloverPerformance-Grave/receipt.json"
+    },
+    "Rollover-Subaru50": {
+      "checks": 91,
+      "captures": 10,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 57.46,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/ModelPhotoPass/Candidate2/Native/Rollover-Subaru50/receipt.json"
+    },
+    "Expanded": {
+      "checks": 278,
+      "captures": 29,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 60.1,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/ModelPhotoPass/Candidate2/Native/Expanded/receipt.json"
+    }
+  },
+  "sourceChecks": {
+    "focusedModelGeometry": 92,
+    "tireFit": 327,
+    "bodyVertices": {
+      "grave-digger": 186687,
+      "subaru-22b-sti": 152302
+    }
+  },
+  "revisedMeshHashes": [
+    {
+      "name": "grave_digger_body",
+      "index": 110,
+      "oldSha256": "5688d6a095f0cbd20538deaac6131443e45932d12cacc100d8755b7de2626531",
+      "sha256": "8b7ca0767d32e22494ce1734a3b958f0ae3921aed2e29d8535e8146024b884b2"
+    },
+    {
+      "name": "grave_digger_wheel",
+      "index": 111,
+      "oldSha256": "3f8b669792c433cfd774852cd8db5da66d2937d3abf532be6a84765aba9b476e",
+      "sha256": "96bf56f7b38012bd92a7fa5799a728a31a3c3afc4f9d844535c4cb29dba98767"
+    },
+    {
+      "name": "grave_digger_tire",
+      "index": 112,
+      "oldSha256": "19c39eb902c59f0f1819e991e4e40710e5eb7dfa7cd35c764b6b493c8c93ead7",
+      "sha256": "45d75437bb4bae21d934f69457445a9dd91f803b6b2174f5193f787c9cbcaaa8"
+    },
+    {
+      "name": "grave_digger_tire_1",
+      "index": 113,
+      "oldSha256": "7e5a075175acd1e16f8016609042d99a098f864ebbfda03987942e9f1190dc28",
+      "sha256": "09916eadc18872065e80318bcc34799e9887c0fc6fb26d30fe3a62cb5fd7cb60"
+    },
+    {
+      "name": "grave_digger_tire_2",
+      "index": 114,
+      "oldSha256": "7e5a075175acd1e16f8016609042d99a098f864ebbfda03987942e9f1190dc28",
+      "sha256": "09916eadc18872065e80318bcc34799e9887c0fc6fb26d30fe3a62cb5fd7cb60"
+    },
+    {
+      "name": "grave_digger_tire_3",
+      "index": 115,
+      "oldSha256": "7e5a075175acd1e16f8016609042d99a098f864ebbfda03987942e9f1190dc28",
+      "sha256": "09916eadc18872065e80318bcc34799e9887c0fc6fb26d30fe3a62cb5fd7cb60"
+    },
+    {
+      "name": "grave_digger_rim",
+      "index": 116,
+      "oldSha256": "c33569e5654d11ccb269c8abc09b587d9a3783c8b11026dc198da9c2d752b77e",
+      "sha256": "7e9d84a9523df5414c229ef2e278513df1f223c1701ed4d2d630ace86f406248"
+    },
+    {
+      "name": "subaru_22b_sti_body",
+      "index": 118,
+      "oldSha256": "82a1a1b06b7913bcf8680e49d342141e7e2d98c36e24eeef11944ddcbc893061",
+      "sha256": "d678ecc933e3db5f32d820bc4e5c5c6cc92b8b84f7b2be8c0f624400a7aec29a"
+    },
+    {
+      "name": "subaru_22b_sti_wheel",
+      "index": 119,
+      "oldSha256": "97bb89d8f391dfa1e5d4b3197c7881570494b278aa38abdc2512979700fec485",
+      "sha256": "ddf8c5935594bf0da73998c1d79a943aed05e690cd5464b9fa04b0894f5d9d65"
+    },
+    {
+      "name": "subaru_22b_sti_rim",
+      "index": 127,
+      "oldSha256": "4048e3a9199e56c6364188ec1d5326401ebf2190b1d614cd648e53bd6d958548",
+      "sha256": "9f261b0bd48f1949ad27c6386505ad85378b1852f9ea88a810d35114f5c809a9"
+    }
+  ],
+  "rollover": {
+    "fixedClock": false,
+    "requestedRenderCapFPS": 20,
+    "poses": 9,
+    "exposedSupportChecks": 4,
+    "minimumAverageFPS": 19.96422004699707,
+    "maximumP95FrameMs": 51.04600143432617,
+    "report": "Saved/ModelPhotoPass/Candidate2/Native/RolloverPerformance-Grave/rollover-performance.json"
+  }
+}

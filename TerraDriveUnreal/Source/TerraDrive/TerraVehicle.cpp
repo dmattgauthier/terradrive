@@ -610,8 +610,8 @@ void ATerraVehicle::Simulate(float Dt) {
     TotalTorque = 0;
   if (LowRange) TotalTorque *= FMath::Clamp(8.f-FMath::Abs(Speed),0.f,1.f);
   const float SteerAngle =
-      Steer * FMath::DegreesToRadians(34.f) / (1 + FMath::Abs(Speed) * .025f) + DamageSteeringOffset();
-  const float RearSteerAngle=Number(TEXT("monsterTruck"),0)>0?-SteerAngle*.65f/(1+FMath::Abs(Speed)*.18f):VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
+      Steer * FMath::DegreesToRadians(SteeringLockDegrees) / (1 + FMath::Abs(Speed) * .025f) + DamageSteeringOffset();
+  const float RearSteerAngle=Number(TEXT("monsterTruck"),0)>0?SteerAngle*MonsterRearSteerRatio/(1+FMath::Abs(Speed)*.18f):VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
   float TotalLoad = 0;
   ContactCount = 0;
   LastTireForceN = 0;
@@ -1149,6 +1149,11 @@ float ATerraVehicle::BumpTravel(bool Front) const {
   double Travel=S->GetNumberField(TEXT("travel"));
   S->TryGetNumberField(Front?TEXT("travelFront"):TEXT("travelRear"),Travel);
   return TerraSim::SuspensionBumpTravel(float(Travel),Tuning.Travel);
+}
+float ATerraVehicle::ReboundTravel(int Axle) const {
+  // Ride height already compresses the spring by its static preload.
+  const float StaticLoad=Mass*9.81f*AxleLoadFraction(Axle)*.5f;
+  return Droop+StaticLoad/Spring;
 }
 void ATerraVehicle::SaveSetup() {
   if(AutoTest)return;
