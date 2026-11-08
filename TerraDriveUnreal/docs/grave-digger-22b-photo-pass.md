@@ -73,3 +73,48 @@ c1664da1f12f8a56eff1840d31a843ae338ba8236ce8fa43e5b51fd3ca8ff133.
 The native record binds the tests to that executable, the cooked containers,
 and the source inputs. The 20 FPS cap applies to these verification runs.
 [Native record](grave-digger-22b-photo-native.json).
+
+## PR #13 review follow-up
+
+Grave Digger's side artwork now clips to the same window contours as the
+fiberglass. The 22B headlight openings fit inside the fascia, and the mirror
+caps meet their housings at the crowned rim. The wheelhouse arches, liners,
+floor edges and nearby trim clear the stock tires. The body-derived lifts for
+the 33-, 42- and 50-inch kits are now 0.598, 0.746 and 0.863 m, respectively.
+
+The follow-up Windows package passed **454 native checks** with zero runtime
+errors and a peak sampled GPU temperature of 63.03 C. The five suites used
+isolated settings and offscreen 1600×900 rendering at a 20 FPS cap.
+
+| Suite | Passing checks | Coverage |
+| --- | ---: | --- |
+| Grave Digger and 22B art | 22 | Ten new views per vehicle, including the side windows, fascia and mirrors |
+| Expanded roster | 282 | Four stock 22B clearance checks plus driving, braking, recovery and largest-tire coverage |
+| Grave Digger real-time rollover | 59 | Nine poses across three surfaces and constructed support checks |
+| 22B rollover with 50-inch tires | 91 | Ten poses, including oblique impacts |
+
+The stock fixture checks the cooked render triangles against a swept tire
+envelope from normal ride height through **104.4 mm** of compression. It
+verified **at least 5 mm** of clearance on each wheel, using 71 steering
+samples per front wheel and padding for the motion between samples. This is a
+deterministic geometry check. Grave Digger's rollover runs use real elapsed
+time, and the other suites use a paced fixed clock.
+
+The source export changed two mesh hashes. The source checks passed 96
+focused assertions and 327 oversized tire-fit assertions. The livery check
+found zero window overlaps across 65,748 side-art triangles. The fascia had
+zero stray or obstructing triangles and the mirror seam gap measured below
+0.01 mm on both sides. [Model checks](model-validation.json) · [Tire fit](tire-fit-validation.json).
+
+The final package pairs a rebuilt validation executable with the five
+hash-matched containers from the full follow-up cook. Raw receipts, captures
+and earlier failed attempts are under `Saved/PR13Review`. The initial native
+fixture's front-wheel false positives were reproduced by the engine helper's
+stale plane classifications and resolved by clipping each plane directly.
+
+| Tested input | SHA-256 |
+| --- | --- |
+| Staged game executable | `3736ed9f57a76669a4f6e9c8ca7a3619395c23cbe7137d3ca7cc24f679a8328f` |
+| Manifest of 221 source inputs | `583a6b1540afa0db15d75541cf4acc8bae6a66370e55836a853ff9295cc93acb` |
+| `TerraDrive-Windows.ucas` | `fa97d20eba1a5dc137d1375373efd076eba27946020005261f59c21bb5007f99` |
+| `TerraDrive-Windows.pak` | `c26facd1785a7e7c862cdcf46f81b84c972fb233ffd8fe32567520be8a2594f8` |

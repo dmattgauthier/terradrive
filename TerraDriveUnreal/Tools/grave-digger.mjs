@@ -25,6 +25,7 @@ const rockerStations=[
   [tailZ,2.235],[-2.01,2.186],[-1.67,2.348],[-1.39,2.209],
   [-1.13,1.985],[-.68,1.907],[.11,1.910],[.45,1.973],[cowlZ,2.091]
 ];
+const sideWindow=roundedContour([[-.523,2.515],[.527,2.505],[.121,2.904],[-.493,2.990]],.049,9);
 const low=z=>station(rockerStations,z,1);
 const top=z=>z<=roofFront?station(roofStations,z,2)-.157:
   lerp(roofStations.at(-1)[2]-.157,2.467,(z-roofFront)/(cowlZ-roofFront));
@@ -87,6 +88,73 @@ function paintPatch(g,material,outline,base,flip,name,layer=0){
  o.userData.gravePaint={base,offset,flip};return o;
 }
 function smoothPath(points,steps=32,closed=false){const c=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(p[0],p[1],0)),closed,'centripetal');return Array.from({length:steps+(closed?0:1)},(_,i)=>{const p=c.getPoint(i/steps);return[p.x,p.y];});}
+const triangleArea=([a,b,c])=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+
+function clipPaintOpening(artwork,opening) {
+  const geometry=artwork.geometry;
+  const {index,attributes:{uv}}=geometry;
+  const points=Array.from({length:uv.count},(_,i)=>[uv.getX(i),uv.getY(i)]);
+  const winding=Math.sign(T.ShapeUtils.area(opening.map(p=>new T.Vector2(...p))));
+  const edges=opening.map(([x,y],i)=>{
+    const [nextX,nextY]=opening[(i+1)%opening.length];
+    const length=Math.hypot(nextX-x,nextY-y);
+    // Leave a 2 mm margin for the paint's outward normal offset.
+    return ([px,py])=>winding*((nextX-x)*(py-y)-(nextY-y)*(px-x))/length+.002;
+  });
+  const keptPoints=[],keptIndices=[],pointIds=new Map();
+  let trimmed=false;
+  const emit=triangle=>{
+    if(Math.abs(triangleArea(triangle))<1e-12)return;
+    for(const point of triangle){
+      if(!pointIds.has(point)){
+        pointIds.set(point,keptPoints.length);
+        keptPoints.push(point);
+      }
+      keptIndices.push(pointIds.get(point));
+    }
+  };
+  for(let i=0;i<index.count;i+=3) {
+    let inside=[points[index.getX(i)],points[index.getX(i+1)],points[index.getX(i+2)]];
+    if(edges.some(distance=>inside.every(point=>distance(point)<=0))){
+      emit(inside);
+      continue;
+    }
+    trimmed=true;
+    // The aperture is convex. Keep the part outside each edge and pass
+    // only the remainder to the next edge. The final remainder is the hole.
+    for(const distance of edges) {
+      if(inside.length<3)break;
+      const next=[],outside=[];
+      let previous=inside.at(-1),previousDistance=distance(previous);
+      for(const point of inside) {
+        const currentDistance=distance(point);
+        if((previousDistance<0)!==(currentDistance<0)){
+          const crossing=mix(previous,point,previousDistance/(previousDistance-currentDistance));
+          next.push(crossing);
+          outside.push(crossing);
+        }
+        (currentDistance<0?outside:next).push(point);
+        previous=point;
+        previousDistance=currentDistance;
+      }
+      for(let j=1;j+1<outside.length;j++)emit([outside[0],outside[j],outside[j+1]]);
+      inside=next;
+    }
+  }
+  if(!trimmed)return;
+  const {base,offset,flip}=artwork.userData.gravePaint;
+  const positions=[],normals=[];
+  for(const point of keptPoints) {
+    const normal=paintNormal(base,...point,flip);
+    positions.push(...new T.Vector3(...base(...point)).addScaledVector(normal,offset).toArray());
+    normals.push(...normal.toArray());
+  }
+  geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('normal',new T.Float32BufferAttribute(normals,3));
+  geometry.setAttribute('uv',new T.Float32BufferAttribute(keptPoints.flat(),2));
+  geometry.setIndex(keptIndices);
+}
+
 function paintStroke(g,m,points,width,base,flip,name,layer=0){
  // A conforming ribbon grid avoids the long, near-collinear ear triangles
  // produced by triangulating a thin curved outline as one large polygon.
@@ -96,7 +164,7 @@ function paintStroke(g,m,points,width,base,flip,name,layer=0){
  for(let i=0;i<rows.length;i++){const a=rows[Math.max(0,i-1)].q,b=rows[Math.min(rows.length-1,i+1)].q,d=Math.hypot(b[0]-a[0],b[1]-a[1]),r=(typeof width==='function'?width(rows[i].t):width)*.5;
   for(let column=0;column<=columns;column++){const side=lerp(-1,1,column/columns),q=[rows[i].q[0]-side*(b[1]-a[1])/d*r,rows[i].q[1]+side*(b[0]-a[0])/d*r],normal=paintNormal(base,...q,flip),v=new T.Vector3(...base(...q)).addScaledVector(normal,offset);p.push(...v.toArray());n.push(...normal.toArray());uv.push(...q);}
  }
- for(let i=0;i<rows.length-1;i++)for(let column=0;column<columns;column++)for(const ids of [[i*stride+column,i*stride+column+1,(i+1)*stride+column],[i*stride+column+1,(i+1)*stride+column+1,(i+1)*stride+column]]){const[a,b,c]=ids.map(j=>uv.slice(j*2,j*2+2)),det=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);if(Math.abs(det)<1e-12)continue;if((det>0)===flip)[ids[1],ids[2]]=[ids[2],ids[1]];ix.push(...ids);}
+ for(let i=0;i<rows.length-1;i++)for(let column=0;column<columns;column++)for(const ids of [[i*stride+column,i*stride+column+1,(i+1)*stride+column],[i*stride+column+1,(i+1)*stride+column+1,(i+1)*stride+column]]){const det=triangleArea(ids.map(j=>uv.slice(j*2,j*2+2)));if(Math.abs(det)<1e-12)continue;if((det>0)===flip)[ids[1],ids[2]]=[ids[2],ids[1]];ix.push(...ids);}
  const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(p,3));geo.setAttribute('normal',new T.Float32BufferAttribute(n,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(ix);
  const o=mesh(g,geo,m);o.name='grave-painted-'+name;o.castShadow=false;o.userData.gravePaint={base,offset,flip};return o;
 }
@@ -224,6 +292,7 @@ function paintMoon(g,inks,base,flip) {
 }
 
 function paintSide(g,inks,side) {
+  const firstPaint=g.children.length;
   const base=(z,y)=>graveSidePaintBase(side,z,y);
   const flip=side>0;
   const fogZ=Array.from({length:61},(_,i)=>lerp(-2.175,.531,i/60));
@@ -264,6 +333,7 @@ function paintSide(g,inks,side) {
     const z=start+span*(side>0?1-t:t);
     return [z,top(z)-.253+.142*y];
   },base,flip);
+  for(const artwork of g.children.slice(firstPaint))clipPaintOpening(artwork,sideWindow);
 }
 
 function paintFlames(g,inks) {
@@ -517,16 +587,17 @@ function addShell(g,m) {
     .name='grave-digger-domed-wagon-roof';
   const range=Array.from({length:77},(_,i)=>lerp(tailZ,cowlZ,i/76));
   const outline=[...range.map(z=>[z,low(z)]),...range.slice().reverse().map(z=>[z,top(z)])];
-  const window=roundedContour([[-.523,2.515],[.527,2.505],[.121,2.904],[-.493,2.990]],.049,9);
   for(const side of [-1,1]) {
     const map=(z,y,depth=0)=>{
       const p=graveSidePaintBase(side,z,y);
       p[0]-=side*depth;
       return p;
     };
-    mappedPolygon(g,m.paint,outline,map,[window],side>0,9).name='grave-digger-panel-wagon-side';
-    panelReturn(g,m.black,window,window,map,.021,side>0).name='grave-open-side-window-edge';
-    line(g,m.glossBlack,[...window,window[0]].map(([z,y])=>map(z,y,-.002)),.005);
+    const panel=mappedPolygon(g,m.paint,outline,map,[sideWindow],side>0,9);
+    panel.name='grave-digger-panel-wagon-side';
+    panel.userData.windowContour=sideWindow;
+    panelReturn(g,m.black,sideWindow,sideWindow,map,.021,side>0).name='grave-open-side-window-edge';
+    line(g,m.glossBlack,[...sideWindow,sideWindow[0]].map(([z,y])=>map(z,y,-.002)),.005);
     surface(g,m.dark,104,5,(u,t)=>{
       const z=lerp(tailZ,cowlZ,u);
       return map(z,low(z),t*.028);

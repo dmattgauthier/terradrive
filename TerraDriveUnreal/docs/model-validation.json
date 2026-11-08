@@ -1429,7 +1429,7 @@
     },
     {
       "vehicle": "Grave Digger",
-      "vertices": 186687,
+      "vertices": 186977,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -1440,8 +1440,8 @@
       },
       "addedReference": {
         "id": "grave-digger",
-        "checks": 21,
-        "vertices": 186687,
+        "checks": 22,
+        "vertices": 186977,
         "bodySizeM": [
           1.9999902248382568,
           2.458979520251848,
@@ -1451,7 +1451,7 @@
           {
             "name": "finite bounded authored geometry",
             "pass": true,
-            "vertices": 186687,
+            "vertices": 186977,
             "bad": 0
           },
           {
@@ -1539,7 +1539,7 @@
             "name": "livery stays a thin painted layer above curved panels",
             "pass": true,
             "meshes": 646,
-            "samples": 579412,
+            "samples": 579892,
             "minGapM": 0.0002593277685377042,
             "maxGapM": 0.001905294692197306
           },
@@ -1548,6 +1548,13 @@
             "pass": true,
             "badTriangles": 0,
             "minimumWinding": 0.9889537384162155
+          },
+          {
+            "name": "both side windows stay clear of the side livery",
+            "pass": true,
+            "trails": 12,
+            "sidePaintTriangles": 65748,
+            "windowOverlaps": 0
           },
           {
             "name": "panel wagon has distinct low narrow bonnet",
@@ -1560,7 +1567,7 @@
     },
     {
       "vehicle": "Subaru Impreza 22B STI",
-      "vertices": 152302,
+      "vertices": 151767,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -1571,18 +1578,18 @@
       },
       "addedReference": {
         "id": "subaru-22b-sti",
-        "checks": 67,
-        "vertices": 152302,
+        "checks": 70,
+        "vertices": 151767,
         "bodySizeM": [
           1.9286856651306152,
-          1.2394999859333038,
+          1.2394999861717224,
           4.36497163772583
         ],
         "results": [
           {
             "name": "finite bounded authored geometry",
             "pass": true,
-            "vertices": 152302,
+            "vertices": 151767,
             "bad": 0
           },
           {
@@ -1698,7 +1705,7 @@
           {
             "name": "front curved closure meets side shell and crowned upper panel",
             "pass": true,
-            "maximumClosureGapM": 1.0186767652557985e-7,
+            "maximumClosureGapM": 1.1178339260772341e-7,
             "maximumAdjoiningPanelGapM": 0.00007594812219693481,
             "probes": 107
           },
@@ -1712,6 +1719,20 @@
           {
             "name": "both end closure boundaries are covered",
             "pass": true
+          },
+          {
+            "name": "fascia triangulates with all openings inside the panel and free of paint",
+            "pass": true,
+            "outsideVertices": 0,
+            "strayTriangles": 0,
+            "blockedTriangles": 0,
+            "areaErrorM2": 1.69318822296205e-8
+          },
+          {
+            "name": "22b-rounded-mirror-shell--1 closes against 22b-crowned-mirror-cap--1",
+            "pass": true,
+            "probes": 269,
+            "maximumActualTriangleGapM": 0.000007960289688195993
           },
           {
             "name": "22b-bonnet-edge-return--1 closes against 22b-rounded-quarter-shoulder--1",
@@ -1790,6 +1811,12 @@
             "pass": true,
             "probes": 57,
             "maximumActualTriangleGapM": 5.547688232695716e-8
+          },
+          {
+            "name": "22b-rounded-mirror-shell-1 closes against 22b-crowned-mirror-cap-1",
+            "pass": true,
+            "probes": 269,
+            "maximumActualTriangleGapM": 0.000007960289688195993
           },
           {
             "name": "22b-bonnet-edge-return-1 closes against 22b-rounded-quarter-shoulder-1",

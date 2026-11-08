@@ -6,6 +6,8 @@ const rearZ=-frontZ;
 const frontAxle=1.26;
 const rearAxle=-frontAxle;
 const archRadius=.355;
+const frontArchRadius=.390;
+const innerWheelhouse=.390;
 const shoulderRadius=.053;
 const frontGlass={baseZ:.895,baseY:.895,roofZ:.17};
 const rearGlass={baseZ:-1.462,baseY:.952,roofZ:-.745};
@@ -184,9 +186,16 @@ function alloy(spec,m) {
 }
 
 function addSidePanels(g,m,spec,side) {
-  const arch=(axle,u)=>{
+  const bump=Math.max(.055,spec.suspension.travel*.58);
+  const archRun=axle=>axle===frontAxle?frontArchRadius:archRadius;
+  const arch=(axle,u,lip=0)=>{
     const angle=u*Math.PI;
-    return [axle-archRadius*Math.cos(angle),spec.tireRadius+archRadius*Math.sin(angle)];
+    const end=Math.cos(angle);
+    // Clearance over the compressed tread, with the arch ends rolled down
+    // past its reach. The front opening also clears the steered shoulders.
+    const rise=axle===frontAxle?.339:.335;
+    return [axle-(archRun(axle)+lip)*end,
+      spec.tireRadius+bump*(1-end**8)+(rise+lip)*Math.sin(angle)];
   };
   const flat=(a,b,u)=>{
     const z=lerp(a,b,u);
@@ -195,9 +204,9 @@ function addSidePanels(g,m,spec,side) {
   const spans=[
     [rearZ,rearAxle-archRadius,null,40],
     [0,0,rearAxle,60],
-    [rearAxle+archRadius,frontAxle-archRadius,null,86],
+    [rearAxle+archRadius,frontAxle-frontArchRadius,null,86],
     [0,0,frontAxle,60],
-    [frontAxle+archRadius,frontZ,null,40]
+    [frontAxle+frontArchRadius,frontZ,null,40]
   ];
   for(const [a,b,axle,segments] of spans) {
     surface(g,m.paint,segments,20,(u,t)=>{
@@ -209,11 +218,10 @@ function addSidePanels(g,m,spec,side) {
     .name='22b-rounded-quarter-shoulder-'+side;
   for(const axle of [rearAxle,frontAxle]) {
     surface(g,m.paint,72,5,(u,t)=>{
-      const a=lerp(-.09,Math.PI+.09,u);
-      const r=archRadius+lerp(-.003,.015,t);
-      return sidePoint(side,axle+Math.cos(a)*r,spec.tireRadius+Math.sin(a)*r,.0038*Math.sin(t*Math.PI)+.0007);
+      const [z,y]=arch(axle,lerp(1+.09/Math.PI,-.09/Math.PI,u),lerp(0,.015,t));
+      return sidePoint(side,z,y,.0038*Math.sin(t*Math.PI)+.0007);
     },side<0).name='22b-rolled-open-arch';
-    const innerWheelhouseX=side*.390;
+    const innerWheelhouseX=side*innerWheelhouse;
     surface(g,m.dark,64,8,(u,t)=>{
       const [z,y]=arch(axle,u);
       return blend(sidePoint(side,z,y,-.003),[innerWheelhouseX,y-.004,z],t);
@@ -235,7 +243,8 @@ function addSidePanels(g,m,spec,side) {
   ],.034,6);
   line(g,m.black,[...door,door[0]].map(([z,y])=>sidePoint(side,z,y,.0008)),.00145)
     .name='22b-long-door-reveal';
-  const rubbing=roundedContour([[-1.00,.525],[.934,.525],[.934,.540],[-1.00,.540]],.010);
+  const moldingRear=rearAxle+archRadius+.012,moldingFront=frontAxle-frontArchRadius-.012;
+  const rubbing=roundedContour([[moldingRear,.525],[moldingFront,.525],[moldingFront,.540],[moldingRear,.540]],.010);
   mappedPolygon(g,m.paint,rubbing,(z,y)=>sidePoint(side,z,y,.005),[],side>0,5);
   const handle=roundedContour([[-.425,.726],[-.238,.724],[-.228,.768],[-.407,.773]],.017);
   mappedPolygon(g,m.glossBlack,handle,(z,y)=>sidePoint(side,z,y,.005),[],side>0,5);
@@ -338,8 +347,18 @@ function addCoupeCabin(g,m,side) {
   const surround=inset(mirrorOutline,1.08);
   const lens=inset(mirrorOutline,.87);
   const mirrorNose=inset(mirrorOutline,.57);
-  panelReturn(g,m.paint,surround,mirrorNose,mirrorBack,.119,side>0).name='22b-rounded-mirror-shell';
-  mappedPolygon(g,m.paint,mirrorNose,(u,v)=>mirrorBack(u,v,.119+.012*(1-(u/.09)**2)),[],side<0,6);
+  // Both sheets need the same short chords along the curved nose rim.
+  const edgeSteps=mirrorNose.map(([u,v],i)=>{
+    const [nextU,nextV]=mirrorNose[(i+1)%mirrorNose.length];
+    return Math.ceil(Math.hypot(nextU-u,nextV-v)/.008);
+  });
+  const sampleRim=outline=>outline.flatMap((p,i)=>Array.from({length:edgeSteps[i]},(_,j)=>
+    blend(p,outline[(i+1)%outline.length],j/edgeSteps[i])));
+  const rim=sampleRim(mirrorNose);
+  const mirrorDepth=.119;
+  const crown=(u,v,depth)=>mirrorBack(u,v,depth+.012*(depth/mirrorDepth)**2*(1-(u/.09)**2));
+  panelReturn(g,m.paint,sampleRim(surround),rim,crown,mirrorDepth,side>0).name='22b-rounded-mirror-shell-'+side;
+  mappedPolygon(g,m.paint,rim,(u,v)=>crown(u,v,mirrorDepth),[],side<0,6).name='22b-crowned-mirror-cap-'+side;
   mappedPolygon(g,m.glossBlack,surround,mirrorBack,[lens],side>0,5);
   mappedPolygon(g,m.satinMetal,lens,(u,v)=>mirrorBack(u,v,.004),[],side>0,5);
 }
@@ -493,14 +512,16 @@ function addFront(g,m) {
   const lower=roundedContour([[-.444,.469],[.444,.469],[.378,.254],[-.378,.254]],.043,8);
   const lenses=[-1,1].map(side=>roundedContour([
     [side*.365,.565],[side*.802,.565],[side*.822,.634],
-    [side*.786,.681],[side*.420,.669],[side*.387,.644]
+    [side*.786,.663],[side*.420,.669],[side*.387,.644]
   ],.022,7));
   const corners=[-1,1].map(side=>roundedContour([
     [side*.645,.455],[side*.817,.455],[side*.815,.411],
     [side*.773,.304],[side*.687,.298],[side*.655,.342]
   ],.025,7));
-  mappedPolygon(g,m.paint,outline.contour,nose,[grille,lower,...lenses,...corners],false,6)
-    .name='22b-perforated-curved-front-bumper';
+  const openings=[grille,lower,...lenses,...corners];
+  const fascia=mappedPolygon(g,m.paint,outline.contour,nose,openings,false,6);
+  fascia.name='22b-perforated-curved-front-bumper';
+  fascia.userData.contours={outline:outline.contour,openings};
   recessed(g,m,grille,nose,.042);
   recessed(g,m,lower,nose,.067);
   for(const hole of corners)recessed(g,m,hole,nose,.051);
@@ -531,9 +552,9 @@ function addFront(g,m) {
     }
     for(let rib=0;rib<17;rib++) {
       const x=side*lerp(.407,.782,rib/16);
-      rod(g,m.satinMetal,nose(x,.574,.006),nose(x,.646+.022*(rib/16),.006),.0009,5);
+      rod(g,m.satinMetal,nose(x,.574,.006),nose(x,.646+.010*(rib/16),.006),.0009,5);
     }
-    rod(g,m.glossBlack,nose(side*.748,.566,.002),nose(side*.748,.681,.002),.0025,8);
+    rod(g,m.glossBlack,nose(side*.748,.567,.002),nose(side*.748,.658,.002),.0025,8);
     mappedPolygon(g,m.lens,face,(x,y)=>nose(x,y,-.0018),[],false,5).name='22b-clear-fluted-headlamp-cover';
 
     const amber=roundedContour([[side*.652,.397],[side*.806,.398],[side*.813,.442],[side*.651,.442]],.009);
@@ -656,12 +677,22 @@ function addRear(g,m) {
   return {front:false,side:outline.side.map(([x,y])=>tail(x,y)),upper:outline.upper.map(([x,y])=>tail(x,y))};
 }
 
+function floorPanel(g,material,y,thickness,side) {
+  const outline=roundedContour([...side,...side.slice().reverse().map(([x,z])=>[-x,z])],.020);
+  const map=(x,z,depth=0)=>[x,y+depth,z];
+  mappedPolygon(g,material,outline,map,[],false,1);
+  mappedPolygon(g,material,outline,(x,z)=>map(x,z,thickness),[],true,1);
+  panelReturn(g,material,outline,outline,map,thickness,true);
+}
+
 function addInterior(g,m) {
-  box(g,m.interior,[0,.290,-.30],[1.39,.061,1.90],.024);
+  floorPanel(g,m.interior,.2595,.061,[
+    [innerWheelhouse,-1.250],[innerWheelhouse,rearAxle+archRadius],[.695,rearAxle+archRadius],[.695,.650]
+  ]);
   box(g,m.interior,[0,.824,.635],[1.42,.135,.415],.060).name='22b-curved-dash';
   box(g,m.interior,[0,.787,-1.283],[1.45,.039,.398],.014).name='22b-rear-parcel-shelf';
-  box(g,m.upholstery,[0,.435,-.91],[1.27,.144,.429],.053);
-  box(g,m.upholstery,[0,.655,-1.092],[1.26,.355,.139],.065);
+  box(g,m.upholstery,[0,.435,-.91],[1.23,.144,.429],.053);
+  box(g,m.upholstery,[0,.655,-1.092],[1.23,.355,.139],.065);
   for(const x of [-.354,.354]) {
     box(g,m.interior,[x,.490,-.181],[.490,.138,.529],.062);
     box(g,m.upholstery,[x,.531,-.162],[.321,.101,.435],.052);
@@ -712,7 +743,10 @@ export function subaru22bView(spec=SUBARU_22B_SPEC) {
   addBonnetDetails(g,m);
   const front=addFront(g,m),rear=addRear(g,m);
   addInterior(g,m);
-  box(g,m.dark,[0,.169,0],[1.38,.037,3.55],.020);
+  floorPanel(g,m.dark,.1505,.037,[
+    [innerWheelhouse,-1.775],[innerWheelhouse,rearAxle+archRadius],[.690,rearAxle+archRadius],
+    [.690,frontAxle-frontArchRadius],[innerWheelhouse,frontAxle-frontArchRadius],[innerWheelhouse,1.775]
+  ]);
   Object.assign(view.root.userData,{
     nativeConstruction:{
       version:4,endClosureRevision:3,greenhouseClosureRevision:3,bodySurfaceRevision:2,
