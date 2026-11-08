@@ -30,8 +30,17 @@ export function inspectAddedReference(view,spec,parts){
   const paint=meshes.filter(o=>o.material===view.materials.paint);
   for(const z of [-1.26,1.26])for(const side of [-1,1])test('real wheel opening '+z+'/'+side,cast([side*1.1,.48,z],[-side,0,0],paint,.28).length===0);
   for(const name of ['22b-crowned-bonnet','22b-open-scoop-roof','22b-adjustable-rear-wing','22b-gold-ten-paired-spoke-17in-wheel'])test(name+' present',!!view.body.getObjectByName(name)||!!parts.rim.getObjectByName(name));
-  const roof=cast([0,2,-.3],[0,-1,0])[0],flank=cast([.6,2,-.3],[0,-1,0])[0];test('roof is crowned within exact height',roof&&flank&&roof.point.y-flank.point.y>.016&&roof.point.y-flank.point.y<.045);
-  const scoop=view.body.getObjectByName('22b-open-scoop-roof'),b=new T.Box3().setFromObject(scoop);test('scoop stands above bonnet',b.max.y+spec.cgHeight>.95&&b.max.y+spec.cgHeight<1.1,{topM:b.max.y+spec.cgHeight});
+  const roofPanel=view.body.getObjectByName('22b-crowned-short-coupe-roof');
+  const roofHalfWidth=new T.Box3().setFromObject(roofPanel).max.x;
+  const roof=cast([0,2,-.3],[0,-1,0],[roofPanel])[0];
+  const flank=cast([roofHalfWidth*.92,2,-.3],[0,-1,0],[roofPanel])[0];
+  test('roof is crowned within exact height',roof&&flank&&roof.point.y-flank.point.y>.016&&roof.point.y-flank.point.y<.045);
+  const scoop=view.body.getObjectByName('22b-open-scoop-roof');
+  const bonnet=view.body.getObjectByName('22b-crowned-bonnet');
+  const crown=cast([0,2,1.399],[0,-1,0],[scoop])[0];
+  const beneath=cast([0,2,1.399],[0,-1,0],[bonnet])[0];
+  const scoopRise=crown&&beneath?crown.point.y-beneath.point.y:0;
+  test('stock low scoop rises 45 to 80 mm above the bonnet',scoopRise>.045&&scoopRise<.080,{riseM:scoopRise});
   test('two coupe window openings each side',meshes.filter(o=>o.name==='reference-open-window').length===6);
   for(const boundary of view.root.userData.endClosureSamples??[]){
    const closure=view.body.getObjectByName(boundary.front?'22b-perforated-curved-front-bumper':'22b-formed-rear-closure');
@@ -95,7 +104,15 @@ export function inspectAddedReference(view,spec,parts){
    const o=meshByName(name),p=o.geometry.attributes.position,n=o.geometry.attributes.normal,ix=o.geometry.index;let minimumExteriorNormal=1,minimumWinding=1;
    for(let i=0;i<n.count;i++)minimumExteriorNormal=Math.min(minimumExteriorNormal,new T.Vector3().fromBufferAttribute(n,i)[axis]*sign);
    for(let i=0;i<ix.count;i+=3){const ids=[0,1,2].map(j=>ix.getX(i+j)),v=ids.map(j=>new T.Vector3().fromBufferAttribute(p,j)),face=v[1].sub(v[0]).cross(v[2].sub(v[0])).normalize(),normal=ids.reduce((sum,j)=>sum.add(new T.Vector3().fromBufferAttribute(n,j)),new T.Vector3()).normalize();minimumWinding=Math.min(minimumWinding,face.dot(normal));}
-   test(name+' is opaque and outward facing',!o.material.transparent&&minimumExteriorNormal>.45&&minimumWinding>.85,{minimumExteriorNormal,minimumWinding});
+   // The 22B's backlight is shallow in profile. Check its upward/outward
+   // cone as well as winding instead of using the front glass's Z cutoff.
+   let exterior=minimumExteriorNormal>.45;
+   if(name==='22b-formed-rear-window-surround'){
+    let minimumUpward=1;
+    for(let i=0;i<n.count;i++)minimumUpward=Math.min(minimumUpward,n.getY(i));
+    exterior=minimumExteriorNormal>.36&&minimumUpward>.68;
+   }
+   test(name+' is opaque and outward facing',!o.material.transparent&&exterior&&minimumWinding>.85,{minimumExteriorNormal,minimumWinding});
   }
 
 

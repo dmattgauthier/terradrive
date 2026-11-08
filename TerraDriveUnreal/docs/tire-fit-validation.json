@@ -931,14 +931,14 @@
     },
     {
       "id": "subaru-22b-sti",
-      "bodySha256": "82a1a1b06b7913bcf8680e49d342141e7e2d98c36e24eeef11944ddcbc893061",
-      "coverageCells": 11723,
-      "previousFormulaOverlapM": 0.5491999959959228,
+      "bodySha256": "d678ecc933e3db5f32d820bc4e5c5c6cc92b8b84f7b2be8c0f624400a7aec29a",
+      "coverageCells": 11913,
+      "previousFormulaOverlapM": 0.548700000210097,
       "fits": [
         {
           "stage": 1,
           "diameterInches": 33,
-          "liftM": 0.732,
+          "liftM": 0.731,
           "trackExtraM": 0.07500000000000001,
           "axleOffsetsM": [
             1.0584,
@@ -948,19 +948,19 @@
           "maximumWidthScale": 1.407127376614294,
           "maximumSuspensionStage": 3,
           "maximumWheelStage": 3,
-          "clearanceM": 0.008600009732168123,
+          "clearanceM": 0.008100000557997311,
           "limiting": {
             "axle": 0,
-            "side": 1,
-            "steerDegrees": 9.871006205307701,
+            "side": -1,
+            "steerDegrees": -15.793609928492321,
             "wheelStage": 0,
             "surfaceM": [
-              0.6398526492871737,
-              0.15000000044703493,
-              1.0832289781495146
+              -0.6363094535313154,
+              0.15049999976158146,
+              1.099751547241211
             ]
           },
-          "minimumVerticalClearanceM": 0.048600000510567065,
+          "minimumVerticalClearanceM": 0.04809999976375162,
           "poseCount": 688
         },
         {
@@ -976,25 +976,25 @@
           "maximumWidthScale": 1.587453774738423,
           "maximumSuspensionStage": 3,
           "maximumWheelStage": 3,
-          "clearanceM": 0.008300000450332523,
+          "clearanceM": 0.00879999984603308,
           "limiting": {
             "axle": 0,
             "side": -1,
-            "steerDegrees": -6.870810525029366,
-            "wheelStage": 3,
+            "steerDegrees": 15.953804373037794,
+            "wheelStage": 1,
             "surfaceM": [
-              -0.6754000186920166,
-              0.15000000044703493,
-              1.0806333640522428
+              -0.681119978427887,
+              0.15049999976158146,
+              1.0172715195991624
             ]
           },
-          "minimumVerticalClearanceM": 0.04830000054452677,
+          "minimumVerticalClearanceM": 0.04879999976905647,
           "poseCount": 696
         },
         {
           "stage": 3,
           "diameterInches": 50,
-          "liftM": 0.948,
+          "liftM": 0.947,
           "trackExtraM": 0.2,
           "axleOffsetsM": [
             1.0584,
@@ -1004,19 +1004,19 @@
           "maximumWidthScale": 1.732054067852905,
           "maximumSuspensionStage": 3,
           "maximumWheelStage": 3,
-          "clearanceM": 0.00870000063936227,
+          "clearanceM": 0.008199999790558965,
           "limiting": {
             "axle": 0,
             "side": 1,
-            "steerDegrees": 13.749853824525037,
-            "wheelStage": 1,
+            "steerDegrees": 19.56056291161804,
+            "wheelStage": 0,
             "surfaceM": [
-              0.6665131763408059,
-              0.15000000044703493,
-              1.1065895050249606
+              0.6631957684692583,
+              0.15049999976158146,
+              1.1229899677276611
             ]
           },
-          "minimumVerticalClearanceM": 0.04870004055957444,
+          "minimumVerticalClearanceM": 0.04819999979238432,
           "poseCount": 704
         }
       ]

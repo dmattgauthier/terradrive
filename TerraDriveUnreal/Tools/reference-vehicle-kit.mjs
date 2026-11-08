@@ -1,8 +1,8 @@
 // Shared construction for new native-only photo-reference models. Metres, Y up.
-import {T,mesh,box,surface,mappedPolygon,line,curve,lerp} from './body-surface.mjs';
+import {T,mesh,box,surface,mappedPolygon,line,curve,lerp,station} from './body-surface.mjs';
 import {nativeGeometry as G} from './vehicle-geometry.mjs';
 import {geometryText,refineFactoryWheel} from './vehicle-fidelity.mjs';
-export {T,mesh,box,surface,mappedPolygon,line,curve,lerp,G,geometryText};
+export {T,mesh,box,surface,mappedPolygon,line,curve,lerp,station,G,geometryText};
 export function finishMaterial(color,role,roughness=.35,metalness=0){const m=new T.MeshPhysicalMaterial({color,roughness,metalness,clearcoat:role==='paint'?.85:0,clearcoatRoughness:.13,side:T.DoubleSide});m.userData.automotive=role;return m;}
 export function newReferenceView(spec){
  const scene=new T.Scene(),root=new T.Group(),body=new T.Group();scene.add(root);root.add(body);body.position.set(0,-spec.cgHeight,(.5-spec.frontWeightFraction)*spec.wheelbase);
@@ -31,3 +31,30 @@ export function simpleCabin(g,m,{floor=.30,seatY=.52,seatZ=-.2,seatX=.37,dashY=.
 // Cut-out surface grids can retain unused vertices inside an opening. Compact
 // only unreferenced rows; no visible triangle, position or shading normal changes.
 function compactReferencedVertices(group){group.traverse(o=>{if(!o.isMesh||!o.geometry.index)return;const g=o.geometry,old=g.index.array,used=[...new Set(old)];if(used.length===g.attributes.position.count)return;const remap=new Map(used.map((v,i)=>[v,i]));for(const [key,a]of Object.entries(g.attributes)){const values=[];for(const index of used)for(let k=0;k<a.itemSize;k++)values.push(a.array[index*a.itemSize+k]);g.setAttribute(key,new T.Float32BufferAttribute(values,a.itemSize));}g.setIndex(Array.from(old,i=>remap.get(i)));});}
+
+// Trim each corner with a quadratic arc in the panel's two-dimensional domain.
+export function roundedContour(corners, radius, steps=5) {
+  return corners.flatMap((corner, index) => {
+    const trim = point => {
+      const distance = Math.hypot(point[0]-corner[0], point[1]-corner[1]);
+      const t = Math.min(.44, radius/distance);
+      return corner.map((value, axis) => lerp(value, point[axis], t));
+    };
+    const a = trim(corners[(index+corners.length-1)%corners.length]);
+    const b = trim(corners[(index+1)%corners.length]);
+    return Array.from({length:steps+1}, (_, i) => {
+      const t=i/steps;
+      return a.map((value, axis) => lerp(lerp(value,corner[axis],t),lerp(corner[axis],b[axis],t),t));
+    });
+  });
+}
+
+// Join matching outlines with a formed reveal. Depth is positive into the panel.
+export function panelReturn(group, material, outer, inner, map, depth, flip=false) {
+  const clockwise=T.ShapeUtils.area(outer.map(p=>new T.Vector2(...p)))<0;
+  return surface(group,material,outer.length,3,(u,t)=>{
+    const i=Math.round(u*outer.length)%outer.length;
+    const point=outer[i].map((value,axis)=>lerp(value,inner[i][axis],t));
+    return map(...point,depth*t);
+  },clockwise!==flip);
+}

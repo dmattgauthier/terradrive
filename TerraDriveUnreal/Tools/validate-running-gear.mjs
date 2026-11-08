@@ -71,7 +71,13 @@ const caliper=brakeCaliperModel();rows.push({name:'caliper',...inspect(caliper)}
 assert.ok(new THREE.Box3().setFromObject(caliper).getSize(new THREE.Vector3()).x<.13,'caliper clears barrel depth');
 for(const spec of VEHICLES){
  if(['monster','subaru22b'].includes(spec.bodyStyle)){
-  const {view,parts}=prepareNativeVehicle(spec),row=inspect(parts.rim),r=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5,barrels=[];
+  const {view,parts}=prepareNativeVehicle(spec);
+  // The swept beadlock bowls use Three's lathe path normals. Verify the
+  // exporter normalizes them exactly, including both end rings.
+  const canonical=spec.bodyStyle==='monster';
+  const row=inspect(parts.rim,canonical);
+  if(canonical)row.canonicalNormals=compareCanonicalExportNormals(parts.rim,spec);
+  const r=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5,barrels=[];
   parts.rim.traverse(o=>{if(o.name==='native-reference-closed-drop-centre-barrel')barrels.push(o);});assert.equal(barrels.length,1,'new model has an actual closed wheel barrel');
   const hits=new THREE.Raycaster(new THREE.Vector3(0,0,0),new THREE.Vector3(0,1,0),0,r*1.2).intersectObject(barrels[0],false);assert.ok(hits.some(h=>h.distance>=r*.8&&h.distance<r),'new rim open interior wall');assert.ok(row.bounds[1][1]<r*1.02&&row.bounds[0][1]>-r*1.02,'new model fixed wheel radius');rows.push({name:spec.id+' rim',wheelCount:4,innerBarrelHits:hits.map(h=>h.distance),...row});view.dispose();continue;
  }
