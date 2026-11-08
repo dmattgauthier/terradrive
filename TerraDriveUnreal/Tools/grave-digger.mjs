@@ -544,6 +544,8 @@ function addChassis(g,m,green) {
 function addPowertrain(g,m) {
   box(g,m.dark,[0,1.193,-.652],[.596,.591,.864],.066).name='grave-rear-mounted-v8';
   box(g,m.satinMetal,[0,.950,-.586],[.466,.158,.656],.044);
+  const header=m.chrome.clone(),outlet=m.glossBlack.clone();
+  header.userData.nativeRole=outlet.userData.nativeRole='exhaust';
   for(const side of [-1,1]) {
     const cover=box(g,m.chrome,[side*.283,1.506,-.667],[.269,.177,.813],.044);
     cover.rotation.z=side*.393;
@@ -553,9 +555,17 @@ function addPowertrain(g,m) {
     }
     for(let port=0;port<4;port++) {
       const z=-.988+port*.171;
-      curve(g,m.chrome,[[side*.351,1.454,z],[side*.559,1.354,z-.027],
-        [side*.756,1.132,z-.103],[side*.896,1.092,z-.204]],.031);
-      cylinder(g,m.glossBlack,[side*.900,1.093,z-.209],.024,.005,'x',18);
+      // Sweep the outlets forward of the rear tire at full bump and steer.
+      // The second pipe from the rear passes over the diagonal cage brace.
+      const rise=port===1?.100:0;
+      const points=[[side*.351,1.454,z],[side*.500,1.384,z+.056],
+        [side*.648,1.167+rise,z+.151],[side*.835,1.098+rise,z+.244]];
+      curve(g,header,points,.031).name='grave-exhaust-header';
+      const tip=new T.Vector3(...points.at(-1));
+      const direction=tip.clone().sub(new T.Vector3(...points.at(-2))).normalize();
+      const inner=tip.clone().addScaledVector(direction,-.007);
+      const face=tip.clone().addScaledVector(direction,-.002);
+      rod(g,outlet,inner.toArray(),face.toArray(),.024,18).name='grave-exhaust-outlet';
     }
   }
   box(g,m.chrome,[0,1.719,-.640],[.382,.234,.657],.039);

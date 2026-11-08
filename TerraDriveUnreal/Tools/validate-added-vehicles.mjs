@@ -162,6 +162,10 @@ export function inspectAddedReference(view,spec,parts){
 
 
  }else{
+  const exhaust=meshes.filter(o=>o.material.userData.nativeRole==='exhaust');
+  const headers=exhaust.filter(o=>o.name==='grave-exhaust-header'&&o.geometry.type==='TubeGeometry').length;
+  const outlets=exhaust.filter(o=>o.name==='grave-exhaust-outlet'&&o.geometry.type==='CylinderGeometry').length;
+  test('all eight exhaust pipes and outlets are tagged for the cooked clearance check',headers===8&&outlets===8&&exhaust.length===16,{headers,outlets});
   const headlights=meshes.filter(o=>o.name==='monster-constant-red-headlight');test('constant red headlights stay separate from brake circuit',headlights.length===2&&headlights.every(o=>!o.material.userData.nativeRole&&o.material.emissiveIntensity>.8));
   test('official monster class scale',Math.abs(spec.tireRadius*2/.0254-66)<1e-6&&Math.abs(spec.tireWidth/.0254-43)<1e-6&&Math.abs(spec.suspension.travel/.0254-30)<1e-6);
   test('stock monster tires are not shrunk to upgrade limit',tireDiameterInches(spec.tireRadius,3)>65.99);

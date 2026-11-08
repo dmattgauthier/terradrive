@@ -1440,7 +1440,7 @@
       },
       "addedReference": {
         "id": "grave-digger",
-        "checks": 22,
+        "checks": 23,
         "vertices": 186977,
         "bodySizeM": [
           1.9999902248382568,
@@ -1494,6 +1494,12 @@
           {
             "name": "clear reference glazing",
             "pass": true
+          },
+          {
+            "name": "all eight exhaust pipes and outlets are tagged for the cooked clearance check",
+            "pass": true,
+            "headers": 8,
+            "outlets": 8
           },
           {
             "name": "constant red headlights stay separate from brake circuit",

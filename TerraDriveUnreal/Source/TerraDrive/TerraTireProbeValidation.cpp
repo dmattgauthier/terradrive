@@ -8,7 +8,7 @@
 #include "Serialization/JsonSerializer.h"
 namespace TerraTireProbeValidation {
 namespace {
-struct FProfile {FName Asset;TArray<FVector> Points;};
+struct FProfile {FName Asset;TArray<FVector> Points;FMeshEnvelope Envelope;};
 struct FVehicleProfiles {FProfile Sizes[4],Compounds[3];};
 FVehicleProfiles Profiles[ATerraVehicle::VehicleCount];bool Ready=false;
 
@@ -18,6 +18,10 @@ bool ReadProfile(const TSharedPtr<FJsonValue>& Value,int Stage,FProfile& P){
   if(!Item.IsValid()||Item->GetIntegerField(TEXT("stage"))!=Stage||!Item->TryGetStringField(TEXT("asset"),Asset)||Asset.IsEmpty()||
       !Item->TryGetStringField(TEXT("sha256"),Hash)||Hash.Len()!=64||!Item->TryGetArrayField(TEXT("pointsCm"),Points)||Points->Num()<24||Points->Num()>96)return false;
   P.Asset=FName(*Asset);P.Points.Reset();
+  P.Envelope={};
+  double RadiusM=0,HalfWidthM=0;
+  if(Item->TryGetNumberField(TEXT("maxRadialM"),RadiusM)&&Item->TryGetNumberField(TEXT("maxAxialHalfWidthM"),HalfWidthM)&&
+    FMath::IsFinite(RadiusM)&&RadiusM>0&&FMath::IsFinite(HalfWidthM)&&HalfWidthM>0)P.Envelope={RadiusM*100,HalfWidthM*100};
   for(const auto& Entry:*Points){
     const auto& A=Entry->AsArray();if(A.Num()!=3)return false;
     const FVector Point(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber());
@@ -65,6 +69,10 @@ bool Load(){
   Ready=true;return true;
 }
 bool Matches(const ATerraVehicle* V){return MatchedProfile(V)!=nullptr;}
+FMeshEnvelope MeshEnvelope(const ATerraVehicle* V){
+  const auto* P=MatchedProfile(V);
+  return P?P->Envelope:FMeshEnvelope{};
+}
 TArray<FVector> ActorLocalPoints(const ATerraVehicle* V){
   TArray<FVector> Result;const auto* P=MatchedProfile(V);if(!P)return Result;
   const auto Inverse=V->GetActorTransform().Inverse();

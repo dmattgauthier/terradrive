@@ -118,3 +118,39 @@ stale plane classifications and resolved by clipping each plane directly.
 | Manifest of 221 source inputs | `583a6b1540afa0db15d75541cf4acc8bae6a66370e55836a853ff9295cc93acb` |
 | `TerraDrive-Windows.ucas` | `fa97d20eba1a5dc137d1375373efd076eba27946020005261f59c21bb5007f99` |
 | `TerraDrive-Windows.pak` | `c26facd1785a7e7c862cdcf46f81b84c972fb233ffd8fe32567520be8a2594f8` |
+
+## Grave Digger exhaust follow-up
+
+The two rearmost headers on each side crossed the rear tire sidewalls at
+stock ride height. The revised outlets sweep forward through the cage
+openings, with one tube raised over its diagonal brace. The export changed
+one mesh, `grave_digger_body`. The two tagged exhaust material slots let the
+native fixture read all 6,720 cooked header and outlet triangles.
+
+Both stock rear tires cleared the cooked exhaust by **at least 5 mm** over
+**989.1 mm** of vertical travel. The sweep runs from 547.135 mm of rebound
+below ride height, including spring preload, to 441.960 mm of bump above it.
+Each rear wheel uses 52 steering samples spanning its low-speed locks
+(35.0° inner and 16.0° outer), with padding for motion between samples. This
+is a deterministic geometry fixture in `verify-fidelity.ps1 -Mode Expanded`.
+
+The fresh Windows package passed 11 art checks with ten new captures, 284
+expanded roster checks, and 59 real-time rollover checks on repeat. These
+354 checks ran with isolated settings, offscreen 1600×900 rendering and a
+20 FPS cap. The logs recorded zero runtime errors and a peak sampled GPU
+temperature of 62.91 C. Source checks passed 97 focused assertions and 327
+oversized tire-fit assertions.
+
+The 90° dirt-side rollover pose crossed its 4 cm tire-to-ground tolerance
+on the first revised run (−2.260 in) and a matching run of the previous
+`fa7e6c7` package (−1.929 in). The revised package cleared the tolerance on
+repeat (−1.375 in). Raw reports, failed runs, captures and package hashes are
+under `Saved/PR13Exhaust`.
+
+| Tested input | SHA-256 |
+| --- | --- |
+| Staged game executable | `53af44712d598f53f1bb854cdd4a480d1ba1665f2a98d815ba4f3c057b7f0589` |
+| Manifest of 221 source inputs | `6481698ad587c6a5a9a481b4d1440bcfcda57a5ae9d19412bd9ff0ece7b823b1` |
+| `grave_digger_body.obj` | `db165177cc0ccc9ed94b35a0dd86fb23e2ed31339c38a9a1cb8408936bdadd63` |
+| `TerraDrive-Windows.ucas` | `aa066c84ba4ce291f130afa8d2a3adced63e7f6568703e88329eb96f4c30d124` |
+| `TerraDrive-Windows.pak` | `90375a56886588ee8a04307222df61fda17bc679fc5c4282c40a078aed19195d` |

@@ -110,6 +110,8 @@ public:
   UPROPERTY() TObjectPtr<UStaticMeshComponent> TrailEquipment;
   static constexpr int MaxWheels=6;
   static constexpr int VehicleCount=12;
+  static constexpr float SteeringLockDegrees=34.f;
+  static constexpr float MonsterRearSteerRatio=-.65f;
   FTerraWheel WheelState[MaxWheels];
   // Diagnostic budget for the rolled tire contact solver; zero in normal driving.
   int RolledTireCandidates=0,RolledTireTraces=0,RolledTireContacts=0;
@@ -244,6 +246,7 @@ public:
   FVector GarageViewState() const { return FVector(GarageYaw,GaragePitch,GarageDistance); }
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
   float BumpTravel(bool Front) const;
+  float ReboundTravel(int Axle) const;
   void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0;BodyGroundContactCount=0;PendingBodyGroundContacts.Reset();RolledBodySupports.Reset(); }
   TerraSim::UpgradeSetup Builds[VehicleCount];
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> BrakeLamps;
