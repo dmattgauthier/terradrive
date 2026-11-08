@@ -14,6 +14,8 @@
   ],
   "visualMaskValidated": true,
   "slateRimVisualPixels": 43814,
+  "graniteApronPixels": 81381,
+  "quarryLaneMaskValidated": true,
   "sourceTerrainSHA256": "04febae6063ca385d27e5843cdfe65fe72690942dd2cd4126c146745d313bd20",
   "lines": [
     {

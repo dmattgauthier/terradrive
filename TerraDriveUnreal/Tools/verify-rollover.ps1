@@ -1,4 +1,4 @@
-param([switch]$Quick,[ValidateRange(0,9)][int]$QuickVehicle=3,[switch]$AllowLegacyProxy,[switch]$MeasurePerformance,[string]$FixtureFile='',[string]$Name='rollover',[int]$TimeoutSeconds=900)
+param([switch]$Quick,[ValidateRange(0,11)][int]$QuickVehicle=3,[switch]$AllowLegacyProxy,[switch]$MeasurePerformance,[string]$FixtureFile='',[string]$Name='rollover',[int]$TimeoutSeconds=900,[ValidateRange(0,3)][int]$TireSizeStage=0,[switch]$LegacyRolledTires)
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(@(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue).Count){throw 'Close engine processes before the isolated rollover check'}
@@ -6,6 +6,8 @@ if($Name -notmatch '^[a-z0-9-]+$'){throw 'Use a simple report name'}
 $taskOut=Join-Path $taskRoot 'Saved/Validation';New-Item -ItemType Directory -Path $taskOut -Force | Out-Null
 $taskReport=Join-Path $taskOut ($Name+'.json');$taskLog=Join-Path $taskOut ($Name+'.log');$taskStart=Get-Date
 $taskArgs=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-TerraValidate','-TerraCapture','-TerraRolloverOnly','-TerraTestFPS=20','-TerraGraphicsMode=2',('-TerraReport="'+$taskReport+'"'),('-TerraGarage="'+(Join-Path $taskOut 'rollover-test-garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOut 'rollover-test-graphics.json')+'"'),('-abslog="'+$taskLog+'"'))
+$taskArgs+=('-TerraRolloverTireSize='+$TireSizeStage)
+if($LegacyRolledTires){$taskArgs+='-TerraLegacyRolledTires'}
 if($Quick){$taskArgs+=@('-TerraRolloverQuick',('-TerraRolloverQuickVehicle='+$QuickVehicle))}
 if($MeasurePerformance){$taskArgs+='-TerraRolloverMeasurePerformance'}
 if(!$AllowLegacyProxy){$taskArgs+='-TerraExpectCoachworkCollision'}
@@ -26,15 +28,22 @@ $taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw | ConvertFrom-Json
 $taskRoster=Get-Content -LiteralPath (Join-Path $taskRoot 'Content/NativeData/vehicle-collision.json') -Raw | ConvertFrom-Json
 $taskVehicleCount=@($taskRoster.vehicles).Count
 $taskPoseCount=if($Quick){10}else{$taskVehicleCount*6+4}
-$taskChecksPerPose=$(if($AllowLegacyProxy){6}else{8})+$(if($MeasurePerformance){1}else{0})
+$taskChecksPerPose=$(if($AllowLegacyProxy){7}else{9})+$(if($MeasurePerformance){1}else{0})
 $taskExpected=1+$taskPoseCount*$taskChecksPerPose
-$taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 0 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and $taskPlan.quick -eq [bool]$Quick -and $taskPlan.coachworkCollisionRequired -eq (!$AllowLegacyProxy) -and $taskPlan.checksPerPose -eq $taskChecksPerPose -and @($taskPlan.cases).Count -eq $taskPoseCount
+$taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 0 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and $taskPlan.performanceMeasured -eq [bool]$MeasurePerformance -and $taskPlan.tireSizeStage -eq $TireSizeStage -and $taskPlan.quick -eq [bool]$Quick -and $taskPlan.coachworkCollisionRequired -eq (!$AllowLegacyProxy) -and $taskPlan.checksPerPose -eq $taskChecksPerPose -and @($taskPlan.cases).Count -eq $taskPoseCount
 $taskCoverage=[Collections.Generic.HashSet[string]]::new()
 foreach($taskCase in $taskPlan.cases){
  $taskPlanValid=$taskPlanValid -and $taskCase.vehicle -ge 0 -and $taskCase.vehicle -lt $taskVehicleCount -and $taskCase.zone -in @(0,1) -and $taskCase.roll -in @(-110,-90,-55,55,90,110,180)
  if($Quick){$taskPlanValid=$taskPlanValid -and $taskCase.vehicle -eq $QuickVehicle -and $taskPlan.quickVehicle -eq $QuickVehicle}
  [void]$taskCoverage.Add(('{0}:{1}:{2}' -f $taskCase.vehicle,$taskCase.zone,$taskCase.roll))
 }
+# Require the exact side/roof matrix, not only a matching number of cases.
+$taskRequired=[Collections.Generic.HashSet[string]]::new()
+$taskVehicles=if($Quick){@($QuickVehicle)}else{@(0..($taskVehicleCount-1))}
+foreach($taskVehicle in $taskVehicles){foreach($taskZone in @(1,0)){foreach($taskRoll in @(-90,90,180)){[void]$taskRequired.Add(('{0}:{1}:{2}' -f $taskVehicle,$taskZone,$taskRoll))}}}
+$taskExtraVehicle=if($Quick){$QuickVehicle}else{3}
+foreach($taskRoll in @(-55,55,-110,110)){[void]$taskRequired.Add(('{0}:0:{1}' -f $taskExtraVehicle,$taskRoll))}
+$taskPlanValid=$taskPlanValid -and $taskCoverage.SetEquals($taskRequired)
 if(!$taskPlanValid -or $taskCoverage.Count -ne $taskPoseCount -or $taskPlan.expectedChecks -ne $taskExpected){throw 'Rollover fixture plan does not match the complete requested pose matrix'}
 $taskFailures=@($taskResult.tests | Where-Object {!$_.pass});$taskErrors=@(Select-String -LiteralPath $taskLog -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
 if($taskExit -ne 0 -or $taskFailures.Count -or $taskErrors.Count -or $taskResult.tests.Count -ne $taskExpected){$taskFailures | Select-Object case,value,pass | Format-Table -AutoSize | Out-String | Write-Output;throw ('Rollover check failed: '+$taskReport)}

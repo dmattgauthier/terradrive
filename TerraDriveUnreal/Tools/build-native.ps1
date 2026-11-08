@@ -17,6 +17,8 @@ if ($ImportAssets) {
     }
     & node (Join-Path $PSScriptRoot 'bake-vehicle-ground-probes.mjs')
     if($LASTEXITCODE){throw 'Vehicle lower-body probe generation failed'}
+    & node (Join-Path $PSScriptRoot 'bake-tire-probes.mjs')
+    if($LASTEXITCODE){throw 'Vehicle tire rollover probe generation failed'}
     & node (Join-Path $PSScriptRoot 'bake-coachwork-collision.mjs')
     if($LASTEXITCODE){throw 'Vehicle coachwork collision generation failed'}
     $importMarker=Join-Path $projectRoot 'Saved\import-complete.json'
@@ -55,7 +57,7 @@ if ($ImportAssets) {
 if ($Package) {
     & node (Join-Path $PSScriptRoot 'garden-geology.mjs')
     if($LASTEXITCODE){throw 'Garden geology cache generation failed'}
-    foreach ($required in @('Content\Maps\ProvingGround.umap','Content\NativeData\world.json','Content\NativeData\terrain.bin','Content\NativeData\vehicle-ground-probes.json','Content\NativeData\vehicle-collision.json')) {
+    foreach ($required in @('Content\Maps\ProvingGround.umap','Content\NativeData\world.json','Content\NativeData\terrain.bin','Content\NativeData\vehicle-ground-probes.json','Content\NativeData\vehicle-collision.json','Content\NativeData\vehicle-tire-probes.json')) {
         if (!(Test-Path -LiteralPath (Join-Path $projectRoot $required))) {
             throw "Missing $required. Run with -ImportAssets before packaging."
         }

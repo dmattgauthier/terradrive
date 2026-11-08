@@ -1,7 +1,7 @@
 {
   "terrainSamples": 1000,
   "maximumHeightExportErrorM": 0.0000019073486328125,
-  "vehicles": 10,
+  "vehicles": 12,
   "zones": 9,
   "zoneSamples": [
     {
@@ -68,7 +68,7 @@
       "heightM": 12.272045135498047
     }
   ],
-  "meshSources": 307,
+  "meshSources": 361,
   "constructedGroups": 2,
   "challengeRoutes": 14,
   "quarryDeckHeightM": 26.172911834716796,
@@ -138,6 +138,18 @@
       "id": "mercedes-amg-g63-6x6",
       "wheels": 6,
       "axles": 3,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "grave-digger",
+      "wheels": 4,
+      "axles": 2,
+      "referenceCraftRevision": 24
+    },
+    {
+      "id": "subaru-22b-sti",
+      "wheels": 4,
+      "axles": 2,
       "referenceCraftRevision": 24
     }
   ],

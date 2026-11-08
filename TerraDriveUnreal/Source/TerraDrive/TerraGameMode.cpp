@@ -45,6 +45,8 @@
 #include "TerraRutValidation.h"
 #include "TerraRutTransitionValidation.h"
 #include "TerraPerimeterValidation.h"
+#include "TerraExpandedValidation.h"
+#include "TerraRecoveryValidation.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
@@ -122,6 +124,12 @@ void ATerraGameMode::Tick(float Dt) {
       FScreenshotRequest::RequestScreenshot(Directory/Name,true,false);
     }
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraRecoveryOnly"))){
+    if(TerraRecoveryValidation::Tick(V,Dt,Check,Capture))FinishValidation();return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraExpandedOnly"))){
+    if(TerraExpandedValidation::Tick(V,Dt,Check,Capture))FinishValidation();return;
+  }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
     return;
@@ -267,7 +275,7 @@ void ATerraGameMode::Tick(float Dt) {
   };
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))Next(61);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly")))Next(64);
-  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"))){ModelVehicle=0;Next(64);}
+  if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraModelHeroOnly"))){ModelVehicle=0;FParse::Value(FCommandLine::Get(),TEXT("TerraModelHeroVehicle="),ModelVehicle);ModelVehicle=FMath::Clamp(ModelVehicle,0,ATerraVehicle::VehicleCount-1);Next(64);}
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraGroundOnly")))Next(66);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTransitionsOnly")))Next(80);
   if(Stage==0&&FParse::Param(FCommandLine::Get(),TEXT("TerraTerrainDetailOnly")))Next(84);
@@ -294,10 +302,10 @@ void ATerraGameMode::Tick(float Dt) {
       Results.Add(FString::Printf(TEXT("{\"case\":\"vehicle %d meshes\",\"pass\":%s}"),
           I, Loaded ? TEXT("true") : TEXT("false")));
       Check(FString::Printf(TEXT("vehicle %d articulated suspension and upgrade models"),I),
-          V->SuspensionParts.Num()==20&&V->Protection->GetStaticMesh()&&V->TrailEquipment->GetStaticMesh());
-      bool SplitLoaded=V->Rims.Num()==4&&V->HubDetails.Num()==16;
+          V->SuspensionParts.Num()==V->WheelCount()*5&&V->Protection->GetStaticMesh()&&V->TrailEquipment->GetStaticMesh());
+      bool SplitLoaded=V->Rims.Num()==V->WheelCount()&&V->HubDetails.Num()==V->WheelCount()*4;
       for(auto Rim:V->Rims)SplitLoaded&=Rim->GetStaticMesh()!=nullptr;
-      for(int Wheel=0;Wheel<4;++Wheel)SplitLoaded&=V->HubDetails[Wheel*4+2]->GetStaticMesh()!=nullptr;
+      for(int Wheel=0;Wheel<V->WheelCount();++Wheel)SplitLoaded&=V->HubDetails.IsValidIndex(Wheel*4+2)&&V->HubDetails[Wheel*4+2]->GetStaticMesh()!=nullptr;
       const auto VehicleSpec=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[I]->AsObject();
       for(int TireStage=1;TireStage<=3;++TireStage)SplitLoaded&=LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/Meshes/%s_tire_%d"),*VehicleSpec->GetStringField(TEXT("asset")),TireStage))!=nullptr;
       Check(FString::Printf(TEXT("vehicle %d factory rims, upgraded tires and stationary brakes"),I),SplitLoaded);
@@ -1137,7 +1145,7 @@ void ATerraGameMode::Tick(float Dt) {
       if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarrySurvey"))){
         double ArtPilot=0,ExtensionVersion=0;
         const TSharedPtr<FJsonObject>* Extension=nullptr;
-        const bool CurrentHood=UrusBody->TryGetNumberField(TEXT("artPilot"),ArtPilot)&&ArtPilot==3;
+        const bool CurrentHood=UrusBody->TryGetNumberField(TEXT("artPilot"),ArtPilot)&&ArtPilot==4;
         const bool CurrentQuarry=WorldData->TryGetObjectField(TEXT("slateRimExtension"),Extension)&&
           (*Extension)->TryGetNumberField(TEXT("version"),ExtensionVersion)&&ExtensionVersion==1;
         Check(TEXT("quarry survey requires the current Urus hood art"),CurrentHood,ArtPilot);
@@ -1282,7 +1290,7 @@ void ATerraGameMode::Tick(float Dt) {
     if(StageTime>2.5f){
       const int PhotoViews=AllModels?10:(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarrySurvey"))?7:6);
       if(++ModelView==PhotoViews){
-        if(AllModels){if(++ModelVehicle==ATerraVehicle::VehicleCount)FinishValidation();else Next(64);}
+        if(AllModels){int SingleVehicle=-1;FParse::Value(FCommandLine::Get(),TEXT("TerraModelHeroVehicle="),SingleVehicle);if(SingleVehicle>=0||++ModelVehicle==ATerraVehicle::VehicleCount)FinishValidation();else Next(64);}
         else if(FParse::Param(FCommandLine::Get(),TEXT("TerraHeroOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraTrailOnly")))FinishValidation();else Next(66);
       }else Next(65);
     }

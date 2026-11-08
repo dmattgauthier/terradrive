@@ -111,7 +111,7 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     Check(Label+TEXT("rear locker card matches mechanical or virtual capability"),Ids.Contains(TEXT("rearLock"))==V->HasLocker(false));
     Check(Label+TEXT("energy gauge matches the active EV or ICE powertrain"),Ids.Contains(TEXT("battery"))==V->IsElectric()&&Ids.Contains(TEXT("fuel"))==!V->IsElectric());
     Check(Label+TEXT("center card distinguishes real center lock or rigid transfer"),Ids.Contains(TEXT("centerLock"))==(V->HasCenterLocker()||V->HasRigidTransfer()));
-    Check(Label+TEXT("status stays in the top fifth of the actual viewport"),W>=1024&&H>=576&&HUD->LastStatusBottom>0&&HUD->LastStatusBottom<H*.2f,HUD->LastStatusBottom);
+    Check(Label+TEXT("status stays at the bottom of the actual viewport"),W>=1024&&H>=576&&HUD->LastStatusTop>H*.78f&&HUD->LastStatusBottom<H,HUD->LastStatusBottom);
     Check(Label+TEXT("active drivetrain and configurable key labels are nonempty"),!V->DriveDescription().IsEmpty()&&!V->ControlLabel(A::Garage).IsEmpty()&&!V->ControlLabel(A::PressureDown).IsEmpty());
     Capture(*FString::Printf(TEXT("native-interface-hud-v%d.png"),State.Model));Next(3);
   }break;

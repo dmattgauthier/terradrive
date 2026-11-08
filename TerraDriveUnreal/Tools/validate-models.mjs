@@ -5,6 +5,7 @@ import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
 import {nativeGeometry as geo} from './vehicle-geometry.mjs';
 import {expeditionStyle,inspectExpeditionVehicle} from './validate-expedition-vehicles.mjs';
+import {addedReferenceStyle,inspectAddedReference} from './validate-added-vehicles.mjs';
 const results=[];
 for(const spec of VEHICLES){
  const {view,parts:wheelParts}=prepareNativeVehicle(spec);view.root.updateMatrixWorld(true);
@@ -22,7 +23,7 @@ for(const spec of VEHICLES){
  });
  // Keep the original six completeness regressions. New originals are checked
  // against physical envelopes/openings, rather than rewarding extra vertices.
- if(!expeditionStyle(spec))assert.ok(vertices>200000,spec.id+' complete coachwork');
+ if(!expeditionStyle(spec)&&!addedReferenceStyle(spec))assert.ok(vertices>200000,spec.id+' complete coachwork');
  assert.ok(unitNormals/vertices>.995,spec.id+' normalized shading');
  const visibility=[];
  const firstSolid=(start,dir)=>{
@@ -124,10 +125,11 @@ for(const spec of VEHICLES){
  assert.ok(Math.abs(Math.max(size.y,size.z)/2-spec.tireRadius)<.004,spec.name+' tread matches mechanical radius');
  assert.ok(size.x>=spec.tireWidth*.99&&size.x<spec.tireWidth*1.10,spec.name+' tire shoulder width');
  assert.equal(view.wheels[0].root.userData.factoryWheelRevision,spec.bodyStyle==='g63six'||spec.gClassVariant==='squared'?24:['g580','g63'].includes(spec.bodyStyle)?15:3);
+ const addedReference=addedReferenceStyle(spec)?inspectAddedReference(view,spec,wheelParts):undefined;
  const expedition=expeditionStyle(spec)?inspectExpeditionVehicle(view,spec,wheelParts):undefined;
- results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:view.wheels[0].root.userData.factoryWheelRevision,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},...(expedition?{expedition}:{}),pass:true});view.dispose();
+ results.push({vehicle:spec.name,vertices,normalizedFraction:unitNormals/vertices,visibility,tire:{revision:view.wheels[0].root.userData.factoryWheelRevision,type:spec.tireType,diameterM:Math.max(size.y,size.z),widthM:size.x},...(expedition?{expedition}:{}),...(addedReference?{addedReference}:{}),pass:true});view.dispose();
 }
-assert.equal(results.length,10,'complete expedition roster');
+assert.equal(results.length,12,'complete reference roster');
 const report={revision:'reference-coachwork-24',vehicles:results,newExpeditionChecks:results.reduce((n,r)=>n+(r.expedition?.checks||0),0),pass:true};
 assert.ok(report.newExpeditionChecks>=110,'physical envelope/glazing and portal-variant checks for all four expedition bodies');
 fs.writeFileSync(new URL('../docs/model-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');

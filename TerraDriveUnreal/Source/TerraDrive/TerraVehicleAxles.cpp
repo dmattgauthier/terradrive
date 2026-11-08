@@ -7,7 +7,15 @@ int ATerraVehicle::WheelCount()const{return Number(TEXT("wheelCount"),4)==6?6:4;
 float ATerraVehicle::AxleOffsetM(int Axle)const{
   const TArray<TSharedPtr<FJsonValue>>* Offsets=nullptr;
   if(Spec.IsValid()&&Spec->TryGetArrayField(TEXT("axleOffsetsM"),Offsets)&&Offsets->IsValidIndex(Axle)){
-    double X;if((*Offsets)[Axle]->TryGetNumber(X)&&FMath::IsFinite(X))return X;
+    double X;if((*Offsets)[Axle]->TryGetNumber(X)&&FMath::IsFinite(X)){
+      if(Axle==2&&UpgradeStage(TerraSim::TireSize)>0){
+        const float Middle=(*Offsets)[1]->AsNumber();
+        // The big-tire conversion extends the trailing bogie and its links;
+        // stock tandem spacing is only 43.3 inches and cannot fit 50-inch tires.
+        X=FMath::Min(float(X),Middle-(Radius*2+.08f));
+      }
+      return X;
+    }
   }
   return Wheelbase*(Axle==0?1-FrontWeight:-FrontWeight);
 }

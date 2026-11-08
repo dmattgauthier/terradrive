@@ -275,6 +275,10 @@ FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM
     if (!Hit.Component.IsValid() || Hit.Component->ComponentHasTag(TEXT("TerraGround"))) continue;
     if(RigidEncountered)*RigidEncountered=true;
     if(Hit.bStartPenetrating)continue;
+    // A constructed slab can extend under solid terrain. Its buried bottom
+    // is not an exposed tire support: accepting it retracts a rolled wheel
+    // and mistakes the underside for an inverted loop surface.
+    if(Hit.ImpactPoint.Z<Height(Hit.ImpactPoint.X,Hit.ImpactPoint.Y)-4.f)continue;
     const float D = MinCM + Hit.Distance;
     if (!TerraSim::ValidSupport(D, MinCM, MaxCM, FVector::DotProduct(Up, Hit.ImpactNormal))) continue;
     if (!Result.Hit || D < Result.Distance) {
@@ -312,6 +316,7 @@ FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forw
     if(TerraSim::ValidSupport(Distance,MinCM,MaxCM,Alignment)&&
         GetWorld()->LineTraceSingleByChannel(Shoulder,Point+Nrm*6,Point-Nrm*6,ECC_Visibility,Q)&&
         Shoulder.Component.IsValid()&&FVector::Dist(Shoulder.ImpactPoint,Point)<2&&
+        Shoulder.ImpactPoint.Z>=Height(Shoulder.ImpactPoint.X,Shoulder.ImpactPoint.Y)-4.f&&
         FVector::DotProduct(Shoulder.ImpactNormal,Up)>.15f&&!Shoulder.Component->ComponentHasTag(TEXT("TerraGround"))){
       Central.Point=Shoulder.ImpactPoint;Central.Normal=Shoulder.ImpactNormal;Central.Distance=Distance;
     }else Central=FTerraSupport();
@@ -330,6 +335,7 @@ FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forw
       if(!GetWorld()->LineTraceSingleByChannel(H,Mount+Offset+Up*(RadiusCM-MinCM+4),
           Mount+Offset-Up*(MaxCM+Arc),ECC_Visibility,Q)||!H.Component.IsValid()||
           H.Component->ComponentHasTag(TEXT("TerraGround")))continue;
+      if(H.ImpactPoint.Z<Height(H.ImpactPoint.X,H.ImpactPoint.Y)-4.f)continue;
       const float D=FVector::DotProduct(Mount+Offset-H.ImpactPoint,Up)-Arc;
       if(!TerraSim::ValidSupport(D,MinCM,MaxCM,FVector::DotProduct(Up,H.ImpactNormal)))continue;
       if(!Central.Hit||!Central.Constructed||D<Central.Distance)
@@ -878,6 +884,17 @@ void ATerraWorld::LoadScenery() {
       auto *C = NewObject<UStaticMeshComponent>(this);
       C->SetupAttachment(RootComponent);
       C->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, *(TEXT("/Game/Meshes/") + (Pass == 0 ? Visual : Collision))));
+      if(Pass==0&&Visual==TEXT("granite_trials")&&C->GetStaticMesh()){
+        // The approach reaches the natural terrain at the rectangle edge.
+        // Share its world-space coverage instead of ending a pure-rock
+        // material there. Only rock slots change; gate colors remain intact.
+        auto* QuarryMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Materials/Terrain_QuarryBlend"));
+        ensureMsgf(QuarryMaterial,TEXT("Granite Trials ground blend material is missing"));
+        if(QuarryMaterial)for(int Slot=0;Slot<C->GetNumMaterials();++Slot){
+          auto* Original=C->GetMaterial(Slot);
+          if(Original&&Original->GetName()==TEXT("Terrain_rock"))C->SetMaterial(Slot,QuarryMaterial);
+        }
+      }
       const bool Physical = Visual == Collision || Pass == 1;
       C->SetCollisionProfileName(Physical ? TEXT("BlockAll") : TEXT("NoCollision"));
       C->ComponentTags.Add(TEXT("TerraConstructed"));
@@ -1240,6 +1257,19 @@ void ATerraWorld::Tick(float Dt) {
                                                 true);
       }
     }
+}
+bool ATerraWorld::HasBlendedGraniteApproach() const {
+  for(const auto& Component:ConstructedMeshes){
+    if(!IsValid(Component)||!Component->GetStaticMesh()||Component->GetStaticMesh()->GetName()!=TEXT("granite_trials"))continue;
+    bool Blended=false,Marker=false;
+    for(int Slot=0;Slot<Component->GetNumMaterials();++Slot){
+      const auto* Material=Component->GetMaterial(Slot);if(!Material)return false;
+      if(Material->GetName()==TEXT("Terrain_rock"))return false;
+      if(Material->GetName()==TEXT("Terrain_QuarryBlend"))Blended=true;else Marker=true;
+    }
+    return Blended&&Marker;
+  }
+  return false;
 }
 void ATerraWorld::SetRain(bool Enabled) { Rain = Enabled; }
 FTerraSoilCollisionStats ATerraWorld::SoilCollisionStats() const {

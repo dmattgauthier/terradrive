@@ -1,0 +1,19 @@
+{
+  "kind": "source-geometry",
+  "nativeAcceptance": false,
+  "before": {
+    "triangles": 8640,
+    "samples": 12769,
+    "meanDegrees": 0.7707296995497193,
+    "p95Degrees": 3.8550486979889245,
+    "maxDegrees": 8.548851772288273
+  },
+  "after": {
+    "triangles": 32000,
+    "samples": 66792,
+    "meanDegrees": 0.04826328695953077,
+    "p95Degrees": 0.21309770750666765,
+    "maxDegrees": 0.3751395305531709
+  },
+  "pass": true
+}

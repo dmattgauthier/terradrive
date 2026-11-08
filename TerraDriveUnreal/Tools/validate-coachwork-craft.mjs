@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import {VEHICLES} from './native-vehicles.mjs';
 import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {T} from './body-surface.mjs';
+import {G_VARIANTS} from './gclass-variants.mjs';
 const checks=[],observed=[];
 const check=(vehicle,name,pass,value)=>{checks.push({vehicle,name,pass,value});assert.ok(pass,vehicle+': '+name+' '+JSON.stringify(value));};
 for(const i of [5,7,8]){
@@ -52,7 +53,7 @@ for(const i of [5,7,8]){
  }else{
   for(const side of [-1,1]){
    const bucket=view.body.getObjectByName('gclass-formed-black-headlamp-bucket-'+side);
-   const origin=[side*(.635+.130),.909,3],hits=ray(origin,[0,0,-1],bucket);
+   const origin=[side*(.635+.130),.909+(spec.gClassVariant==='squared'?G_VARIANTS.squared.bodyRise:0),3],hits=ray(origin,[0,0,-1],bucket);
    const b=bucket&&new T.Box3().setFromObject(bucket).getSize(new T.Vector3());
    check(spec.id,'formed headlamp surround is wider than the round lens '+side,!!hits.length&&b.x>.300&&b.y>.250,{widthIn:b?.x/.0254,heightIn:b?.y/.0254});
    const glass=view.body.getObjectByName('gclass-rear-facing-mirror-glass-'+side),n=glass?.geometry.attributes.normal;

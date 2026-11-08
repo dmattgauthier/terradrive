@@ -8,12 +8,12 @@
 
 void ATerraHUD::DrawHUD() {
   Super::DrawHUD();
-  VisibleStatusIds.Reset();LastStatusBottom=0;
+  VisibleStatusIds.Reset();LastStatusBottom=LastStatusTop=0;
   auto* V=Cast<ATerraVehicle>(GetOwningPawn());
   if(!bShowHUD||!V||!Canvas||V->Garage||V->PauseMenuOpen)return;
   using A=TerraControls::Action;
   const FLinearColor White(.94f,.97f,.96f),Muted(.61f,.70f,.72f),Mint(.48f,.94f,.72f),Amber(1.f,.76f,.30f);
-  const float S=FMath::Min(1.35f,Canvas->SizeX/1280.f),Y=16*S,H=82*S,Gap=6*S;
+  const float S=FMath::Min(1.35f,Canvas->SizeX/1280.f),H=82*S,Gap=6*S;
   struct Card {FString Id,Title,Value,Key;int Icon;bool On;float Width;};
   TArray<Card> Cards;
   auto Add=[&](FString Id,FString Title,FString Value,FString Key,int Icon,bool On,float Width){Cards.Add({Id,Title,Value,Key,Icon,On,Width*S});};
@@ -25,7 +25,7 @@ void ATerraHUD::DrawHUD() {
   Add(TEXT("drive"),TEXT("DRIVE"),Mode,V->HasFourDrive()?(V->DriveCapabilities().Permanent?TEXT("FIXED"):V->ControlLabel(A::FourDrive)):TEXT("STOCK"),2,Front&&Rear,96);
   if(V->HasLowRange())Add(TEXT("range"),TEXT("RANGE"),V->LowRange?TEXT("LOW"):TEXT("HIGH"),V->ControlLabel(A::LowRange),3,V->LowRange,86);
   if(V->HasLocker(true))Add(TEXT("frontLock"),V->IndependentWheel(0)?TEXT("FRONT V-LOCK"):TEXT("FRONT DIFF"),V->FrontLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::FrontLock),4,V->FrontLocked,98);
-  if(V->HasCenterLocker()||V->HasRigidTransfer())Add(TEXT("centerLock"),TEXT("CENTER"),(V->CenterLockActive()||V->HasRigidTransfer())?TEXT("LOCKED"):TEXT("OPEN"),V->HasRigidTransfer()?V->ControlLabel(A::FourDrive)+TEXT(" AUTO"):V->ControlLabel(A::CenterLock),5,V->CenterLockActive()||V->HasRigidTransfer(),98);
+  if(V->HasCenterLocker()||V->HasRigidTransfer())Add(TEXT("centerLock"),TEXT("CENTER"),(V->CenterLockActive()||V->HasRigidTransfer())?TEXT("LOCKED"):TEXT("OPEN"),V->HasRigidTransfer()?(Drive.Permanent?TEXT("FIXED"):V->ControlLabel(A::FourDrive)+TEXT(" AUTO")):V->ControlLabel(A::CenterLock),5,V->CenterLockActive()||V->HasRigidTransfer(),98);
   if(V->HasLocker(false))Add(TEXT("rearLock"),V->IndependentWheel(2)?TEXT("REAR V-LOCK"):TEXT("REAR DIFF"),V->RearLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::RearLock),6,V->RearLocked,98);
   if(V->AxleCount()==3){
     Add(TEXT("rear2Lock"),TEXT("REAR 2 DIFF"),V->RearLocked?TEXT("LOCKED"):TEXT("OPEN"),V->ControlLabel(A::RearLock),15,V->RearLocked,98);
@@ -42,7 +42,7 @@ void ATerraHUD::DrawHUD() {
   const float Fit=FMath::Min(1.f,(Canvas->SizeX-24*S)/Total);
   // At 720p every fitted card stays inside the viewport; higher resolutions
   // scale text and line art together rather than stretching bitmap icons.
-  const float Q=S*Fit;float X=(Canvas->SizeX-Total*Fit)*.5f;
+  const float Q=S*Fit,Y=Canvas->SizeY-12*S-H*Fit;LastStatusTop=Y;VehicleSafeBottom=Y-85*S;float X=(Canvas->SizeX-Total*Fit)*.5f;
   auto Text=[&](const FString& T,FLinearColor Color,float PX,float PY,float Size,float Width){
     float TW=0,TH=0;Canvas->StrLen(GEngine->GetSmallFont(),T,TW,TH);
     const float Scale=FMath::Min(Size*Q,Width/FMath::Max(1.f,TW));
@@ -85,16 +85,16 @@ void ATerraHUD::DrawHUD() {
   if(V->DescentAssist)Details+=TEXT("   /   DESCENT [")+V->ControlLabel(A::DescentAssist)+TEXT("]");
   if(V->Tracks)Details+=TEXT("   /   TRACKS [")+V->ControlLabel(A::Tracks)+TEXT("]");
   if(V->WinchAttached)Details+=FString::Printf(TEXT("   /   WINCH %.0f lbf ["),TerraUnits::PoundsForce(V->WinchTension))+V->ControlLabel(A::WinchReel)+TEXT("]");
-  Text(Details,White,20*S,LastStatusBottom+10*S,.83f,Canvas->SizeX-40*S);
-  if(!V->RouteStatus.IsEmpty())Text(V->RouteStatus,Muted,20*S,LastStatusBottom+30*S,.8f,Canvas->SizeX-40*S);
-  float NoticeY=LastStatusBottom+50*S;
+  Text(Details,White,20*S,Y-38*S,.83f,Canvas->SizeX-40*S);
+  if(!V->RouteStatus.IsEmpty())Text(V->RouteStatus,Muted,20*S,Y-21*S,.8f,Canvas->SizeX-40*S);
+  float NoticeY=Y-61*S;
   if(V->Terrain&&V->Terrain->Routes.IsValidIndex(V->RouteIndex)){
     const auto& Route=V->Terrain->Routes[V->RouteIndex];
     if(Route.Gates.IsValidIndex(V->GateIndex)&&Route.GateNotes.IsValidIndex(V->GateIndex)){
       const auto& Tip=Route.GateNotes[V->GateIndex];
       if(!Tip.IsEmpty()){
         Text(Tip,Mint,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
-        NoticeY+=20*S;
+        NoticeY-=20*S;
       }
     }
   }

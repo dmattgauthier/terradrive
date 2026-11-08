@@ -169,7 +169,7 @@ int main(){
     build.Stage[TerraSim::Engine]=999;build.Stage[TerraSim::Tires]=-8;
     auto sanitized=TerraSim::Tune(build,false,true);
     check(sanitized.Power==engine.Power&&sanitized.Grip==1,"out of range saved stages are clamped safely");
-    check(TerraSim::Electrical==6&&TerraSim::Drivetrain==7&&TerraSim::Differentials==8&&TerraSim::Portals==9&&TerraSim::EVSwap==10&&TerraSim::TireAir==11&&TerraSim::CenterDifferential==12&&TerraSim::PartCount==13,"persistent original upgrade indices remain unchanged while electric, tire air and center append at ten through twelve");
+    check(TerraSim::Electrical==6&&TerraSim::Drivetrain==7&&TerraSim::Differentials==8&&TerraSim::Portals==9&&TerraSim::EVSwap==10&&TerraSim::TireAir==11&&TerraSim::CenterDifferential==12&&TerraSim::TireSize==13&&TerraSim::PartCount==14,"persistent original upgrade indices remain unchanged while electric, tire air, center and diameter append at ten through thirteen");
     const TerraSim::FactoryDrivetrain factories[]={
         {true,false,false,true,true,4}, {true,false,false,true,true,3.06f},
         {false,false,true,false,false,1}, {false,false,false,false,false,1},
@@ -217,7 +217,7 @@ int main(){
         modern[7]=bad;const auto before=migrated;
         check(!TerraSim::DecodeUpgradeStages(modern,10,3,true,migrated)&&migrated.Stage[TerraSim::Portals]==before.Stage[TerraSim::Portals]&&migrated.Stage[TerraSim::Drivetrain]==before.Stage[TerraSim::Drivetrain],"malformed stage data is rejected without partial save mutation");
     }
-    check(!TerraSim::DecodeUpgradeStages(legacy,7,3,true,migrated)&&!TerraSim::DecodeUpgradeStages(legacy,7,9,true,migrated),"wrong stage count and unknown save versions are rejected");
+    check(!TerraSim::DecodeUpgradeStages(legacy,7,3,true,migrated)&&!TerraSim::DecodeUpgradeStages(legacy,7,10,true,migrated),"wrong stage count and unknown save versions are rejected");
     check(TerraSim::UpgradeStageCountForVersion(1)==7&&TerraSim::UpgradeStageCountForVersion(2)==7&&TerraSim::UpgradeStageCountForVersion(3)==10&&TerraSim::UpgradeStageCountForVersion(4)==12,"save version lengths remain explicit rather than inheriting the current part count");
     double electricBuild[]={0,1,2,3,0,1,2,1,2,3,3,2};
     check(TerraSim::DecodeUpgradeStages(electricBuild,12,4,true,migrated)&&migrated.Stage[TerraSim::EVSwap]==3&&migrated.Stage[TerraSim::TireAir]==2&&migrated.Stage[TerraSim::Portals]==3&&migrated.Stage[TerraSim::Engine]==1,"v4 saves retain conversion and tire air alongside every original hardware category");
@@ -471,6 +471,92 @@ int main(){
         }
         check(std::isfinite(compression)&&peak-preload<bump+std::max(.0015f,1.25f*9.81f*dt*dt)&&std::abs(compression-preload)<.012f,
             "progressive stops resist a 2.2-g dive and return to ride height without collapse");
+    }
+    // Measured C2 Grave Digger body inertia. This independently integrates
+    // body roll under spring forces plus tire brake holding; the old corner-
+    // mass response grows from floating-point noise to alternating unloaded
+    // wheels even while all four support rays hit the flat tarmac.
+    for(float dt:{1.f/120,1.f/60,1.f/30,1.f/20,.1f}){
+        constexpr float mass=5443.108f,share=mass/4,load=share*9.81f;
+        constexpr float ix=1368.0361f,iy=6401.158f,iz=7593.5616f,cg=1.45f;
+        const float normalMass=TerraSim::EffectiveContactMass(mass,ix,iy,iz,1.36f,1.75f,0);
+        const float sideMass=TerraSim::EffectiveContactMass(mass,ix,iy,iz,cg,0,1.75f)/4;
+        const float preload=load/105000,bump=TerraSim::SuspensionBumpTravel(.762f,0);
+        check(std::abs(TerraSim::ProgressiveSuspensionForce(preload,0,105000,12000,share,1,dt,bump,normalMass)-load)<.01f,
+            "actual rotational response mass preserves the monster's static suspension load");
+        auto roll=[&](bool actualInertia){float angle=.00002f,rate=.00005f,peak=std::abs(angle);
+            for(int frame=0;frame<int(6/dt);++frame){float torque=0;
+                for(float y:{-1.36f,1.36f})for(int axle=0;axle<2;++axle){
+                    const float force=std::clamp(TerraSim::ProgressiveSuspensionForce(preload-angle*y,rate*y,105000,12000,
+                        share,1,dt,bump,actualInertia?normalMass:0),0.f,load*6);
+                    const float lateral=std::clamp(-sideMass*rate*cg/dt,-.98f*force,.98f*force);
+                    torque+=(force-load)*y+lateral*cg;
+                }
+                rate=(rate+torque/ix*dt)/(1+.6f*dt);angle+=rate*dt;peak=std::max(peak,std::abs(angle));
+                if(!std::isfinite(angle)||peak>1)return 2.f;
+            }
+            return peak;
+        };
+        check(roll(true)<.002f,"measured monster suspension and static tire grip decay together across frame times");
+        if(dt==1.f/20)check(roll(false)>.01f,"measured monster regression reproduces old upright roll amplification at 20 Hz");
+    }
+    // A four-wheel rigid body is already pitching into its stop when the
+    // service brakes add torque below the COM. Integrate constant queued
+    // forces independently through the actual 60-Hz substep schedule. The
+    // former isolated stop misses this external torque and crosses its limit.
+    for(float dt:{1.f/120,1.f/60,1.f/30,1.f/20,.1f}){
+        constexpr float mass=5443.108f,ix=1368.0361f,iy=6401.158f,iz=7593.5616f;
+        constexpr float spring=105000,damper=12000,halfWheelbase=1.75f,halfTrack=1.36f,cg=1.45f;
+        const float share=mass/4,load=share*9.81f,preload=load/spring,bump=TerraSim::SuspensionBumpTravel(.762f,0);
+        const int substeps=std::clamp(int(std::ceil(dt/(1.f/60))),1,6);
+        const float normalMass=TerraSim::EffectiveContactMass(mass,ix,iy,iz,halfTrack,halfWheelbase,0);
+        auto brakeDive=[&](bool coupled,float initialRate=.5f){
+            const float initialPitch=(bump-.005f)/halfWheelbase;
+            float force[4],x[4],y[4],matrix[6][6]={},normalVelocity[4],compression[4],brakeMoment=0;
+            for(int i=0;i<4;++i){x[i]=i<2?halfWheelbase:-halfWheelbase;y[i]=(i&1)?halfTrack:-halfTrack;
+                normalVelocity[i]=-initialRate*x[i];compression[i]=preload+initialPitch*x[i];
+                force[i]=std::clamp(TerraSim::ProgressiveSuspensionForce(compression[i],normalVelocity[i],spring,damper,share,1,dt,bump,normalMass),0.f,load*6);
+                // Grip-bounded tire braking; no arbitrary external torque.
+                brakeMoment+=std::min(.98f*force[i],mass*9.81f*.4f)*cg;
+            }
+            for(int i=0;i<4;++i)for(int j=0;j<4;++j)matrix[i][j]=1/mass+y[i]*y[j]/ix+x[i]*x[j]/iy;
+            if(coupled){TerraSim::SuspensionBumpContact stops[6];
+                for(int i=0;i<4;++i){float predicted=normalVelocity[i]-9.81f*dt-brakeMoment/iy*x[i]*dt;
+                    for(int j=0;j<4;++j)predicted+=matrix[i][j]*force[j]*dt;
+                    stops[i].PredictedVelocity=predicted;
+                    stops[i].TargetVelocity=TerraSim::SuspensionBumpTargetVelocity(preload+bump-compression[i],normalVelocity[i],dt,substeps);
+                    stops[i].MaximumImpulse=(load*6-force[i])*dt;
+                }
+                TerraSim::SolveSuspensionBumpContacts(stops,matrix,4);
+                for(int i=0;i<4;++i){check(stops[i].Impulse>=0&&stops[i].Impulse<=stops[i].MaximumImpulse,"full-bump projection stays unilateral and within the existing six-load force cap");force[i]+=stops[i].Impulse/dt;}
+            }
+            float heave=0,heaveVelocity=0,pitch=initialPitch,pitchRate=initialRate,roll=0,rollRate=0,maxCompression=0;
+            float vertical=-mass*9.81f,pitchTorque=brakeMoment,rollTorque=0;
+            for(int i=0;i<4;++i){vertical+=force[i];pitchTorque-=force[i]*x[i];rollTorque+=force[i]*y[i];}
+            for(int step=0;step<substeps;++step){const float h=dt/substeps;
+                heaveVelocity+=vertical/mass*h;pitchRate+=pitchTorque/iy*h;rollRate+=rollTorque/ix*h;
+                heave+=heaveVelocity*h;pitch+=pitchRate*h;roll+=rollRate*h;
+                for(int i=0;i<4;++i)maxCompression=std::max(maxCompression,-heave+pitch*x[i]-roll*y[i]);
+            }
+            return maxCompression;
+        };
+        const float corrected=brakeDive(true),old=brakeDive(false);
+        std::cout<<"BUMP_REGRESSION dt="<<dt<<" corrected="<<corrected<<" old="<<old<<" limit="<<bump<<"\n";
+        check(corrected<=bump+.001f,"coupled brake-pitch stop keeps every actual substep inside full suspension bump");
+        if(dt==1.f/20)check(old>bump+.02f,"braking-pitch regression reproduces isolated-stop travel overshoot at20Hz");
+        if(dt==1.f/120){const float capped=brakeDive(true,.8f),unconstrained=brakeDive(false,.8f);
+            check(std::isfinite(capped)&&capped>bump&&capped<unconstrained,"incoming energy above the bump force cap remains finite and improves without teleporting or exceeding the cap");
+        }
+        TerraSim::SuspensionBumpContact resting[6];float response[6][6]={};
+        for(int i=0;i<4;++i){const float x=i<2?halfWheelbase:-halfWheelbase,y=(i&1)?halfTrack:-halfTrack;
+            resting[i].PredictedVelocity=0;resting[i].TargetVelocity=TerraSim::SuspensionBumpTargetVelocity(bump,0,dt,substeps);resting[i].MaximumImpulse=load*5*dt;
+            for(int j=0;j<4;++j)response[i][j]=1/mass+y*((j&1)?halfTrack:-halfTrack)/ix+x*(j<2?halfWheelbase:-halfWheelbase)/iy;
+        }
+        TerraSim::SolveSuspensionBumpContacts(resting,response,4);
+        check(resting[0].Impulse==0&&resting[1].Impulse==0&&resting[2].Impulse==0&&resting[3].Impulse==0,"ordinary supported suspension receives no supplemental bump impulse");
+        for(int i=0;i<4;++i){resting[i].MaximumImpulse=0;resting[i].PredictedVelocity=-5;resting[i].TargetVelocity=10;}
+        TerraSim::SolveSuspensionBumpContacts(resting,response,4);
+        check(resting[0].Impulse==0&&resting[1].Impulse==0&&resting[2].Impulse==0&&resting[3].Impulse==0,"unsupported wheels never receive a synthetic bump reaction");
     }
     check(TerraSim::SuspensionBumpTravel(.16f,0)<TerraSim::SuspensionBumpTravel(.3302f,0),
         "a sedan has less physical bump travel than the Hummer");

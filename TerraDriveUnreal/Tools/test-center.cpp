@@ -31,13 +31,15 @@ struct Trial {
 };
 int main(){
     using namespace TerraSim;
-    Check(CenterDifferential==12&&PartCount==13,"center appends without moving existing upgrade slots");
-    for(int version=1;version<=6;++version){
-        const int count=version<=2?7:version==3?10:version<=5?12:13;
+    Check(CenterDifferential==12&&TireSize==13&&PartCount==14,"center and tire size append without moving existing upgrade slots");
+    for(int version=1;version<=9;++version){
+        const int count=version<=2?7:version==3?10:version<=5?12:version<=8?13:14;
         Check(UpgradeStageCountForVersion(version)==count,"historical save row lengths remain explicit");
-        double data[13]={};for(int i=0;i<count;++i)data[i]=i%4;
+        double data[14]={};for(int i=0;i<count;++i)data[i]=i%4;
         UpgradeSetup result;Check(DecodeUpgradeStages(data,count,version,true,result),"all supported save versions decode");
-        Check(result.Stage[CenterDifferential]==(version==6?int(data[12]):0),"old saves default center kit to stock");
+        Check(result.Stage[CenterDifferential]==(version>=6?int(data[12]):0),"old saves default center kit to stock");
+        Check(result.Stage[TireSize]==(version==9?int(data[13]):0),"only v9 may carry an explicit tire diameter stage");
+        for(int i=0;i<count;++i)Check(result.Stage[i]==int(data[i]),"every historical and current upgrade slot keeps its original value");
     }
     double data[13]={};data[12]=2;UpgradeSetup kept;
     Check(DecodeUpgradeStages(data,13,6,true,kept)&&kept.Stage[CenterDifferential]==2,"v6 preserves center kit stage");
@@ -46,6 +48,16 @@ int main(){
         Check(!DecodeUpgradeStages(data,13,6,true,after)&&after.Stage[CenterDifferential]==2,"invalid center stage rejected atomically");
     }
     Check(!DecodeUpgradeStages(data,12,6,true,kept)&&!DecodeUpgradeStages(data,13,5,true,kept),"save length cannot silently expand historical versions");
+    double sized[14]={};sized[13]=3;UpgradeSetup sizedBuild;
+    Check(DecodeUpgradeStages(sized,14,9,true,sizedBuild)&&sizedBuild.Stage[TireSize]==3,"v9 persists the maximum tire kit");
+    for(int version:{0,8,10,999}){
+        UpgradeSetup result=sizedBuild;
+        Check(!DecodeUpgradeStages(sized,14,version,true,result)&&result.Stage[TireSize]==3,"invalid version or historical overlong row rejects atomically");
+    }
+    for(double invalid:{-1.,4.,.5,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}){
+        sized[13]=invalid;UpgradeSetup result=sizedBuild;
+        Check(!DecodeUpgradeStages(sized,14,9,true,result)&&result.Stage[TireSize]==3,"invalid diameter stage cannot partially replace a build");
+    }
     FactoryDrivetrain factory;factory.FourDrive=true;factory.LowRatio=4;
     UpgradeSetup stock;auto caps=ResolveDriveCapabilities(stock,factory);
     Check(caps.RigidTransfer&&!caps.CenterLocker&&!caps.Permanent,"part-time transfer is intrinsically coupled without a fake center diff");

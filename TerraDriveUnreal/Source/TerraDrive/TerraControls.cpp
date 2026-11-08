@@ -16,7 +16,7 @@ const Definition& Def(Action A) {
     {TEXT("steerRight"),TEXT("Steer right"),EKeys::D,TEXT("Right arrow / gamepad left stick")},
     {TEXT("holdBrake"),TEXT("Hold brake"),EKeys::SpaceBar,TEXT("Gamepad bottom face button")},
     {TEXT("garage"),TEXT("Open / close garage"),EKeys::V,TEXT("Tab is always available")},
-    {TEXT("recover"),TEXT("Recover / restart challenge"),EKeys::R,TEXT("")},
+    {TEXT("recover"),TEXT("Right vehicle at current position"),EKeys::R,TEXT("Keeps challenge progress; restart is in the pause menu")},
     {TEXT("nextChallenge"),TEXT("Next challenge"),EKeys::J,TEXT("")},
     {TEXT("tracks"),TEXT("Fit / remove tracks"),EKeys::T,TEXT("Stop before changing running gear")},
     {TEXT("fourDrive"),TEXT("Select two / four-wheel drive"),EKeys::F,TEXT("Selectable drivetrains only")},

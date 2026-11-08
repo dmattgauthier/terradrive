@@ -299,8 +299,48 @@ function frontSkinProjector(parent, skins, facing = 1, flatCapZ) {
   return { point, patch, strip };
 }
 
+/** A continuous round reveal through every supplied station, with no
+ * intersecting cylinder caps at each seam joint. The eight-sided smooth
+ * section retains the original radius while sharing neighboring rings. */
+function polylineTube(parent,material,points,radius=.003){
+ const path=points.map(p=>v3(...p)).filter((p,i,a)=>!i||p.distanceToSquared(a[i-1])>1e-16);
+ if(path.length<2)return finish(new THREE.Mesh(new THREE.BufferGeometry(),material),parent);
+ const closed=path[0].distanceToSquared(path.at(-1))<1e-16,count=path.length,segments=8;
+ const tangents=path.map((p,i)=>{
+  const before=i?path[i-1]:closed?path[count-2]:p,after=i<count-1?path[i+1]:closed?path[1]:p;
+  const incoming=p.clone().sub(before).normalize(),outgoing=after.clone().sub(p).normalize(),tangent=incoming.add(outgoing);
+  return tangent.lengthSq()>1e-12?tangent.normalize():after.clone().sub(before).normalize();
+ });
+ const normals=[];let n=(Math.abs(tangents[0].y)<.8?UP:X_AXIS).clone().cross(tangents[0]).normalize();
+ for(const tangent of tangents){n=n.clone().addScaledVector(tangent,-n.dot(tangent)).normalize();normals.push(n);}
+ if(closed){
+  const turn=Math.atan2(normals.at(-1).clone().cross(normals[0]).dot(tangents[0]),normals.at(-1).dot(normals[0]));
+  for(let i=1;i<count;i++)normals[i].applyAxisAngle(tangents[i],turn*i/(count-1));
+  normals[count-1].copy(normals[0]);
+ }
+ const p=[],ns=[],uv=[],ix=[];let distance=0;
+ for(let i=0;i<count;i++){
+  if(i)distance+=path[i].distanceTo(path[i-1]);const binormal=tangents[i].clone().cross(normals[i]).normalize();
+  for(let j=0;j<=segments;j++){
+   const angle=j*Math.PI*2/segments,radial=normals[i].clone().multiplyScalar(Math.cos(angle)).addScaledVector(binormal,Math.sin(angle));
+   p.push(...path[i].clone().addScaledVector(radial,radius).toArray());ns.push(...radial.toArray());uv.push(j/segments,distance);
+  }
+ }
+ for(let i=0;i<count-1;i++)for(let j=0;j<segments;j++){
+  const a=i*(segments+1)+j,b=a+1,c=a+segments+1,d=c+1;ix.push(a,b,c,b,d,c);
+ }
+ if(!closed)for(const end of [0,count-1]){
+  const sign=end?1:-1,normal=tangents[end].clone().multiplyScalar(sign),start=p.length/3;
+  p.push(...path[end].toArray());ns.push(...normal.toArray());uv.push(.5,.5);
+  for(let j=0;j<=segments;j++){const at=(end*(segments+1)+j)*3;p.push(...p.slice(at,at+3));ns.push(...normal.toArray());uv.push((Math.cos(j*Math.PI*2/segments)+1)*.5,(Math.sin(j*Math.PI*2/segments)+1)*.5);}
+  for(let j=0;j<segments;j++)ix.push(...(end?[start,start+j+1,start+j+2]:[start,start+j+2,start+j+1]));
+ }
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(ns,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(ix);
+ const result=finish(new THREE.Mesh(geometry,material),parent);result.userData.continuousReveal={revision:1,stations:count,closed,radiusM:radius};return result;
+}
+
 function curvedLine(parent, material, points, radius = 0.004, smooth = false) {
-  if (!smooth) { for (let i = 1; i < points.length; i++) line(parent, material, points[i - 1], points[i], radius); return; }
+  if (!smooth) return polylineTube(parent,material,points,radius);
   const curve = new THREE.CatmullRomCurve3(points.map(p => v3(...p)));
   return finish(new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(12, points.length * 5), radius, 5, false), material), parent);
 }
@@ -423,6 +463,6 @@ export function mergeStaticMeshes(group, predicate = () => true) {
   }
 }
 
-const VEHICLE_GEOMETRY = { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText };
+const VEHICLE_GEOMETRY = { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, polylineTube, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText };
 export {VEHICLE_GEOMETRY as nativeGeometry};
 

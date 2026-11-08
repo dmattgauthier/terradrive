@@ -70,4 +70,6 @@ export const G63SIX={...StandardG63,id:'mercedes-amg-g63-6x6',name:'Mercedes-Ben
  'CG, load shares, final reduction, tire pressures, portal drop and suspension rates are simulation calibration estimates.'],
  sources:['https://media.mercedes-benz.jp/G-63-AMG-6%C3%976%E3%82%92%E9%99%90%E5%AE%9A%E7%99%BA%E5%A3%B2/']};
 export const EARTHCRUISER={...EARTHCRUISER_EXP_SPEC,rimDiameterInches:17,bodyFrontEndM:2.70+(.5-EARTHCRUISER_EXP_SPEC.frontWeightFraction)*EARTHCRUISER_EXP_SPEC.wheelbase,bodyRearEndM:3.30-(.5-EARTHCRUISER_EXP_SPEC.frontWeightFraction)*EARTHCRUISER_EXP_SPEC.wheelbase};
-export const VEHICLES=[...BrowserVehicles.slice(0,4),HUMMER,URUS,EARTHCRUISER,G580,G63,G63SIX];
+import {GRAVE_DIGGER_SPEC} from './grave-digger.mjs';
+import {SUBARU_22B_SPEC} from './subaru-22b.mjs';
+export const VEHICLES=[...BrowserVehicles.slice(0,4),HUMMER,URUS,EARTHCRUISER,G580,G63,G63SIX,GRAVE_DIGGER_SPEC,SUBARU_22B_SPEC];

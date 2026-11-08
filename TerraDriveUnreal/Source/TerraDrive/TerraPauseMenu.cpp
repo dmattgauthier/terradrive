@@ -40,6 +40,8 @@ void STerraPauseMenu::Construct(const FArguments& Args){
       .IsEnabled_Lambda([this]{return Vehicle.IsValid()&&(Vehicle->Garage||FMath::Abs(Vehicle->Speed)<.5f);})
       .ToolTipText(FText::FromString(TEXT("Stop the vehicle before entering the garage.")))
       .OnClicked_Lambda([this]{if(Vehicle.IsValid()){Vehicle->SetPauseMenu(false);Vehicle->SetGarage(true);}return FReply::Handled();})[Label(TEXT("GARAGE"),15,White,true)]];
+  Add(TEXT("RECOVER HERE"),-3,[this]{if(Vehicle.IsValid()){Vehicle->SetPauseMenu(false);Vehicle->RecoverInPlace();}return FReply::Handled();});
+  Add(TEXT("RESTART ROUTE"),-4,[this]{if(Vehicle.IsValid()){Vehicle->SetPauseMenu(false);if(Vehicle->RouteIndex>=0)Vehicle->TeleportRoute(Vehicle->RouteIndex);else Vehicle->TeleportZone(Vehicle->Zone);}return FReply::Handled();});
   Add(TEXT("CONTROLS"),1,[this]{ShowPage(1);return FReply::Handled();});
   Add(TEXT("GRAPHICS"),2,[this]{ShowPage(2);return FReply::Handled();});
   Add(TEXT("EXIT GAME"),-2,[this]{RequestExit();return FReply::Handled();});

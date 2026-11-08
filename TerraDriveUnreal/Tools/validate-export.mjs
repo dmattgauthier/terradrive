@@ -44,9 +44,25 @@ for(let i=0;i<1000;i++){
  assert.equal(data.surfaces[b[offset+8]],s.surface);
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
-assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,10);assert.equal(data.zones.length,9);
-// Existing garage IDs keep their positions; the six wheeler is appended.
-assert.deepEqual(data.vehicles.map(v=>v.id),['wrangler-rubicon','bronco-badlands','civic-sport','sprinter-2500','hummer-ev-suv-3x','urus-performante','earthcruiser-exp','mercedes-g580-ev','mercedes-amg-g63','mercedes-amg-g63-6x6']);
+assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,12);assert.equal(data.zones.length,9);
+// Existing garage IDs retain their positions; new reference models append.
+assert.deepEqual(data.vehicles.map(v=>v.id),['wrangler-rubicon','bronco-badlands','civic-sport','sprinter-2500','hummer-ev-suv-3x','urus-performante','earthcruiser-exp','mercedes-g580-ev','mercedes-amg-g63','mercedes-amg-g63-6x6','grave-digger','subaru-22b-sti']);
+const world=JSON.parse(fs.readFileSync(path.join(root,'Content/NativeData/world.json')));
+for(const v of data.vehicles){
+ const w=world.vehicles.find(x=>x.id===v.id);assert.ok(w,'matching native vehicle');
+ assert.deepEqual(w.tireFits,v.tireFits,'source/native tire fitting parity');
+ if(v.monsterTruck){assert.deepEqual(v.tireFits,[]);continue;}
+ assert.equal(v.tireFits.length,3,'three body-derived tire fitting stages');
+ for(let i=0;i<3;i++){const f=v.tireFits[i];assert.equal(f.stage,i+1);assert.ok(f.diameterInches>v.tireRadius*2/.0254&&f.diameterInches<=50);
+  assert.ok(Number.isFinite(f.liftM)&&f.liftM>=0&&f.liftM<1.25,'bounded fitting lift');
+  assert.ok(Number.isFinite(f.trackExtraM)&&f.trackExtraM>=0&&f.trackExtraM<=1.10,'bounded fitting track');
+  assert.ok(f.marginM>=.04&&f.clearanceM>=0,'conservative geometry margin');
+  assert.equal(f.axleOffsetsM.length,v.wheelCount===6?3:2);
+ }
+ assert.equal(v.tireFits[2].diameterInches,50);
+}
+assert.ok(data.vehicles[10].monsterTruck&&data.vehicles[10].droopTravel>.4&&data.vehicles[10].bodyWidthM<2.1);
+assert.ok(Math.abs(data.vehicles[11].fuelCapacityGallons*3.785411784-60)<1e-6);
 const squared=data.vehicles[8],six=data.vehicles[9];
 assert.equal(squared.gClassVariant,'squared');assert.equal(squared.rimDiameterInches,22);
 assert.ok(Math.abs(squared.tireRadius-.45815)<1e-7&&Math.abs(squared.clearance-.351)<1e-7);
@@ -196,10 +212,24 @@ for(const v of data.vehicles){
  const stockTire=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
  const stockMin=stockTire.reduce((n,p)=>Math.min(n,Math.hypot(p[0],p[2])),Infinity),stockMax=stockTire.reduce((n,p)=>Math.max(n,Math.hypot(p[0],p[2])),0);
  for(let stage=1;stage<=3;stage++){
-  const scale=1+.04*stage,upgraded=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire_'+stage+'.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
+  const scale=v.monsterTruck?1:1+.04*stage,upgraded=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire_'+stage+'.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
   const minimum=upgraded.reduce((n,p)=>Math.min(n,Math.hypot(p[0],p[2])*scale),Infinity),maximum=upgraded.reduce((n,p)=>Math.max(n,Math.hypot(p[0],p[2])*scale),0);
   assert.ok(Math.abs(minimum-stockMin)<.05,v.name+' upgraded bead stays seated at stage '+stage);
   assert.ok(Math.abs(maximum/stockMax-scale)<.005,v.name+' tread reaches physical size at stage '+stage);
+ }
+}
+// Explicit diameter kits retain the real stock wheel bead; compound stage
+// changes width/traction in native code and shares one immutable mesh per size.
+for(const v of data.vehicles){
+ const stockIn=v.tireRadius*2/.0254;if(stockIn>=50)continue;
+ const bead=Number(v.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100;
+ const stock=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
+ const stockMin=stock.reduce((a,p)=>Math.min(a,Math.hypot(p[0],p[2])),Infinity),stockWidth=stock.reduce((a,p)=>[Math.min(a[0],p[1]),Math.max(a[1],p[1])],[Infinity,-Infinity]);
+ for(let stage=1;stage<=3;stage++){
+  const name=v.asset+'_tire_size'+stage+'_0';assert.ok(data.assets.some(a=>a.name===name),'explicit tire mesh '+name);
+  const positions=fs.readFileSync(path.join(root,'SourceAssets',name+'.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
+  const radial=positions.map(p=>Math.hypot(p[0],p[2])),min=radial.reduce((a,b)=>Math.min(a,b),Infinity),max=radial.reduce((a,b)=>Math.max(a,b),0),diameter=Math.ceil(stockIn+(50-stockIn)*stage/3),width=positions.reduce((a,p)=>[Math.min(a[0],p[1]),Math.max(a[1],p[1])],[Infinity,-Infinity]);
+  assert.ok(Math.abs(min-stockMin)<.02,v.name+' explicit kit bead stays seated');assert.ok(Math.abs(max-diameter*.0254*50)<.6,v.name+' explicit kit reaches selected diameter');assert.deepEqual(width,stockWidth,v.name+' size mesh avoids applying width scale twice');assert.ok(min<=bead+.05,v.name+' unchanged bead seat');
  }
 }
 assert.ok(data.assets.some(a=>a.name==='detail_brake_caliper'));

@@ -1,17 +1,6 @@
 """Unified native ground: filtered coverage, shared samplers, branch only into present biomes."""
 blend_report=json.load(open(os.path.join(root,'Saved','terrain-transitions.json'),encoding='utf8'))
-def blend_mask(name):
-    filename=os.path.join(source,name+'.tga');digest=hashlib.sha256(open(filename,'rb').read()).hexdigest();dest='/Game/Textures/'+name
-    tex=lib.load_asset(dest) if lib.does_asset_exist(dest) else None
-    if not tex or lib.get_metadata_tag(tex,'TerraBlendHash')!=digest:
-        task=unreal.AssetImportTask();task.filename=filename;task.destination_path='/Game/Textures';task.destination_name=name
-        task.automated=True;task.save=True;task.replace_existing=True;tools.import_asset_tasks([task]);tex=lib.load_asset(dest)
-        if not tex:raise RuntimeError('Transition texture import failed: '+name)
-        tex.set_editor_property('srgb',False);tex.set_editor_property('compression_no_alpha',False);tex.set_editor_property('compression_settings',unreal.TextureCompressionSettings.TC_VECTOR_DISPLACEMENTMAP)
-        tex.set_editor_property('address_x',unreal.TextureAddress.TA_CLAMP);tex.set_editor_property('address_y',unreal.TextureAddress.TA_CLAMP)
-        lib.set_metadata_tag(tex,'TerraBlendHash',digest);lib.save_loaded_asset(tex)
-    return tex
-masks=[blend_mask('TerrainBlendA'),blend_mask('TerrainBlendB')]
+masks=[terrain_mask('TerrainBlendA'),terrain_mask('TerrainBlendB'),trail_mask]
 prefix,body=terrain_code.split('TerraSurface f;',1)
 prefix=prefix.rsplit('};',1)[0]
 body=body.replace('f.','')
@@ -20,7 +9,7 @@ dest='/Game/Materials/Terrain_GroundBlend';m=lib.load_asset(dest) if lib.does_as
 if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
     edit.delete_all_material_expressions(m);m.set_editor_property('two_sided',True);m.set_editor_property('tangent_space_normal',False);m.set_editor_property('blend_mode',unreal.BlendMode.BLEND_OPAQUE)
     pins=['Primary','NormalMap','RoughMap','Secondary','SecondaryNormal','SecondaryRough','Accent','AccentNormal','AccentRough']
-    params=','.join('Texture2D '+p for p in pins)+',SamplerState Shared,float3 World,float3 GeoNormal,float Wear,float LooseSoil,float SoilDisplacement,float Churn,float2 TireDirection,float3 Scales,float3 NormalSigns,float3 RoughChannels,float Biome,float Wetness,out float Roughness,out float3 SurfaceNormal'
+    params=','.join('Texture2D '+p for p in pins)+',SamplerState Shared,float3 World,float3 GeoNormal,float QuarryPath,float Wear,float LooseSoil,float SoilDisplacement,float Churn,float2 TireDirection,float3 Scales,float3 NormalSigns,float3 RoughChannels,float Biome,float Wetness,out float Roughness,out float3 SurfaceNormal'
     for p in pins:body=body.replace(p+'Sampler','Shared')
     library=prefix+'\nfloat3 evaluate('+params+'){\n'+body+'\n}\n};\nTerraSurface f;\n'
     textures={};calls=[]
@@ -40,11 +29,18 @@ if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
         if biome==5:wet_arg='max(.08,saturate(naturalWet*2)*.65)'
         # Match Material Shared:Wrap, including World-group anisotropic filtering.
         # The global trilinear sampler blurs scan detail at grazing angles.
-        args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
+        args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','quarryPath','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
         calls.append('[branch] if(w[%d]>.0005){float rr;float3 nn;float3 cc=f.evaluate(%s);color+=cc*w[%d];rough+=rr*w[%d];normal+=nn*w[%d];}'%(biome,','.join(args),biome,biome,biome))
     code=library+'''float2 uv=(World.yx*.01+400.0)/800.5+(.25/800.5);
 float4 a=Texture2DSample(BlendA,GlobalTrilinearClampedSampler,uv);
 float4 b=Texture2DSample(BlendB,GlobalTrilinearClampedSampler,uv);
+float quarryPath=Texture2DSample(TrailMask,GlobalTrilinearClampedSampler,uv).r;
+// Imported rigid trial meshes have no soil vertex stream. Their material
+// instance supplies neutral undeformed data while sharing the exact atlas,
+// scan layers, world coordinates and edge normals of the surrounding ground.
+Wear=lerp(1,Wear,GroundData);LooseSoil*=GroundData;
+SoilDisplacement=lerp(128.0/255.0,SoilDisplacement,GroundData);Churn*=GroundData;
+TireDirection=lerp(float2(1,0),TireDirection,GroundData);
 float w[7]={a.r,a.g,a.b,a.a,b.r,b.g,b.b};float sum=0;float paved=saturate(w[1]*16);
 // Moisture follows the continuous physical cover, before visual competition.
 // A thin isolated snow patch is still slushy even when it wins this pixel;
@@ -76,7 +72,7 @@ color=lerp(color,color*float3(1.09,1.025,.92)+float3(.026,.013,.004),track*.68);
 Roughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return color;
 '''
     custom=edit.create_material_expression(m,unreal.MaterialExpressionCustom,0,0);custom.set_editor_property('code',code);custom.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    all_inputs=['World','GeoNormal','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection','BlendA','BlendB']+[pin for tex,pin in textures.values()]
+    all_inputs=['World','GeoNormal','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection','BlendA','BlendB','TrailMask','GroundData']+[pin for tex,pin in textures.values()]
     inputs=[]
     for name in all_inputs:item=unreal.CustomInput();item.set_editor_property('input_name',name);inputs.append(item)
     custom.set_editor_property('inputs',inputs)
@@ -86,13 +82,23 @@ Roughness=rough;SurfaceNormal=normalize(normal);Specular=.12+.33*w[6];return col
     custom.set_editor_property('additional_outputs',outputs)
     for name,klass,output in [('World',unreal.MaterialExpressionWorldPosition,''),('GeoNormal',unreal.MaterialExpressionVertexNormalWS,''),('Wear',unreal.MaterialExpressionVertexColor,'R'),('LooseSoil',unreal.MaterialExpressionVertexColor,'G'),('SoilDisplacement',unreal.MaterialExpressionVertexColor,'B'),('Churn',unreal.MaterialExpressionVertexColor,'A'),('TireDirection',unreal.MaterialExpressionTextureCoordinate,'')]:
         node=edit.create_material_expression(m,klass,-600,-200);edit.connect_material_expressions(node,output,custom,name)
-    for tex,pin in [(masks[0],'BlendA'),(masks[1],'BlendB')]+list(textures.values()):
+    for tex,pin in [(masks[0],'BlendA'),(masks[1],'BlendB'),(masks[2],'TrailMask')]+list(textures.values()):
         obj=edit.create_material_expression(m,unreal.MaterialExpressionTextureObject,-600,100);obj.set_editor_property('texture',tex)
         if not tex.get_editor_property('srgb'):obj.set_editor_property('sampler_type',unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL if tex.get_editor_property('compression_settings')==unreal.TextureCompressionSettings.TC_NORMALMAP else unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
         edit.connect_material_expressions(obj,'',custom,pin)
+    ground_data=edit.create_material_expression(m,unreal.MaterialExpressionScalarParameter,-500,-600)
+    ground_data.set_editor_property('parameter_name','GroundData');ground_data.set_editor_property('default_value',1.)
+    edit.connect_material_expressions(ground_data,'',custom,'GroundData')
     for output,prop in [('',unreal.MaterialProperty.MP_BASE_COLOR),('Roughness',unreal.MaterialProperty.MP_ROUGHNESS),('SurfaceNormal',unreal.MaterialProperty.MP_NORMAL),('Specular',unreal.MaterialProperty.MP_SPECULAR)]:
         if not edit.connect_material_property(custom,output,prop):raise RuntimeError('Ground blend output failed: '+output)
     edit.recompile_material(m);lib.set_metadata_tag(m,'TerraGroundBlendSignature',signature);lib.save_loaded_asset(m)
     open(os.path.join(root,'Saved','terrain-ground-shader.hlsl'),'w').write(code)
-json.dump({'version':1,'signature':signature,'material':dest,'coverageTextures':[t.get_path_name() for t in masks],'biomes':7,'sharedSamplers':True},open(os.path.join(root,'Saved','terrain-ground-bindings.json'),'w'),indent=2)
+# A uniform parameter keeps rigid imported granite neutral without changing
+# its collision mesh, colored markers, acquired maps or original source data.
+rigid_path='/Game/Materials/Terrain_QuarryBlend'
+rigid=lib.load_asset(rigid_path) if lib.does_asset_exist(rigid_path) else tools.create_asset('Terrain_QuarryBlend','/Game/Materials',unreal.MaterialInstanceConstant,unreal.MaterialInstanceConstantFactoryNew())
+edit.set_material_instance_parent(rigid,m)
+edit.set_material_instance_scalar_parameter_value(rigid,'GroundData',0.)
+lib.save_loaded_asset(rigid)
+json.dump({'version':1,'signature':signature,'material':dest,'rigidMaterial':rigid_path,'bakedQuarryLane':True,'coverageTextures':[t.get_path_name() for t in masks],'biomes':7,'sharedSamplers':True},open(os.path.join(root,'Saved','terrain-ground-bindings.json'),'w'),indent=2)
 unreal.log('TERRA_GROUND_BLEND_READY '+dest)

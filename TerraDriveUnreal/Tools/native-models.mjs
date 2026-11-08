@@ -13,6 +13,15 @@ function rod(g,mat,a,b,r=.025,segments=12){const va=new THREE.Vector3(...a),vb=n
 
 export function vehicleAdditions(spec){
   const armor=new THREE.Group(),equipment=new THREE.Group(),half=spec.width*.50;
+  if(['monster','subaru22b'].includes(spec.bodyStyle)){
+    // Native originals already contain their factory bumper and cage. Upgrade
+    // armor stays within the axles rather than borrowing another car's overhang.
+    const monster=spec.bodyStyle==='monster',y=(monster?.72:.14)-spec.cgHeight,z=(.5-spec.frontWeightFraction)*spec.wheelbase;
+    box(armor,steel,[0,y,z],[monster?1.12:1.25,.035,spec.wheelbase*.64]);
+    for(const s of [-1,1])rod(armor,steel,[s*(monster?.71:.78),y+.05,z-spec.wheelbase*.24],[s*(monster?.71:.78),y+.05,z+spec.wheelbase*.24],monster?.035:.025);
+    for(const s of [-1,1])rod(equipment,chrome,[s*.40,y+.17,-spec.length*.41+z],[s*.40,y+.17,-spec.length*.41+z-.045],monster?.035:.016);
+    return {armor,equipment};
+  }
   const datum=spec.cgHeight,offset=spec.bodyStyle==='g63six'?0:(.5-spec.frontWeightFraction)*spec.wheelbase;
   const front=(spec.bodyStyle==='g63six'?2.99:spec.bodyStyle==='earthcruiser'?2.70:['g580','g63'].includes(spec.bodyStyle)?2.332:spec.bodyStyle==='van'?3.03:spec.bodyStyle==='hummer'?spec.length*.47:2.43)+offset;
   const low=(spec.bodyStyle==='g63six'?.46:spec.bodyStyle==='sedan'?.20:.33)-datum;
@@ -37,6 +46,7 @@ export function vehicleAdditions(spec){
     const rear=(spec.bodyStyle==='g63six'?-2.89:spec.bodyStyle==='earthcruiser'?-3.30:['g580','g63'].includes(spec.bodyStyle)?-2.292:-2.37)+offset;
     box(equipment,steel,[0,.34-datum,rear],[.23,.055,.09]);
     box(equipment,chrome,[0,.345-datum,rear-.05],[.065,.065,.018]);
+
     return {armor,equipment};
   }
   if(spec.bodyStyle!=='sedan'&&spec.bodyStyle!=='urus'){
@@ -87,7 +97,14 @@ export function suspensionModels(){
   add(air,new THREE.LatheGeometry(profile.map(p=>new THREE.Vector2(...p)),32),rubber);
   rod(air,chrome,[0,.16,0],[0,.48,0],.018);
   for(const y of [-.48,.48])add(air,new THREE.CylinderGeometry(.038,.038,.04,24),steel,[0,y,0]);
-  return {coil,air};
+  const nitrogen=new THREE.Group();
+  rod(nitrogen,chrome,[0,-.48,0],[0,.13,0],.026,20);
+  rod(nitrogen,steel,[0,-.04,0],[0,.44,0],.058,24);
+  for(const y of [-.025,.41])rod(nitrogen,chrome,[0,y-.018,0],[0,y+.018,0],.064,24);
+  rod(nitrogen,steel,[.078,.12,0],[.078,.42,0],.036,20);
+  for(const y of [.16,.35])rod(nitrogen,chrome,[0,y,0],[.078,y,0],.012);
+  for(const y of [-.48,.48]){const eye=add(nitrogen,new THREE.TorusGeometry(.035,.011,8,20),steel,[0,y,0]);eye.rotation.y=Math.PI/2;}
+  return {coil,air,nitrogen};
 }
 
 export function environmentModels(terrain,routes,zones){

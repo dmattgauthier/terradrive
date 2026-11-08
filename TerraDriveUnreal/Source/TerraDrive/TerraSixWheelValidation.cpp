@@ -26,14 +26,19 @@ void Saves(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check)
   const FString Current=S.Folder/TEXT("current.json"),Legacy=S.Folder/TEXT("legacy7.json");
   bool Saved=V->SaveGarage(Current);FString Text;TSharedPtr<FJsonObject> R;
   Saved&=FFileHelper::LoadFileToString(Text,*Current)&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),R)&&R.IsValid();
-  Check(TEXT("v8 garage writes all ten native vehicle profiles"),Saved&&R->GetNumberField(TEXT("version"))==8&&R->GetArrayField(TEXT("builds")).Num()==10,10);
+  Check(TEXT("v9 garage writes all twelve native vehicle profiles"),Saved&&R->GetNumberField(TEXT("version"))==9&&R->GetArrayField(TEXT("builds")).Num()==ATerraVehicle::VehicleCount,ATerraVehicle::VehicleCount);
   if(!Saved)return;
   for(const TCHAR* K:{TEXT("builds"),TEXT("fuelLevels"),TEXT("batteryCharge"),TEXT("pressureTargets")}){auto A=R->GetArrayField(K);A.SetNum(9);R->SetArrayField(K,A);}
+  // A historical v7 profile has thirteen slots, even though current saves
+  // include the appended tire-diameter category.
+  auto OldBuilds=R->GetArrayField(TEXT("builds"));
+  for(auto& Car:OldBuilds){auto Parts=Car->AsArray();Parts.SetNum(13);Car=MakeShared<FJsonValueArray>(Parts);}
+  R->SetArrayField(TEXT("builds"),OldBuilds);
   R->SetNumberField(TEXT("version"),7);R->SetNumberField(TEXT("vehicle"),8);
   bool Migrated=Write(R,Legacy)&&V->LoadGarage(Legacy);
   for(int I=0;I<9;++I)Migrated&=V->Builds[I].Stage[TerraSim::Tires]==I%4&&FMath::Abs(V->FuelProfiles[I]-(.25f+I*.04f))<.00001f&&FMath::Abs(V->BatteryProfiles[I]-(.3f+I*.03f))<.00001f;
-  Migrated&=V->Builds[9].Stage[TerraSim::Tires]==0&&V->FuelProfiles[9]==.75f&&V->BatteryProfiles[9]==.75f;
-  Check(TEXT("v7 migration retains nine old builds fuel and batteries and defaults only the appended six wheeler"),Migrated,10);
+  for(int I=9;I<ATerraVehicle::VehicleCount;++I)Migrated&=V->Builds[I].Stage[TerraSim::Tires]==0&&V->Builds[I].Stage[TerraSim::TireSize]==0&&V->FuelProfiles[I]==.75f&&V->BatteryProfiles[I]==.75f;
+  Check(TEXT("v7 migration retains nine old builds fuel and batteries and defaults appended vehicle profiles"),Migrated,ATerraVehicle::VehicleCount);
   V->SelectVehicle(9);V->FuelFraction=.43f;V->SetEnergyUsageEnabled(false,false);
   Check(TEXT("new vehicle fuel and unlimited setting roundtrip"),V->SaveGarage(Current)&&V->LoadGarage(Current)&&V->FuelProfiles[9]==.43f&&!V->EnergyUsageEnabled,V->FuelProfiles[9]);
   V->SetEnergyUsageEnabled(true,false);V->SetGarage(true);V->ResetUpgrades(false);V->FuelFraction=.75f;

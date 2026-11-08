@@ -16,11 +16,11 @@
     },
     {
       "path": "Tools/vehicle-fidelity.mjs",
-      "sha256": "a96666739a36d1b0559fe78cc3a7ba0d694d1d7552d1d761afe5a3aa7f1c8d9a"
+      "sha256": "7748674d8c1d74268a12aba67cf2bc73a454f78937dd9ee0a53ba0a965ae5664"
     },
     {
       "path": "Tools/vehicle-realism.mjs",
-      "sha256": "847d943a5ec1458768aad2c1c34e7105e0f641345b6d9a18b1a17aa7506ecb55"
+      "sha256": "328fac6d8cc442ca0a2e2712f2ffe5d579f04259ff48d29273d5c3812ab459ca"
     },
     {
       "path": "Tools/suv-body.mjs",
@@ -32,7 +32,7 @@
     },
     {
       "path": "Tools/urus-body.mjs",
-      "sha256": "8b32eccacfdce21bee28503f4955caa183a8f02d88fe1b1f333dac4e2935e5f9"
+      "sha256": "1d439115ce7839a83f3a398dda065ecfd1770172641b09db3cd5f5084dfe0bb1"
     },
     {
       "path": "Tools/urus-cabin.mjs",
@@ -44,15 +44,15 @@
     },
     {
       "path": "Tools/sprinter-body.mjs",
-      "sha256": "15841680a62c25b25ed20c31045892e1b911aaa41f94cf64b9e5c96d65f3cc39"
+      "sha256": "40c26079c11e22f2e9406430085b6ec87db70b81021909736951b238949c32d1"
     },
     {
       "path": "Tools/mercedes-gclass.mjs",
-      "sha256": "b9d648d2a6f3244310da5eed226edba9d73c27384ffc5862d00156468979be13"
+      "sha256": "c0d47de71c3d5d9e53395634dc8eaf7774d8510d899ebdd0490fdbf4ab6d8784"
     },
     {
       "path": "Tools/earthcruiser-exp.mjs",
-      "sha256": "3c7434e5d4d228c7c11ef8e156cfcd0906fd3f9f8c0dddc197de1b6721c2f2cf"
+      "sha256": "4c7dd32d8ad6a3feec4019440285487bcdb1f2e1efedbb4a61233fed4e1f54c9"
     }
   ],
   "observed": [
@@ -75,7 +75,7 @@
       "name": "entire bonnet crown edge shares the actual shoulder boundary -1",
       "pass": true,
       "value": {
-        "maximumGapIn": 0.000005378252018357113,
+        "maximumGapIn": 0.000006832582007535234,
         "edgeSamples": 11
       }
     },
@@ -85,7 +85,7 @@
       "pass": true,
       "value": {
         "samples": 37,
-        "maximumGapIn": 0.012869290780786247,
+        "maximumGapIn": 0.01823785408147357,
         "misses": []
       }
     },
@@ -94,7 +94,7 @@
       "name": "formed lamp cover has a visible painted rim around its whole perimeter -1",
       "pass": true,
       "value": {
-        "rimEdges": 13,
+        "rimEdges": 12,
         "misses": []
       }
     },
@@ -103,7 +103,7 @@
       "name": "clear lamp cover precedes actual recessed optics -1",
       "pass": true,
       "value": {
-        "depthIn": 0.7423687967956721,
+        "depthIn": 0.7396483819875348,
         "firstSolid": "urus-recessed-projector-reflector"
       }
     },
@@ -112,7 +112,7 @@
       "name": "rear molded lens covers the live red light guide -1",
       "pass": true,
       "value": {
-        "hitLayers": 7
+        "hitLayers": 6
       }
     },
     {
@@ -120,7 +120,7 @@
       "name": "entire bonnet crown edge shares the actual shoulder boundary 1",
       "pass": true,
       "value": {
-        "maximumGapIn": 0.000005378252018357113,
+        "maximumGapIn": 0.000006832582007535234,
         "edgeSamples": 11
       }
     },
@@ -130,7 +130,7 @@
       "pass": true,
       "value": {
         "samples": 37,
-        "maximumGapIn": 0.012807381583931566,
+        "maximumGapIn": 0.017837642150245497,
         "misses": []
       }
     },
@@ -139,7 +139,7 @@
       "name": "formed lamp cover has a visible painted rim around its whole perimeter 1",
       "pass": true,
       "value": {
-        "rimEdges": 13,
+        "rimEdges": 12,
         "misses": []
       }
     },
@@ -148,7 +148,7 @@
       "name": "clear lamp cover precedes actual recessed optics 1",
       "pass": true,
       "value": {
-        "depthIn": 0.7423687971423065,
+        "depthIn": 0.7396483824506465,
         "firstSolid": "urus-recessed-projector-reflector"
       }
     },
@@ -157,7 +157,7 @@
       "name": "rear molded lens covers the live red light guide 1",
       "pass": true,
       "value": {
-        "hitLayers": 7
+        "hitLayers": 6
       }
     },
     {
@@ -229,7 +229,7 @@
       "name": "new detail retains the existing 450000-triangle exterior/cabin budget",
       "pass": true,
       "value": {
-        "triangles": 434424
+        "triangles": 365033
       }
     },
     {
@@ -285,7 +285,7 @@
       "name": "new detail retains the existing 450000-triangle exterior/cabin budget",
       "pass": true,
       "value": {
-        "triangles": 448763
+        "triangles": 387342
       }
     }
   ],

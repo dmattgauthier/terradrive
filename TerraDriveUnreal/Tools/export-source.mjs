@@ -8,6 +8,7 @@ import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {Terrain} from './native-terrain.mjs';
 import {buildGardenGeology} from './garden-geology.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
+import {resizeTireObj,tireDiameterInches} from './tire-size-geometry.mjs';
 import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {refineExpRoof} from './refine-exp-roof.mjs';
 import {bodyRefinement} from './body-refinement.mjs';
@@ -86,7 +87,7 @@ function exportTireStages(prefix,spec){
  const positions=lines.filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
  const bead=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100,outer=spec.tireRadius*100;
  for(let stage=1;stage<=3;stage++){
-  const scale=1+.04*stage,k=(outer*scale-bead)/(outer-bead);let vi=0,ni=0;
+  const scale=spec.monsterTruck?1:1+.04*stage,k=(outer*scale-bead)/(outer-bead);let vi=0,ni=0;
   const obj=lines.map(line=>{
    if(line.startsWith('v ')){
     const [x,y,z]=positions[vi++],r=Math.hypot(x,z),radial=(r<bead?r:bead+(r-bead)*k)/scale;
@@ -102,6 +103,15 @@ function exportTireStages(prefix,spec){
   }).join('\n');
   const name=prefix+'_tire_'+stage;fs.writeFileSync(path.join(out,name+'.obj'),obj);
   assets.push({name,slots:[...base.slots],sha256:crypto.createHash('sha256').update(obj).digest('hex')});
+ }
+}
+function exportSizedTires(prefix,spec){
+ if(spec.tireRadius*2/.0254>=50)return;
+ const base=assets.find(a=>a.name===prefix+'_tire'),source=fs.readFileSync(path.join(out,base.name+'.obj'),'utf8');
+ const bead=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100;
+ for(let stage=1;stage<=3;stage++){
+  const diameter=tireDiameterInches(spec.tireRadius,stage),obj=resizeTireObj(source,spec.tireRadius*100,diameter*.0254*.5*100,bead),name=prefix+'_tire_size'+stage+'_0';
+  fs.writeFileSync(path.join(out,name+'.obj'),obj);assets.push({name,slots:[...base.slots],sha256:crypto.createHash('sha256').update(obj).digest('hex')});
  }
 }
 const terrain=new Terrain(),surfaces=['dirt','asphalt','mud','wetland','rock','sand','snow'];
@@ -134,7 +144,7 @@ for(let row=502;row<=670;row++)for(let col=646;col<=750;col++){
 fs.writeFileSync(path.join(data,'terrain.bin'),field);
 const vehicles=[];for(const spec of VEHICLES){const {view,parts}=prepareNativeVehicle(spec);
  if(spec.bodyStyle==='earthcruiser')view.root.userData.nativeFidelity.roofDamageTopology=refineExpRoof(view.body);
- const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix,lamps:assets.find(a=>a.name===prefix+'_body').slots.filter(id=>['brake','reverse'].includes(mats.find(m=>m.id===id).role)).map(id=>({material:id,role:mats.find(m=>m.id===id).role})),nativeModel:{...view.root.userData.nativeFidelity,construction:view.root.userData.nativeConstruction,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?{...view.root.userData.visualModel,refinement:view.root.userData.bodyRefinement}:view.root.userData.bodyRefinement}});view.dispose();console.log('Vehicle exported',spec.name);}
+ const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportSizedTires(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);vehicles.push({...spec,asset:prefix,lamps:assets.find(a=>a.name===prefix+'_body').slots.filter(id=>['brake','reverse'].includes(mats.find(m=>m.id===id).role)).map(id=>({material:id,role:mats.find(m=>m.id===id).role})),nativeModel:{...view.root.userData.nativeFidelity,construction:view.root.userData.nativeConstruction,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?{...view.root.userData.visualModel,refinement:view.root.userData.bodyRefinement}:view.root.userData.bodyRefinement}});view.dispose();console.log('Vehicle exported',spec.name);}
 // Export the actual shared scenery geometry and original placements.
 const world=Object.create(OffroadWorld.prototype);Object.assign(world,{terrain,scene:new THREE.Scene(),groundMeshes:new Map(),spec:VEHICLES[0],clock:0,_textureLoader:{load(url){return new THREE.Texture();}}});
 terrain.obstacles=[];world._createVegetation();world._createLandmarks();world.scene.updateMatrixWorld(true);
@@ -176,7 +186,7 @@ const routes=[
  ...quarry.routes
 ];
 for(const spec of VEHICLES){const prefix=spec.id.replaceAll('-','_'),parts=vehicleAdditions(spec);exportObj(prefix+'_armor',parts.armor);exportObj(prefix+'_equipment',parts.equipment);}
-const suspension=suspensionModels();exportObj('detail_coil',suspension.coil);exportObj('detail_airstrut',suspension.air);
+const suspension=suspensionModels();exportObj('detail_coil',suspension.coil);exportObj('detail_airstrut',suspension.air);exportObj('detail_nitrogenstrut',suspension.nitrogen);
 exportObj('detail_brake_caliper',brakeCaliperModel());
 exportObj('detail_brake_rotor',brakeRotorModel());
 exportObj('detail_brake_rotor_ceramic',brakeRotorModel(true));
@@ -210,6 +220,9 @@ applySlateRimExtension(manifest,field);
 fs.writeFileSync(path.join(data,'terrain.bin'),field);
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
+// Tire fit is derived from these exact exported coachwork triangles, then
+// written to both vehicle manifests before the editor imports any assets.
+await (await import('./tire-fit.mjs')).bakeTireFits(root);
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));
 console.log('Export complete:',assets.length,'meshes,',placements.length,'instance groups,',trees.length,'trees');
 

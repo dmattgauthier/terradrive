@@ -4,7 +4,7 @@
 
 namespace TerraSim {
 // The original seven indices are persistent save data; append new hardware.
-enum UpgradePart { Suspension, Engine, Tires, Wheels, Frame, Body, Electrical, Drivetrain, Differentials, Portals, EVSwap, TireAir, CenterDifferential, PartCount };
+enum UpgradePart { Suspension, Engine, Tires, Wheels, Frame, Body, Electrical, Drivetrain, Differentials, Portals, EVSwap, TireAir, CenterDifferential, TireSize, PartCount };
 struct UpgradeSetup {
     int Stage[PartCount] = {};
     void Sanitize(bool electrical) {
@@ -13,7 +13,7 @@ struct UpgradeSetup {
     }
 };
 inline int UpgradeStageCountForVersion(int version) {
-    return version==1||version==2?7:version==3?10:version==4||version==5?12:version>=6&&version<=8?PartCount:0;
+    return version==1||version==2?7:version==3?10:version==4||version==5?12:version>=6&&version<=8?13:version==9?14:0;
 }
 inline bool DecodeUpgradeStages(const double* values,int count,int version,bool electrical,UpgradeSetup& result,bool factoryElectric=false) {
     if(!values||count!=UpgradeStageCountForVersion(version)||count==0)return false;
@@ -27,6 +27,12 @@ inline bool DecodeUpgradeStages(const double* values,int count,int version,bool 
     // never reinterpret the player's old electric conversion as a gasoline kit.
     if(version<=4&&factoryElectric)decoded.Stage[EVSwap]=0;
     decoded.Sanitize(electrical);result=decoded;return true;
+}
+// Explicit diameter kits keep the bead/rim fixed and are independent of compound.
+inline float TireKitDiameterInches(float stock, int stage) {
+    if(!std::isfinite(stock)||stock<=0)return 0;
+    if(stock>=50||stage<=0)return stock;
+    return std::min(50.f,std::ceil(stock+(50.f-stock)*std::clamp(stage,0,3)/3.f));
 }
 struct FactoryDrivetrain {
     bool FourDrive=false,Permanent=false,FrontPrimary=false,FrontLocker=false,RearLocker=false;
