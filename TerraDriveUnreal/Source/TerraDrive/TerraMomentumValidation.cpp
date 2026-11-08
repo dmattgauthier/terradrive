@@ -24,6 +24,7 @@ struct FTrial {
   int Trial=0,Phase=0,Frames=0;
   float Time=0,Span=0,Travel=0,LastSpeed=0,PeakLoss=0,MinimumSpeed=1000,
       PeakCompression=0,MinimumClearance=10000,PeakPitch=0,BrakeEntrySpeed=0,
+      RisePeakCompression=0,RisePeakPitch=0,BrakePeakCompression=0,BrakePeakPitch=0,
       MinimumVisibleClearance=10000,RiseVisibleClearance=10000,PeakDeceleration=0;
   float LoadedDistance[ATerraVehicle::MaxWheels]={};
   int PairMask=0,EncounteredMask=0;
@@ -100,6 +101,7 @@ void Park(ATerraVehicle *V,int VehicleIndex,FVector Ground,FVector Direction){
 void Launch(ATerraVehicle *V,float Speed){
   State.Start=V->GetActorLocation();State.LastSpeed=Speed;State.MinimumSpeed=Speed;
   State.PeakLoss=State.PeakCompression=State.PeakPitch=State.PeakDeceleration=0;State.MinimumClearance=10000;
+  State.RisePeakCompression=State.RisePeakPitch=State.BrakePeakCompression=State.BrakePeakPitch=0;
   State.MinimumVisibleClearance=State.RiseVisibleClearance=10000;State.LastPosition=State.Start;State.EncounteredMask=0;
   V->ResetContactTelemetry();V->TestBrake=0;
   const FVector Forward=V->GetActorForwardVector();
@@ -159,10 +161,14 @@ void RecordMotion(ATerraVehicle *V,float Dt){
   ++State.Frames;
 }
 void RecordSuspension(ATerraVehicle *V){
+  float Compression=0;
   for(int I=0;I<V->WheelCount();++I)if(V->WheelState[I].ContactValid)
-    State.PeakCompression=FMath::Max(State.PeakCompression,
-        (State.LoadedDistance[I]-V->WheelState[I].Distance)/V->BumpTravel(I<2));
-  State.PeakPitch=FMath::Max(State.PeakPitch,FMath::Abs(V->GetActorRotation().Pitch));
+    Compression=FMath::Max(Compression,(State.LoadedDistance[I]-V->WheelState[I].Distance)/V->BumpTravel(I<2));
+  const float Pitch=FMath::Abs(V->GetActorRotation().Pitch);
+  State.PeakCompression=FMath::Max(State.PeakCompression,Compression);
+  State.PeakPitch=FMath::Max(State.PeakPitch,Pitch);
+  if(State.Phase==2){State.RisePeakCompression=FMath::Max(State.RisePeakCompression,Compression);State.RisePeakPitch=FMath::Max(State.RisePeakPitch,Pitch);}
+  else if(State.Phase==3){State.BrakePeakCompression=FMath::Max(State.BrakePeakCompression,Compression);State.BrakePeakPitch=FMath::Max(State.BrakePeakPitch,Pitch);}
   for(auto *C:{V->Chassis.Get(),V->FrontCollision.Get(),V->RearCollision.Get()}){
     const FVector E=C->GetScaledBoxExtent();const FTransform T=C->GetComponentTransform();
     for(float X:{-1.f,1.f})for(float Y:{-1.f,1.f}){
@@ -249,8 +255,8 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
         Check(State.Name+TEXT(" front suspension resists brake dive"),State.PeakCompression<1.40f&&State.PeakPitch<18,State.PeakCompression);
         Check(State.Name+TEXT(" braking does not bury the nose"),State.MinimumClearance>-8,State.MinimumClearance);
         Check(State.Name+TEXT(" visible coachwork stays clear while braking"),State.MinimumVisibleClearance>-3,State.MinimumVisibleClearance);
-        UE_LOG(LogTemp,Display,TEXT("TERRA_MOMENTUM_SUSPENSION vehicle=%d travel=%.3f speed=%.3f compression=%.4f clearanceCM=%.3f riseVisibleCM=%.3f brakeVisibleCM=%.3f probes=%d pitch=%.3f terrainHits=%d objectHits=%d"),
-            Vehicle,State.Travel,Speed,State.PeakCompression,State.MinimumClearance,State.RiseVisibleClearance,State.MinimumVisibleClearance,State.BodyProbes[Vehicle].Num(),State.PeakPitch,V->TerrainBodyHits,V->ObjectBodyHits);
+        UE_LOG(LogTemp,Display,TEXT("TERRA_MOMENTUM_SUSPENSION vehicle=%d travel=%.3f speed=%.3f compression=%.4f clearanceCM=%.3f riseVisibleCM=%.3f brakeVisibleCM=%.3f probes=%d pitch=%.3f terrainHits=%d objectHits=%d riseCompression=%.4f risePitch=%.3f brakeCompression=%.4f brakePitch=%.3f"),
+            Vehicle,State.Travel,Speed,State.PeakCompression,State.MinimumClearance,State.RiseVisibleClearance,State.MinimumVisibleClearance,State.BodyProbes[Vehicle].Num(),State.PeakPitch,V->TerrainBodyHits,V->ObjectBodyHits,State.RisePeakCompression,State.RisePeakPitch,State.BrakePeakCompression,State.BrakePeakPitch);
         Capture(FString::Printf(TEXT("native-suspension-rise-%d.png"),Vehicle));EndTrial();
       }
     }

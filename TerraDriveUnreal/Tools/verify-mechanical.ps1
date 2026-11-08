@@ -1,12 +1,16 @@
-param([string]$Name='mechanical',[int]$TimeoutSeconds=900)
+param([string]$Name='mechanical',[int]$TimeoutSeconds=900,[string]$OutputDirectory='',[string]$PackageDirectory='')
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(@(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue).Count){throw 'Close engine processes before the isolated mechanical check'}
 if($Name -notmatch '^[a-z0-9-]+$'){throw 'Use a simple report name'}
-$taskOut=Join-Path $taskRoot 'Saved/Validation';New-Item -ItemType Directory -Path $taskOut -Force | Out-Null
+if(!$OutputDirectory){$OutputDirectory=Join-Path $taskRoot 'Saved/Validation'}
+if(!$PackageDirectory){$PackageDirectory=Join-Path $taskRoot 'Build/Windows'}
+$taskOut=[IO.Path]::GetFullPath($OutputDirectory);New-Item -ItemType Directory -Path $taskOut -Force | Out-Null
 $taskReport=Join-Path $taskOut ($Name+'.json');$taskLog=Join-Path $taskOut ($Name+'.log');$taskStart=Get-Date
-$taskArgs=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-TerraValidate','-TerraCapture','-TerraMechanicalOnly','-TerraTestFPS=20','-TerraGraphicsMode=2',('-TerraReport="'+$taskReport+'"'),('-TerraGarage="'+(Join-Path $taskOut 'mechanical-test-garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOut 'mechanical-test-graphics.json')+'"'),('-abslog="'+$taskLog+'"'))
-$taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=Join-Path $taskRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe';$taskInfo.Arguments=$taskArgs -join ' ';$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
+$taskArgs=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-TerraValidate','-TerraCapture','-TerraMechanicalOnly','-TerraTestFPS=20','-TerraGraphicsMode=2',
+ ('-TerraReport="'+$taskReport+'"'),('-TerraGarage="'+(Join-Path $taskOut 'mechanical-test-garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOut 'mechanical-test-graphics.json')+'"'),
+ ('-TerraControls="'+(Join-Path $taskOut 'mechanical-test-controls.json')+'"'),('-UserDir="'+(Join-Path $taskOut ($Name+'-User'))+'"'),('-abslog="'+$taskLog+'"'))
+$taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=Join-Path (Resolve-Path -LiteralPath $PackageDirectory).ProviderPath 'TerraDrive/Binaries/Win64/TerraDrive.exe';$taskInfo.Arguments=$taskArgs -join ' ';$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
 $taskGame=[Diagnostics.Process]::new();$taskGame.StartInfo=$taskInfo;if(!$taskGame.Start()){throw 'Game did not start'}
 $taskGpu=Get-Command nvidia-smi -ErrorAction SilentlyContinue;$taskSamples=[Collections.Generic.List[object]]::new()
 try{while(!$taskGame.WaitForExit(1500)){
@@ -23,16 +27,22 @@ $taskResult=Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json
 $taskPlanPath=Join-Path $taskOut 'mechanical-fixtures.json'
 if(!(Test-Path -LiteralPath $taskPlanPath) -or (Get-Item -LiteralPath $taskPlanPath).LastWriteTime -lt $taskStart){throw 'No fresh mechanical fixture plan'}
 $taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw | ConvertFrom-Json
-$taskRoster=Get-Content -LiteralPath (Join-Path $taskRoot 'Content/NativeData/vehicle-ground-probes.json') -Raw | ConvertFrom-Json
-$taskVehicleCount=@($taskRoster.vehicles).Count
-$taskPlanValid=$taskPlan.version -eq 1 -and $taskVehicleCount -gt 0 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and $taskPlan.partCount -eq 13 -and $taskPlan.portalStages -eq 4 -and $taskPlan.migrationChecks -eq 5 -and $taskPlan.persistenceChecks -eq 2 -and $taskPlan.capabilityChecksPerVehicle -eq 8 -and $taskPlan.growthChecksPerVehicle -eq 3 -and $taskPlan.spinChecksPerVehicle -eq 4 -and $taskPlan.stationaryChecksPerTrial -eq 10 -and @($taskPlan.trials).Count -eq $taskVehicleCount*$taskPlan.portalStages
+# Pin the supported roster independently of the package's reported plan.
+$taskVehicleCount=12
+$taskPlanValid=$taskPlan.version -eq 1 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and
+ $taskPlan.partCount -eq 14 -and $taskPlan.portalStages -eq 4 -and $taskPlan.migrationChecks -eq 8 -and $taskPlan.persistenceChecks -eq 3 -and
+ $taskPlan.capabilityChecksPerVehicle -eq 8 -and $taskPlan.growthChecksPerVehicle -eq 3 -and $taskPlan.spinChecksPerVehicle -eq 4 -and
+ $taskPlan.stationaryChecksPerTrial -eq 10 -and @($taskPlan.trials).Count -eq $taskVehicleCount*$taskPlan.portalStages -and
+ $taskPlan.trackTireChecksPerVehicle -eq 4 -and $taskPlan.trackCapableVehicles -eq ($taskVehicleCount-3)
 $taskCoverage=[Collections.Generic.HashSet[string]]::new()
 foreach($taskTrial in $taskPlan.trials){
  $taskPlanValid=$taskPlanValid -and $taskTrial.vehicle -ge 0 -and $taskTrial.vehicle -lt $taskVehicleCount -and $taskTrial.stage -ge 0 -and $taskTrial.stage -lt $taskPlan.portalStages
  [void]$taskCoverage.Add(('{0}:{1}' -f $taskTrial.vehicle,$taskTrial.stage))
 }
-$taskExpected=[int]$taskPlan.migrationChecks+[int]$taskPlan.persistenceChecks+$taskVehicleCount*([int]$taskPlan.capabilityChecksPerVehicle+[int]$taskPlan.growthChecksPerVehicle+[int]$taskPlan.spinChecksPerVehicle)+@($taskPlan.trials).Count*[int]$taskPlan.stationaryChecksPerTrial
-if(!$taskPlanValid -or $taskCoverage.Count -ne $taskVehicleCount*$taskPlan.portalStages -or $taskPlan.expectedChecks -ne $taskExpected){throw 'Mechanical fixture plan does not cover the complete generated roster and portal-stage matrix'}
+$taskExpected=[int]$taskPlan.migrationChecks+[int]$taskPlan.persistenceChecks+
+ $taskVehicleCount*([int]$taskPlan.capabilityChecksPerVehicle+[int]$taskPlan.growthChecksPerVehicle+[int]$taskPlan.spinChecksPerVehicle)+
+ @($taskPlan.trials).Count*[int]$taskPlan.stationaryChecksPerTrial+[int]$taskPlan.trackCapableVehicles*[int]$taskPlan.trackTireChecksPerVehicle
+if(!$taskPlanValid -or $taskCoverage.Count -ne $taskVehicleCount*$taskPlan.portalStages -or $taskPlan.expectedChecks -ne $taskExpected){throw 'Mechanical fixture plan does not cover the expected roster and portal-stage matrix'}
 $taskFailures=@($taskResult.tests | Where-Object {!$_.pass});$taskErrors=@(Select-String -LiteralPath $taskLog -Pattern 'Fatal error|Assertion failed|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
 if($taskExit -ne 0 -or $taskFailures.Count -or $taskErrors.Count -or $taskResult.tests.Count -ne $taskExpected){$taskFailures | Select-Object case,value,pass | Format-Table -AutoSize | Out-String | Write-Output;throw ('Mechanical check failed: '+$taskReport+'; exit '+$taskExit+'; checks '+$taskResult.tests.Count+'/'+$taskExpected)}
 Write-Output ('PASS '+$taskResult.tests.Count+' native mechanical checks; exit 0')

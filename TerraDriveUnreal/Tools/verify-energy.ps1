@@ -1,7 +1,8 @@
 param(
  [ValidateSet('EnergyLock','Interface','ElectricPressure','Mechanical')][string]$Mode='EnergyLock',
  [string]$OutputDirectory='',
- [int]$TimeoutSeconds=1200
+ [int]$TimeoutSeconds=1200,
+ [string]$PackageDirectory=''
 )
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path $PSScriptRoot -Parent
@@ -12,7 +13,8 @@ if(Test-Path -LiteralPath (Join-Path $taskOutput 'receipt.json')){throw 'Existin
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
 $taskReport=Join-Path $taskOutput 'result.json';$taskCaptures=Join-Path $taskOutput 'Screenshots'
 New-Item -ItemType Directory -Path $taskCaptures -Force | Out-Null
-$taskExe=Join-Path $taskRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'
+if(!$PackageDirectory){$PackageDirectory=Join-Path $taskRoot 'Build/Windows'}
+$taskExe=Join-Path (Resolve-Path -LiteralPath $PackageDirectory).ProviderPath 'TerraDrive/Binaries/Win64/TerraDrive.exe'
 $taskFlags=@{
  EnergyLock='-TerraEnergyLockOnly';Interface='-TerraInterfaceOnly';ElectricPressure='-TerraElectricPressureOnly';Mechanical='-TerraMechanicalOnly'
 }
@@ -41,7 +43,7 @@ try{
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json
  $taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{EnergyLock=135;Interface=140;ElectricPressure=280;Mechanical=557}[$Mode]
+ $taskExpected=@{EnergyLock=135;Interface=156;ElectricPressure=280;Mechanical=707}[$Mode]
  if($taskGame.ExitCode -ne 0 -or $taskResult.engine -ne '5.8.3' -or $taskFailed.Count -or $taskReceipt.checks -ne $taskExpected){throw 'Native acceptance failed; inspect the preserved report'}
  $taskReceipt.pass=$true
 }catch{$taskProblem=$_;if(!$taskGame.HasExited){$taskGame.Kill();$taskGame.WaitForExit()};$taskReceipt.problem=$_.Exception.Message}

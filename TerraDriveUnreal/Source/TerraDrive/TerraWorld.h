@@ -127,6 +127,7 @@ public:
   TArray<FString> ZoneNames;
   TArray<FTerraRoute> Routes;
   int ConstructedMeshCount = 0;
+  bool HasBlendedGraniteApproach() const;
   int DetailInstanceCount = 0, SolidDetailCount = 0;
   int FabAssetCount = 0, FabInstanceCount = 0;
   double DepressedVolume = 0, DisplacedVolume = 0, CompactedVolume = 0;

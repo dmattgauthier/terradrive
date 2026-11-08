@@ -2,10 +2,11 @@
 #include "Components/BoxComponent.h"
 
 float ATerraVehicle::FuelCapacityGallons()const{
-  // Gameplay tanks for the nine chassis, including optional gasoline donors.
+  // Gameplay tanks for the native chassis, including optional gasoline donors.
   // These remain estimates; no certified fuel-economy figures are implied.
-  static constexpr float Gallons[]={21.5f,20.8f,12.4f,24.5f,26.f,22.5f,60.f,26.f,26.f,42.f};
-  return Gallons[FMath::Clamp(VehicleIndex,0,VehicleCount-1)];
+  static constexpr float Gallons[]={21.5f,20.8f,12.4f,24.5f,26.f,22.5f,60.f,26.f,26.f,42.f,30.f,15.9f};
+  static_assert(UE_ARRAY_COUNT(Gallons)==VehicleCount,"Every vehicle needs a safe fuel capacity");
+  return FMath::Max(1.f,Number(TEXT("fuelCapacityGallons"),Gallons[FMath::Clamp(VehicleIndex,0,int(UE_ARRAY_COUNT(Gallons))-1)]));
 }
 FString ATerraVehicle::EnergyDescription()const{
   const FString Level=IsElectric()?FString::Printf(TEXT("Battery %.0f%% / %.0f kWh"),BatterySOC*100,ElectricConfig().BatteryKWh):

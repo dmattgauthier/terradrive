@@ -2,7 +2,7 @@
   "kind": "source-geometry",
   "nativeAcceptance": false,
   "revision": 12,
-  "artPilot": 3,
+  "artPilot": 4,
   "intakeGridProbes": 1316,
   "perRegion": [
     148,
@@ -11,20 +11,20 @@
     280
   ],
   "bonnetGridProbes": 90,
-  "bonnetTriangles": 8640,
-  "bonnetVertexNormals": 4453,
-  "bonnetMinFaceNormalY": 0.7276106073519225,
-  "bonnetMinVertexNormalY": 0.7576823234558105,
+  "bonnetTriangles": 32000,
+  "bonnetVertexNormals": 16281,
+  "bonnetMinFaceNormalY": 0.7301392439903893,
+  "bonnetMinVertexNormalY": 0.7500830888748169,
   "paintedIntrusions": 0,
   "opticalDepthM": [
-    0.0063514584893473724,
-    0.0063533234704071795
+    0.005396529626395363,
+    0.005386300480522355
   ],
   "exhaustDepthM": [
     0.061120499280207685,
-    0.061199975996613976,
-    0.061176846584839684,
-    0.06119914389771175
+    0.06128831176054117,
+    0.06127078809977249,
+    0.061275069288381
   ],
   "pass": true
 }

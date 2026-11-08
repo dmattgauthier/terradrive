@@ -1,8 +1,11 @@
-param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,9)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey)
+param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter','Expanded','Recovery','RolloverPerformance')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,11)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey,[ValidateRange(0,11)][int]$PerformanceVehicle=10,[ValidateRange(0,3)][int]$TireSizeStage=0,[switch]$LegacyRolledTires,[switch]$ContactDiagnostics,[ValidateRange(-1,11)][int]$ArtVehicle=-1,[string]$SavedBuild='')
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'staged-package-content.ps1')
 if($RolloverQuickVehicle -ge 0 -and $Mode -ne 'Rollover'){throw '-RolloverQuickVehicle requires Rollover mode.'}
+if($ArtVehicle -ge 0 -and $Mode -ne 'Art'){throw '-ArtVehicle requires Art mode.'}
 if($QuarrySurvey -and $Mode -ne 'Quarry'){throw '-QuarrySurvey requires Quarry mode.'}
+if($SavedBuild -and $Mode -ne 'RolloverPerformance'){throw '-SavedBuild requires RolloverPerformance mode.'}
+if(($TireSizeStage -gt 0 -or $LegacyRolledTires) -and $Mode -notin @('Rollover','RolloverPerformance')){throw 'Tire rollover options require a rollover mode.'}
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue){throw 'Close game/editor before native validation.'}
 if(!$OutputDirectory){$OutputDirectory=Join-Path $taskRoot ('Saved/FidelityValidation-'+$Mode+'-'+(Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH-mm-ssZ'))}
@@ -17,11 +20,20 @@ $taskExe=Join-Path $taskPackage 'TerraDrive/Binaries/Win64/TerraDrive.exe'
 $taskFlags=@{SixWheel='-TerraSixWheelOnly';Art='-TerraModelHeroOnly';UrusArt='-TerraHeroOnly';Quarry='-TerraTrailOnly';Interface='-TerraInterfaceOnly';Mechanical='-TerraMechanicalOnly';ElectricPressure='-TerraElectricPressureOnly';Rollover='-TerraRolloverOnly';Ruts='-TerraRutOnly';Garden='-TerraGardenOnly';Transitions='-TerraTransitionsOnly';Detail='-TerraTerrainDetailOnly';Movement='-TerraMomentumOnly'}
 $taskFlags.RutTransitions='-TerraRutTransitionOnly'
 $taskFlags.Perimeter='-TerraPerimeterOnly'
-$taskQuality=if($Mode -in @('Art','UrusArt','Quarry','Garden','Ruts','Transitions','Detail','RutTransitions')){2}else{0}
+$taskFlags.Expanded='-TerraExpandedOnly'
+$taskFlags.Recovery='-TerraRecoveryOnly'
+$taskFlags.RolloverPerformance='-TerraRolloverPerformanceOnly'
+$taskQuality=if($Mode -in @('Art','UrusArt','Quarry','Garden','Ruts','Transitions','Detail','RutTransitions','Expanded')){2}else{0}
 $taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-NoTrace','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraGraphicsMode='+$taskQuality),$taskFlags[$Mode],
  ('-TerraReport="'+$taskReport+'"'),('-TerraCaptureDir="'+$taskCaptures+'"'),('-TerraGarage="'+(Join-Path $taskOutput 'garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOutput 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $taskOutput 'controls.json')+'"'),('-UserDir="'+(Join-Path $taskOutput 'User')+'"'),('-abslog="'+(Join-Path $taskOutput 'game.log')+'"'),
  '-ini:Engine:[/Script/Engine.Engine]:bUseFixedFrameRate=True','-ini:Engine:[/Script/Engine.Engine]:FixedFrameRate=20.0')
+if($Mode -eq 'RolloverPerformance'){$taskArguments=@($taskArguments|Where-Object {$_ -notlike '-ini:Engine:*'});$taskArguments+=('-TerraPerfVehicle='+$PerformanceVehicle)}
+if($SavedBuild){$taskArguments+=('-TerraPerfBuild="'+(Resolve-Path -LiteralPath $SavedBuild).ProviderPath+'"')}
 if($QuarrySurvey){$taskArguments+='-TerraQuarrySurvey'}
+if($ArtVehicle -ge 0){$taskArguments+=('-TerraModelHeroVehicle='+$ArtVehicle)}
+if($Mode -in @('Rollover','RolloverPerformance')){$taskArguments+=('-TerraRolloverTireSize='+$TireSizeStage)}
+if($LegacyRolledTires){$taskArguments+='-TerraLegacyRolledTires'}
+if($ContactDiagnostics){$taskArguments+=@('-TerraRolledTireDiagnostics','-TerraUprightSupportDiagnostics')}
 if($Mode -eq 'Rollover'){$taskArguments+='-TerraExpectCoachworkCollision'}
 if($RolloverQuickVehicle -ge 0){$taskArguments+=@('-TerraRolloverQuick',('-TerraRolloverQuickVehicle='+$RolloverQuickVehicle))}
 $taskExecutableHash=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -29,7 +41,7 @@ $taskContent=@(Get-StagedPackageContent -PackageDirectory $taskPackage)
 $taskStart=Get-Date
 $taskReceipt=[ordered]@{mode=$Mode;started=$taskStart.ToUniversalTime().ToString('o');
  packageDirectory=$taskPackage;executableSha256=$taskExecutableHash;stagedContent=$taskContent;
- arguments=$taskArguments;simulationClock='paced fixed20Hz functional verification';pass=$false}
+ arguments=$taskArguments;simulationClock=$(if($Mode -eq 'RolloverPerformance'){'real elapsed time; 20 FPS render cap; normal physics'}else{'paced fixed20Hz functional verification'});pass=$false}
 $taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=$taskExe;$taskInfo.Arguments=$taskArguments -join ' ';$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
 $taskGame=[Diagnostics.Process]::new();$taskGame.StartInfo=$taskInfo
 $taskStarted=$false
@@ -46,19 +58,45 @@ try{
   if($taskSample.temperatureC -ge 77){throw 'GPU reached the77C cutoff'}
  }
  $taskReceipt.exitCode=$taskGame.ExitCode
+ $taskLog=Join-Path $taskOutput 'game.log'
+ if(!(Test-Path -LiteralPath $taskLog) -or (Get-Item -LiteralPath $taskLog).LastWriteTime -lt $taskStart){throw 'No fresh native runtime log'}
+ # An exit-zero fixture can still contain an ensure or a failed material.
+ # Preserve the actual lines in the receipt instead of accepting silent fallback.
+ $taskRuntimePattern='Fatal error|Assertion failed|Ensure condition failed|Handled ensure|Log[A-Za-z0-9_]+:\s*(?:Fatal|Error):|does(?:n.t| not) have a valid ShaderMap|missing usage flag|Failed to compile Material|Failed to find shader|(?:Missing|Invalid|Null) (?:cached )?ShaderMap|Default Material will be used|GPU Crashed|DXGI_ERROR_DEVICE_(?:REMOVED|HUNG|RESET)'
+ $taskRuntimeErrors=@(Select-String -LiteralPath $taskLog -Pattern $taskRuntimePattern)
+ $taskReceipt.runtimeErrorCount=$taskRuntimeErrors.Count
+ $taskReceipt.runtimeErrors=@($taskRuntimeErrors|Select-Object -First 40|ForEach-Object {[pscustomobject]@{line=$_.LineNumber;message=$_.Line}})
+ if($taskRuntimeErrors.Count){throw 'Native runtime logged an error, ensure, shader/material failure or GPU fault; inspect receipt and game.log'}
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=110;UrusArt=7;Quarry=16;Interface=140;Mechanical=557;ElectricPressure=280;Rollover=513;Ruts=117;Transitions=53;Detail=15;Movement=120;RutTransitions=64;Perimeter=5}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=156;Mechanical=707;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=138;RutTransitions=64;Perimeter=5;Expanded=278;Recovery=48;RolloverPerformance=59}[$Mode]
+ if($SavedBuild){$taskExpected+=9} # One saved-profile check per real-time pose.
  if($QuarrySurvey){$taskExpected+=9}
- if($RolloverQuickVehicle -ge 0){
-  $taskExpected=81
-  $taskPlan=Get-Content -LiteralPath (Join-Path $taskOutput 'rollover-fixtures.json') -Raw|ConvertFrom-Json
-  $taskKeys=@($taskPlan.cases|ForEach-Object {('{0}:{1}:{2}' -f $_.vehicle,$_.zone,$_.roll)}|Sort-Object -Unique)
-  if(!$taskPlan.quick -or $taskPlan.quickVehicle -ne $RolloverQuickVehicle -or $taskPlan.expectedChecks -ne 81 -or @($taskPlan.cases).Count -ne 10 -or $taskKeys.Count -ne 10 -or @($taskPlan.cases|Where-Object {$_.vehicle -ne $RolloverQuickVehicle}).Count){throw 'Focused rollover fixture coverage is incomplete.'}
+ if($ArtVehicle -ge 0){$taskExpected=11}
+ if($Mode -eq 'Rollover'){
+  $taskQuick=$RolloverQuickVehicle -ge 0
+  $taskExpected=if($taskQuick){91}else{685}
+  $taskPlanPath=Join-Path $taskOutput 'rollover-fixtures.json'
+  if(!(Test-Path -LiteralPath $taskPlanPath) -or (Get-Item -LiteralPath $taskPlanPath).LastWriteTime -lt $taskStart){throw 'No fresh rollover fixture plan'}
+  $taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw|ConvertFrom-Json
+  $taskRolloverCases=@($taskPlan.cases)
+  $taskRequired=[Collections.Generic.HashSet[string]]::new()
+  $taskVehicles=if($taskQuick){@($RolloverQuickVehicle)}else{@(0..11)}
+  foreach($taskVehicle in $taskVehicles){foreach($taskZone in @(1,0)){foreach($taskRoll in @(-90,90,180)){[void]$taskRequired.Add(('{0}:{1}:{2}' -f $taskVehicle,$taskZone,$taskRoll))}}}
+  $taskExtraVehicle=if($taskQuick){$RolloverQuickVehicle}else{3}
+  foreach($taskRoll in @(-55,55,-110,110)){[void]$taskRequired.Add(('{0}:0:{1}' -f $taskExtraVehicle,$taskRoll))}
+  $taskActual=[Collections.Generic.HashSet[string]]::new()
+  foreach($taskCase in $taskRolloverCases){[void]$taskActual.Add(('{0}:{1}:{2}' -f $taskCase.vehicle,$taskCase.zone,$taskCase.roll))}
+  $taskPlanValid=$taskPlan.version -eq 1 -and $taskPlan.vehicleCount -eq 12 -and $taskPlan.quick -eq $taskQuick -and $taskPlan.coachworkCollisionRequired -eq $true -and $taskPlan.performanceMeasured -eq $false -and $taskPlan.checksPerPose -eq 9 -and $taskPlan.tireSizeStage -eq $TireSizeStage -and $taskPlan.expectedChecks -eq $taskExpected
+  if($taskQuick){$taskPlanValid=$taskPlanValid -and $taskPlan.quickVehicle -eq $RolloverQuickVehicle}
+  if(!$taskPlanValid -or $taskRolloverCases.Count -ne $taskRequired.Count -or !$taskActual.SetEquals($taskRequired)){throw 'Rollover fixture coverage does not match the complete requested pose matrix'}
  }
  if($taskGame.ExitCode -ne 0 -or $taskResult.engine -ne '5.8.3' -or $taskFailed.Count -or $taskReceipt.checks -lt 1 -or ($taskExpected -and $taskReceipt.checks -ne $taskExpected)){throw 'Native acceptance failed; inspect preserved report'}
  $taskExpectedCaptures=@()
+ if($Mode -eq 'Rollover'){
+  foreach($taskCase in $taskRolloverCases){$taskSign=if($taskCase.roll -lt 0){'m'}else{'p'};$taskExpectedCaptures+=('native-rollover-v{0}-z{1}-{2}{3}.png' -f $taskCase.vehicle,$taskCase.zone,$taskSign,[Math]::Abs([int]$taskCase.roll))}
+ }
  if($Mode -eq 'SixWheel'){$taskExpectedCaptures=@('sixwheel-locked-motion.png','g63-squared-garage.png','sixwheel-mud-ruts.png','sixwheel-ev-drive-1.png','sixwheel-ev-drive-2.png','sixwheel-ev-drive-3.png')}
  if($Mode -eq 'Garden'){$taskExpectedCaptures=@('garden-main-outcrop.png','garden-detached-blocks.png','garden-ledge-silhouette.png','garden-stone-close.png','garden-articulation-line.png')}
  if($Mode -eq 'Perimeter'){
@@ -71,7 +109,10 @@ try{
   $taskExpectedCaptures+='native-urus-hero-6.png'
   foreach($taskSector in 1..6){$taskExpectedCaptures+=('native-slate-rim-sector-{0:00}.png' -f $taskSector)}
  }
- if($Mode -eq 'Art'){foreach($taskVehicle in 0..9){foreach($taskView in 0..9){$taskExpectedCaptures+=('native-vehicle-'+$taskVehicle+'-hero-'+$taskView+'.png')}}}
+ if($Mode -eq 'Art'){$taskArtVehicles=if($ArtVehicle -ge 0){@($ArtVehicle)}else{@(0..11)};foreach($taskVehicle in $taskArtVehicles){foreach($taskView in 0..9){$taskExpectedCaptures+=('native-vehicle-'+$taskVehicle+'-hero-'+$taskView+'.png')}}}
+ if($Mode -eq 'Expanded'){$taskExpectedCaptures+=@('native-granite-entry-oblique.png','native-granite-entry-close.png','expanded-tire-garage-2.png','expanded-tire-garage-10.png','expanded-tire-garage-11.png');foreach($taskVehicle in 0..11){$taskExpectedCaptures+=('expanded-largest-tires-'+$taskVehicle+'.png');$taskExpectedCaptures+=('expanded-recovered-'+$taskVehicle+'.png')}}
+ if($Mode -eq 'RolloverPerformance'){foreach($taskZone in @(0,2,6)){foreach($taskRoll in @(0,90,180)){$taskExpectedCaptures+=('roll-perf-v'+$PerformanceVehicle+'-z'+$taskZone+'-r'+$taskRoll+'.png')}}}
+ if($Mode -eq 'Recovery'){foreach($taskCase in 0..3){foreach($taskPose in @('before','after')){$taskExpectedCaptures+=('native-recovery-'+$taskCase+'-'+$taskPose+'.png')}}}
  if($Mode -eq 'Ruts'){
   foreach($taskSurface in @('firm-dirt','mud','snow','wet-grass','sand','loose-dirt','driven-mud','driven-snow')){foreach($taskView in @('oblique','profile')){$taskExpectedCaptures+=('native-rut-'+$taskSurface+'-'+$taskView+'.png')}}
  }
@@ -85,8 +126,8 @@ try{
  if($Mode -eq 'Movement'){
   $taskPlan=Get-Content -LiteralPath (Join-Path $taskOutput 'momentum-fixtures.json') -Raw|ConvertFrom-Json
   $taskVehicles=@($taskPlan.riseVehicles|Sort-Object -Unique)
-  if($taskPlan.vehicleCount -ne 10 -or $taskVehicles.Count -ne 10 -or $taskPlan.boundaryTrialCount -ne 7 -or @($taskPlan.boundaries).Count -ne 7 -or $taskPlan.expectedChecks -ne 120){throw 'Movement fixture coverage is incomplete.'}
-  foreach($taskVehicle in 0..9){if($taskVehicle -notin $taskVehicles){throw 'Movement fixture omitted a vehicle.'}}
+  if($taskPlan.vehicleCount -ne 12 -or $taskVehicles.Count -ne 12 -or $taskPlan.boundaryTrialCount -ne 7 -or @($taskPlan.boundaries).Count -ne 7 -or $taskPlan.expectedChecks -ne 138){throw 'Movement fixture coverage is incomplete.'}
+  foreach($taskVehicle in 0..11){if($taskVehicle -notin $taskVehicles){throw 'Movement fixture omitted a vehicle.'}}
  }
  foreach($taskName in $taskExpectedCaptures){
   $taskImage=Join-Path $taskCaptures $taskName

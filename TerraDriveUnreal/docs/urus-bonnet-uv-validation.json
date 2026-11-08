@@ -1,0 +1,37 @@
+{
+  "kind": "exported-source-geometry",
+  "nativeAcceptance": false,
+  "asset": "urus_performante_body",
+  "sha256": "d205778eb7aedce0c92dc82e367341f43e9659f7ea62af150dfa60311aab26cd",
+  "hashMatchesManifest": true,
+  "exportedVertices": 731799,
+  "exportedNormals": 731799,
+  "exportedUVs": 731799,
+  "carbonStartIndex": 465136,
+  "carbonUVMatchesAuthoring": 16281,
+  "carbon": {
+    "triangles": 32000,
+    "zeroUVDeterminantsBelow1eMinus14": 0,
+    "tinyUVDeterminantsBelow1eMinus8": 0,
+    "zeroAreaTriangles": 0,
+    "minAbsoluteUVDeterminant": 9.498386788209245e-7,
+    "minAreaCm2": 0.004530584662926023,
+    "minNormalLength": 0.9999999999999997,
+    "maxNormalLength": 1.0000000000000004,
+    "minOrthogonalizedTangentLength": 99.47138392789171,
+    "minOrthogonalizedBitangentLength": 86.53308467586811,
+    "maxNormalizedTangentNormalDot": 2.186995463878643e-16,
+    "maxTangentBasisCondition": 1.0145637221116715
+  },
+  "broaderMappedBonnetRegion": {
+    "selection": "All triangle vertices within 4 mm of the physical hood surface reconstructed from their UV coordinates; includes painted sheet and vent lips, not an exact named-mesh selection",
+    "triangles": 114872,
+    "zeroUVDeterminantsBelow1eMinus14": 182,
+    "zeroAreaTriangles": 30
+  },
+  "wholeBody": {
+    "triangles": 1217277,
+    "zeroUVDeterminantsBelow1eMinus14": 714
+  },
+  "conclusion": "The new exposed-carbon bonnet has valid normals and nondegenerate UV/tangent bases. The body-wide MikkTSpace warning cannot be attributed to this panel. Existing degeneracies elsewhere, including the broader painted/vent region, remain separately recorded; this source audit does not prove the Unreal imported asset or native highlights."
+}

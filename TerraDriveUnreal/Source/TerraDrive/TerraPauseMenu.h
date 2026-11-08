@@ -3,6 +3,7 @@
 #include "TerraControls.h"
 #include "Widgets/SCompoundWidget.h"
 class ATerraVehicle;
+class SButton;
 class SWidgetSwitcher;
 class SScrollBox;
 
@@ -26,10 +27,12 @@ public:
   bool ExitWasRequested()const{return ExitRequested;}
   TSharedPtr<SWidget> ControlRow(TerraControls::Action A)const{return Rows.IsValidIndex(int(A))?Rows[int(A)]:nullptr;}
   TSharedPtr<SScrollBox> ControlsScrollBox()const{return ControlsScroll;}
+  TSharedPtr<SButton> RecoverButton()const{return RecoverHere;}
 private:
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TSharedPtr<SWidgetSwitcher> Pages;
   TSharedPtr<SScrollBox> ControlsScroll;
+  TSharedPtr<SButton> RecoverHere;
   TArray<TSharedPtr<SWidget>> Rows;
   bool WaitingForBinding=false,ExitRequested=false;
   TerraControls::Action BindingAction=TerraControls::Action::Count;

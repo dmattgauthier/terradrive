@@ -1,5 +1,6 @@
 #include "TerraRolloverValidation.h"
 #include "TerraVehicle.h"
+#include "TerraTireProbeValidation.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Camera/CameraActor.h"
@@ -25,7 +26,7 @@ struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TWeakObjectPtr<ACameraActor> Camera;
   TArray<FVector> Probes[ATerraVehicle::VehicleCount];TArray<FCase> Cases;
-  int Trial=0,Phase=0,Samples=0;float Time=0,MinimumClearance=10000;
+  int Trial=0,Phase=0,Samples=0,TireSize=0,MaximumCandidates=0,MaximumTraces=0;float Time=0,MinimumClearance=10000,MinimumTireClearance=10000;
   bool Ready=false,Finite=true,RequestedPoseSeen=false,OverturnedSeen=false,PoweredWhileOverturned=false;
   double PreviousMeasuredFrame=0;TArray<float> FrameMS;
 };
@@ -49,6 +50,9 @@ bool Load(){
     if(!Item.IsValid()||!Item->TryGetArrayField(TEXT("rolloverProbes"),Probes)||Probes->Num()<64||Probes->Num()>384)return false;
     for(const auto& Value:*Probes){const auto& A=Value->AsArray();if(A.Num()!=3)return false;const FVector P(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber());if(P.ContainsNaN())return false;State.Probes[I].Add(P);}
   }
+  if(!TerraTireProbeValidation::Load())return false;
+  FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverTireSize="),State.TireSize);
+  if(State.TireSize<0||State.TireSize>3)return false;
   const bool Quick=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverQuick"));
   int QuickVehicle=3;FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverQuickVehicle="),QuickVehicle);
   if(QuickVehicle<0||QuickVehicle>=ATerraVehicle::VehicleCount)return false;
@@ -57,9 +61,9 @@ bool Load(){
   auto Plan=MakeShared<FJsonObject>();Plan->SetNumberField(TEXT("version"),1);Plan->SetNumberField(TEXT("vehicleCount"),ATerraVehicle::VehicleCount);Plan->SetBoolField(TEXT("quick"),Quick);
   const bool Coachwork=FParse::Param(FCommandLine::Get(),TEXT("TerraExpectCoachworkCollision"));
   const bool Measure=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverMeasurePerformance"));
-  const int ChecksPerPose=(Coachwork?8:6)+(Measure?1:0);
+  const int ChecksPerPose=(Coachwork?9:7)+(Measure?1:0);
   Plan->SetBoolField(TEXT("performanceMeasured"),Measure);
-  Plan->SetNumberField(TEXT("quickVehicle"),QuickVehicle);
+  Plan->SetNumberField(TEXT("quickVehicle"),QuickVehicle);Plan->SetNumberField(TEXT("tireSizeStage"),State.TireSize);
   Plan->SetBoolField(TEXT("coachworkCollisionRequired"),Coachwork);Plan->SetNumberField(TEXT("checksPerPose"),ChecksPerPose);
   TArray<TSharedPtr<FJsonValue>> Cases;
   for(const auto& C:State.Cases){auto Item=MakeShared<FJsonObject>();Item->SetNumberField(TEXT("vehicle"),C.Vehicle);Item->SetNumberField(TEXT("zone"),C.Zone);Item->SetNumberField(TEXT("roll"),C.Roll);Cases.Add(MakeShared<FJsonValueObject>(Item));}
@@ -69,7 +73,7 @@ bool Load(){
 void Prepare(ATerraVehicle* V,const FCase& C){
   // Exercise the player's menu selection/upgrade/return path before each drop.
   // Auto-weld readiness must be established after the kinematic garage closes.
-  V->SetGarage(true);V->SelectVehicle(C.Vehicle);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;V->Terrain->ResetSoil();
+  V->SetGarage(true);V->SelectVehicle(C.Vehicle);V->ResetUpgrades(false);if(State.TireSize>0)V->SetUpgrade(TerraSim::TireSize,State.TireSize,false);V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;V->Terrain->ResetSoil();
   V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
   // Let activation/re-welding complete before applying the independent drop
   // pose. A same-frame teleport can be replaced by pending physics state.
@@ -79,10 +83,11 @@ void Place(ATerraVehicle* V,const FCase& C){
   FVector Center=V->Terrain->Spawns[C.Zone]+(C.Zone==0?FVector(-1500,1200,0):FVector(3000,0,0));
   const FRotator Rotation(0,0,C.Roll);const FQuat Q=Rotation.Quaternion();
   float Height=-100000;for(const FVector& P:State.Probes[C.Vehicle]){const FVector Offset=Q.RotateVector(P);Height=FMath::Max(Height,V->Terrain->Height(Center.X+Offset.X,Center.Y+Offset.Y)-float(Offset.Z));}
+  for(const FVector& P:TerraTireProbeValidation::ActorLocalPoints(V)){const FVector Offset=Q.RotateVector(P);Height=FMath::Max(Height,V->Terrain->Height(Center.X+Offset.X,Center.Y+Offset.Y)-float(Offset.Z));}
   Center.Z=Height+30;
   V->SetActorLocationAndRotation(Center,Rotation,false,nullptr,ETeleportType::TeleportPhysics);
   V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);V->ResetContactTelemetry();
-  State.Time=0;State.Samples=0;State.MinimumClearance=10000;State.Finite=true;State.RequestedPoseSeen=State.OverturnedSeen=State.PoweredWhileOverturned=false;State.Phase=1;
+  State.Time=0;State.Samples=0;State.MinimumClearance=State.MinimumTireClearance=10000;State.MaximumCandidates=State.MaximumTraces=0;State.Finite=true;State.RequestedPoseSeen=State.OverturnedSeen=State.PoweredWhileOverturned=false;State.Phase=1;
   State.PreviousMeasuredFrame=0;State.FrameMS.Reset();
 }
 }
@@ -105,6 +110,8 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
       if(State.PreviousMeasuredFrame>0)State.FrameMS.Add(float((Now-State.PreviousMeasuredFrame)*1000));
       State.PreviousMeasuredFrame=Now;
       for(const FVector& Local:State.Probes[C.Vehicle]){const FVector P=V->Body->GetComponentTransform().TransformPosition(Local);State.MinimumClearance=FMath::Min(State.MinimumClearance,float(P.Z-V->Terrain->Height(P.X,P.Y)));}
+      State.MinimumTireClearance=FMath::Min(State.MinimumTireClearance,TerraTireProbeValidation::MinimumClearance(V));
+      State.MaximumCandidates=FMath::Max(State.MaximumCandidates,V->RolledTireCandidates);State.MaximumTraces=FMath::Max(State.MaximumTraces,V->RolledTireTraces);
       State.Samples++;
     }
     if(State.Time>3.2f){V->TestThrottle=1;V->TestSteer=1;V->TestBrake=0;}
@@ -125,6 +132,11 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
       }
       Check(Name+TEXT(" remains finite and enters its requested drop pose under real Chaos gravity"),State.Finite&&State.RequestedPoseSeen,State.RequestedPoseSeen?1:0);
       Check(Name+TEXT(" sampled visible body stays within 1.6 inches of ground"),State.Samples>=8&&State.MinimumClearance>=-4.f,State.MinimumClearance/2.54f);
+      Check(Name+TEXT(" independent visible tire probes stay within 1.6 inches of ground with bounded contact work"),
+        State.Samples>=8&&TerraTireProbeValidation::Matches(V)&&State.MinimumTireClearance>=-4.f&&
+        State.MaximumCandidates<=V->WheelCount()*2&&State.MaximumTraces<=V->WheelCount()*2,State.MinimumTireClearance/2.54f);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLOVER_TIRES vehicle=%d sizeStage=%d clearanceIn=%.3f candidates=%d traces=%d"),
+        C.Vehicle,State.TireSize,State.MinimumTireClearance/2.54f,State.MaximumCandidates,State.MaximumTraces);
       Check(Name+TEXT(" retains its source surface probes"),State.Probes[C.Vehicle].Num()>=64,State.Probes[C.Vehicle].Num());
       Check(Name+TEXT(" cannot apply tire drive while overturned"),!State.PoweredWhileOverturned,State.OverturnedSeen?1:0);
       if(!State.Camera.IsValid())State.Camera=V->GetWorld()->SpawnActor<ACameraActor>();

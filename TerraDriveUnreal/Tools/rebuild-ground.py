@@ -80,7 +80,7 @@ try:
 
     manifest = os.path.join(source, 'import.json')
     required = [manifest, os.path.join(source, 'TerrainBlendA.tga'),
-                os.path.join(source, 'TerrainBlendB.tga'),
+                os.path.join(source, 'TerrainBlendB.tga'), os.path.join(source, 'TerrainTrail.tga'),
                 os.path.join(root, 'Saved', 'terrain-transitions.json'),
                 os.path.join(root, 'Tools', 'terrain-surface.hlsl'),
                 os.path.join(root, 'Tools', 'terrain-ground-blend.py'), terrain_script]

@@ -12,7 +12,7 @@ struct TerraSurface {
   // Three overlapping lattice samples remove the repeating square pattern.
   // Color, normal and roughness share every offset, rotation and blend weight.
   void plane(Texture2D albedo,SamplerState asamp,Texture2D normals,SamplerState nsamp,
-             Texture2D rough,SamplerState rsamp,float2 uv,float seed,float normalY,float roughG,
+             Texture2D rough,SamplerState rsamp,float2 uv,float2 dx,float2 dy,float seed,float normalY,float roughG,
              out float3 color,out float3 detail,out float r) {
     float2 cell=floor(uv),f=frac(uv);
     float2 corners[3];float3 weight;
@@ -21,7 +21,7 @@ struct TerraSurface {
     weight=pow(max(weight,0),4);weight/=max(dot(weight,1),.0001);
     uint texWidth,texHeight;albedo.GetDimensions(texWidth,texHeight);
     float2 aspect=float2(1,float(texWidth)/max(float(texHeight),1));
-    float2 dx=ddx(uv),dy=ddy(uv);color=0;detail=0;r=0;
+    color=0;detail=0;r=0;
     [unroll]for(int k=0;k<3;++k){
       float h=hash(corners[k]+seed),q=floor(h*4);
       float2 coord=rotate(uv-corners[k],q)+float2(hash(corners[k]+31+seed),hash(corners[k]-17-seed))*23;
@@ -36,14 +36,16 @@ struct TerraSurface {
     }
   }
   void layer(Texture2D a,SamplerState sa,Texture2D n,SamplerState sn,Texture2D r,SamplerState sr,
-             float3 p,float3 normal,float seed,float normalY,float roughG,
+             float3 p,float3 dpdx,float3 dpdy,float3 normal,float seed,float normalY,float roughG,
              out float3 color,out float3 worldDetail,out float roughness){
     float3 w=pow(abs(normal),6);w/=max(dot(w,1),.0001);
     color=0;worldDetail=0;roughness=0;
     // Flat ground samples one projection. Cliff transitions blend projections.
     [unroll]for(int axis=0;axis<3;++axis)if(w[axis]>.005){
       float2 uv=axis==0?p.yz:axis==1?p.xz:p.xy;float3 c,d;float rr;
-      plane(a,sa,n,sn,r,sr,uv,seed+axis*19,normalY,roughG,c,d,rr);
+      float2 dx=axis==0?dpdx.yz:axis==1?dpdx.xz:dpdx.xy;
+      float2 dy=axis==0?dpdy.yz:axis==1?dpdy.xz:dpdy.xy;
+      plane(a,sa,n,sn,r,sr,uv,dx,dy,seed+axis*19,normalY,roughG,c,d,rr);
       float3 tangent=axis==0?float3(0,1,0):float3(1,0,0);
       tangent=normalize(tangent-normal*dot(tangent,normal));
       float3 bitangent=normalize(cross(normal,tangent));
@@ -66,16 +68,23 @@ if(Biome==4){b*=smoothstep(.25,.88,n.z);c=max(c,(1-n.z)*.65);}
 if(Biome==1){b*=.15;c*=.10;}
 if(Biome==5){b*=.54;c*=.28;}
 if(Biome==6){b=.12+smoothstep(.34,.73,patches)*.62;c=(1-smoothstep(.38,.75,n.z))*.74;}
-if(Biome==0){ /*QUARRY_TRAIL*/ }
+if(Biome==0){b*=1-QuarryPath;c=lerp(c,.15,QuarryPath);}
 // A continuous low-amplitude domain warp breaks the surviving photograph
 // motifs without new texture reads. Derivatives still follow the warped UVs.
 float3 texP=p;
 float2 warp=float2(f.noise(p.xy*.27+41),f.noise(p.xy*.27-79))-.5;
 texP.xy+=warp*.48;
+// Evaluate gradients before zero-contribution branches. SampleGrad then
+// remains defined at quad boundaries where only some pixels need a layer.
+float3 tx=ddx(texP),ty=ddy(texP);
 float3 ac,bc,cc,an,bn,cn;float ar,br,cr;
-f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,texP/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
-f.layer(Secondary,SecondarySampler,SecondaryNormal,SecondaryNormalSampler,SecondaryRough,SecondaryRoughSampler,texP/Scales.y,n,7,NormalSigns.y,RoughChannels.y,bc,bn,br);
-f.layer(Accent,AccentSampler,AccentNormal,AccentNormalSampler,AccentRough,AccentRoughSampler,texP/Scales.z,n,29,NormalSigns.z,RoughChannels.z,cc,cn,cr);
+f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,texP/Scales.x,tx/Scales.x,ty/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
+// Smoothstep has genuinely zero coverage across whole patches, especially
+// the worn quarry lane. Do not fetch a layer that contributes exactly zero.
+// Keep the primary scan because later excavation shading also uses it.
+bc=ac;bn=an;br=ar;cc=ac;cn=an;cr=ar;
+[branch]if(b>0)f.layer(Secondary,SecondarySampler,SecondaryNormal,SecondaryNormalSampler,SecondaryRough,SecondaryRoughSampler,texP/Scales.y,tx/Scales.y,ty/Scales.y,n,7,NormalSigns.y,RoughChannels.y,bc,bn,br);
+[branch]if(c>0)f.layer(Accent,AccentSampler,AccentNormal,AccentNormalSampler,AccentRough,AccentRoughSampler,texP/Scales.z,tx/Scales.z,ty/Scales.z,n,29,NormalSigns.z,RoughChannels.z,cc,cn,cr);
 if(Biome==0){cc*=float3(.84,.83,.78);bc*=float3(.51,.63,.41);}
 if(Biome==5)cc*=float3(.62,.57,.47);
 float3 color=lerp(lerp(ac,bc,b),cc,c);

@@ -91,7 +91,7 @@ void ATerraVehicle::UpdateVisualDetails(){
   const auto Suspension=Spec->GetObjectField(TEXT("suspension"));
   const float PortalCM=PortalLift()*100.f;
   const FString BodyStyle=Spec->GetStringField(TEXT("bodyStyle"));
-  const bool Expedition=BodyStyle==TEXT("earthcruiser");
+  const bool Expedition=BodyStyle==TEXT("earthcruiser"),Monster=BodyStyle==TEXT("monster");
   const bool ModernG=BodyStyle==TEXT("g580")||BodyStyle==TEXT("g63")||BodyStyle==TEXT("g63six");
   const float AxleRestZ=(Radius-CG)*100.f;
   const auto MotorLayout=ElectricLayout();
@@ -159,14 +159,14 @@ void ATerraVehicle::UpdateVisualDetails(){
     const FQuat Steering=FQuat(Up,Overturned?0.f:WheelState[I].Angle)*GetActorQuat();
     const FVector Joint=AxleHub+Steering.RotateVector(FVector(0,-Side*Width*22.f,0));
     AxleJoints[I]=Joint;
-    const float ShockTopZ=Expedition?AxleRestZ+50.f:ModernG?AxleRestZ+47.f:VehicleIndex==2?20.f:18.f;
+    const float ShockTopZ=Monster?34.f:Expedition?AxleRestZ+50.f:ModernG?AxleRestZ+47.f:VehicleIndex==2?20.f:18.f;
     const FVector Top=At(X,Side*Track*(VehicleIndex==2?.36f:.34f)*100,ShockTopZ);
     const FVector Lower=Joint+Up*5.f;
     Link(I*4,Lower,FMath::Lerp(Lower,Top,.68f),3.2f);
     Link(I*4+1,FMath::Lerp(Lower,Top,.45f),Top,1.4f);
     auto *Coil=SuspensionParts[I*4+2].Get();
-    const TCHAR* SpringMesh=VehicleIndex==4?TEXT("/Game/Meshes/detail_airstrut"):TEXT("/Game/Meshes/detail_coil");
-    const FString SpringName=VehicleIndex==4?TEXT("detail_airstrut"):TEXT("detail_coil");
+    const TCHAR* SpringMesh=Monster?TEXT("/Game/Meshes/detail_nitrogenstrut"):VehicleIndex==4?TEXT("/Game/Meshes/detail_airstrut"):TEXT("/Game/Meshes/detail_coil");
+    const FString SpringName=Monster?TEXT("detail_nitrogenstrut"):VehicleIndex==4?TEXT("detail_airstrut"):TEXT("detail_coil");
     if(!Coil->GetStaticMesh()||Coil->GetStaticMesh()->GetName()!=SpringName)Coil->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,SpringMesh));
     // Live-axle coils sit beside the shock; the Sprinter retains its real
     // transverse front and longitudinal rear leaf-spring architecture.
@@ -258,12 +258,12 @@ void ATerraVehicle::UpdateVisualDetails(){
     SuspensionParts[WheelCount()*4+Axle*2]->SetVisibility(!Tracks&&Solid);
     SuspensionParts[WheelCount()*4+1+Axle*2]->SetVisibility(!Tracks&&Solid&&!IndependentPair);
     const FVector A=AxleJoints[Axle*2],B=AxleJoints[Axle*2+1];
-    Link(WheelCount()*4+Axle*2,A,B,5.5f);
+    Link(WheelCount()*4+Axle*2,A,B,Monster?9.f:5.5f);
     const FVector Center=(A+B)*.5f;
     const FVector AxleDir=(B-A).GetSafeNormal(),Forward=FVector::CrossProduct(AxleDir,Up).GetSafeNormal();
     const FQuat AxleRotation=FRotationMatrix::MakeFromXY(Forward,AxleDir).ToQuat();
     SuspensionParts[WheelCount()*4+1+Axle*2]->SetWorldLocationAndRotation(Center,AxleRotation);
-    SuspensionParts[WheelCount()*4+1+Axle*2]->SetWorldScale3D(FVector(.27,.34,.31));
+    SuspensionParts[WheelCount()*4+1+Axle*2]->SetWorldScale3D(Monster?FVector(.42,.48,.44):FVector(.27,.34,.31));
     if(Tracks)continue;
     const float X=AxleOffsetM(Axle)*100.f;
     const FVector DiffCenter=Solid?Center:At(X,0,(Radius-CG)*100.f+3.f);
@@ -280,7 +280,7 @@ void ATerraVehicle::UpdateVisualDetails(){
           Rod(1,P-Forward*.6f,P+Forward*.6f,.8f);}
         // Panhard rod across the live axle, and differential cover flange.
         if(!Leaf)Rod(0,At(X-11.f,-Track*32.f,ModernG?AxleRestZ+7.f:4.f),B+Up*7.f,1.65f);
-        Rod(0,Center-Forward*12.f,Center-Forward*14.f,12.5f);
+        Rod(0,Center-Forward*(Monster?20.f:12.f),Center-Forward*(Monster?22.f:14.f),Monster?19.f:12.5f);
       }
     }
     if((MotorLayout==TerraSim::MotorLayout::Dual&&Axle<2)||(MotorLayout==TerraSim::MotorLayout::Triple&&Axle==0))MotorCan(At(X+12.f,0,DriveUnitZ),12.f);

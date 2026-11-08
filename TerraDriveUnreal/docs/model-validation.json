@@ -3,8 +3,8 @@
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 535734,
-      "normalizedFraction": 0.9999869338141689,
+      "vertices": 417924,
+      "normalizedFraction": 0.999983250543161,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -22,8 +22,8 @@
     },
     {
       "vehicle": "Ford Bronco Badlands",
-      "vertices": 508883,
-      "normalizedFraction": 0.9999921396470308,
+      "vertices": 393200,
+      "normalizedFraction": 0.9999898270600204,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -45,8 +45,8 @@
     },
     {
       "vehicle": "Honda Civic Sport",
-      "vertices": 321780,
-      "normalizedFraction": 0.9998850146062527,
+      "vertices": 286181,
+      "normalizedFraction": 0.9998707111932658,
       "visibility": [
         {
           "pane": "open lower mesh",
@@ -64,8 +64,8 @@
     },
     {
       "vehicle": "Mercedes-Benz Sprinter 2500",
-      "vertices": 614488,
-      "normalizedFraction": 0.9999886084024424,
+      "vertices": 566833,
+      "normalizedFraction": 0.9999876506837111,
       "visibility": [
         {
           "pane": "waist swage",
@@ -82,8 +82,8 @@
     },
     {
       "vehicle": "GMC HUMMER EV SUV",
-      "vertices": 404004,
-      "normalizedFraction": 0.9998242591657508,
+      "vertices": 352140,
+      "normalizedFraction": 0.9997983756460499,
       "visibility": [
         {
           "pane": "recessed bonnet vent",
@@ -104,8 +104,8 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 847205,
-      "normalizedFraction": 0.9996246481076009,
+      "vertices": 731799,
+      "normalizedFraction": 0.9995654544485576,
       "visibility": [
         {
           "pane": "windshield",
@@ -154,8 +154,8 @@
     },
     {
       "vehicle": "EarthCruiser EXP",
-      "vertices": 223432,
-      "normalizedFraction": 0.9999820974614201,
+      "vertices": 211779,
+      "normalizedFraction": 0.999981112386025,
       "visibility": [],
       "tire": {
         "revision": 3,
@@ -171,8 +171,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 223432,
-          "triangles": 336472,
+          "vertices": 211779,
+          "triangles": 324149,
           "materialObjects": 26,
           "bounds": [
             [
@@ -210,13 +210,13 @@
           {
             "case": "unit source shading normals",
             "pass": true,
-            "normalizedFraction": 0.9999820974614201
+            "normalizedFraction": 0.999981112386025
           },
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 336472,
-            "vertices": 223432,
+            "triangles": 324149,
+            "vertices": 211779,
             "materialObjects": 26
           },
           {
@@ -389,8 +389,8 @@
     },
     {
       "vehicle": "Mercedes-Benz G 580 with EQ Technology",
-      "vertices": 317516,
-      "normalizedFraction": 0.9999874022096524,
+      "vertices": 231839,
+      "normalizedFraction": 0.9999827466474579,
       "visibility": [],
       "tire": {
         "revision": 15,
@@ -406,8 +406,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 317516,
-          "triangles": 434424,
+          "vertices": 231839,
+          "triangles": 365033,
           "materialObjects": 25,
           "bounds": [
             [
@@ -449,15 +449,15 @@
           },
           {
             "pane": "upright windscreen",
-            "firstDistanceM": 3.438726693666352
+            "firstDistanceM": 3.437915857687502
           },
           {
             "pane": "rear door glass",
-            "firstDistanceM": 1.783002053063174
+            "firstDistanceM": 1.7830156869539286
           },
           {
             "pane": "sunroof",
-            "firstDistanceM": 1.014594862936224
+            "firstDistanceM": 1.014597674414
           }
         ],
         "tests": [
@@ -469,13 +469,13 @@
           {
             "case": "unit source shading normals",
             "pass": true,
-            "normalizedFraction": 0.9999874022096524
+            "normalizedFraction": 0.9999827466474579
           },
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 434424,
-            "vertices": 317516,
+            "triangles": 365033,
+            "vertices": 231839,
             "materialObjects": 25
           },
           {
@@ -624,19 +624,19 @@
             "case": "upright windscreen has a genuine first-hit glass opening",
             "pass": true,
             "firstMaterialRole": "glass",
-            "firstDistanceM": 3.438726693666352
+            "firstDistanceM": 3.437915857687502
           },
           {
             "case": "rear door glass has a genuine first-hit glass opening",
             "pass": true,
             "firstMaterialRole": "glass",
-            "firstDistanceM": 1.783002053063174
+            "firstDistanceM": 1.7830156869539286
           },
           {
             "case": "sunroof has a genuine first-hit glass opening",
             "pass": true,
             "firstMaterialRole": "glass",
-            "firstDistanceM": 1.014594862936224
+            "firstDistanceM": 1.014597674414
           },
           {
             "case": "bonnet has restrained physical transverse crown",
@@ -646,7 +646,7 @@
           {
             "case": "drawn door sheet has physical shoulder relief",
             "pass": true,
-            "reliefM": 0.0123803028850904
+            "reliefM": 0.012116647239867051
           },
           {
             "case": "metal roof has a shallow transverse crown",
@@ -695,8 +695,8 @@
     },
     {
       "vehicle": "Mercedes-AMG G 63 4x4 squared",
-      "vertices": 337935,
-      "normalizedFraction": 0.9999881634042049,
+      "vertices": 257706,
+      "normalizedFraction": 0.9999844784366682,
       "visibility": [],
       "tire": {
         "revision": 24,
@@ -712,8 +712,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 337935,
-          "triangles": 451323,
+          "vertices": 257706,
+          "triangles": 387342,
           "bounds": [
             [
               -1.098000000026077,
@@ -731,20 +731,20 @@
           {
             "case": "finite source positions and normals",
             "pass": true,
-            "vertices": 337935,
+            "vertices": 257706,
             "nonfinite": 0
           },
           {
             "case": "unit shading normals",
             "pass": true,
             "nonunit": 4,
-            "normalizedFraction": 0.9999881634042049
+            "normalizedFraction": 0.9999844784366682
           },
           {
             "case": "bounded triangle budget without cab duplication",
             "pass": true,
-            "triangles": 451323,
-            "vertices": 337935
+            "triangles": 387342,
+            "vertices": 257706
           },
           {
             "case": "roof and roll bar follow the selected reference envelope within one inch",
@@ -815,7 +815,7 @@
           {
             "case": "windshield is actual first-hit glazing",
             "pass": true,
-            "firstDistanceM": 3.438726693666352
+            "firstDistanceM": 3.437915857687502
           },
           {
             "case": "squared conversion retains the 113.8-inch wheelbase",
@@ -913,8 +913,8 @@
     },
     {
       "vehicle": "Mercedes-Benz G 63 AMG 6x6",
-      "vertices": 292620,
-      "normalizedFraction": 0.9999794955915522,
+      "vertices": 246222,
+      "normalizedFraction": 0.99997563174696,
       "visibility": [],
       "tire": {
         "revision": 24,
@@ -930,8 +930,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 292620,
-          "triangles": 439115,
+          "vertices": 246222,
+          "triangles": 388845,
           "bounds": [
             [
               -1.098000000026077,
@@ -949,20 +949,20 @@
           {
             "case": "finite source positions and normals",
             "pass": true,
-            "vertices": 292620,
+            "vertices": 246222,
             "nonfinite": 0
           },
           {
             "case": "unit shading normals",
             "pass": true,
             "nonunit": 6,
-            "normalizedFraction": 0.9999794955915522
+            "normalizedFraction": 0.99997563174696
           },
           {
             "case": "bounded triangle budget without cab duplication",
             "pass": true,
-            "triangles": 439115,
-            "vertices": 292620
+            "triangles": 388845,
+            "vertices": 246222
           },
           {
             "case": "roof and roll bar follow the selected reference envelope within one inch",
@@ -1033,7 +1033,7 @@
           {
             "case": "windshield is actual first-hit glazing",
             "pass": true,
-            "firstDistanceM": 2.7837266936663516
+            "firstDistanceM": 2.7829158576875015
           },
           {
             "case": "all three axle positions retain the selected 123-inch first wheelbase and 43-inch tandem spacing",
@@ -1424,6 +1424,534 @@
           "Variant dimension and axle envelopes are reference estimates; a first-party dimension sheet was not inspectable.",
           "Native collision, six-wheel behavior and rendering require separate integration verification."
         ]
+      },
+      "pass": true
+    },
+    {
+      "vehicle": "Grave Digger",
+      "vertices": 93539,
+      "normalizedFraction": 1,
+      "visibility": [],
+      "tire": {
+        "revision": 3,
+        "type": "mud-terrain",
+        "diameterM": 1.6763999462127686,
+        "widthM": 1.1425444000587406
+      },
+      "addedReference": {
+        "id": "grave-digger",
+        "checks": 23,
+        "vertices": 93539,
+        "bodySizeM": [
+          2,
+          2.4374335910379226,
+          4.697999929204583
+        ],
+        "results": [
+          {
+            "name": "finite bounded authored geometry",
+            "pass": true,
+            "vertices": 93539,
+            "bad": 0
+          },
+          {
+            "name": "factory body height envelope",
+            "pass": true,
+            "heightM": 3.1999967098236084
+          },
+          {
+            "name": "reference body length",
+            "pass": true,
+            "lengthM": 4.697999929204583
+          },
+          {
+            "name": "four separated wheel assemblies",
+            "pass": true
+          },
+          {
+            "name": "physical tire radius preserved",
+            "pass": true,
+            "radiusM": 0.8381999731063843
+          },
+          {
+            "name": "physical tire width",
+            "pass": true,
+            "widthM": 1.1425444000587406
+          },
+          {
+            "name": "independent fixed rim diameter",
+            "pass": true,
+            "radiusM": 0.31962499022483826
+          },
+          {
+            "name": "native brake and reverse emitters",
+            "pass": true
+          },
+          {
+            "name": "brake emission is confined to rear lamps",
+            "pass": true
+          },
+          {
+            "name": "clear reference glazing",
+            "pass": true
+          },
+          {
+            "name": "side glass faces exterior -1/0.11",
+            "pass": true,
+            "minimumNormalX": 0.9950371980667114
+          },
+          {
+            "name": "side glass faces exterior 1/0.11",
+            "pass": true,
+            "minimumNormalX": 0.9950371980667114
+          },
+          {
+            "name": "constant red headlights stay separate from brake circuit",
+            "pass": true
+          },
+          {
+            "name": "official monster class scale",
+            "pass": true
+          },
+          {
+            "name": "stock monster tires are not shrunk to upgrade limit",
+            "pass": true
+          },
+          {
+            "name": "grave-digger-domed-wagon-roof present",
+            "pass": true
+          },
+          {
+            "name": "grave-digger-domed-narrow-bonnet present",
+            "pass": true
+          },
+          {
+            "name": "monster-deep-25in-beadlock-wheel present",
+            "pass": true
+          },
+          {
+            "name": "48 full-width directional chevron half-lugs",
+            "pass": true,
+            "lugs": 48
+          },
+          {
+            "name": "exposed triangulated tubular chassis",
+            "pass": true,
+            "tubes": 59,
+            "diagonalBraces": 20,
+            "sizeM": [
+              1.7375344344836134,
+              2.3661310007361003,
+              4.258696092761035
+            ]
+          },
+          {
+            "name": "livery stays a thin painted layer above curved panels",
+            "pass": true,
+            "meshes": 182,
+            "samples": 287568,
+            "minGapM": 0.0002851615525808566,
+            "maxGapM": 0.0013999039227612106
+          },
+          {
+            "name": "painted livery triangles face outward without degeneracy",
+            "pass": true,
+            "badTriangles": 0,
+            "minimumWinding": 0.9621829131817637
+          },
+          {
+            "name": "panel wagon has distinct low narrow bonnet",
+            "pass": true
+          }
+        ],
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "vehicle": "Subaru Impreza 22B STI",
+      "vertices": 75747,
+      "normalizedFraction": 1,
+      "visibility": [],
+      "tire": {
+        "revision": 3,
+        "type": "road-performance",
+        "diameterM": 0.6199610024444976,
+        "widthM": 0.2443099999191613
+      },
+      "addedReference": {
+        "id": "subaru-22b-sti",
+        "checks": 67,
+        "vertices": 75747,
+        "bodySizeM": [
+          1.923000001192093,
+          1.2399999852478505,
+          4.411013148923038
+        ],
+        "results": [
+          {
+            "name": "finite bounded authored geometry",
+            "pass": true,
+            "vertices": 75747,
+            "bad": 0
+          },
+          {
+            "name": "factory body height envelope",
+            "pass": true,
+            "heightM": 1.3899999856948853
+          },
+          {
+            "name": "reference body length",
+            "pass": true,
+            "lengthM": 4.411013148923038
+          },
+          {
+            "name": "four separated wheel assemblies",
+            "pass": true
+          },
+          {
+            "name": "physical tire radius preserved",
+            "pass": true,
+            "radiusM": 0.3099805012222488
+          },
+          {
+            "name": "physical tire width",
+            "pass": true,
+            "widthM": 0.2443099999191613
+          },
+          {
+            "name": "independent fixed rim diameter",
+            "pass": true,
+            "radiusM": 0.21590000391006473
+          },
+          {
+            "name": "native brake and reverse emitters",
+            "pass": true
+          },
+          {
+            "name": "brake emission is confined to rear lamps",
+            "pass": true
+          },
+          {
+            "name": "clear reference glazing",
+            "pass": true
+          },
+          {
+            "name": "side glass faces exterior -1/0.06",
+            "pass": true,
+            "minimumNormalX": 0.9731157422065735
+          },
+          {
+            "name": "side glass faces exterior -1/-0.84",
+            "pass": true,
+            "minimumNormalX": 0.9702668190002441
+          },
+          {
+            "name": "side glass faces exterior 1/0.06",
+            "pass": true,
+            "minimumNormalX": 0.9731157422065735
+          },
+          {
+            "name": "side glass faces exterior 1/-0.84",
+            "pass": true,
+            "minimumNormalX": 0.9702668190002441
+          },
+          {
+            "name": "1998 factory spec anchors",
+            "pass": true
+          },
+          {
+            "name": "real wheel opening -1.26/-1",
+            "pass": true
+          },
+          {
+            "name": "real wheel opening -1.26/1",
+            "pass": true
+          },
+          {
+            "name": "real wheel opening 1.26/-1",
+            "pass": true
+          },
+          {
+            "name": "real wheel opening 1.26/1",
+            "pass": true
+          },
+          {
+            "name": "22b-crowned-bonnet present",
+            "pass": true
+          },
+          {
+            "name": "22b-open-scoop-roof present",
+            "pass": true
+          },
+          {
+            "name": "22b-adjustable-rear-wing present",
+            "pass": true
+          },
+          {
+            "name": "22b-gold-ten-paired-spoke-17in-wheel present",
+            "pass": true
+          },
+          {
+            "name": "roof is crowned within exact height",
+            "pass": true
+          },
+          {
+            "name": "scoop stands above bonnet",
+            "pass": true,
+            "topM": 0.9773182272911072
+          },
+          {
+            "name": "two coupe window openings each side",
+            "pass": true
+          },
+          {
+            "name": "front curved closure meets side shell and crowned upper panel",
+            "pass": true,
+            "maximumClosureGapM": 1.1388189079122393e-7,
+            "maximumAdjoiningPanelGapM": 0.00007086614024951065,
+            "probes": 99
+          },
+          {
+            "name": "rear curved closure meets side shell and crowned upper panel",
+            "pass": true,
+            "maximumClosureGapM": 1.2149716804827584e-7,
+            "maximumAdjoiningPanelGapM": 0.00006624352159886712,
+            "probes": 99
+          },
+          {
+            "name": "both end closure boundaries are covered",
+            "pass": true
+          },
+          {
+            "name": "22b-bonnet-edge-return--1 closes against 22b-rounded-quarter-shoulder--1",
+            "pass": true,
+            "probes": 221,
+            "maximumActualTriangleGapM": 0.0001504247758379272
+          },
+          {
+            "name": "22b-bonnet-edge-return--1 closes against 22b-crowned-bonnet",
+            "pass": true,
+            "probes": 221,
+            "maximumActualTriangleGapM": 0.00008389743803444567
+          },
+          {
+            "name": "22b-boot-edge-return--1 closes against 22b-rounded-quarter-shoulder--1",
+            "pass": true,
+            "probes": 289,
+            "maximumActualTriangleGapM": 0.0000925776583119889
+          },
+          {
+            "name": "22b-boot-edge-return--1 closes against 22b-rounded-trunk-deck",
+            "pass": true,
+            "probes": 289,
+            "maximumActualTriangleGapM": 0.00007688830625050964
+          },
+          {
+            "name": "22b-greenhouse-belt-return--1 closes against 22b-rounded-quarter-shoulder--1",
+            "pass": true,
+            "probes": 193,
+            "maximumActualTriangleGapM": 0.00007819022798113296
+          },
+          {
+            "name": "22b-greenhouse-belt-return--1 closes against 22b-stamped-side-window-frame--1",
+            "pass": true,
+            "probes": 193,
+            "maximumActualTriangleGapM": 4.971286568661271e-8
+          },
+          {
+            "name": "22b-crowned-short-coupe-roof closes against 22b-stamped-side-window-frame--1",
+            "pass": true,
+            "probes": 177,
+            "maximumActualTriangleGapM": 0.000013995739118635572
+          },
+          {
+            "name": "22b-formed-front-window-surround closes against 22b-stamped-side-window-frame--1",
+            "pass": true,
+            "probes": 5,
+            "maximumActualTriangleGapM": 6.836022690438135e-8
+          },
+          {
+            "name": "22b-cowl-corner-return--1 closes against 22b-rounded-quarter-shoulder--1",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 0.00007819022798113296
+          },
+          {
+            "name": "22b-cowl-corner-return--1 closes against 22b-closed-cowl",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 5.3408139300840366e-8
+          },
+          {
+            "name": "22b-formed-rear-window-surround closes against 22b-stamped-side-window-frame--1",
+            "pass": true,
+            "probes": 9,
+            "maximumActualTriangleGapM": 4.316755287495205e-8
+          },
+          {
+            "name": "22b-rear-sill-corner-return--1 closes against 22b-rounded-quarter-shoulder--1",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 0.000028067932704909347
+          },
+          {
+            "name": "22b-rear-sill-corner-return--1 closes against 22b-closed-rear-window-sill",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 4.392105795073584e-8
+          },
+          {
+            "name": "22b-bonnet-edge-return-1 closes against 22b-rounded-quarter-shoulder-1",
+            "pass": true,
+            "probes": 221,
+            "maximumActualTriangleGapM": 0.0001504247758379272
+          },
+          {
+            "name": "22b-bonnet-edge-return-1 closes against 22b-crowned-bonnet",
+            "pass": true,
+            "probes": 221,
+            "maximumActualTriangleGapM": 0.00008389743803444567
+          },
+          {
+            "name": "22b-boot-edge-return-1 closes against 22b-rounded-quarter-shoulder-1",
+            "pass": true,
+            "probes": 289,
+            "maximumActualTriangleGapM": 0.0000925776583119889
+          },
+          {
+            "name": "22b-boot-edge-return-1 closes against 22b-rounded-trunk-deck",
+            "pass": true,
+            "probes": 289,
+            "maximumActualTriangleGapM": 0.00007688830625050964
+          },
+          {
+            "name": "22b-greenhouse-belt-return-1 closes against 22b-rounded-quarter-shoulder-1",
+            "pass": true,
+            "probes": 193,
+            "maximumActualTriangleGapM": 0.00007819022798113296
+          },
+          {
+            "name": "22b-greenhouse-belt-return-1 closes against 22b-stamped-side-window-frame-1",
+            "pass": true,
+            "probes": 193,
+            "maximumActualTriangleGapM": 4.971286568710785e-8
+          },
+          {
+            "name": "22b-crowned-short-coupe-roof closes against 22b-stamped-side-window-frame-1",
+            "pass": true,
+            "probes": 177,
+            "maximumActualTriangleGapM": 0.000013995739118635572
+          },
+          {
+            "name": "22b-formed-front-window-surround closes against 22b-stamped-side-window-frame-1",
+            "pass": true,
+            "probes": 5,
+            "maximumActualTriangleGapM": 6.836022690438135e-8
+          },
+          {
+            "name": "22b-cowl-corner-return-1 closes against 22b-rounded-quarter-shoulder-1",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 0.00007819022798113296
+          },
+          {
+            "name": "22b-cowl-corner-return-1 closes against 22b-closed-cowl",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 5.3408139300840366e-8
+          },
+          {
+            "name": "22b-formed-rear-window-surround closes against 22b-stamped-side-window-frame-1",
+            "pass": true,
+            "probes": 9,
+            "maximumActualTriangleGapM": 4.316755287495205e-8
+          },
+          {
+            "name": "22b-rear-sill-corner-return-1 closes against 22b-rounded-quarter-shoulder-1",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 0.000028067932704909347
+          },
+          {
+            "name": "22b-rear-sill-corner-return-1 closes against 22b-closed-rear-window-sill",
+            "pass": true,
+            "probes": 49,
+            "maximumActualTriangleGapM": 4.342910775950864e-8
+          },
+          {
+            "name": "22b-formed-front-window-surround closes against 22b-crowned-short-coupe-roof",
+            "pass": true,
+            "probes": 33,
+            "maximumActualTriangleGapM": 0.00043249364394206985
+          },
+          {
+            "name": "22b-formed-front-window-surround closes against 22b-closed-cowl",
+            "pass": true,
+            "probes": 9,
+            "maximumActualTriangleGapM": 0
+          },
+          {
+            "name": "22b-closed-cowl closes against 22b-crowned-bonnet",
+            "pass": true,
+            "probes": 257,
+            "maximumActualTriangleGapM": 0.000005897278588953746
+          },
+          {
+            "name": "22b-formed-rear-window-surround closes against 22b-crowned-short-coupe-roof",
+            "pass": true,
+            "probes": 33,
+            "maximumActualTriangleGapM": 0.000432491368343387
+          },
+          {
+            "name": "22b-formed-rear-window-surround closes against 22b-closed-rear-window-sill",
+            "pass": true,
+            "probes": 9,
+            "maximumActualTriangleGapM": 0
+          },
+          {
+            "name": "22b-closed-rear-window-sill closes against 22b-rounded-trunk-deck",
+            "pass": true,
+            "probes": 257,
+            "maximumActualTriangleGapM": 0.000007599401236393723
+          },
+          {
+            "name": "opaque parcel shelf occludes rear axle through rear glazing",
+            "pass": true,
+            "occludedRays": 15,
+            "minimumShelfHeightM": 0.8029999996647239
+          },
+          {
+            "name": "A and C pillars are formed sheet surrounds without exposed painted rods",
+            "pass": true,
+            "externalPillarTubes": 0
+          },
+          {
+            "name": "22b-formed-front-window-surround is opaque and outward facing",
+            "pass": true,
+            "minimumExteriorNormal": 0.6105337142944336,
+            "minimumWinding": 0.9993159133433768
+          },
+          {
+            "name": "22b-formed-rear-window-surround is opaque and outward facing",
+            "pass": true,
+            "minimumExteriorNormal": 0.5624616146087646,
+            "minimumWinding": 0.9994153690022188
+          },
+          {
+            "name": "22b-stamped-side-window-frame--1 is opaque and outward facing",
+            "pass": true,
+            "minimumExteriorNormal": 0.9701737761497498,
+            "minimumWinding": 0.986021630171504
+          },
+          {
+            "name": "22b-stamped-side-window-frame-1 is opaque and outward facing",
+            "pass": true,
+            "minimumExteriorNormal": 0.9701737761497498,
+            "minimumWinding": 0.986021630171504
+          }
+        ],
+        "pass": true
       },
       "pass": true
     }

@@ -33,10 +33,10 @@ FSlateFontInfo Font(int Size, bool Bold=false) { return FCoreStyle::GetDefaultFo
 TSharedRef<STextBlock> Label(const FString &S,int Size=12,FLinearColor Color=White,bool Bold=false) {
   return SNew(STextBlock).Text(FText::FromString(S)).Font(Font(Size,Bold)).ColorAndOpacity(Color);
 }
-const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV"),TEXT("URUS"),TEXT("EARTHCRUISER"),TEXT("G 580 EV"),TEXT("G 63 4x4 SQUARED"),TEXT("G 63 AMG 6x6")};
+const TCHAR* ShortNames[]={TEXT("WRANGLER"),TEXT("BRONCO"),TEXT("CIVIC"),TEXT("SPRINTER"),TEXT("HUMMER EV"),TEXT("URUS"),TEXT("EARTHCRUISER"),TEXT("G 580 EV"),TEXT("G 63 4x4 SQUARED"),TEXT("G 63 AMG 6x6"),TEXT("GRAVE DIGGER"),TEXT("IMPREZA 22B STI")};
 const TCHAR* Roles[]={TEXT("RUBICON  /  TECHNICAL CRAWLER"),TEXT("BADLANDS  /  ALL-TERRAIN"),
  TEXT("SPORT  /  LIGHT & AGILE"),TEXT("2500  /  EXPEDITION VAN"),TEXT("3X SUV  /  ELECTRIC TORQUE"),TEXT("PERFORMANTE  /  V8 SUPER SUV"),
- TEXT("EXP98  /  OVERLAND CAB-OVER"),TEXT("EQ TECHNOLOGY  /  FOUR-MOTOR EV"),TEXT("PORTAL AXLES  /  AMG V8"),TEXT("THREE PORTAL AXLES  /  SIX-WHEEL DRIVE")};
+ TEXT("EXP98  /  OVERLAND CAB-OVER"),TEXT("EQ TECHNOLOGY  /  FOUR-MOTOR EV"),TEXT("PORTAL AXLES  /  AMG V8"),TEXT("THREE PORTAL AXLES  /  SIX-WHEEL DRIVE"),TEXT("MONSTER TRUCK / 66-INCH TIRES"),TEXT("1998 / WIDEBODY RALLY COUPE")};
 const TCHAR* Notes[]={TEXT("Solid axles, low range and front/rear lockers.\nA deliberate line is your best tool."),
  TEXT("Independent front suspension and locking axles.\nBuilt for speed between the obstacles."),
  TEXT("Lightweight front-wheel drive.\nFind the smooth line and keep momentum."),
@@ -45,7 +45,7 @@ const TCHAR* Notes[]={TEXT("Solid axles, low range and front/rear lockers.\nA de
  TEXT("A heavy expedition cabin on leaf-sprung axles.\nUse low range and allow room for the rear overhang."),
  TEXT("Four-wheel motor torque control and low range.\nA heavy electric off-roader with a rear Design Box."),
  TEXT("Raised portal-axle stance, V8 power and three factory locks.\nCarbon arch extensions and a covered spare."),
- TEXT("Six driven tires, three portal axles and five locking differentials.\nCenter key couples both longitudinal shafts; rear key locks both rear axles.")};
+ TEXT("Six driven tires, three portal axles and five locking differentials.\nCenter key couples both longitudinal shafts; rear key locks both rear axles."),TEXT("Tubular chassis, massive tires and long-travel suspension.\nAllow room for the wide axles and jumps."),TEXT("Two-door widebody, boxer turbo and all-wheel drive.\nCompact rally proportions and a tall rear wing.")};
 static_assert(UE_ARRAY_COUNT(ShortNames)==ATerraVehicle::VehicleCount,"Garage names must match the vehicle roster");
 static_assert(UE_ARRAY_COUNT(Roles)==ATerraVehicle::VehicleCount,"Garage roles must match the vehicle roster");
 static_assert(UE_ARRAY_COUNT(Notes)==ATerraVehicle::VehicleCount,"Garage notes must match the vehicle roster");
@@ -262,7 +262,7 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
       [SNew(SVerticalBox)
         +SVerticalBox::Slot().AutoHeight().Padding(4,0,0,10)[Label(TEXT("CHOOSE YOUR VEHICLE"),12,Mint,true)]
         +SVerticalBox::Slot().FillHeight(1)[SNew(SScrollBox)+SScrollBox::Slot()[List]]
-        +SVerticalBox::Slot().AutoHeight().Padding(4,6,0,0)[Label(TEXT("SCROLL FOR ALL TEN VEHICLES"),9,Muted)]]]
+        +SVerticalBox::Slot().AutoHeight().Padding(4,6,0,0)[Label(TEXT("SCROLL FOR ALL TWELVE VEHICLES"),9,Muted)]]]
     +SHorizontalBox::Slot().FillWidth(1).Padding(20,0)
       [SNew(STerraVehiclePreview).Vehicle(Vehicle.Get())]
     +SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(285)
@@ -292,7 +292,8 @@ TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
     Stages->AddSlot().AutoWidth().Padding(3,0)
     [SNew(SBox).WidthOverride(S==0?64:Part==TerraSim::CenterDifferential?96:Part>=TerraSim::Drivetrain?59:46).HeightOverride(34)
       [SNew(SButton).ButtonStyle(&ButtonStyle()).HAlign(HAlign_Center).VAlign(VAlign_Center)
-        .IsEnabled_Lambda([this,Part,S]{return Vehicle.IsValid()&&(Part!=TerraSim::Electrical||Vehicle->HasElectrical())&&(Part!=TerraSim::CenterDifferential||S==0||Vehicle->CenterLockUpgradeAvailable());})
+        .IsEnabled_Lambda([this,Part,S]{return Vehicle.IsValid()&&(Part!=TerraSim::Electrical||Vehicle->HasElectrical())&&(Part!=TerraSim::CenterDifferential||S==0||Vehicle->CenterLockUpgradeAvailable())&&(Part!=TerraSim::TireSize||S==0||(!Vehicle->Tracks&&Vehicle->SpecValue(TEXT("tireRadius"),.42f)*200/2.54f<50));})
+        .ToolTipText_Lambda([this,Part,S]{return Part==TerraSim::TireSize&&S>0&&Vehicle.IsValid()&&Vehicle->Tracks?FText::FromString(TEXT("Remove tracks before fitting a larger tire kit.")):FText::GetEmpty();})
         .ButtonColorAndOpacity_Lambda([this,Part,S]{return Vehicle.IsValid()&&Vehicle->UpgradeStage(Part)==S?FLinearColor(.28,.49,.34):FLinearColor(.07,.10,.11);})
         .OnClicked_Lambda([this,Part,S]{if(Vehicle.IsValid())Vehicle->SetUpgrade(Part,S);return FReply::Handled();})
         [SNew(STextBlock).Text_Lambda([this,Part,S]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeStageName(Part,S):TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(White)]]];

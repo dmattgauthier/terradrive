@@ -4,12 +4,20 @@ Executed by import-assets.py with its editor helpers in scope.
 """
 with open(os.path.join(root, 'Tools', 'terrain-surface.hlsl'), encoding='utf8') as stream:
     terrain_code = stream.read()
-trail_points=data.get('quarryTrail',{}).get('samples',[])[::6]
-if trail_points:
-    literal=','.join('float2(%.5f,%.5f)'%(p['x'],p['y']) for p in trail_points)
-    terrain_code=terrain_code.replace('/*QUARRY_TRAIL*/','float2 trail[%d]={%s}; float trailDistance=1e9; for(int ti=1;ti<%d;++ti){float2 a=trail[ti-1],d=trail[ti]-a; float t=saturate(dot(p.xy-a,d)/dot(d,d));trailDistance=min(trailDistance,length(p.xy-a-d*t));} float path=1-smoothstep(2.25,3.8,trailDistance);b*=1-path;c=lerp(c,.15,path);'%(len(trail_points),literal,len(trail_points)))
-else:
-    terrain_code=terrain_code.replace('/*QUARRY_TRAIL*/','')
+# These coverage maps use the same bounded world coordinates as the terrain.
+# Load once for the standalone and unified ground materials.
+def terrain_mask(name):
+    filename=os.path.join(source,name+'.tga');digest=hashlib.sha256(open(filename,'rb').read()).hexdigest();dest='/Game/Textures/'+name
+    tex=lib.load_asset(dest) if lib.does_asset_exist(dest) else None
+    if not tex or lib.get_metadata_tag(tex,'TerraBlendHash')!=digest:
+        task=unreal.AssetImportTask();task.filename=filename;task.destination_path='/Game/Textures';task.destination_name=name
+        task.automated=True;task.save=True;task.replace_existing=True;tools.import_asset_tasks([task]);tex=lib.load_asset(dest)
+        if not tex:raise RuntimeError('Transition texture import failed: '+name)
+        tex.set_editor_property('srgb',False);tex.set_editor_property('compression_no_alpha',False);tex.set_editor_property('compression_settings',unreal.TextureCompressionSettings.TC_VECTOR_DISPLACEMENTMAP)
+        tex.set_editor_property('address_x',unreal.TextureAddress.TA_CLAMP);tex.set_editor_property('address_y',unreal.TextureAddress.TA_CLAMP)
+        lib.set_metadata_tag(tex,'TerraBlendHash',digest);lib.save_loaded_asset(tex)
+    return tex
+trail_mask=terrain_mask('TerrainTrail')
 
 def terrain_map(stem, kind):
     filename = ('native/'+stem+'/'+stem+'_'+kind+'_2k.jpg') if stem in ['dry_ground_rocks','rocks_ground_05'] else stem+'_'+kind+'_1k.jpg'
@@ -73,7 +81,7 @@ def terrain_material(name, layers, biome, wetness, scales):
                    'lodBias':t.get_editor_property('lod_bias'), 'neverStream':t.get_editor_property('never_stream'), 'sRGB':t.get_editor_property('srgb')}
                   for t in layer['maps']] for layer in layers]
     terrain_bindings.append({'material':dest,'textures':paths,'scalesM':scales,'residency':residency})
-    signature = hashlib.sha256((terrain_code+repr((paths,biome,wetness,scales,5))).encode()).hexdigest()
+    signature = hashlib.sha256((terrain_code+repr((paths,biome,wetness,scales,6,lib.get_metadata_tag(trail_mask,'TerraBlendHash')))).encode()).hexdigest()
     m = lib.load_asset(dest) if lib.does_asset_exist(dest) else tools.create_asset(
         name, '/Game/Materials', unreal.Material, unreal.MaterialFactoryNew())
     if lib.get_metadata_tag(m, 'TerraTerrainSignature') == signature:
@@ -87,7 +95,7 @@ def terrain_material(name, layers, biome, wetness, scales):
     custom.set_editor_property('code', terrain_code)
     custom.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     inputs = []
-    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','SecondaryRough','AccentRough','NormalSigns','RoughChannels','Scales','Biome','Wetness','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection']:
+    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','SecondaryRough','AccentRough','NormalSigns','RoughChannels','Scales','Biome','Wetness','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection','QuarryPath']:
         item = unreal.CustomInput()
         item.set_editor_property('input_name', name)
         inputs.append(item)
@@ -104,6 +112,15 @@ def terrain_material(name, layers, biome, wetness, scales):
     normal = edit.create_material_expression(m, unreal.MaterialExpressionVertexNormalWS,-600,-160)
     edit.connect_material_expressions(world,'',custom,'World')
     edit.connect_material_expressions(normal,'',custom,'GeoNormal')
+    coordinates=edit.create_material_expression(m,unreal.MaterialExpressionCustom,-700,-500)
+    coordinates.set_editor_property('code','return (World.yx*.01+400.0)/800.5+(.25/800.5);')
+    coordinates.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT2)
+    pin=unreal.CustomInput();pin.set_editor_property('input_name','World');coordinates.set_editor_property('inputs',[pin])
+    edit.connect_material_expressions(world,'',coordinates,'World')
+    trail_sample=edit.create_material_expression(m,unreal.MaterialExpressionTextureSample,-450,-450)
+    trail_sample.set_editor_property('texture',trail_mask);trail_sample.set_editor_property('sampler_type',unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
+    edit.connect_material_expressions(coordinates,'',trail_sample,'UVs');edit.connect_material_expressions(trail_sample,'R',custom,'QuarryPath')
+
     wear=edit.create_material_expression(m,unreal.MaterialExpressionVertexColor,-600,-80)
     edit.connect_material_expressions(wear,'R',custom,'Wear')
     edit.connect_material_expressions(wear,'G',custom,'LooseSoil')

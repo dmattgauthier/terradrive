@@ -14,7 +14,11 @@ import {bodyRefinement} from './body-refinement.mjs';
 import {buildEarthCruiser,refineEarthCruiser} from './earthcruiser-exp.mjs';
 import {gClassView,refineGClass} from './mercedes-gclass.mjs';
 import {gClassSquaredView,gClassSixView,refineGVariant} from './gclass-variants.mjs';
+import {graveDiggerView,refineGraveDigger} from './grave-digger.mjs';
+import {subaru22bView,refineSubaru22b} from './subaru-22b.mjs';
 export function nativeVehicle(spec){
+  if(spec.bodyStyle==='monster')return graveDiggerView(spec);
+  if(spec.bodyStyle==='subaru22b')return subaru22bView(spec);
   if(spec.bodyStyle==='g63six')return gClassSixView(spec);
   if(spec.gClassVariant==='squared')return gClassSquaredView(spec);
   if(spec.bodyStyle==='earthcruiser')return buildEarthCruiser(spec);
@@ -56,11 +60,13 @@ export function vehicleFinishes(view,spec){
 
 export function prepareNativeVehicle(spec){
  const view=nativeVehicle(spec);let parts;
- if(spec.bodyStyle==='g63six'||spec.gClassVariant==='squared')parts=refineGVariant(view,spec);
+ if(spec.bodyStyle==='monster')parts=refineGraveDigger(view,spec);
+ else if(spec.bodyStyle==='subaru22b')parts=refineSubaru22b(view,spec);
+ else if(spec.bodyStyle==='g63six'||spec.gClassVariant==='squared')parts=refineGVariant(view,spec);
  else if(spec.bodyStyle==='earthcruiser')parts=refineEarthCruiser(view,spec);
  else if(['g580','g63'].includes(spec.bodyStyle))parts=refineGClass(view,spec);
  else {bodyRefinement(view,spec);vehicleFinishes(view,spec);parts=refineVehicle(view,spec);}
- if(['earthcruiser','g580','g63','g63six'].includes(spec.bodyStyle))vehicleFinishes(view,spec);
- view.root.userData.nativeFidelity={...view.root.userData.nativeFidelity,referenceCraftRevision:Math.max(24,view.root.userData.nativeFidelity?.referenceCraftRevision??0)};
+ if(['earthcruiser','g580','g63','g63six','monster','subaru22b'].includes(spec.bodyStyle))vehicleFinishes(view,spec);
+ view.root.userData.nativeFidelity={...view.root.userData.nativeFidelity,surfaceCraftRevision:1,referenceCraftRevision:Math.max(24,view.root.userData.nativeFidelity?.referenceCraftRevision??0)};
  return {view,parts};
 }

@@ -1,0 +1,19 @@
+{
+  "kind": "source-geometry",
+  "nativeAcceptance": false,
+  "continuousReveal": {
+    "stations": 5,
+    "vertices": 65,
+    "oldSegmentedCylinderVertices": 184,
+    "triangles": 80,
+    "closedSeam": true
+  },
+  "flatApertureTriangles": 8,
+  "curvedPanel": {
+    "triangles": 128,
+    "originalFixedTriangles": 512,
+    "maxSagM": 0.00034027802240517435,
+    "maxNormalDegrees": 0.0000308778190009618
+  },
+  "pass": true
+}

@@ -29,7 +29,7 @@ inline float SuspensionBumpTravel(float travel,float extraTravel) {
     return std::max(.055f,travel*.58f+std::max(0.f,extraTravel)*.45f);
 }
 inline float ProgressiveSuspensionForce(float compression,float velocity,float spring,
-    float damping,float mass,float normalZ,float dt,float bumpTravel) {
+    float damping,float mass,float normalZ,float dt,float bumpTravel,float responseMass=0) {
     const float m=std::max(1.f,mass),load=m*9.81f,k=std::max(1.f,spring);
     const float travel=std::max(.04f,bumpTravel),preload=load/k;
     const float stopLength=travel*.32f;
@@ -43,16 +43,54 @@ inline float ProgressiveSuspensionForce(float compression,float velocity,float s
     const float valve=.28f+.72f*std::min(1.f,1.25f/std::max(.001f,compressionSpeed));
     const float damper=damping*valve;
     const float step=std::max(0.f,dt),response=damper+tangent*step;
-    const float compliant=(k*compression+stopForce-response*velocity+
-        response*9.81f*normalZ*step*ContactCoupling)/(1+response*step*ContactCoupling/m);
+    // Static corner mass sets preload and bump progression. The force response
+    // also rotates the chassis, so its inertia can be much smaller (a wide
+    // monster truck's measured normal response is ~500 kg, not its 1361 kg
+    // corner share). Keeping those quantities separate preserves ride height
+    // without overspending the roll impulse when tire grip acts concurrently.
+    const float responseM=responseMass>0?std::clamp(responseMass,1.f,m):m;
+    const float normalLoad=load*normalZ;
+    const float compliant=normalLoad+(k*compression+stopForce-normalLoad-response*velocity)/
+        (1+response*step*ContactCoupling/responseM);
     if(step<=0)return compliant;
     // At full bump the rubber stop becomes a unilateral travel constraint.
     // A tangent spring alone weakens as its implicit denominator grows and
     // can let a long frame push the front axle through the body. Spend only
     // the impulse needed to reach the end of travel, never a velocity reset.
-    const float stopConstraint=m*(9.81f*normalZ+
-        ((compression-preload-travel)/step-velocity)/step);
+    const float stopConstraint=normalLoad+responseM*
+        ((compression-preload-travel)/step-velocity)/step;
     return std::max(compliant,stopConstraint);
+}
+// Full-bump reactions share a rigid body with every wheel's brake/lateral
+// force. Predict those queued impulses first, then project only the extra
+// unilateral stop impulses. The normal spring solve remains unchanged.
+inline constexpr int MaximumSuspensionContacts=6;
+struct SuspensionBumpContact {
+    float PredictedVelocity=0,TargetVelocity=0,MaximumImpulse=0,Impulse=0;
+};
+// Constant queued force acts across Chaos substeps. Bound every substep's
+// displacement, not just its final velocity, so existing inward momentum
+// cannot cross full bump halfway through a long render frame.
+inline float SuspensionBumpTargetVelocity(float clearance,float velocity,float dt,int substeps) {
+    const float step=std::max(.0001f,dt);const int n=std::clamp(substeps,1,12);
+    float delta=-1e30f;
+    for(int k=1;k<=n;++k){const float t=step*k/n,weight=step*k*(k+1)/(2.f*n*n);
+        delta=std::max(delta,(-clearance-velocity*t)/weight);
+    }
+    return velocity+delta;
+}
+inline void SolveSuspensionBumpContacts(SuspensionBumpContact* contacts,
+    const float inverseResponse[MaximumSuspensionContacts][MaximumSuspensionContacts],int count) {
+    count=std::clamp(count,0,MaximumSuspensionContacts);
+    for(int i=0;i<count;++i)contacts[i].Impulse=0;
+    for(int pass=0;pass<12;++pass)for(int order=0;order<count;++order){
+        const int i=(pass&1)?count-1-order:order;auto& c=contacts[i];
+        const float diagonal=inverseResponse[i][i];
+        if(c.MaximumImpulse<=0||diagonal<=0)continue;
+        float velocity=c.PredictedVelocity;
+        for(int j=0;j<count;++j)velocity+=inverseResponse[i][j]*contacts[j].Impulse;
+        c.Impulse=std::clamp(c.Impulse+(c.TargetVelocity-velocity)/diagonal,0.f,c.MaximumImpulse);
+    }
 }
 inline float ContactStiffness(float raw,float mass,float dt){
     return std::max(0.f,raw)/(1+std::max(0.f,raw)*std::max(0.f,dt)*ContactCoupling/std::max(1.f,mass));

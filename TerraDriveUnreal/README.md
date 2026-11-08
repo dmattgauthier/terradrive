@@ -1,5 +1,14 @@
 # Terra Drive native port
 
+The [expanded roster and fidelity update](docs/expanded-roster-fidelity.md) adds
+Grave Digger and the 1998 Impreza 22B STI, tire-size kits through 50 inches,
+recovery at the current position, and a bottom HUD with vehicle-safe camera
+framing. It smooths Urus hood reflections, blends the Granite Trials approach,
+and reduces terrain shading work. Final native checks cover rollover support,
+movement/braking, upgrades, tire fit, recovery, ruts and the full quarry trail.
+Exact build hashes and measured real-time comparisons are in the
+[native evidence record](docs/expanded-roster-native.json).
+
 The [Urus front and Slate Rim follow-up](docs/urus-quarry-fidelity.md)
 rebuilds the Urus Performante hood and front bumper and extends the quarry
 art through the finish. The stock Urus cleared all 20 gates in the packaged
@@ -194,9 +203,9 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 
 | J | Cycle challenge routes, including [Perimeter Expedition](docs/perimeter-expedition.md) |
 | V | Open vehicle selection while stopped |
-| T | Equip/remove flotation tracks while stopped; Civic excluded |
+| T | Equip/remove supported flotation tracks while stopped; return tire diameter to DEFAULT first |
 | F / L | Available four-wheel high drive / low range; change near a stop |
-| Z / U | Rear / front differential lock; stop and select required driveline first |
+| Z / U / I | Rear / front / center differential lock when equipped; stop and select the required driveline first |
 | Shift + W | Crawl throttle |
 | K | Descent assist on supported vehicles |
 | + / - | Raise/lower the front pressure target by 2 PSI; equals/numpad-plus and hyphen/numpad-minus are supported |
@@ -207,9 +216,10 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 | Mouse on garage buttons | Select a vehicle, category stage, reset to stock, or drive |
 | Escape in garage | Return to driving |
 | P | Dry/rain response |
-| R | Recover at current region or restart current challenge route |
+| R | Right vehicle at its current position; keeps challenge progress, damage and energy |
+| Restart route in Esc menu | Return to the region or challenge start |
 | Backspace | Repair deformed soil and clear tire marks |
-| Esc | Quit |
+| Esc | Pause menu: controls, graphics, recovery, route restart, energy service and exit |
 
 Gamepad left stick steers. Right/left triggers request forward/reverse; opposite input brakes before selecting direction. The bottom face button is a dedicated brake/hold.
 
@@ -217,11 +227,11 @@ This is a migration preview. Browser regression results are reference evidence, 
 
 See [offroad-challenges.md](docs/offroad-challenges.md) for route descriptions, driving techniques and the native axle/contact model.
 
-The game opens in the scrollable nine-vehicle garage. Stock plus three upgrade stages across twelve categories are available immediately and saved independently for each vehicle. Drivetrain, differential, portal, EV conversion and tire-air stages retain factory capabilities and describe the current configuration separately from factory-character notes. The Upgrades menu shows actual front/rear PSI, the front target, air-system status and **−2 / +2** and **ROAD PRESSURE** controls. Rear pressure follows the vehicle's axle-pressure ratio. Garage adjustment and vehicle selection service the saved target immediately; installed trail systems change actual pressure over time and pause beyond their operating speed. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [pass 14](docs/expedition-electric-14.md) for current stages and pressure behavior, and the earlier [garage-and-terrain.md](docs/garage-and-terrain.md) for the original integration.
+The game opens in the scrollable twelve-vehicle garage. Stock plus three upgrade stages across fourteen categories are available immediately and saved independently for each vehicle. Drivetrain, differential, portal, EV conversion and tire-air stages retain factory capabilities and describe the current configuration separately from factory-character notes. The Upgrades menu shows actual front/rear PSI, the front target, air-system status and **−2 / +2** and **ROAD PRESSURE** controls. Rear pressure follows the vehicle's axle-pressure ratio. Garage adjustment and vehicle selection service the saved target immediately; installed trail systems change actual pressure over time and pause beyond their operating speed. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [pass 14](docs/expedition-electric-14.md) for current stages and pressure behavior, and the earlier [garage-and-terrain.md](docs/garage-and-terrain.md) for the original integration.
 
 Player-facing measurements use mph, feet/inches, pounds, PSI, horsepower and pounds-force. The new tire-contact and model pass is described in [terrain-interaction-and-models.md](docs/terrain-interaction-and-models.md). Run `Tools/test-core.cmd` for the standalone simulation checks.
 
-Earlier controls and researched refinements for the original six vehicles are described in [vehicle-model-research.md](docs/vehicle-model-research.md). Their regression coverage includes brake input/holding, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling. The current nine-vehicle additions and their separate source/native acceptance boundary are described in [pass 14](docs/expedition-electric-14.md).
+Earlier controls and researched refinements for the original six vehicles are described in [vehicle-model-research.md](docs/vehicle-model-research.md). Their regression coverage includes brake input/holding, forward/reverse wheel orientation, Hummer physical ride height, garage camera persistence and separate tire/rim scaling. The earlier nine-vehicle additions are described in [pass 14](docs/expedition-electric-14.md); the current twelve-vehicle roster is documented in [expanded roster fidelity](docs/expanded-roster-fidelity.md).
 
 See [lighting-tracks-urus.md](docs/lighting-tracks-urus.md) for the original V8 Urus Performante, brake/reverse lights, CC0 scan sources and photographic sky. Vendored native sources are under Vendor/Environment. Run Tools/fetch-environment-assets.py only to recover missing source downloads; normal builds use the included offline copies.
 

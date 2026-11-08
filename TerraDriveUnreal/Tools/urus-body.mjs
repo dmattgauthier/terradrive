@@ -5,6 +5,7 @@ import {T,mesh,box,surface,polygon,mappedPolygon,line,curve,station,lerp,clamp,s
 import {urusCabin} from './urus-cabin.mjs';
 import {geometryText} from './vehicle-fidelity.mjs';
 import {panelJoint} from './coachwork-craft.mjs';
+import {hoodRows,hood,carbonPanel,carbonNu,carbonNv,carbonBonnet} from './urus-bonnet.mjs';
 export const URUS_BODY_LANDMARKS={length:5.137,width:2.026,widthWithMirrors:2.181,height:1.618,wheelbase:3.006,
  roofFrontZ:-.06,roofRearZ:-1.12,cowlZ:.72,frontZ:2.5685,rearZ:-2.5685,beltFrontY:1.102,beltRearY:1.248,archRadius:.448};
 export function urusView(spec){
@@ -220,26 +221,10 @@ export function urusView(spec){
  curve(g,black,[canopy(.49,-2.05,.011),canopy(.37,-2.01,.013),canopy(.24,-1.95,.013)],.005);
  // The exposed carbon runs out of the windscreen into a broad, round-ended
  // field. Its diverging press lines are part of the same surface as the paint.
- const hoodRows=[[.72,1.156,.81],[1.08,1.125,.849],[1.50,1.091,.870],[1.93,1.055,.844],[2.27,1.017,.762],[2.48,.976,.64]];
- const hood=(x,z,off=0)=>{
-  const t=x/station(hoodRows,z,2),a=Math.abs(t),fade=smooth(z,.72,1.03)*(1-smooth(z,2.05,2.40));
-  const ridge=.42+.24*smooth(z,.75,2.15);
-  const blade=.029*gauss(a,ridge,.044)-.008*gauss(a,ridge+.078,.055);
-  const shoulder=.034*gauss(a,.86,.075)+.008*gauss(a,.98,.13);
-  const sweep=.122*smooth(z,1.84,2.48)*Math.abs(t)**1.85;
-  return[x,station(hoodRows,z,1)+.039*(1-t*t)+fade*(blade+shoulder)+off,z-sweep];
- };
  const ventOutline=roundContour([[.710,1.00],[.784,1.085],[.746,1.54],[.674,1.905],[.627,1.827],[.646,1.465],[.672,1.116]],.023,3);
  // The cooling ducts are holes in the bonnet. A black patch above an intact
  // hood cannot provide the shadowed return or the visible depth of the vents.
  const bonnetVents=[-1,1].map(s=>ventOutline.map(([x,z])=>[s*x,z]));
- const carbonSides=[[.730,.665],[1.05,.644],[1.44,.618],[1.90,.594],[2.265,.572]];
- const carbonPanel=(u,v)=>{
-  const t=2*u-1,a=Math.abs(t),z=lerp(.730,2.265-.148*a**8,v);
-  // Spread the taper so neighboring columns keep their order at the nose.
-  return[t*(station(carbonSides,z,1)-.035*v**6*a**8),z];
- };
- const carbonNu=72,carbonNv=60;
  const carbonBoundary=[...Array.from({length:carbonNv+1},(_,i)=>carbonPanel(0,i/carbonNv)),
   ...Array.from({length:carbonNu-1},(_,i)=>carbonPanel((i+1)/carbonNu,1)),
   ...Array.from({length:carbonNv+1},(_,i)=>carbonPanel(1,1-i/carbonNv))];
@@ -248,7 +233,7 @@ export function urusView(spec){
  const bonnetOutline=[...bonnetSides.map(([x,z])=>[-x,z]),...bonnetNose.slice(1,-1),...bonnetSides.slice().reverse()];
  // Shared sampled boundaries divide the body-color and exposed-carbon finish.
  // The carbon and both cooling outlets are cut directly out of the paint sheet.
- surface(g,carbon,carbonNu,carbonNv,(u,v)=>hood(...carbonPanel(u,v)),true).name='urus-partitioned-carbon-bonnet';
+ carbonBonnet(g,carbon).name='urus-partitioned-carbon-bonnet';
  mappedPolygon(g,m.paint,bonnetOutline,hood,[carbonBoundary,...bonnetVents],true,12).name='urus-open-vent-bonnet';
  for(const s of [-1,1]){
   surface(g,m.paint,110,12,(u,v)=>{const z=lerp(.72,2.48,u),a=hood(s*station(hoodRows,z,2),z),b=sidePoint(s,z,belt(z));return a.map((n,k)=>lerp(n,b[k],v));},s<0).name='urus-bonnet-shoulder-sheet-'+s;
@@ -441,5 +426,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.582],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:12,artPilot:3,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,formedCarbonFlares:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:12,artPilot:4,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,formedCarbonFlares:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

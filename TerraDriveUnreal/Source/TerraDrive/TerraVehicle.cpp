@@ -11,6 +11,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "Engine/StaticMesh.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
@@ -21,6 +22,8 @@
 #include "Misc/Parse.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "PhysicsEngine/BodyInstance.h"
+#include "PhysicsEngine/PhysicsSettings.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
 
 float ATerraVehicle::Number(const TCHAR *Name, float Default) const {
@@ -162,13 +165,17 @@ void ATerraVehicle::BeginPlay() {
     PC->bShowMouseCursor = false;
   }
 }
-void ATerraVehicle::SelectVehicle(int Index) {
+void ATerraVehicle::SelectVehicle(int Index, bool StoreCurrentProfile) {
   if (!Terrain || !Terrain->Data)
     return;
   auto &List = Terrain->Data->GetArrayField(TEXT("vehicles"));
   const int PreviousRoute = RouteIndex;
   Terrain->BreakTireMarks();
-  if(Spec.IsValid()&&Initialized){PressureProfiles[VehicleIndex]=PressureTarget;BatteryProfiles[VehicleIndex]=BatterySOC;FuelProfiles[VehicleIndex]=FuelFraction;}
+  if(StoreCurrentProfile&&Spec.IsValid()&&Initialized){
+    PressureProfiles[VehicleIndex]=PressureTarget;
+    BatteryProfiles[VehicleIndex]=BatterySOC;
+    FuelProfiles[VehicleIndex]=FuelFraction;
+  }
   VehicleIndex = (Index + List.Num()) % List.Num();
   Spec = List[VehicleIndex]->AsObject();
   ResizeWheelComponents();
@@ -197,7 +204,7 @@ void ATerraVehicle::SelectVehicle(int Index) {
   BatteryEnergyRemainder=FuelEnergyRemainder=0;
   for(int I=0;I<MaxWheels;++I)LastWheelDriveNm[I]=LastWheelRegenNm[I]=0;
   const float Length=Number(TEXT("bodyLength"),Number(TEXT("length"),4.8f));
-  const float HalfWidth=Number(TEXT("width"),1.8f)*.42f;
+  const float HalfWidth=Number(TEXT("bodyWidthM"),Number(TEXT("width"),1.8f))*.42f;
   const float HalfHeight=VehicleIndex==5?CG-Number(TEXT("clearance"),.158f):.22f;
   const float BellyLength=FMath::Min(Length*.36f,Wheelbase*.54f);
   Chassis->SetBoxExtent(FVector(BellyLength,HalfWidth,HalfHeight)*100);
@@ -246,8 +253,11 @@ void ATerraVehicle::SelectVehicle(int Index) {
   if(!AutoTest&&Initialized)SaveGarage(GaragePath());
 }
 void ATerraVehicle::SetTracks(bool Enabled) {
-  if (VehicleIndex == 2||WheelCount()==6) {
-    Notice = WheelCount()==6?TEXT("Individual track pods are unavailable for the tandem chassis"):TEXT("Tracks unavailable for the Civic");
+  if(Enabled&&UpgradeStage(TerraSim::TireSize)>0){
+    Notice=TEXT("Return TIRE DIAMETER to DEFAULT in the garage before fitting tracks. Your tire kit is unchanged.");return;
+  }
+  if (VehicleIndex == 2||WheelCount()==6||Number(TEXT("monsterTruck"),0)>0) {
+    Notice = Number(TEXT("monsterTruck"),0)>0?TEXT("The monster chassis retains its 66-inch wheels; standard track pods do not fit"):WheelCount()==6?TEXT("Individual track pods are unavailable for the tandem chassis"):TEXT("Tracks unavailable for the Civic");
     return;
   }
   if (FMath::Abs(Speed) > .5f) {
@@ -292,6 +302,65 @@ void ATerraVehicle::TeleportZone(int Index) {
   for (auto M : SprayMeshes) M->ClearInstances();
   Notice = Terrain->ZoneNames[Zone];
 }
+bool ATerraVehicle::RecoverInPlace() {
+  if(!Terrain||!Spec.IsValid()||Garage)return false;
+  const FVector Old=GetActorLocation();
+  FVector Forward=GetActorForwardVector();Forward.Z=0;
+  // A rolled vehicle's right vector can point the opposite way. Use it only
+  // when the nose is effectively vertical and has no horizontal heading.
+  if(Forward.IsNearlyZero())Forward=GetActorRightVector().Cross(FVector::UpVector);
+  const FRotator Upright(0,Forward.Rotation().Yaw,0);
+  const FQuat Rotation=Upright.Quaternion();
+  FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraLocalRecovery),true,this);
+  const float HalfLength=Number(TEXT("length"),4.8f)*50,HalfWidth=FMath::Max(Track+Width,Number(TEXT("width"),1.8f))*50;
+  float Height=Terrain->Height(Old.X,Old.Y)+ExpectedRideHeight()*100+15;
+  auto Floor=[&](FVector P){
+    const float Ground=Terrain->Height(P.X,P.Y);FHitResult Hit;
+    const float Top=FMath::Max(Ground+650.f,float(Old.Z+200.f));
+    return GetWorld()->LineTraceSingleByChannel(Hit,FVector(P.X,P.Y,Top),FVector(P.X,P.Y,Ground-200),ECC_Visibility,Query)&&Hit.ImpactNormal.Z>.25f?FMath::Max(Ground,float(Hit.ImpactPoint.Z)):Ground;
+  };
+  // Tire supports establish normal ride height, including upslope wheels.
+  for(int I=0;I<WheelCount();++I){const FVector Offset=Rotation.RotateVector(FVector(AxleOffsetM(I/2)*100,(I%2?1:-1)*Track*50,0));
+    Height=FMath::Max(Height,Floor(Old+Offset)+ExpectedRideHeight()*100+15);
+  }
+  // Belly/end footprint keeps the upright body out of boulders and ledges.
+  const float BodyBottom=FMath::Min(-22.f,(Number(TEXT("clearance"),.22f)-CG)*100);
+  for(int X=-5;X<=5;++X)for(int Y=-2;Y<=2;++Y){
+    const FVector Offset=Rotation.RotateVector(FVector(HalfLength*X/5,HalfWidth*Y/2,0));
+    Height=FMath::Max(Height,Floor(Old+Offset)-BodyBottom+12);
+  }
+  FVector Position(Old.X,Old.Y,Height);
+  if(Position.ContainsNaN()||Height-Terrain->Height(Old.X,Old.Y)>1800){Notice=TEXT("Recovery space is obstructed. Use Restart route in the pause menu.");return false;}
+  // Reject remaining solid overlaps rather than teleporting into a narrow rock
+  // missed between the support probes. Retry upward only, preserving XY.
+  bool Clear=false;FComponentQueryParams BodyQuery(SCENE_QUERY_STAT(TerraRecoverBody),this);
+  for(int Attempt=0;Attempt<13&&!Clear;++Attempt){
+    TArray<FOverlapResult> Overlaps;Clear=true;
+    // UE filters a welded body's shapes by their original component owner.
+    // Query each active member, including all twelve coachwork convex hulls.
+    UPrimitiveComponent* Members[]={Chassis.Get(),FrontCollision.Get(),RearCollision.Get(),CoachworkCollision.Get(),RoofCollision.Get()};
+    for(auto* Member:Members){
+      if(Member->GetCollisionEnabled()==ECollisionEnabled::NoCollision)continue;
+      const FTransform Relative=Member==Chassis?FTransform::Identity:Member->GetRelativeTransform();
+      const FTransform Pose=Relative*FTransform(Rotation,Position);
+      if(Member->ComponentOverlapMulti(Overlaps,GetWorld(),Pose.GetLocation(),Pose.GetRotation(),ECC_Visibility,BodyQuery)){Clear=false;break;}
+    }
+    if(!Clear)Position.Z+=20;
+  }
+  if(!Clear){Notice=TEXT("No clear upright space here. Use Restart route in the pause menu.");return false;}
+  Terrain->BreakTireMarks();
+  Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+  SetActorLocationAndRotation(Position,Upright,false,nullptr,ETeleportType::TeleportPhysics);
+  Chassis->WakeAllRigidBodies();
+  for(auto& W:WheelState)W=FTerraWheel();
+  ResetContactTelemetry();Overturned=false;Speed=Throttle=Steer=0;Brake=1;ReverseHold=0;
+  ReverseReleaseRequired=false;RequireControlRelease=true;RecoveryBrakeHold=true;SpawnCooldown=.7f;
+  WinchAttached=Reeling=false;PreviousRoutePosition=Position;
+  Parcels.Empty();for(auto& Budget:SprayBudget)Budget=0;for(auto Mesh:SprayMeshes)Mesh->ClearInstances();
+  Notice=TEXT("Recovered here. Challenge progress, damage and fuel are retained.");
+  return true;
+}
+
 void ATerraVehicle::TeleportRoute(int Index) {
   if (!Terrain || Terrain->Routes.IsEmpty()) return;
   const int R = (Index + Terrain->Routes.Num()) % Terrain->Routes.Num();
@@ -376,15 +445,15 @@ void ATerraVehicle::Input(float Dt) {
   }
   if (Garage) { Throttle=Steer=0; Brake=1; return; }
   if(RequireControlRelease){
-    Throttle=Brake=Steer=0;Reeling=false;
+    Throttle=Steer=0;Brake=RecoveryBrakeHold?1.f:0.f;Reeling=false;
     const bool Held=Down(A::Forward)||Down(A::Reverse)||Down(A::SteerLeft)||Down(A::SteerRight)||Down(A::HoldBrake)||Down(A::WinchReel)||
       DownKey(EKeys::Up)||DownKey(EKeys::Down)||DownKey(EKeys::Left)||DownKey(EKeys::Right)||DownKey(EKeys::Gamepad_FaceButton_Bottom)||
       FMath::Abs(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX))>.1f||PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis)>.05f||PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis)>.05f;
     if(Held)return;
-    RequireControlRelease=false;
+    RequireControlRelease=false;RecoveryBrakeHold=false;
   }
   if (Press(A::Recover))
-    { if (RouteIndex >= 0) TeleportRoute(RouteIndex); else TeleportZone(Zone); }
+    { RecoverInPlace(); return; }
   if (Press(A::NextChallenge)) TeleportRoute(RouteIndex + 1);
   if (Press(A::RearLock)) ToggleLocker(false);
   if (Press(A::FrontLock)) ToggleLocker(true);
@@ -542,12 +611,16 @@ void ATerraVehicle::Simulate(float Dt) {
   if (LowRange) TotalTorque *= FMath::Clamp(8.f-FMath::Abs(Speed),0.f,1.f);
   const float SteerAngle =
       Steer * FMath::DegreesToRadians(34.f) / (1 + FMath::Abs(Speed) * .025f) + DamageSteeringOffset();
-  const float RearSteerAngle=VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
+  const float RearSteerAngle=Number(TEXT("monsterTruck"),0)>0?-SteerAngle*.65f/(1+FMath::Abs(Speed)*.18f):VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
   float TotalLoad = 0;
   ContactCount = 0;
   LastTireForceN = 0;
   const int Count=WheelCount(),Axles=AxleCount();
+  const float ResponseBodyMass=Chassis->GetMass();
+  const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
+  const FQuat BodyRotation=Chassis->BodyInstance.GetMassSpaceToWorldSpace().GetRotation();
   float Capacities[MaxWheels] = {}, Drives[MaxWheels] = {};
+  FVector NormalArms[MaxWheels],PendingTireForces[MaxWheels];
   // Resolve every contact before sharing torque between an axle's two wheels.
   for (int I = 0; I < Count; ++I) {
     auto &W = WheelState[I];
@@ -581,19 +654,20 @@ void ATerraVehicle::Simulate(float Dt) {
       }
     }
     const FVector Normal = W.Ground.Normal;
-    const FVector MountVelocity=Chassis->GetPhysicsLinearVelocityAtPoint(Mount)/100;
     W.PointVelocity = Chassis->GetPhysicsLinearVelocityAtPoint(W.Contact)/100;
+    const FVector NormalArm=BodyRotation.UnrotateVector(FVector::CrossProduct(W.Contact/100-BodyCenter,Normal));
+    NormalArms[I]=NormalArm;
+    const float NormalMass=FMath::Min(StaticLoad/9.81f,TerraSim::EffectiveContactMass(ResponseBodyMass,
+        BodyInertia.X,BodyInertia.Y,BodyInertia.Z,NormalArm.X,NormalArm.Y,NormalArm.Z));
     W.Load = Support.Hit ? FMath::Clamp(TerraSim::ProgressiveSuspensionForce(Rest-W.Distance,
-        FVector::DotProduct(MountVelocity,Normal),Spring,Damping,StaticLoad/9.81f,Normal.Z,Dt,Bump),0.f,StaticLoad*6) : 0;
-    W.SoilLoad=TerraSim::FilteredSoilLoad(W.SoilLoad,
-        W.ContactValid&&!W.Constructed?W.Load:0,Dt);
+        FVector::DotProduct(W.PointVelocity,Normal),Spring,Damping,StaticLoad/9.81f,Normal.Z,Dt,Bump,NormalMass),0.f,StaticLoad*6) : 0;
+
     TotalLoad += W.Load;
     if (W.Load>50) ++ContactCount;
     W.ForceForward = (WF-Normal*FVector::DotProduct(WF,Normal)).GetSafeNormal();
     W.ForceSide = FVector::CrossProduct(Normal,W.ForceForward).GetSafeNormal();
     W.LongSpeed = FVector::DotProduct(W.PointVelocity,W.ForceForward);
     W.LateralSpeed = FVector::DotProduct(W.PointVelocity,W.ForceSide);
-    W.Footprint=TerraSim::FootprintLength(W.Load,WheelPressure(I),Tracks?.48f:AxleWidth,Radius,Tracks);
     W.RutDepth=W.Constructed?0:W.Ground.RutDepth;
     const float Placard=Number(Front?TEXT("stockPSIFront"):TEXT("stockPSIRear"),Number(TEXT("stockPSI"),35));
     const auto Air=TerraSim::EvaluateTirePressure(WheelPressure(I),Placard,StaticLoad,Number(TEXT("mass"),2100)*9.81f*AxleLoadFraction(I/2)*.5f,Speed,W.Ground.Softness,Tracks);
@@ -602,6 +676,25 @@ void ATerraVehicle::Simulate(float Dt) {
         (Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
     W.Grip=BaseGrip*Air.LongitudinalGrip;W.SideGrip=BaseGrip*Air.LateralGrip;W.CorneringResponse=Air.CorneringStiffness;
     Capacities[I] = W.Load*W.Grip*Radius;
+  }
+  // Opt-in native evidence for unsupported/oscillating upright suspension.
+  // No forces, contacts, timing, or player settings are changed by this probe.
+  if(AutoTest&&Up.Z>.85f&&FParse::Param(FCommandLine::Get(),TEXT("TerraUprightSupportDiagnostics"))&&
+      (Number(TEXT("monsterTruck"),0)>0||UpgradeStage(TerraSim::TireSize)>0)){
+    static double NextUprightDiagnostic=0;const double Now=FPlatformTime::Seconds();
+    if(Now>=NextUprightDiagnostic){
+      NextUprightDiagnostic=Now+.25;
+      UE_LOG(LogTemp,Display,TEXT("TERRA_UPRIGHT_SUPPORT vehicle=%d sizeStage=%d dt=%.6f contacts=%d massKg=%.3f radiusM=%.4f restM=%.4f droopM=%.4f spring=%.1f damper=%.1f positionCM=%s rotation=%s velocityCMPS=%s angularRPS=%s inertiaKGCM2=%s"),
+        VehicleIndex,UpgradeStage(TerraSim::TireSize),Dt,ContactCount,Mass,Radius,Rest,Droop,Spring,Damping,
+        *GetActorLocation().ToString(),*GetActorRotation().ToString(),*Chassis->GetPhysicsLinearVelocity().ToString(),
+        *Chassis->GetPhysicsAngularVelocityInRadians().ToString(),*Chassis->GetInertiaTensor().ToString());
+      for(int I=0;I<Count;++I){const auto& W=WheelState[I];
+        const FVector Arm=BodyRotation.UnrotateVector(FVector::CrossProduct(W.Contact/100-BodyCenter,W.Ground.Normal));
+        const float ResponseMass=FMath::Min(Mass*AxleLoadFraction(I/2)*.5f,TerraSim::EffectiveContactMass(ResponseBodyMass,BodyInertia.X,BodyInertia.Y,BodyInertia.Z,Arm.X,Arm.Y,Arm.Z));
+        UE_LOG(LogTemp,Display,TEXT("TERRA_UPRIGHT_WHEEL vehicle=%d wheel=%d hit=%d constructed=%d loadN=%.3f responseMassKg=%.3f distanceM=%.5f omega=%.5f centerCM=%s contactCM=%s normal=%s"),
+          VehicleIndex,I,W.ContactValid,W.Constructed,W.Load,ResponseMass,W.Distance,W.Omega,*W.Center.ToString(),*W.Contact.ToString(),*W.Ground.Normal.ToString());
+      }
+    }
   }
   bool InvertedTrackSupport=false;
   for(int I=0;I<Count;++I){const auto& W=WheelState[I];InvertedTrackSupport|=W.Constructed&&W.Load>50&&FVector::DotProduct(W.Ground.Normal,Up)>.35f;}
@@ -662,8 +755,6 @@ void ATerraVehicle::Simulate(float Dt) {
   const auto Regeneration=TerraSim::ElectricRegen(EV,MotorOmega,EffectiveBrake,Throttle<.01f?.08f:0.f,
       FMath::Clamp((.99f-BatterySOC)/.04f,0.f,1.f),Low,PortalReduction(),Environment,FourDrive);
   const float Inertia=Tracks?24.f+Tuning.RotatingMass:WheelInertia(), R=Radius;
-  const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
-  const FQuat BodyRotation=Chassis->GetComponentQuat();
   const float WheelRevLimit=Electric?0:RedlineRPM*2*PI/
       (60*FMath::Max(.1f,Ratio*Final*Low));
   float Stiffness[MaxWheels]={}, Drag[MaxWheels]={}, Lateral[MaxWheels]={}, LongLimit[MaxWheels]={};
@@ -738,7 +829,7 @@ void ATerraVehicle::Simulate(float Dt) {
   };
   LastCenterCouplingNm=LastTandemCouplingNm=0;
   const float Rating=HasRigidTransfer()?Mass*9.81f*Radius*6.f:
-      TerraSim::CenterRatedTorque(UpgradeStage(TerraSim::CenterDifferential),VehicleIndex==8||VehicleIndex==9,Mass,Radius);
+      TerraSim::CenterRatedTorque(UpgradeStage(TerraSim::CenterDifferential),HasFactoryCenterLocker(),Mass,Radius);
   if(Count==6&&(CenterCoupled||TandemLockActive())){
     auto Evaluate=[&](float C,float T){const float Difference=SolveAxles(C,T);return TerraSim::TandemResidual{Difference,
         (WheelState[2].Omega+WheelState[3].Omega-WheelState[4].Omega-WheelState[5].Omega)*.5f};};
@@ -789,9 +880,53 @@ void ATerraVehicle::Simulate(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_CONTACT t=%.1f wheel=%d dt=%.3f fx=%.0f fy=%.0f omega=%.2f long=%.2f lateral=%.2f distance=%.3f normal=%s"),RouteTime,I,Dt,FX,FY,W.Omega,W.LongSpeed,W.LateralSpeed,W.Distance,*W.Ground.Normal.ToString());
     W.Slip=(W.Omega*R-W.LongSpeed)/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
     W.SoilSlip+=(FMath::Clamp(W.Slip,-2.f,2.f)-W.SoilSlip)*(1-FMath::Exp(-Dt/.10f));
+    PendingTireForces[I]=W.ContactValid&&W.Load>0?W.Ground.Normal*W.Load+W.ForceForward*FX+W.ForceSide*FY:FVector::ZeroVector;
+    if(W.ContactValid&&W.Load>0)LastTireForceN+=FMath::Abs(FX)+FMath::Abs(FY);
+  }
+  if(!Overturned&&Dt>.0001f){
+    // Brake forces below the COM rotate the front into full bump in this same
+    // step. Predict all queued tire forces together, then add only the missing
+    // stop reaction. FX/FY retain their conservative pre-correction grip limit.
+    FVector DeltaLinear(0,0,-GravityDownMS2*Dt),DeltaAngular=FVector::ZeroVector;
+    for(int I=0;I<Count;++I){
+      DeltaLinear+=PendingTireForces[I]*(Dt/FMath::Max(1.f,ResponseBodyMass));
+      const FVector SuspensionTorque=BodyRotation.UnrotateVector(FVector::CrossProduct(WheelState[I].Contact/100-BodyCenter,PendingTireForces[I]));
+      DeltaAngular+=FVector(SuspensionTorque.X/FMath::Max(1.f,float(BodyInertia.X)),SuspensionTorque.Y/FMath::Max(1.f,float(BodyInertia.Y)),SuspensionTorque.Z/FMath::Max(1.f,float(BodyInertia.Z)))*Dt;
+    }
+    const auto* Physics=UPhysicsSettings::Get();
+    const int Substeps=Physics->bSubstepping?FMath::Clamp(FMath::CeilToInt(Dt/FMath::Max(.0001f,Physics->MaxSubstepDeltaTime)),1,Physics->MaxSubsteps):1;
+    TerraSim::SuspensionBumpContact Stops[MaxWheels];float Response[MaxWheels][MaxWheels]={};
+    for(int I=0;I<Count;++I){const auto& W=WheelState[I];const float Alignment=FVector::DotProduct(Up,W.Ground.Normal);
+      const float StaticLoad=Mass*9.81f*AxleLoadFraction(I/2)*.5f;
+      const float NormalVelocity=FVector::DotProduct(W.PointVelocity,W.Ground.Normal);
+      const float Clearance=(StaticLoad/Spring+BumpTravel(I<2)-(Rest-W.Distance))*Alignment;
+      Stops[I].PredictedVelocity=NormalVelocity+FVector::DotProduct(DeltaLinear,W.Ground.Normal)+FVector::DotProduct(DeltaAngular,NormalArms[I]);
+      Stops[I].TargetVelocity=TerraSim::SuspensionBumpTargetVelocity(Clearance,NormalVelocity,Dt,Substeps);
+      Stops[I].MaximumImpulse=W.ContactValid&&Alignment>.35f?FMath::Max(0.f,StaticLoad*6-W.Load)*Dt:0;
+      for(int J=0;J<Count;++J)Response[I][J]=FVector::DotProduct(W.Ground.Normal,WheelState[J].Ground.Normal)/FMath::Max(1.f,ResponseBodyMass)+
+        NormalArms[I].X*NormalArms[J].X/FMath::Max(1.f,float(BodyInertia.X))+
+        NormalArms[I].Y*NormalArms[J].Y/FMath::Max(1.f,float(BodyInertia.Y))+
+        NormalArms[I].Z*NormalArms[J].Z/FMath::Max(1.f,float(BodyInertia.Z));
+    }
+    TerraSim::SolveSuspensionBumpContacts(Stops,Response,Count);
+    float TotalStopImpulse=0,MaximumStopError=0;
+    for(int I=0;I<Count;++I)if(Stops[I].Impulse>0){
+      const float Extra=Stops[I].Impulse/Dt;WheelState[I].Load+=Extra;
+      PendingTireForces[I]+=WheelState[I].Ground.Normal*Extra;TotalStopImpulse+=Stops[I].Impulse;
+      float Predicted=Stops[I].PredictedVelocity;for(int J=0;J<Count;++J)Predicted+=Response[I][J]*Stops[J].Impulse;
+      MaximumStopError=FMath::Max(MaximumStopError,Stops[I].TargetVelocity-Predicted);
+    }
+    if(AutoTest&&TotalStopImpulse>1&&FParse::Param(FCommandLine::Get(),TEXT("TerraUprightSupportDiagnostics")))
+      UE_LOG(LogTemp,Display,TEXT("TERRA_BUMP_CONSTRAINT vehicle=%d dt=%.6f impulseNS=%.3f residualMPS=%.6f"),VehicleIndex,Dt,TotalStopImpulse,MaximumStopError);
+  }
+  ContactCount=0;
+  for(int I=0;I<Count;++I){auto& W=WheelState[I];
+    if(W.Load>50)++ContactCount;
+    // Filter the actual final load once, including a full-bump reaction.
+    W.SoilLoad=TerraSim::FilteredSoilLoad(W.SoilLoad,W.ContactValid&&!W.Constructed?W.Load:0,Dt);
+    W.Footprint=TerraSim::FootprintLength(W.Load,WheelPressure(I),Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth),Radius,Tracks);
     if (W.Load>0 && W.ContactValid) {
-      Chassis->AddForceAtLocation((W.Ground.Normal*W.Load+W.ForceForward*FX+W.ForceSide*FY)*100,W.Contact);
-      LastTireForceN+=FMath::Abs(FX)+FMath::Abs(FY);
+      Chassis->AddForceAtLocation(PendingTireForces[I]*100,W.Contact);
       if (SoilTimer>=.025f && !W.Constructed && W.Load>=50){
         const float TireWidth=Tracks?.48f:(I<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth);
         // The rolling support witness can switch +/- 0.6 tire radii as
@@ -838,6 +973,7 @@ void ATerraVehicle::Simulate(float Dt) {
     LastElectricDrawW=Consumed/FMath::Max(.5f,EV.Efficiency)+350.f;
   }
   UpdateEnergy(Dt);
+  UpdateRolledTireContacts(Dt);
   UpdateWheelVisuals();
   UpdateVisualDetails();
   if (SoilTimer >= .025f)
@@ -899,6 +1035,7 @@ void ATerraVehicle::Tick(float Dt) {
   }else{
     PendingBodyGroundContacts.Reset();
     CameraArm->bEnableCameraLag=false;
+    CameraArm->SocketOffset=FVector::ZeroVector;
     CameraArm->TargetArmLength=GarageDistance;
     CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,-15));
     CameraArm->SetWorldRotation(FRotator(GaragePitch,GetActorRotation().Yaw+GarageYaw,0));
@@ -913,10 +1050,65 @@ void ATerraVehicle::Tick(float Dt) {
   const bool InvertedSupport = GetActorUpVector().Z < -.3f && !Overturned;
   // The long boom crosses the curved ceiling near the loop apex. Keep a
   // shorter inside view there, with enough distance to clear the vehicle.
-  CameraArm->TargetArmLength = NearCamera ? 340 : InvertedSupport ? 500 : 1150;
-  CameraArm->SetWorldLocation(GetActorLocation()+FVector(0,0,InvertedSupport?-75:110));
-  CameraArm->SetWorldRotation(
-      FRotator(AutoTest&&TestMarkCamera?-48:InvertedSupport?-CameraPitch:CameraPitch, GetActorRotation().Yaw + CameraYaw, 0));
+  const bool BenchmarkCamera=AutoTest&&FParse::Param(FCommandLine::Get(),TEXT("TerraQuarryPerformanceOnly"));
+  const FRotator ViewRotation(AutoTest&&TestMarkCamera?-48:InvertedSupport?-CameraPitch:CameraPitch,GetActorRotation().Yaw+CameraYaw,0);
+  FVector Focus=GetActorLocation()+FVector(0,0,InvertedSupport?-75:BenchmarkCamera?110:10);
+  FVector SweepOrigin=Focus;CameraArm->SocketOffset=FVector::ZeroVector;
+  float Distance=BenchmarkCamera?1150:InvertedSupport?500:NearCamera?FMath::Max(850.f,Number(TEXT("length"),4.8f)*170.f):FMath::Max(1250.f,Number(TEXT("length"),4.8f)*210.f);
+  if(!BenchmarkCamera&&!InvertedSupport&&Body->GetStaticMesh()){
+    // Frame the visible envelope above the bottom HUD. Work from mesh-local
+    // corners: world AABBs expand with yaw, and wheel AABBs expand as a round
+    // tire spins, making an otherwise steady following camera pulse in/out.
+    TArray<FVector,TInlineAllocator<56>> Corners;
+    FBox ActorEnvelope(ForceInit);const FTransform WorldToActor=GetActorTransform().Inverse();
+    auto AddBox=[&](const FBox& Box,const FTransform& Transform){for(int I=0;I<8;++I){
+      const FVector Local=Box.GetCenter()+Box.GetExtent()*FVector(I&1?1:-1,I&2?1:-1,I&4?1:-1);
+      const FVector World=Transform.TransformPosition(Local);Corners.Add(World);ActorEnvelope+=WorldToActor.TransformPosition(World);
+    }};
+    AddBox(Body->GetStaticMesh()->GetBoundingBox(),Body->GetComponentTransform());
+    for(int I=0;I<Wheels.Num();++I){auto* Wheel=Wheels[I].Get();
+      if(!Wheel||!Wheel->IsVisible()||!Wheel->GetStaticMesh())continue;
+      const FBox Box=Wheel->GetStaticMesh()->GetBoundingBox();
+      if(Tracks){AddBox(Box,Wheel->GetComponentTransform());continue;}
+      const FVector Scale=Wheel->GetComponentTransform().GetScale3D().GetAbs();
+      const FQuat Pose=FQuat(GetActorUpVector(),Overturned?0.f:WheelState[I].Angle)*GetActorQuat();
+      const float RadiusCM=FMath::Max(FMath::Max(FMath::Abs(Box.Min.X),FMath::Abs(Box.Max.X))*Scale.X,
+        FMath::Max(FMath::Abs(Box.Min.Z),FMath::Abs(Box.Max.Z))*Scale.Z)+.5f;
+      const float HalfWidthCM=Box.GetExtent().Y*Scale.Y;
+      const FVector Center=Wheel->GetComponentLocation()+Pose.RotateVector(FVector(0,Box.GetCenter().Y*Scale.Y,0));
+      // A fixed radial envelope includes small tread bevels. Only real steer
+      // and suspension change this frame; rolling tread does not change it.
+      const FVector Extent(RadiusCM,HalfWidthCM,RadiusCM);
+      AddBox(FBox(-Extent,Extent),FTransform(Pose,Center));
+    }
+    const FVector Center=GetActorTransform().TransformPosition(ActorEnvelope.GetCenter());
+    const FRotationMatrix Basis(ViewRotation);
+    const FVector ViewForward=Basis.GetUnitAxis(EAxis::X),ViewRight=Basis.GetUnitAxis(EAxis::Y),ViewUp=Basis.GetUnitAxis(EAxis::Z);
+    int ViewWidth=1600,ViewHeight=900;if(auto* PC=Cast<APlayerController>(GetController()))PC->GetViewportSize(ViewWidth,ViewHeight);
+    // Match UE's MaintainY projection at every window aspect ratio. Its
+    // horizontal FOV is defined at Camera.AspectRatio, not the live viewport.
+    Camera->bOverrideAspectRatioAxisConstraint=true;Camera->AspectRatioAxisConstraint=AspectRatio_MaintainYFOV;
+    const float TanV=FMath::Tan(FMath::DegreesToRadians(Camera->FieldOfView*.5f))/FMath::Max(.01f,Camera->AspectRatio);
+    const float TanH=TanV*FMath::Max(1,ViewWidth)/FMath::Max(1,ViewHeight);
+    constexpr float Bias=.24f,Top=.88f,Bottom=-.40f;
+    for(const FVector& Corner:Corners){
+      const FVector P=Corner-Center;
+      const float X=FVector::DotProduct(P,ViewRight),Y=FVector::DotProduct(P,ViewUp),Z=FVector::DotProduct(P,ViewForward);
+      Distance=FMath::Max(Distance,FMath::Abs(X)/(.90f*TanH)-Z);
+      Distance=FMath::Max(Distance,(Y-Top*TanV*Z)/((Top-Bias)*TanV));
+      Distance=FMath::Max(Distance,(Bottom*TanV*Z-Y)/((Bias-Bottom)*TanV));
+    }
+    Focus=Center-ViewUp*(Bias*Distance*TanV);
+    // The optical focus biases the vehicle above the HUD, but can lie below
+    // ground when a low vehicle is rolled. Starting the boom sweep there
+    // immediately collapses it underground. Keep its collision origin above
+    // the terrain and carry only the optical delta in the local socket offset.
+    // UE sweeps from this safe origin to the same desired camera endpoint.
+    SweepOrigin=Center;
+    SweepOrigin.Z=FMath::Max(SweepOrigin.Z,Terrain->Height(SweepOrigin.X,SweepOrigin.Y)+CameraArm->ProbeSize+8.f);
+    CameraArm->SocketOffset=ViewRotation.UnrotateVector(Focus-SweepOrigin);
+  }
+  CameraArm->TargetArmLength=Distance;CameraArm->SetWorldLocation(SweepOrigin);CameraArm->SetWorldRotation(ViewRotation);
   SurfaceName =
       Terrain->Data
           ->GetArrayField(TEXT("surfaces"))[WheelState[0].Ground.Surface]
@@ -927,6 +1119,7 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
                             const FHitResult &Result) {
   if (SpawnCooldown > 0)
     return;
+  CacheRolledBodyContact(Other,Result);
   const float Impact=Impulse.Size()/FMath::Max(1.f,Chassis->GetMass()*100);
   const bool GroundHit=Other&&(Other->ComponentHasTag(TEXT("TerraGround"))||
       Other->GetClass()->GetName().StartsWith(TEXT("Landscape")));

@@ -1,0 +1,1025 @@
+{
+  "kind": "source-geometry",
+  "nativeAcceptance": false,
+  "passed": 327,
+  "roster": 12,
+  "fittedVehicles": 11,
+  "method": "One-degree swept solid tire envelopes against actual exported opaque body samples; allwheel tracks, full stock bump, suspension stages0–3, worst compound width, rear-steer and trailing-tandem clearance",
+  "vehicles": [
+    {
+      "id": "wrangler-rubicon",
+      "bodySha256": "4707025de044fbe207e257f2dce6b4c72ffffb78a0de2e0d6d21a45f80cc2436",
+      "coverageCells": 14413,
+      "previousFormulaOverlapM": 0.4943258500482962,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 39,
+          "liftM": 0.648,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            1.41376,
+            -1.59424
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3212539181494694,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008773054976479178,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": 39.94694662804114,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.5899999737739563,
+              0.4350000023841858,
+              1.4545099752044677
+            ]
+          },
+          "minimumVerticalClearanceM": 0.07099969917104376,
+          "poseCount": 684
+        },
+        {
+          "stage": 2,
+          "diameterInches": 45,
+          "liftM": 0.726,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.41376,
+            -1.59424
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4192543747545718,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008548506283389212,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -37.115162396687026,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.5899999737739563,
+              0.4350000023841858,
+              1.3648599522209166
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06789514199674251,
+          "poseCount": 688
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.795,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.41376,
+            -1.59424
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4960254677942078,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.00800987149176724,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -39.06859199651265,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.5899999737739563,
+              0.4350000023841858,
+              1.3893099503612518
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06470956102397118,
+          "poseCount": 688
+        }
+      ]
+    },
+    {
+      "id": "bronco-badlands",
+      "bodySha256": "6defa1a919acefbafa1aca1c92f35331629a528f2f28baa833b9fc34dfbd1fd2",
+      "coverageCells": 14495,
+      "previousFormulaOverlapM": 0.5044997042247785,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 39,
+          "liftM": 0.633,
+          "trackExtraM": 0.15000000000000002,
+          "axleOffsetsM": [
+            1.3565124,
+            -1.5924276
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3212539181494694,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008677769706387561,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.7267575263977051,
+              0.49469998478889465,
+              -1.6006518682266235
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06684826991984821,
+          "poseCount": 688
+        },
+        {
+          "stage": 2,
+          "diameterInches": 45,
+          "liftM": 0.712,
+          "trackExtraM": 0.17500000000000002,
+          "axleOffsetsM": [
+            1.3565124,
+            -1.5924276
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4192543747545718,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008651813015669196,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -39.46253179263757,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.6309999823570251,
+              0.4350000023841858,
+              1.3320624182199479
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06677524151945169,
+          "poseCount": 688
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.798,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.3565124,
+            -1.5924276
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4960254677942078,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008872962883636593,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -34.35591538235855,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.6309999823570251,
+              0.4350000023841858,
+              1.3565124193405151
+            ]
+          },
+          "minimumVerticalClearanceM": 0.07062455574617221,
+          "poseCount": 688
+        }
+      ]
+    },
+    {
+      "id": "civic-sport",
+      "bodySha256": "80b8f537227365edb2edf0bc71d212342ccff87f999d8c36781f79a261d133d2",
+      "coverageCells": 13319,
+      "previousFormulaOverlapM": 0.5019992520980198,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 34,
+          "liftM": 0.685,
+          "trackExtraM": 0.07500000000000001,
+          "axleOffsetsM": [
+            1.0668762,
+            -1.6687038
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3998919230269995,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.00880002028220428,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": 7.834195036689463,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.6500000357627869,
+              0.210999995470047,
+              1.044148997719782
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04880011371904963,
+          "poseCount": 688
+        },
+        {
+          "stage": 2,
+          "diameterInches": 42,
+          "liftM": 0.786,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.0668762,
+            -1.6687038
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.5558928837937558,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008199999840317385,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": 14.769121466946368,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.6500000357627869,
+              0.210999995470047,
+              1.0632399102785977
+            ]
+          },
+          "minimumVerticalClearanceM": 0.0500484225714678,
+          "poseCount": 688
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.888,
+          "trackExtraM": 0.17500000000000002,
+          "axleOffsetsM": [
+            1.0668762,
+            -1.6687038
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.697618312673337,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.00860001102939123,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -19.799802838180355,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.6500000357627869,
+              0.210999995470047,
+              1.0632399102785977
+            ]
+          },
+          "minimumVerticalClearanceM": 0.05310626168645671,
+          "poseCount": 692
+        }
+      ]
+    },
+    {
+      "id": "sprinter-2500",
+      "bodySha256": "7d1581b16519d3e4911b4737978c2083d927eba675f7fcf76913c1e973760df3",
+      "coverageCells": 17901,
+      "previousFormulaOverlapM": 0.46029999332427973,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 37,
+          "liftM": 0.617,
+          "trackExtraM": 0.05,
+          "axleOffsetsM": [
+            1.7593056,
+            -1.9059144000000001
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3334006648373768,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008750006675720234,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.7750204205513,
+              0.3930000066757202,
+              -1.905914411100769
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04875000667572038,
+          "poseCount": 664
+        },
+        {
+          "stage": 2,
+          "diameterInches": 44,
+          "liftM": 0.706,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            1.7593056,
+            -1.9059144000000001
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4540727764557984,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008850006675720223,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.7750204205513,
+              0.3930000066757202,
+              -1.905914411100769
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04885000667572037,
+          "poseCount": 668
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.795,
+          "trackExtraM": 0.15000000000000002,
+          "axleOffsetsM": [
+            1.7593056,
+            -1.9059144000000001
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.5500467878678381,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008335855631541711,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.7750204205513,
+              0.3930000066757202,
+              -1.905914411100769
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06165000667572029,
+          "poseCount": 672
+        }
+      ]
+    },
+    {
+      "id": "hummer-ev-suv-3x",
+      "bodySha256": "4d1bacdd49cd7b80810c0a72bd266273fae576bd248f8c2686d2d46fcd1fe281",
+      "coverageCells": 15799,
+      "previousFormulaOverlapM": 0.7627508311929134,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 40,
+          "liftM": 0.902,
+          "trackExtraM": 0.05,
+          "axleOffsetsM": [
+            1.6412718,
+            -1.5769081999999999
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.2970507495516368,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008270676260229037,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": -11.326345104582842,
+            "wheelStage": 2,
+            "surfaceM": [
+              -0.8159999847412109,
+              0.2875800132751465,
+              -1.5193181628067014
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04844064775166057,
+          "poseCount": 888
+        },
+        {
+          "stage": 2,
+          "diameterInches": 45,
+          "liftM": 0.966,
+          "trackExtraM": 0.07500000000000001,
+          "axleOffsetsM": [
+            1.6412718,
+            -1.5769081999999999
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3757300708265852,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008665148665092604,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": -11.373866993952301,
+            "wheelStage": 2,
+            "surfaceM": [
+              -0.8159999847412109,
+              0.2875800132751465,
+              -1.5193181628067014
+            ]
+          },
+          "minimumVerticalClearanceM": 0.048792822405071656,
+          "poseCount": 892
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 1.031,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.6412718,
+            -1.5769081999999999
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4501468231322576,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008859195745291482,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": -11.470101064230168,
+            "wheelStage": 2,
+            "surfaceM": [
+              -0.8159999847412109,
+              0.2875800132751465,
+              -1.5193181628067014
+            ]
+          },
+          "minimumVerticalClearanceM": 0.050120208212849904,
+          "poseCount": 896
+        }
+      ]
+    },
+    {
+      "id": "urus-performante",
+      "bodySha256": "d205778eb7aedce0c92dc82e367341f43e9659f7ea62af150dfa60311aab26cd",
+      "coverageCells": 15343,
+      "previousFormulaOverlapM": 0.6621500056205765,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 38,
+          "liftM": 0.825,
+          "trackExtraM": 0.05,
+          "axleOffsetsM": [
+            1.26252,
+            -1.7434799999999997
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3401760463768015,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008499412448923382,
+          "limiting": {
+            "axle": 1,
+            "side": 1,
+            "steerDegrees": 5.259736351358499,
+            "wheelStage": 2,
+            "surfaceM": [
+              0.6946774375054143,
+              0.20949999992549417,
+              -1.7054800095367433
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04864824228212494,
+          "poseCount": 776
+        },
+        {
+          "stage": 2,
+          "diameterInches": 44,
+          "liftM": 0.901,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            1.26252,
+            -1.7434799999999997
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4421033683698088,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008241472448809017,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": -5.301941905000478,
+            "wheelStage": 2,
+            "surfaceM": [
+              -0.7064516313614384,
+              0.20949999992549417,
+              -1.7054800095367433
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04835711671288978,
+          "poseCount": 780
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.978,
+          "trackExtraM": 0.15000000000000002,
+          "axleOffsetsM": [
+            1.26252,
+            -1.7434799999999997
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.5372873559764098,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.00899225276096327,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": -5.37526270859382,
+            "wheelStage": 3,
+            "surfaceM": [
+              -0.7300000190734863,
+              0.20949999992549417,
+              -1.7054800095367433
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04907440485694392,
+          "poseCount": 784
+        }
+      ]
+    },
+    {
+      "id": "earthcruiser-exp",
+      "bodySha256": "630c2914f1b2d00d7b2687fe3145a6f05ce6971843a2f78fca6b01fee8100840",
+      "coverageCells": 16578,
+      "previousFormulaOverlapM": 0.6992157111401882,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 42,
+          "liftM": 0.848,
+          "trackExtraM": 0.05,
+          "axleOffsetsM": [
+            1.8510250000000001,
+            -1.514475
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.289166921446308,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008866407966912182,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -1.024254560470581,
+              0.24358706176280975,
+              -1.861822484588623
+            ]
+          },
+          "minimumVerticalClearanceM": 0.060284288859811686,
+          "poseCount": 672
+        },
+        {
+          "stage": 2,
+          "diameterInches": 46,
+          "liftM": 0.91,
+          "trackExtraM": 0.07500000000000001,
+          "axleOffsetsM": [
+            1.8510250000000001,
+            -1.514475
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3491598987638316,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008458712219559295,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -1.024254560470581,
+              0.24358706176280975,
+              -1.861822484588623
+            ]
+          },
+          "minimumVerticalClearanceM": 0.057364414927513874,
+          "poseCount": 676
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.97,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            1.8510250000000001,
+            -1.514475
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.406596428800213,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008317051352840332,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -1.024254560470581,
+              0.24358706176280975,
+              -1.861822484588623
+            ]
+          },
+          "minimumVerticalClearanceM": 0.055509480454158044,
+          "poseCount": 676
+        }
+      ]
+    },
+    {
+      "id": "mercedes-g580-ev",
+      "bodySha256": "6959b62a20aae41dabc380b55d7396512748e482f114f3ec005a25c7229593e8",
+      "coverageCells": 13278,
+      "previousFormulaOverlapM": 0.6466336866002076,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 38,
+          "liftM": 0.811,
+          "trackExtraM": 0.07500000000000001,
+          "axleOffsetsM": [
+            1.445,
+            -1.445
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.343424133911547,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008261237228213036,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.714849986632665,
+              0.2505000013113022,
+              -1.4369999980926513
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04826631339979248,
+          "poseCount": 688
+        },
+        {
+          "stage": 2,
+          "diameterInches": 44,
+          "liftM": 0.887,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            1.445,
+            -1.445
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4455984897661949,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008053443935410076,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.714849986632665,
+              0.2505000013113022,
+              -1.4369999980926513
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04805726984226344,
+          "poseCount": 688
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.964,
+          "trackExtraM": 0.15000000000000002,
+          "axleOffsetsM": [
+            1.445,
+            -1.445
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.541013167903707,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008847410406220613,
+          "limiting": {
+            "axle": 1,
+            "side": -1,
+            "steerDegrees": 0,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.714849986632665,
+              0.2505000013113022,
+              -1.4369999980926513
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04885039703590577,
+          "poseCount": 688
+        }
+      ]
+    },
+    {
+      "id": "mercedes-amg-g63",
+      "bodySha256": "c18af74cb80b8e1455901a5fe2dbe3836494309f198f216c1e66ced13245ba94",
+      "coverageCells": 12612,
+      "previousFormulaOverlapM": 0.41726454433728305,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 41,
+          "liftM": 0.547,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.3294,
+            -1.5606000000000002
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.2899572380006818,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.00845845284566138,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": 38.93890571068606,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.644500000834465,
+              0.5999999999701977,
+              1.3770934705147375
+            ]
+          },
+          "minimumVerticalClearanceM": 0.07123219066971048,
+          "poseCount": 700
+        },
+        {
+          "stage": 2,
+          "diameterInches": 46,
+          "liftM": 0.62,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.3294,
+            -1.5606000000000002
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3663510698566599,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008903663211997759,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": 39.93733919044724,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.644500000834465,
+              0.5999999999701977,
+              1.3523999233637098
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06799233599876786,
+          "poseCount": 700
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.682,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            1.3294,
+            -1.5606000000000002
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.4245194636370935,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.0085485249199998,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": 38.83792213287076,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.644500000834465,
+              0.5999999999701977,
+              1.3277063762126824
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06529101422389183,
+          "poseCount": 696
+        }
+      ]
+    },
+    {
+      "id": "mercedes-amg-g63-6x6",
+      "bodySha256": "cafba4155da402afb4bf2e8bec7cbd172d5de34b14979634df1339f622323a8d",
+      "coverageCells": 18228,
+      "previousFormulaOverlapM": 0.4434869758613078,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 42,
+          "liftM": 0.582,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            2.1,
+            -1.02,
+            -2.1668000000000003
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.289166921446308,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008222790332909735,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -39.18677431500814,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.637502593741102,
+              0.6003271486624232,
+              2.0416982002978057
+            ]
+          },
+          "minimumVerticalClearanceM": 0.07340973397629402,
+          "poseCount": 696
+        },
+        {
+          "stage": 2,
+          "diameterInches": 46,
+          "liftM": 0.639,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            2.1,
+            -1.02,
+            -2.2683999999999997
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.3491598987638316,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008054044235670355,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": 39.10750167779606,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.637502593741102,
+              0.6003271486624232,
+              2.141320845765888
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06832321042260214,
+          "poseCount": 696
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.696,
+          "trackExtraM": 0.1,
+          "axleOffsetsM": [
+            2.1,
+            -1.02,
+            -2.37
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.406596428800213,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.00854837185231816,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -38.05484433193435,
+            "wheelStage": 0,
+            "surfaceM": [
+              -0.637502593741102,
+              0.6003271486624232,
+              2.0666038616648263
+            ]
+          },
+          "minimumVerticalClearanceM": 0.06683638766978683,
+          "poseCount": 696
+        }
+      ]
+    },
+    {
+      "id": "subaru-22b-sti",
+      "bodySha256": "82a1a1b06b7913bcf8680e49d342141e7e2d98c36e24eeef11944ddcbc893061",
+      "coverageCells": 11723,
+      "previousFormulaOverlapM": 0.5491999959959228,
+      "fits": [
+        {
+          "stage": 1,
+          "diameterInches": 33,
+          "liftM": 0.732,
+          "trackExtraM": 0.07500000000000001,
+          "axleOffsetsM": [
+            1.0584,
+            -1.4616
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.407127376614294,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008600009732168123,
+          "limiting": {
+            "axle": 0,
+            "side": 1,
+            "steerDegrees": 9.871006205307701,
+            "wheelStage": 0,
+            "surfaceM": [
+              0.6398526492871737,
+              0.15000000044703493,
+              1.0832289781495146
+            ]
+          },
+          "minimumVerticalClearanceM": 0.048600000510567065,
+          "poseCount": 688
+        },
+        {
+          "stage": 2,
+          "diameterInches": 42,
+          "liftM": 0.846,
+          "trackExtraM": 0.125,
+          "axleOffsetsM": [
+            1.0584,
+            -1.4616
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.587453774738423,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.008300000450332523,
+          "limiting": {
+            "axle": 0,
+            "side": -1,
+            "steerDegrees": -6.870810525029366,
+            "wheelStage": 3,
+            "surfaceM": [
+              -0.6754000186920166,
+              0.15000000044703493,
+              1.0806333640522428
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04830000054452677,
+          "poseCount": 696
+        },
+        {
+          "stage": 3,
+          "diameterInches": 50,
+          "liftM": 0.948,
+          "trackExtraM": 0.2,
+          "axleOffsetsM": [
+            1.0584,
+            -1.4616
+          ],
+          "marginM": 0.04,
+          "maximumWidthScale": 1.732054067852905,
+          "maximumSuspensionStage": 3,
+          "maximumWheelStage": 3,
+          "clearanceM": 0.00870000063936227,
+          "limiting": {
+            "axle": 0,
+            "side": 1,
+            "steerDegrees": 13.749853824525037,
+            "wheelStage": 1,
+            "surfaceM": [
+              0.6665131763408059,
+              0.15000000044703493,
+              1.1065895050249606
+            ]
+          },
+          "minimumVerticalClearanceM": 0.04870004055957444,
+          "poseCount": 704
+        }
+      ]
+    }
+  ]
+}

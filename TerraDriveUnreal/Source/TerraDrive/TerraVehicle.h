@@ -21,6 +21,11 @@ class UMaterialInstanceDynamic;
 class UPhysicalMaterial;
 class UProceduralMeshComponent;
 struct FTerraDamageVisualCache;
+struct FTerraRolledBodySupport {
+  FVector BodyLocalPoint=FVector::ZeroVector,SurfaceLocalPoint=FVector::ZeroVector,SurfaceLocalNormal=FVector::UpVector;
+  TWeakObjectPtr<UPrimitiveComponent> Surface;
+  float Time=0;
+};
 struct FTerraBodyGroundContact {
   FVector Point=FVector::ZeroVector,Normal=FVector::UpVector,Tangent=FVector::ForwardVector;
   float ImpulseNS=0,Speed=0,Alignment=0;
@@ -54,7 +59,7 @@ public:
   virtual void BeginPlay() override;
   virtual void Tick(float Dt) override;
   virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-  void SelectVehicle(int Index);
+  void SelectVehicle(int Index, bool StoreCurrentProfile = true);
   void TeleportZone(int Index);
   void TeleportRoute(int Index);
   void ToggleLocker(bool Front);
@@ -104,8 +109,11 @@ public:
   UPROPERTY() TObjectPtr<UStaticMeshComponent> Protection;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> TrailEquipment;
   static constexpr int MaxWheels=6;
-  static constexpr int VehicleCount=10;
+  static constexpr int VehicleCount=12;
   FTerraWheel WheelState[MaxWheels];
+  // Diagnostic budget for the rolled tire contact solver; zero in normal driving.
+  int RolledTireCandidates=0,RolledTireTraces=0,RolledTireContacts=0;
+  float RolledTireImpulseNS=0;
   int WheelCount()const;
   int AxleCount()const{return WheelCount()/2;}
   float AxleOffsetM(int Axle)const;
@@ -114,6 +122,8 @@ public:
   bool TandemLockActive()const;
   float WheelShaftCouplingNm(int Wheel)const;
   float LastTandemCouplingNm=0;
+  bool RecoverInPlace();
+  float TireKitLift=0;
   FString VehicleName, SurfaceName, Notice;
   float Mass = 2100, Speed = 0, RPM = 700, Steer = 0, Throttle = 0, Brake = 0,
         Pressure = 35, Damage = 0, WinchTension = 0;
@@ -123,6 +133,9 @@ public:
        DescentAssist = false;
   bool CenterLocked=false;
   bool HasCenterLocker() const;
+  bool HasFactoryCenterLocker() const;
+  int SavedVehicleSelection() const {return LastVehicle;}
+  void RestoreValidationSelection(int Index){if(AutoTest&&Index>=0&&Index<VehicleCount)LastVehicle=Index;}
   bool CenterLockActive() const;
   bool CenterLockUpgradeAvailable() const;
   bool HasRigidTransfer() const;
@@ -193,7 +206,7 @@ public:
   float PressureTarget=35,BatterySOC=.75f,LastRegenPowerW=0;
   bool EnergyUsageEnabled=true;
   float FuelFraction=.75f,LastFuelGPH=0,LastElectricDrawW=0;
-  float FuelProfiles[VehicleCount]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
+  float FuelProfiles[VehicleCount]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
   bool HasPropulsionEnergy()const{return TerraSim::PropulsionEnergyAvailable(EnergyUsageEnabled,IsElectric()?BatterySOC:FuelFraction);}
   float FuelCapacityGallons()const;
   FString EnergyDescription()const;
@@ -212,7 +225,7 @@ public:
   FString PowertrainDescription() const;
   FString TireAirDescription() const;
   float PressureProfiles[VehicleCount]={};
-  float BatteryProfiles[VehicleCount]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
+  float BatteryProfiles[VehicleCount]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
   FString DriveDescription() const;
   int UpgradeStage(int Part) const { return Builds[VehicleIndex].Stage[Part]; }
   bool HasElectrical() const { return VehicleIndex != 2||IsElectric(); }
@@ -220,17 +233,18 @@ public:
   float SuspensionTravel() const { return .46f+Tuning.Travel; }
   float TireDiameter() const { return Radius*200/2.54f; }
   float GripMultiplier() const { return Tuning.Grip; }
-  float WheelInertia() const { return 3*Tuning.WheelInertia+Tuning.RotatingMass; }
+  float WheelInertia() const { return Number(TEXT("wheelInertia"),3.f)*Tuning.WheelInertia*FMath::Pow(Tuning.TireRadius,2.6f)+Tuning.RotatingMass; }
   float ImpactDamage(float Impulse) const;
   void OrbitGarageCamera(float YawDelta,float PitchDelta);
   void ZoomGarageCamera(float Steps);
   void SetGarageView(int View);
+  void SetNearCamera(bool Near){NearCamera=Near;}
   TSharedPtr<STerraGarage> GetGarageWidget() const { return GarageWidget; }
   void UpdateWheelVisuals();
   FVector GarageViewState() const { return FVector(GarageYaw,GaragePitch,GarageDistance); }
   float ExpectedRideHeight() const { return CG+Tuning.Lift+Radius-Number(TEXT("tireRadius"),.42f); }
   float BumpTravel(bool Front) const;
-  void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0;BodyGroundContactCount=0;PendingBodyGroundContacts.Reset(); }
+  void ResetContactTelemetry() { TerrainBodyHits=ObjectBodyHits=0;TerrainImpactMPS=ObjectImpactMPS=0;NextBodyDiagnosticTime=0;BodyGroundContactCount=0;PendingBodyGroundContacts.Reset();RolledBodySupports.Reset(); }
   TerraSim::UpgradeSetup Builds[VehicleCount];
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> BrakeLamps;
   UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> ReverseLamps;
@@ -242,13 +256,17 @@ public:
 private:
   TerraControls::Bindings Controls;
   TSharedPtr<STerraPauseMenu> PauseMenuWidget;
-  bool RequireControlRelease=false;
+  bool RequireControlRelease=false,RecoveryBrakeHold=false;
   TSharedPtr<FTerraDamageVisualCache> DamageVisualCache;
   bool PrepareDamageMesh();
   void ConfigureCoachworkCollision();
   float NextBodyDiagnosticTime=0;
   TArray<FTerraBodyGroundContact> PendingBodyGroundContacts;
   void UpdateBodyGroundGrip();
+  void UpdateRolledTireContacts(float Dt);
+  void CacheRolledBodyContact(UPrimitiveComponent* Other,const FHitResult& Hit);
+  TArray<FTerraRolledBodySupport> RolledBodySupports;
+  void RolledTireProfile(int Wheel,TArray<FVector2D>& Profile) const;
   void QueueBodyGroundContact(FVector Impulse,const FHitResult& Hit);
   void ProcessBodyGroundContacts(float Dt);
   TSharedPtr<FJsonObject> Spec;

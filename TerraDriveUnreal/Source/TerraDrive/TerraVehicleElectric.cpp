@@ -49,11 +49,12 @@ FString ATerraVehicle::PowertrainDescription() const {
 float ATerraVehicle::WheelPressure(int Index) const {
   const float Front=Number(TEXT("stockPSIFront"),Number(TEXT("stockPSI"),35));
   const float Rear=Number(TEXT("stockPSIRear"),Front);
-  return FMath::Clamp(Pressure*(Index>=2?Rear/FMath::Max(20.f,Front):1.f),8.f,65.f);
+  return FMath::Clamp(Pressure*(Index>=2?Rear/FMath::Max(8.f,Front):1.f),8.f,65.f);
 }
 TerraSim::TirePressureBounds ATerraVehicle::TireAirBounds() const {
+  if(Number(TEXT("monsterTruck"),0)>0)return {15.f,30.f,Number(TEXT("stockPSIFront"),23.f)};
   const float StockMass=Number(TEXT("mass"),2100),Front=Number(TEXT("stockPSIFront"),Number(TEXT("stockPSI"),35));
-  const float Rear=Number(TEXT("stockPSIRear"),Front),Scale=Rear/FMath::Max(20.f,Front);
+  const float Rear=Number(TEXT("stockPSIRear"),Front),Scale=Rear/FMath::Max(8.f,Front);
   const auto F=TerraSim::PressureBounds(Front,Mass*9.81f*FrontWeight*.5f,StockMass*9.81f*FrontWeight*.5f);
   const auto R=TerraSim::PressureBounds(Rear,Mass*9.81f*AxleLoadFraction(1)*.5f,StockMass*9.81f*AxleLoadFraction(1)*.5f);
   return {FMath::Max(F.MinimumPSI,R.MinimumPSI/Scale),FMath::Min(F.MaximumPSI,R.MaximumPSI/Scale),F.RoadPSI};
