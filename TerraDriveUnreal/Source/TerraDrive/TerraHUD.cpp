@@ -8,7 +8,7 @@
 
 void ATerraHUD::DrawHUD() {
   Super::DrawHUD();
-  VisibleStatusIds.Reset();LastStatusBottom=LastStatusTop=0;
+  VisibleStatusIds.Reset();VisibleNotice.Reset();LastStatusBottom=LastStatusTop=0;
   auto* V=Cast<ATerraVehicle>(GetOwningPawn());
   if(!bShowHUD||!V||!Canvas||V->Garage||V->PauseMenuOpen)return;
   using A=TerraControls::Action;
@@ -100,9 +100,10 @@ void ATerraHUD::DrawHUD() {
   }
   const double Now=GetWorld()->GetRealTimeSeconds();
   if(LastNotice!=V->Notice){LastNotice=V->Notice;NoticeChangedAt=Now;}
-  const bool Recent=Now-NoticeChangedAt<5;
-  FString Notice=Recent&&LastNotice==ATerraVehicle::RecoveryBlockedNotice?LastNotice:
+  const bool RecoveryBlocked=LastNotice==ATerraVehicle::RecoveryBlockedNotice;
+  const bool Recent=Now-(RecoveryBlocked?V->RecoveryBlockedAt:NoticeChangedAt)<5;
+  VisibleNotice=Recent&&RecoveryBlocked?LastNotice:
     V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):!V->HasPropulsionEnergy()?
       TEXT("EMPTY  /  Stop, then charge or refuel [")+V->ControlLabel(A::Garage)+TEXT("] or Esc"):(Recent?LastNotice:FString());
-  if(!Notice.IsEmpty())Text(Notice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
+  if(!VisibleNotice.IsEmpty())Text(VisibleNotice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
 }

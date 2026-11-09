@@ -143,5 +143,44 @@
         "pass": true
       }
     ]
+  },
+  "reviewFixes": {
+    "priorHead": "4fb27970f2557744f6e9f39dd1ff4878f4524d4f",
+    "executableSha256": "0d822cf2fa71cfa31188cbc072550cccec2f5e9dae91e07264293e8d1c1f0c4e",
+    "sourceInputsSha256": "395fff3b3477323e8b030b68300f64cedd902e1e48f302ed9762836dc822c095",
+    "sourceInputCount": 221,
+    "scope": "New paced fixed 20 Hz functional checks against the same cooked content listed above. The rollover run covers the ten Grave Digger poses.",
+    "nativeChecks": 290,
+    "runtimeErrors": 0,
+    "nativeSuites": {
+      "GraveRecovery": {
+        "checks": 34,
+        "elapsedSeconds": 247.15,
+        "peakTemperatureC": 51.92,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/GraveRecovery/receipt.json"
+      },
+      "Recovery": {
+        "checks": 48,
+        "elapsedSeconds": 66.93,
+        "peakTemperatureC": 52.1,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/Recovery/receipt.json"
+      },
+      "Rollover": {
+        "checks": 91,
+        "elapsedSeconds": 102.09,
+        "peakTemperatureC": 52.27,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/Rollover/receipt.json"
+      },
+      "Ruts": {
+        "checks": 117,
+        "elapsedSeconds": 58.24,
+        "peakTemperatureC": 53.67,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/Ruts/receipt.json"
+      }
+    },
+    "summitTakeoff": { "axleHeightSpreadCM": 82.25, "recoveryShiftCM": 0, "settledTireContacts": 4 },
+    "graniteTrials": { "orangeCapAboveProbedRockCM": 150, "blueCapAboveProbedRockCM": 150, "cliffRecoveryShiftCM": 200 },
+    "blockedRecoveryHud": "The first blocked R press showed the restart instruction. It expired to the rollover prompt, then reappeared on the next blocked R press.",
+    "initialBuildAttempt": "Saved/GraveRecovery/ReviewFixes1/build.log records the sandboxed build wrapper waiting on its lock before compilation."
   }
 }

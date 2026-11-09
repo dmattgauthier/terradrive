@@ -279,9 +279,11 @@ constexpr float TestFuel=.43f,TestBattery=.37f,TestRouteTime=38.25f;
 constexpr int TestRoute=4,TestGate=3;
 struct FGraveRecovery {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
+  TWeakObjectPtr<AActor> Blocker;
   FVector Before=FVector::ZeroVector,DriveStart=FVector::ZeroVector;
   FRotator DropRotation;
   float PadZ=0,Time=0,Total=0,Damage=0;
+  double NoticeShownAt=0;
   int Trial=0,Phase=0;
   bool PrimedReleaseGate=false;
   void Next(int P){Phase=P;Time=0;}
@@ -314,6 +316,46 @@ float GraniteTireGap(ATerraVehicle* V){
   }
   return Gap;
 }
+
+bool BeginSummitRecovery(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
+  V->TeleportZone(6);
+  const FVector Center(-625,18300,0);
+  FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraSummitRecoveryFixture),true,V);
+  FHitResult Axles[2];
+  bool HasRamp=true;
+  for(int I=0;I<2;++I){
+    const FVector XY=Center+FVector(V->AxleOffsetM(I)*100,0,0);
+    HasRamp&=V->GetWorld()->LineTraceSingleByChannel(Axles[I],XY+FVector(0,0,6000),XY-FVector(0,0,6000),ECC_Visibility,Query);
+  }
+  const float Spread=FMath::Abs(Axles[0].ImpactPoint.Z-Axles[1].ImpactPoint.Z);
+  HasRamp&=Axles[0].ImpactNormal.Z>.95&&Axles[0].ImpactNormal.Equals(Axles[1].ImpactNormal,.01)&&Spread>65;
+  Check(TEXT("Summit take-off has a continuous grade with more than 65 cm of axle height spread"),HasRamp,Spread);
+  if(!HasRamp)return false;
+  const FVector Before(Center.X,Center.Y,(Axles[0].ImpactPoint.Z+Axles[1].ImpactPoint.Z)*.5+160);
+  PlaceGrave(V,Before,FRotator(0,0,90));
+  const bool Recovered=V->RecoverInPlace();
+  const float Shift=FVector::Dist2D(Before,V->GetActorLocation());
+  Check(TEXT("Summit take-off recovers at the exact XY and heading"),Recovered&&Shift<.1f&&
+    V->GetActorRotation().IsNearlyZero(.1),Shift);
+  return true;
+}
+
+bool BlockGraveLanding(ATerraVehicle* V){
+  auto* Actor=V->GetWorld()->SpawnActor<AActor>();
+  if(!Actor)return false;
+  Grave.Blocker=Actor;
+  auto* Box=NewObject<UBoxComponent>(Actor);
+  Actor->SetRootComponent(Box);
+  Box->SetCollisionObjectType(ECC_WorldStatic);
+  Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+  Box->SetCollisionResponseToAllChannels(ECR_Block);
+  Box->SetGenerateOverlapEvents(false);
+  // Cover the bounded recovery search while leaving the rolled truck in place.
+  Box->SetBoxExtent(FVector(1800,1800,1000));
+  Box->SetWorldLocation(V->GetActorLocation());
+  Box->RegisterComponent();
+  return true;
+}
 }
 
 bool TickGrave(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
@@ -324,7 +366,10 @@ bool TickGrave(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,f
   const FString Name=Shoulder?TEXT("Granite shoulder"):HoldDrive?TEXT("held-control retry"):TEXT("buried quarry tires");
   auto Test=[&](const TCHAR* Detail,bool Pass,float Value=0){Check(TEXT("Grave Digger ")+Name+TEXT(" ")+Detail,Pass,Value);};
   auto* PC=Cast<APlayerController>(V->GetController());
-  if(!PC||Grave.Total>65){Test(TEXT("fixture completes with a native controller"),false,Grave.Total);return true;}
+  if(!PC||Grave.Total>65){
+    if(Grave.Blocker.IsValid())Grave.Blocker->Destroy();
+    Test(TEXT("fixture completes with a native controller"),false,Grave.Total);return true;
+  }
   if(Grave.Phase==0){
     V->AutoTest=true;V->SetGarage(true);V->SelectVehicle(GraveModel);V->ResetUpgrades(false);V->SetGarage(false);
     V->TeleportZone(8);StopInput(V);
@@ -334,6 +379,19 @@ bool TickGrave(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,f
     const bool Wall=GraniteFloor(V,FVector(QuarryX,-27750,0),Slope)&&Slope.ImpactPoint.Z>Flat.ImpactPoint.Z+170;
     Test(TEXT("uses the cooked Granite Trials pad and real rock shoulder"),Pad&&Wall,Slope.ImpactPoint.Z-Flat.ImpactPoint.Z);
     if(!Pad||!Wall)return true;
+    if(Grave.Trial==0){
+      // The first Axlebreaker gate stands on the flat part of the raised pad.
+      for(double Y:{-28375.,-27825.}){
+        const FVector Gate(13100,Y,Flat.ImpactPoint.Z);
+        FHitResult Cap,Rock;int32 Traces=0;
+        const bool HasCap=GraniteFloor(V,Gate,Cap);
+        const bool HasRock=V->Terrain->TraceRaisedGround(Gate-FVector(0,0,15),Rock,Traces);
+        const float Gap=Cap.ImpactPoint.Z-Rock.ImpactPoint.Z;
+        Check(Y<-28100?TEXT("raised ground probe passes through the orange gate cap to the rock below"):
+          TEXT("raised ground probe passes through the blue gate cap to the rock below"),
+          HasCap&&HasRock&&FMath::IsNearlyEqual(Gap,150.f,1.f)&&Rock.ImpactNormal.Z>.95,Gap);
+      }
+    }
     Grave.PadZ=Flat.ImpactPoint.Z;
     const FVector FlatPose(QuarryX,PadY,Grave.PadZ+V->ExpectedRideHeight()*100+15);
     PlaceGrave(V,FlatPose,FRotator::ZeroRotator);
@@ -412,8 +470,43 @@ bool TickGrave(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,f
     const float Motion=FVector::Dist2D(V->GetActorLocation(),Grave.DriveStart);
     Test(TEXT("drives away on the normal forward control"),!V->Overturned&&Motion>150&&FMath::Abs(V->Speed)>1,Motion);
     V->AutoTest=true;StopInput(V);
-    if(++Grave.Trial==3)return true;
-    Grave.Next(0);
+    Grave.Next(++Grave.Trial==3?8:0);
+  }else if(Grave.Phase==8){
+    if(!BeginSummitRecovery(V,Check))return true;
+    Grave.Next(9);
+  }else if(Grave.Phase==9&&Grave.Time>2.5f){
+    Check(TEXT("Summit take-off recovery settles upright on the ramp"),!V->Overturned&&V->GetActorUpVector().Z>.9&&V->ContactCount>=3,V->ContactCount);
+    V->TeleportZone(8);
+    PlaceGrave(V,FVector(QuarryX,PadY,Grave.PadZ+160),Grave.DropRotation);
+    if(!BlockGraveLanding(V)){
+      Check(TEXT("blocked recovery fixture spawns its query obstruction"),false,0);return true;
+    }
+    Grave.Next(10);
+  }else if(Grave.Phase==10&&Grave.Time>1.f){
+    V->AutoTest=false;
+    TestKey(PC,V->ControlKey(A::Recover),IE_Pressed);
+    Grave.Next(11);
+  }else if(Grave.Phase>=11){
+    const auto* HUD=Cast<ATerraHUD>(PC->GetHUD());
+    if(Grave.Phase==11&&Grave.Time>.24f){
+      TestKey(PC,V->ControlKey(A::Recover),IE_Released);
+      Check(TEXT("first blocked recovery shows the restart instruction"),V->Overturned&&HUD&&
+        HUD->VisibleNotice==ATerraVehicle::RecoveryBlockedNotice,0);
+      Grave.NoticeShownAt=V->GetWorld()->GetRealTimeSeconds();
+      Grave.Next(12);
+    }else if(Grave.Phase==12&&V->GetWorld()->GetRealTimeSeconds()-Grave.NoticeShownAt>5.1){
+      Check(TEXT("blocked recovery notice expires back to the rollover prompt"),HUD&&
+        HUD->VisibleNotice.StartsWith(TEXT("ROLLED OVER")),0);
+      TestKey(PC,V->ControlKey(A::Recover),IE_Pressed);
+      Grave.Next(13);
+    }else if(Grave.Phase==13&&Grave.Time>.24f){
+      TestKey(PC,V->ControlKey(A::Recover),IE_Released);
+      Check(TEXT("second blocked recovery shows the same restart instruction again"),V->Overturned&&HUD&&
+        HUD->VisibleNotice==ATerraVehicle::RecoveryBlockedNotice,0);
+      if(Grave.Blocker.IsValid())Grave.Blocker->Destroy();
+      V->AutoTest=true;StopInput(V);
+      return true;
+    }
   }
   return false;
 }

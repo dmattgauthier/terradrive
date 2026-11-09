@@ -126,6 +126,7 @@ public:
   float LastTandemCouplingNm=0;
   bool RecoverInPlace();
   static constexpr const TCHAR* RecoveryBlockedNotice=TEXT("No safe recovery nearby. Use Restart route in the pause menu.");
+  double RecoveryBlockedAt=0;
   float TireKitLift=0;
   FString VehicleName, SurfaceName, Notice;
   float Mass = 2100, Speed = 0, RPM = 700, Steer = 0, Throttle = 0, Brake = 0,

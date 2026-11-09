@@ -351,6 +351,7 @@ bool ATerraVehicle::RecoverInPlace() {
   auto FindLanding=[&](const FVector& Center){
     if(TerraSim::OutsideProvingGround(Center.X,Center.Y,0))return false;
     float Highest=-UE_BIG_NUMBER,Lowest=UE_BIG_NUMBER;
+    FVector SupportNormal=FVector::ZeroVector;
     FVector Tires[MaxWheels];
     for(int I=0;I<WheelCount();++I){
       const FVector Offset=Rotation.RotateVector(FVector(AxleOffsetM(I/2)*100,(I%2?1:-1)*Track*50,0));
@@ -361,7 +362,19 @@ bool ATerraVehicle::RecoverInPlace() {
       Tires[I]=Mount-Up*Support.Distance;
       Highest=FMath::Max(Highest,float(Tires[I].Z));
       Lowest=FMath::Min(Lowest,float(Tires[I].Z));
-      if(Highest-Lowest>HeightSpread)return false;
+      SupportNormal+=Support.Normal;
+    }
+    if(Highest-Lowest>HeightSpread){
+      // Use the measured contact normals to account for a continuous grade.
+      // Fitting a plane through the wheel heights alone can hide a ledge.
+      const FVector SlopeNormal=SupportNormal/SupportNormal.Z;
+      double HighResidual=-UE_BIG_NUMBER,LowResidual=UE_BIG_NUMBER;
+      for(int I=0;I<WheelCount();++I){
+        const double Residual=FVector::DotProduct(Tires[I]-Tires[0],SlopeNormal);
+        HighResidual=FMath::Max(HighResidual,Residual);
+        LowResidual=FMath::Min(LowResidual,Residual);
+      }
+      if(HighResidual-LowResidual>HeightSpread)return false;
     }
     const FVector Landing(Center.X,Center.Y,Highest+RideCM-RadiusCM);
     // Check the welded coachwork at placement and just above loaded height.
@@ -392,7 +405,7 @@ bool ATerraVehicle::RecoverInPlace() {
       if(Clear)break;
     }
   }
-  if(!Clear){Notice=RecoveryBlockedNotice;return false;}
+  if(!Clear){Notice=RecoveryBlockedNotice;RecoveryBlockedAt=GetWorld()->GetRealTimeSeconds();return false;}
   Terrain->BreakTireMarks();
   Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
   SetActorLocationAndRotation(Position,Upright,false,nullptr,ETeleportType::TeleportPhysics);
