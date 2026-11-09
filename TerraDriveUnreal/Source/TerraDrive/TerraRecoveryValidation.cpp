@@ -9,6 +9,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
+#include "InputKeyEventArgs.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
 #include "Misc/FileHelper.h"
@@ -226,7 +227,6 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     S.Next(10);
   }else if(S.Phase==10&&S.Time>.04f){
     const FVector Before=V->GetActorLocation();const FQuat BeforeQ=V->GetActorQuat();
-    const FVector Base=S.Base;const FQuat Upright=S.Upright;
     Test(TEXT("collision setup independently proves the intended obstruction"),S.FixtureValid,S.Trial);
     // A non-default state makes accidental spawn/repair/refill/reset detectable.
     V->RouteIndex=0;V->GateIndex=1;V->RouteTime=38.25f;V->FuelFraction=.43f;V->BatterySOC=.37f;
@@ -234,15 +234,15 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     const auto Damage=V->StructuralDamage;const float DamageAmount=V->Damage;
     const auto Soil=V->Terrain->Sample(S.Sentinel);const int Marks=V->Terrain->BodyMarkCount();
     S.Recovered=V->RecoverInPlace();const FVector After=V->GetActorLocation();
-    Test(TEXT("returns the expected success or obstruction result"),S.FixtureValid&&(S.Recovered==(S.Trial!=3)),S.Recovered?1:0);
+    Test(TEXT("recovers even with the physical post present"),S.FixtureValid&&S.Recovered,S.Recovered?1:0);
     const double YawError=FMath::Abs(FMath::FindDeltaAngleDegrees(BeforeQ.GetForwardVector().Rotation().Yaw,V->GetActorRotation().Yaw));
-    Test(TEXT("preserves XY and heading or leaves the entire trapped pose unchanged"),
-      S.Recovered?FVector::Dist2D(Before,After)<.1f&&V->GetActorUpVector().Z>.999f&&YawError<.1:
-        Before.Equals(After,.001f)&&BeforeQ.Equals(V->GetActorQuat(),.00001f),FVector::Dist2D(Before,After));
+    const float Shift=FVector::Dist2D(Before,After);
+    Test(TEXT("keeps exact XY when clear or moves nearby around the post, with the same heading"),
+      S.Recovered&&(S.Trial<2?Shift<.1f:Shift>=99.f&&Shift<=1201.f)&&V->GetActorUpVector().Z>.999f&&YawError<.1,Shift);
     Test(TEXT("retains route gate and elapsed challenge time"),V->RouteIndex==0&&V->GateIndex==1&&V->RouteTime==38.25f,V->RouteTime);
     Test(TEXT("retains visible damage and both energy reserves"),V->Damage==DamageAmount&&V->StructuralDamage.Zones==Damage.Zones&&V->StructuralDamage.Events==Damage.Events&&V->DamageEventCount==7&&V->FuelFraction==.43f&&V->BatterySOC==.37f,V->Damage);
     Test(TEXT("does not reset soil deformation or existing body marks"),SameSoil(Soil,V->Terrain->Sample(S.Sentinel))&&V->Terrain->BodyMarkCount()==Marks,Marks);
-    Test(TEXT("clears every active hull on success or remains blocked when trapped"),S.Recovered?!ActualBlocked(V,After,V->GetActorQuat()):S.FixtureValid&&ActualBlocked(V,Base,Upright,true),After.Z-Before.Z);
+    Test(TEXT("clears every active hull with the obstruction present"),S.Recovered&&!ActualBlocked(V,After,V->GetActorQuat()),After.Z-Before.Z);
     S.Next(4);
   }else if(S.Phase==4&&S.Time>1.f){
     // Let the ordinary camera lag settle after a successful upward retry.
@@ -250,14 +250,12 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     float CameraGap=0;const bool CameraClear=CameraClearsTerrainAndFramesVehicle(V,CameraGap);
     Test(TEXT("after recovery camera stays above terrain and frames the vehicle clear of the HUD"),CameraClear,CameraGap);
     Capture(*FString::Printf(TEXT("native-recovery-%d-after.png"),S.Trial));S.Next(5);
-  }else if(S.Phase==5&&S.Time>.3f){
-    // Preserve the capture with the obstruction in place, then remove only
-    // the runtime fixture so successful recoveries settle onto normal terrain.
-    RemovePost();S.Next(6);
-  }else if(S.Phase==6&&S.Time>3){
-    Test(TEXT("finishes supported upright or safely remains rolled after rejection"),S.Recovered?V->GetActorUpVector().Z>.9f&&V->ContactCount>=3:V->Overturned,V->ContactCount);
+  }else if(S.Phase==5&&S.Time>3){
+    Test(TEXT("finishes supported upright without removing the obstruction"),
+      S.Recovered&&!V->Overturned&&V->GetActorUpVector().Z>.9f&&V->ContactCount>=3,V->ContactCount);
+    RemovePost();
     if(++S.Trial>=CaseCount){
-      RemovePost();Check(TEXT("local recovery removes all runtime obstruction fixtures"),!S.PostActor.IsValid()&&!S.Post.IsValid(),0);
+      Check(TEXT("local recovery removes all runtime obstruction fixtures"),!S.PostActor.IsValid()&&!S.Post.IsValid(),0);
       // Request recovery before physics changes this steep, inverted pose.
       // The nose has a heading even though the right-vector fallback is reversed.
       constexpr double Heading=37;
@@ -270,6 +268,245 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
       return true;
     }
     S.Next(0);
+  }
+  return false;
+}
+
+namespace {
+constexpr int GraveModel=10;
+constexpr float QuarryX=15000,PadY=-26900,ShoulderY=-27565;
+constexpr float TestFuel=.43f,TestBattery=.37f,TestRouteTime=38.25f;
+constexpr int TestRoute=4,TestGate=3;
+struct FGraveRecovery {
+  TWeakObjectPtr<ATerraVehicle> Vehicle;
+  TWeakObjectPtr<AActor> Blocker;
+  FVector Before=FVector::ZeroVector,DriveStart=FVector::ZeroVector;
+  FRotator DropRotation;
+  float PadZ=0,Time=0,Total=0,Damage=0;
+  double NoticeShownAt=0;
+  int Trial=0,Phase=0;
+  bool PrimedReleaseGate=false;
+  void Next(int P){Phase=P;Time=0;}
+} Grave;
+
+bool GraniteFloor(ATerraVehicle* V,const FVector& XY,FHitResult& Hit){
+  FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraGraveRecoveryFixture),true,V);
+  if(!V->GetWorld()->LineTraceSingleByChannel(Hit,XY+FVector(0,0,6000),XY-FVector(0,0,6000),ECC_Visibility,Query))return false;
+  auto* Mesh=Cast<UStaticMeshComponent>(Hit.GetComponent());
+  return Mesh&&Mesh->GetStaticMesh()&&Mesh->GetStaticMesh()->GetName()==TEXT("granite_trials");
+}
+
+void TestKey(APlayerController* PC,const FKey& Key,EInputEvent Event){
+  PC->InputKey(FInputKeyEventArgs::CreateSimulated(Key,Event,Event==IE_Released?0.f:1.f));
+}
+
+void PlaceGrave(ATerraVehicle* V,const FVector& Position,const FRotator& Rotation){
+  V->SetActorLocationAndRotation(Position,Rotation,false,nullptr,ETeleportType::TeleportPhysics);
+  V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);
+  V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+  V->ResetContactTelemetry();
+}
+
+float GraniteTireGap(ATerraVehicle* V){
+  float Gap=UE_BIG_NUMBER;
+  for(const FVector& Local:TerraTireProbeValidation::ActorLocalPoints(V)){
+    const FVector P=V->GetActorTransform().TransformPosition(Local);
+    FHitResult Hit;
+    if(GraniteFloor(V,P,Hit))Gap=FMath::Min(Gap,float(P.Z-Hit.ImpactPoint.Z));
+  }
+  return Gap;
+}
+
+bool BeginSummitRecovery(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
+  V->TeleportZone(6);
+  const FVector Center(-625,18300,0);
+  FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraSummitRecoveryFixture),true,V);
+  FHitResult Axles[2];
+  bool HasRamp=true;
+  for(int I=0;I<2;++I){
+    const FVector XY=Center+FVector(V->AxleOffsetM(I)*100,0,0);
+    HasRamp&=V->GetWorld()->LineTraceSingleByChannel(Axles[I],XY+FVector(0,0,6000),XY-FVector(0,0,6000),ECC_Visibility,Query);
+  }
+  const float Spread=FMath::Abs(Axles[0].ImpactPoint.Z-Axles[1].ImpactPoint.Z);
+  HasRamp&=Axles[0].ImpactNormal.Z>.95&&Axles[0].ImpactNormal.Equals(Axles[1].ImpactNormal,.01)&&Spread>65;
+  Check(TEXT("Summit take-off has a continuous grade with more than 65 cm of axle height spread"),HasRamp,Spread);
+  if(!HasRamp)return false;
+  const FVector Before(Center.X,Center.Y,(Axles[0].ImpactPoint.Z+Axles[1].ImpactPoint.Z)*.5+160);
+  PlaceGrave(V,Before,FRotator(0,0,90));
+  const bool Recovered=V->RecoverInPlace();
+  const float Shift=FVector::Dist2D(Before,V->GetActorLocation());
+  Check(TEXT("Summit take-off recovers at the exact XY and heading"),Recovered&&Shift<.1f&&
+    V->GetActorRotation().IsNearlyZero(.1),Shift);
+  return true;
+}
+
+bool BlockGraveLanding(ATerraVehicle* V){
+  auto* Actor=V->GetWorld()->SpawnActor<AActor>();
+  if(!Actor)return false;
+  Grave.Blocker=Actor;
+  auto* Box=NewObject<UBoxComponent>(Actor);
+  Actor->SetRootComponent(Box);
+  Box->SetCollisionObjectType(ECC_WorldStatic);
+  Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+  Box->SetCollisionResponseToAllChannels(ECR_Block);
+  Box->SetGenerateOverlapEvents(false);
+  // Cover the bounded recovery search while leaving the rolled truck in place.
+  Box->SetBoxExtent(FVector(1800,1800,1000));
+  Box->SetWorldLocation(V->GetActorLocation());
+  Box->RegisterComponent();
+  return true;
+}
+}
+
+bool TickGrave(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
+  if(Grave.Vehicle.Get()!=V){Grave=FGraveRecovery();Grave.Vehicle=V;}
+  Grave.Time+=Dt;Grave.Total+=Dt;
+  using A=TerraControls::Action;
+  const bool Shoulder=Grave.Trial==1,HoldDrive=Grave.Trial==2;
+  const FString Name=Shoulder?TEXT("Granite shoulder"):HoldDrive?TEXT("held-control retry"):TEXT("buried quarry tires");
+  auto Test=[&](const TCHAR* Detail,bool Pass,float Value=0){Check(TEXT("Grave Digger ")+Name+TEXT(" ")+Detail,Pass,Value);};
+  auto* PC=Cast<APlayerController>(V->GetController());
+  if(!PC||Grave.Total>65){
+    if(Grave.Blocker.IsValid())Grave.Blocker->Destroy();
+    Test(TEXT("fixture completes with a native controller"),false,Grave.Total);return true;
+  }
+  if(Grave.Phase==0){
+    V->AutoTest=true;V->SetGarage(true);V->SelectVehicle(GraveModel);V->ResetUpgrades(false);V->SetGarage(false);
+    V->TeleportZone(8);StopInput(V);
+    V->SetEnergyUsageEnabled(false,false);
+    FHitResult Flat,Slope;
+    const bool Pad=GraniteFloor(V,FVector(QuarryX,PadY,0),Flat)&&Flat.ImpactNormal.Z>.95f;
+    const bool Wall=GraniteFloor(V,FVector(QuarryX,-27750,0),Slope)&&Slope.ImpactPoint.Z>Flat.ImpactPoint.Z+170;
+    Test(TEXT("uses the cooked Granite Trials pad and real rock shoulder"),Pad&&Wall,Slope.ImpactPoint.Z-Flat.ImpactPoint.Z);
+    if(!Pad||!Wall)return true;
+    if(Grave.Trial==0){
+      // The first Axlebreaker gate stands on the flat part of the raised pad.
+      for(double Y:{-28375.,-27825.}){
+        const FVector Gate(13100,Y,Flat.ImpactPoint.Z);
+        FHitResult Cap,Rock;int32 Traces=0;
+        const bool HasCap=GraniteFloor(V,Gate,Cap);
+        const bool HasRock=V->Terrain->TraceRaisedGround(Gate-FVector(0,0,15),Rock,Traces);
+        const float Gap=Cap.ImpactPoint.Z-Rock.ImpactPoint.Z;
+        Check(Y<-28100?TEXT("raised ground probe passes through the orange gate cap to the rock below"):
+          TEXT("raised ground probe passes through the blue gate cap to the rock below"),
+          HasCap&&HasRock&&FMath::IsNearlyEqual(Gap,150.f,1.f)&&Rock.ImpactNormal.Z>.95,Gap);
+      }
+    }
+    Grave.PadZ=Flat.ImpactPoint.Z;
+    const FVector FlatPose(QuarryX,PadY,Grave.PadZ+V->ExpectedRideHeight()*100+15);
+    PlaceGrave(V,FlatPose,FRotator::ZeroRotator);
+    if(HoldDrive)Grave.PrimedReleaseGate=V->RecoverInPlace();
+    Grave.Next(1);
+  }else if(Grave.Phase==1&&Grave.Time>.8f){
+    Grave.DropRotation=FRotator(0,0,90);
+    if(Grave.DropRotation.Quaternion().GetUpVector().Y<0)Grave.DropRotation.Roll=-90;
+    const FVector Start(QuarryX,Shoulder?ShoulderY:PadY,Grave.PadZ+(Shoulder?290:160));
+    PlaceGrave(V,Start,Grave.DropRotation);
+    Grave.Next(2);
+  }else if(Grave.Phase==2&&Grave.Time>.08f){
+    FVector P=V->GetActorLocation();
+    if(!Shoulder&&!HoldDrive){
+      float LowestHub=UE_BIG_NUMBER;
+      for(int I=0;I<V->WheelCount();++I)LowestHub=FMath::Min(LowestHub,float(V->WheelState[I].Center.Z));
+      const float Drop=Grave.PadZ-12-LowestHub;
+      const bool TireData=TerraTireProbeValidation::Load()&&TerraTireProbeValidation::Matches(V);
+      const float InitialGap=TireData?GraniteTireGap(V)+Drop:UE_BIG_NUMBER;
+      Test(TEXT("starts with a lower wheel hub below the actual deck"),TireData&&InitialGap<-45,InitialGap);
+      P.Z+=Drop;
+      PlaceGrave(V,P,Grave.DropRotation);
+    }
+    Grave.Next(3);
+  }else if(Grave.Phase==3&&Grave.Time>(Shoulder?.01f:2.6f)){
+    const bool TireData=TerraTireProbeValidation::Load()&&TerraTireProbeValidation::Matches(V);
+    const float Up=V->GetActorUpVector().Z;
+    Test(TEXT("starts tipped with the actual truck and tire geometry"),
+      TireData&&V->VehicleIndex==GraveModel&&(Shoulder?FMath::Abs(Up)<.5f:V->Overturned),Up);
+    if(!Shoulder){
+      const float Clearance=TireData?GraniteTireGap(V):-999.f;
+      Test(TEXT("rolled tires stay at the visible rock surface"),Clearance>=-5.f&&Clearance<UE_BIG_NUMBER*.5f,Clearance);
+    }
+    if(Shoulder){
+      const FVector P=V->GetActorLocation();
+      FHitResult Left,Right;
+      const bool Both=GraniteFloor(V,P+FVector(0,-136,0),Left)&&GraniteFloor(V,P+FVector(0,136,0),Right);
+      Test(TEXT("the original upright footprint straddles the cliff shoulder"),Both&&FMath::Abs(Left.ImpactPoint.Z-Right.ImpactPoint.Z)>95,
+        FMath::Abs(Left.ImpactPoint.Z-Right.ImpactPoint.Z));
+    }
+    Capture(*FString::Printf(TEXT("grave-recovery-%d-before.png"),Grave.Trial));
+    V->RouteIndex=TestRoute;V->GateIndex=TestGate;V->RouteTime=TestRouteTime;
+    V->FuelFraction=TestFuel;V->BatterySOC=TestBattery;
+    V->StructuralDamage.Zones[1]=.2f;V->StructuralDamage.Events=7;V->Damage=TerraSim::DamageAmount(V->StructuralDamage);V->DamageEventCount=7;
+    Grave.Damage=V->Damage;
+    if(HoldDrive)TestKey(PC,V->ControlKey(A::Forward),IE_Pressed);
+    Grave.Next(4);
+  }else if(Grave.Phase==4&&Grave.Time>(HoldDrive?.20f:.01f)){
+    if(HoldDrive)Test(TEXT("forward is already held after an earlier recovery"),Grave.PrimedReleaseGate&&V->ControlDown(A::Forward));
+    Grave.Before=V->GetActorLocation();
+    V->AutoTest=false;
+    TestKey(PC,V->ControlKey(A::Recover),IE_Pressed);
+    Grave.Next(5);
+  }else if(Grave.Phase==5&&Grave.Time>.24f){
+    TestKey(PC,V->ControlKey(A::Recover),IE_Released);
+    if(HoldDrive)TestKey(PC,V->ControlKey(A::Forward),IE_Released);
+    const FVector P=V->GetActorLocation();
+    const float Shift=FVector::Dist2D(Grave.Before,P);
+    UE_LOG(LogTemp,Display,TEXT("TERRA_GRAVE_RECOVERY trial=%d before=%s after=%s up=%.4f shiftCM=%.2f notice=%s"),
+      Grave.Trial,*Grave.Before.ToString(),*P.ToString(),V->GetActorUpVector().Z,Shift,*V->Notice);
+    Test(TEXT("bound recovery key places the truck upright"),!V->Overturned&&V->GetActorUpVector().Z>.9f,V->GetActorUpVector().Z);
+    Test(TEXT("uses the current pad or a nearby position on the same level"),P.Z<Grave.PadZ+V->ExpectedRideHeight()*100+110&&
+      (Shoulder?Shift>20&&Shift<1225:Shift<20),Shift);
+    Test(TEXT("preserves the challenge gate, elapsed time, damage and energy"),
+      V->RouteIndex==TestRoute&&V->GateIndex==TestGate&&V->RouteTime>=TestRouteTime&&V->RouteTime<TestRouteTime+1&&
+      V->Damage==Grave.Damage&&V->DamageEventCount==7&&V->FuelFraction==TestFuel&&V->BatterySOC==TestBattery,V->RouteTime);
+    Grave.Next(6);
+  }else if(Grave.Phase==6&&Grave.Time>2.5f){
+    const bool Upright=V->GetActorUpVector().Z>.9f&&!V->Overturned;
+    Test(TEXT("settles on at least three tires with the cliff still present"),Upright&&V->ContactCount>=3,V->ContactCount);
+    Capture(*FString::Printf(TEXT("grave-recovery-%d-after.png"),Grave.Trial));
+    Grave.DriveStart=V->GetActorLocation();
+    TestKey(PC,V->ControlKey(A::Forward),IE_Pressed);Grave.Next(7);
+  }else if(Grave.Phase==7&&Grave.Time>2.f){
+    TestKey(PC,V->ControlKey(A::Forward),IE_Released);
+    const float Motion=FVector::Dist2D(V->GetActorLocation(),Grave.DriveStart);
+    Test(TEXT("drives away on the normal forward control"),!V->Overturned&&Motion>150&&FMath::Abs(V->Speed)>1,Motion);
+    V->AutoTest=true;StopInput(V);
+    Grave.Next(++Grave.Trial==3?8:0);
+  }else if(Grave.Phase==8){
+    if(!BeginSummitRecovery(V,Check))return true;
+    Grave.Next(9);
+  }else if(Grave.Phase==9&&Grave.Time>2.5f){
+    Check(TEXT("Summit take-off recovery settles upright on the ramp"),!V->Overturned&&V->GetActorUpVector().Z>.9&&V->ContactCount>=3,V->ContactCount);
+    V->TeleportZone(8);
+    PlaceGrave(V,FVector(QuarryX,PadY,Grave.PadZ+160),Grave.DropRotation);
+    if(!BlockGraveLanding(V)){
+      Check(TEXT("blocked recovery fixture spawns its query obstruction"),false,0);return true;
+    }
+    Grave.Next(10);
+  }else if(Grave.Phase==10&&Grave.Time>1.f){
+    V->AutoTest=false;
+    TestKey(PC,V->ControlKey(A::Recover),IE_Pressed);
+    Grave.Next(11);
+  }else if(Grave.Phase>=11){
+    const auto* HUD=Cast<ATerraHUD>(PC->GetHUD());
+    if(Grave.Phase==11&&Grave.Time>.24f){
+      TestKey(PC,V->ControlKey(A::Recover),IE_Released);
+      Check(TEXT("first blocked recovery shows the restart instruction"),V->Overturned&&HUD&&
+        HUD->VisibleNotice==ATerraVehicle::RecoveryBlockedNotice,0);
+      Grave.NoticeShownAt=V->GetWorld()->GetRealTimeSeconds();
+      Grave.Next(12);
+    }else if(Grave.Phase==12&&V->GetWorld()->GetRealTimeSeconds()-Grave.NoticeShownAt>5.1){
+      Check(TEXT("blocked recovery notice expires back to the rollover prompt"),HUD&&
+        HUD->VisibleNotice.StartsWith(TEXT("ROLLED OVER")),0);
+      TestKey(PC,V->ControlKey(A::Recover),IE_Pressed);
+      Grave.Next(13);
+    }else if(Grave.Phase==13&&Grave.Time>.24f){
+      TestKey(PC,V->ControlKey(A::Recover),IE_Released);
+      Check(TEXT("second blocked recovery shows the same restart instruction again"),V->Overturned&&HUD&&
+        HUD->VisibleNotice==ATerraVehicle::RecoveryBlockedNotice,0);
+      if(Grave.Blocker.IsValid())Grave.Blocker->Destroy();
+      V->AutoTest=true;StopInput(V);
+      return true;
+    }
   }
   return false;
 }

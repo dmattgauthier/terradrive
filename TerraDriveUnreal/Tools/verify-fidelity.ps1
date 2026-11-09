@@ -1,4 +1,4 @@
-param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter','Expanded','Recovery','RolloverPerformance')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,11)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey,[ValidateRange(0,11)][int]$PerformanceVehicle=10,[ValidateRange(0,3)][int]$TireSizeStage=0,[switch]$LegacyRolledTires,[switch]$ContactDiagnostics,[ValidateRange(-1,11)][int]$ArtVehicle=-1,[string]$SavedBuild='')
+param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter','Expanded','Recovery','GraveRecovery','RolloverPerformance')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,11)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey,[ValidateRange(0,11)][int]$PerformanceVehicle=10,[ValidateRange(0,3)][int]$TireSizeStage=0,[switch]$LegacyRolledTires,[switch]$ContactDiagnostics,[ValidateRange(-1,11)][int]$ArtVehicle=-1,[string]$SavedBuild='')
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'staged-package-content.ps1')
 if($RolloverQuickVehicle -ge 0 -and $Mode -ne 'Rollover'){throw '-RolloverQuickVehicle requires Rollover mode.'}
@@ -22,6 +22,7 @@ $taskFlags.RutTransitions='-TerraRutTransitionOnly'
 $taskFlags.Perimeter='-TerraPerimeterOnly'
 $taskFlags.Expanded='-TerraExpandedOnly'
 $taskFlags.Recovery='-TerraRecoveryOnly'
+$taskFlags.GraveRecovery='-TerraGraveRecoveryOnly'
 $taskFlags.RolloverPerformance='-TerraRolloverPerformanceOnly'
 $taskQuality=if($Mode -in @('Art','UrusArt','Quarry','Garden','Ruts','Transitions','Detail','RutTransitions','Expanded')){2}else{0}
 $taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-NoTrace','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraGraphicsMode='+$taskQuality),$taskFlags[$Mode],
@@ -70,7 +71,7 @@ try{
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=156;Mechanical=707;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=138;RutTransitions=64;Perimeter=5;Expanded=286;Recovery=48;RolloverPerformance=59}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=156;Mechanical=707;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=138;RutTransitions=64;Perimeter=5;Expanded=286;Recovery=48;GraveRecovery=34;RolloverPerformance=59}[$Mode]
  if($SavedBuild){$taskExpected+=9} # One saved-profile check per real-time pose.
  if($QuarrySurvey){$taskExpected+=9}
  if($ArtVehicle -ge 0){$taskExpected=11}
@@ -129,6 +130,7 @@ try{
   if($taskPlan.vehicleCount -ne 12 -or $taskVehicles.Count -ne 12 -or $taskPlan.boundaryTrialCount -ne 7 -or @($taskPlan.boundaries).Count -ne 7 -or $taskPlan.expectedChecks -ne 138){throw 'Movement fixture coverage is incomplete.'}
   foreach($taskVehicle in 0..11){if($taskVehicle -notin $taskVehicles){throw 'Movement fixture omitted a vehicle.'}}
  }
+ if($Mode -eq 'GraveRecovery'){foreach($taskCase in 0..2){foreach($taskPose in @('before','after')){$taskExpectedCaptures+=('grave-recovery-'+$taskCase+'-'+$taskPose+'.png')}}}
  foreach($taskName in $taskExpectedCaptures){
   $taskImage=Join-Path $taskCaptures $taskName
   if(!(Test-Path -LiteralPath $taskImage)){throw ('Missing native capture '+$taskName)}

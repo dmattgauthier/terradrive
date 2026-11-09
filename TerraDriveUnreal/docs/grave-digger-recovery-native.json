@@ -1,0 +1,186 @@
+{
+  "baseCommit": "7367df78fc79b97c05a88f83e5510f6b09ad353b",
+  "engine": "5.8.3",
+  "package": {
+    "built": "2026-11-09T00:55:58.8330388Z",
+    "executableSha256": "48b75c8633c861f41dd8d36a5c5ffe2256f246a7bdfd40c0e637b1fe490eb343",
+    "cookedContentSource": "Saved/PR13MeshReview/Cook1/Windows",
+    "stagedContent": [
+      {
+        "path": "TerraDrive/Content/Paks/global.ucas",
+        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/global.utoc",
+        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+        "sha256": "6108b2a3ae3e91fc76a1506762c27ade20e2e86318271a216333f655d031b13e"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+        "sha256": "b2cbf8e2f2f4d3135879efb20852dda4ad11452902e1d2aa6d509ad858e07130"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+        "sha256": "3855a9ac4ba8daf071c8a76880c72a190a6b530e92fc4594a12e63f327211a75"
+      }
+    ],
+    "sourceInputCount": 221
+  },
+  "sourceInputsSha256": "2386798cf71be7dba443189f39c54f01c996420ee36537d5335ac1f7e2a935a7",
+  "nativeChecks": 510,
+  "nativeSuites": {
+    "GraveRecovery": {
+      "checks": 26,
+      "captures": 6,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 60.27,
+      "elapsedSeconds": 168.7490497,
+      "exitCode": 0,
+      "receipt": "Saved/GraveRecovery/Candidate3/Native/GraveRecovery/receipt.json"
+    },
+    "Recovery": {
+      "checks": 48,
+      "captures": 8,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 56.46,
+      "elapsedSeconds": 66.3086297,
+      "exitCode": 0,
+      "receipt": "Saved/GraveRecovery/Candidate3/Native/Recovery/receipt.json"
+    },
+    "GraveRolloverPerformance": {
+      "checks": 59,
+      "captures": 9,
+      "runtimeErrors": 0,
+      "clock": "real elapsed time; 20 FPS render cap; normal physics",
+      "peakTemperatureC": 56.0,
+      "elapsedSeconds": 114.4741252,
+      "exitCode": 0,
+      "receipt": "Saved/GraveRecovery/Candidate3/Native/GraveRolloverPerformance/receipt.json"
+    },
+    "GraveRollover": {
+      "checks": 91,
+      "captures": 10,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 55.25,
+      "elapsedSeconds": 102.1105781,
+      "exitCode": 0,
+      "receipt": "Saved/GraveRecovery/Candidate3/Native/GraveRollover/receipt.json"
+    },
+    "Expanded": {
+      "checks": 286,
+      "captures": 29,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 58.55,
+      "elapsedSeconds": 299.1056987,
+      "exitCode": 0,
+      "receipt": "Saved/GraveRecovery/Candidate3/Native/Expanded/receipt.json"
+    }
+  },
+  "baseline": {
+    "executableSha256": "e43d23dff2f4ce7ff9ba9e617a3bd1d03a9c885daaf7989004d03a76200b8fe3",
+    "receipt": "Saved/GraveRecovery/Baseline/Native/GraveRecovery/receipt.json",
+    "usesIdenticalCookedContent": true,
+    "heldForwardRecoveryKeyPassed": false,
+    "rolledTireClearanceCM": [
+      -17.6714,
+      -117.2458
+    ],
+    "note": "Baseline uses the first version of the new fixture. The cliff fixture and drive-away input were refined before final verification."
+  },
+  "shutdownNote": "The first diagnostic process was stopped after a prolonged engine teardown. The final focused run took about 112 seconds from window destruction to log close while Direct3D finished pipeline creation, then exited with code 0.",
+  "graniteTrials": {
+    "physicalTerrain": "cooked granite_trials mesh",
+    "rolledTireClearance": [
+      {
+        "case": "Grave Digger buried quarry tires rolled tires stay at the visible rock surface",
+        "value": -0.2707,
+        "pass": true
+      },
+      {
+        "case": "Grave Digger held-control retry rolled tires stay at the visible rock surface",
+        "value": -0.3304,
+        "pass": true
+      }
+    ],
+    "placementOffsetsCM": [
+      {
+        "case": "Grave Digger buried quarry tires uses the current pad or a nearby position on the same level",
+        "value": 0.0,
+        "pass": true
+      },
+      {
+        "case": "Grave Digger Granite shoulder uses the current pad or a nearby position on the same level",
+        "value": 200.0,
+        "pass": true
+      },
+      {
+        "case": "Grave Digger held-control retry uses the current pad or a nearby position on the same level",
+        "value": 0.0,
+        "pass": true
+      }
+    ],
+    "normalForwardTravelCM": [
+      {
+        "case": "Grave Digger buried quarry tires drives away on the normal forward control",
+        "value": 907.0924,
+        "pass": true
+      },
+      {
+        "case": "Grave Digger Granite shoulder drives away on the normal forward control",
+        "value": 907.851,
+        "pass": true
+      },
+      {
+        "case": "Grave Digger held-control retry drives away on the normal forward control",
+        "value": 911.7719,
+        "pass": true
+      }
+    ]
+  },
+  "reviewFixes": {
+    "priorHead": "4fb27970f2557744f6e9f39dd1ff4878f4524d4f",
+    "executableSha256": "0d822cf2fa71cfa31188cbc072550cccec2f5e9dae91e07264293e8d1c1f0c4e",
+    "sourceInputsSha256": "395fff3b3477323e8b030b68300f64cedd902e1e48f302ed9762836dc822c095",
+    "sourceInputCount": 221,
+    "scope": "New paced fixed 20 Hz functional checks against the same cooked content listed above. The rollover run covers the ten Grave Digger poses.",
+    "nativeChecks": 290,
+    "runtimeErrors": 0,
+    "nativeSuites": {
+      "GraveRecovery": {
+        "checks": 34,
+        "elapsedSeconds": 247.15,
+        "peakTemperatureC": 51.92,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/GraveRecovery/receipt.json"
+      },
+      "Recovery": {
+        "checks": 48,
+        "elapsedSeconds": 66.93,
+        "peakTemperatureC": 52.1,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/Recovery/receipt.json"
+      },
+      "Rollover": {
+        "checks": 91,
+        "elapsedSeconds": 102.09,
+        "peakTemperatureC": 52.27,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/Rollover/receipt.json"
+      },
+      "Ruts": {
+        "checks": 117,
+        "elapsedSeconds": 58.24,
+        "peakTemperatureC": 53.67,
+        "receipt": "Saved/GraveRecovery/ReviewFixes2/Native/Ruts/receipt.json"
+      }
+    },
+    "summitTakeoff": { "axleHeightSpreadCM": 82.25, "recoveryShiftCM": 0, "settledTireContacts": 4 },
+    "graniteTrials": { "orangeCapAboveProbedRockCM": 150, "blueCapAboveProbedRockCM": 150, "cliffRecoveryShiftCM": 200 },
+    "blockedRecoveryHud": "The first blocked R press showed the restart instruction. It expired to the rollover prompt, then reappeared on the next blocked R press.",
+    "initialBuildAttempt": "Saved/GraveRecovery/ReviewFixes1/build.log records the sandboxed build wrapper waiting on its lock before compilation."
+  }
+}

@@ -238,6 +238,36 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
   }
   return S;
 }
+bool ATerraWorld::TraceRaisedGround(FVector Point,FHitResult& Hit,int32& TraceCount) const {
+  // Granite's rock surface is a heightfield, but its mesh also has solid
+  // gate posts. Only the rock triangles can support a tire from below.
+  static const FName HeightfieldTag(TEXT("TerraRaisedGround"));
+  static const FName RockMaterial(TEXT("Terrain_rock")),BlendMaterial(TEXT("Terrain_QuarryBlend"));
+  for(const auto& Component:ConstructedMeshes){
+    if(!Component||!Component->IsQueryCollisionEnabled()||!Component->ComponentHasTag(HeightfieldTag))continue;
+    const FBox Box=Component->Bounds.GetBox();
+    if(Point.X<Box.Min.X||Point.X>Box.Max.X||Point.Y<Box.Min.Y||Point.Y>Box.Max.Y||Point.Z>Box.Max.Z+60)continue;
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraRaisedGround),true);
+    FVector Start(Point.X,Point.Y,Box.Max.Z+10);
+    const FVector End(Point.X,Point.Y,Box.Min.Z-10);
+    // A vertical ray can cross at most two faces of a convex marker before
+    // reaching the rock beneath it. The ordinary collision stays intact.
+    for(int Pass=0;Pass<3&&Start.Z>End.Z;++Pass){
+      ++TraceCount;
+      if(!Component->LineTraceComponent(Hit,Start,End,Query)||Hit.bStartPenetrating)break;
+      int32 Section=INDEX_NONE;
+      const auto* Material=Component->GetMaterialFromCollisionFaceIndex(Hit.FaceIndex,Section);
+      if(!Material)break;
+      if(Material->GetFName()==RockMaterial||Material->GetFName()==BlendMaterial){
+        if(Hit.ImpactNormal.Z>.15f&&Hit.ImpactPoint.Z>=Height(Point.X,Point.Y)-4.f)return true;
+        break;
+      }
+      Start.Z=Hit.ImpactPoint.Z-.1;
+    }
+  }
+  return false;
+}
+
 FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM,
     float MinCM,float MaxCM) const {
   FTerraSupport Result;
@@ -898,6 +928,7 @@ void ATerraWorld::LoadScenery() {
       const bool Physical = Visual == Collision || Pass == 1;
       C->SetCollisionProfileName(Physical ? TEXT("BlockAll") : TEXT("NoCollision"));
       C->ComponentTags.Add(TEXT("TerraConstructed"));
+      if(Physical&&Visual==TEXT("granite_trials"))C->ComponentTags.Add(TEXT("TerraRaisedGround"));
       if (O->GetIntegerField(TEXT("surface")) == 4) C->ComponentTags.Add(TEXT("TerraRock"));
       C->SetVisibility(Pass == 0);
       C->SetCastShadow(Pass == 0);

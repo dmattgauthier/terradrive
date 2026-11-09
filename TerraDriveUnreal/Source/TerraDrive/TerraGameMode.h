@@ -12,6 +12,7 @@ public:
   virtual void DrawHUD() override;
   // Recorded by the actual draw pass for native viewport/layout acceptance.
   TArray<FString> VisibleStatusIds;
+  FString VisibleNotice;
   float LastStatusBottom=0,LastStatusTop=0,VehicleSafeBottom=0;
 private:
   FString LastNotice;
