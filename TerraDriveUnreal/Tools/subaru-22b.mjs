@@ -712,7 +712,8 @@ function addInterior(g,m) {
   for(const x of [driver-.070,driver+.069])cylinder(g,m.white,[x,.901,.473],.043,.008,'z',32);
   const center=[driver,.894,.348];
   ring(g,m.glossBlack,center,.155,.015,'z').rotation.x=-.26;
-  cylinder(g,m.black,center,.068,.032,'z',32);
+  cylinder(g,m.black,center,.068,.032,'z',32).name='22b-steering-hub';
+  rod(g,m.dark,center,[driver,.848,.503],.036,24).name='22b-steering-column';
   for(const angle of [.32,Math.PI-.32,-Math.PI/2])rod(g,m.satinMetal,center,
     [driver+.146*Math.cos(angle),.894+.146*Math.sin(angle),.348],.012,8);
   box(g,m.interior,[0,.580,.058],[.204,.224,.558],.041);
