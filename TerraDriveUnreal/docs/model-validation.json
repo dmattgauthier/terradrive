@@ -1429,7 +1429,7 @@
     },
     {
       "vehicle": "Grave Digger",
-      "vertices": 186977,
+      "vertices": 187129,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -1440,8 +1440,8 @@
       },
       "addedReference": {
         "id": "grave-digger",
-        "checks": 23,
-        "vertices": 186977,
+        "checks": 25,
+        "vertices": 187129,
         "bodySizeM": [
           1.9999902248382568,
           2.458979520251848,
@@ -1451,7 +1451,7 @@
           {
             "name": "finite bounded authored geometry",
             "pass": true,
-            "vertices": 186977,
+            "vertices": 187129,
             "bad": 0
           },
           {
@@ -1502,6 +1502,16 @@
             "outlets": 8
           },
           {
+            "name": "complete rear reservoir assemblies are tagged for cooked clearance",
+            "pass": true,
+            "partCounts": {
+              "monster-rear-reservoir": 2,
+              "monster-rear-reservoir-collar": 4,
+              "monster-rear-reservoir-mount": 2,
+              "monster-rear-reservoir-hose": 2
+            }
+          },
+          {
             "name": "constant red headlights stay separate from brake circuit",
             "pass": true
           },
@@ -1529,6 +1539,13 @@
             "name": "48 full-width directional chevron half-lugs",
             "pass": true,
             "lugs": 48
+          },
+          {
+            "name": "both pairs of sidewall moldings seat in the actual tire carcass",
+            "pass": true,
+            "moldingProbes": 64,
+            "minimumEmbedM": 0.004182139456403364,
+            "minimumReliefM": 0.0027596883354970747
           },
           {
             "name": "exposed triangulated tubular chassis",
@@ -1573,7 +1590,7 @@
     },
     {
       "vehicle": "Subaru Impreza 22B STI",
-      "vertices": 151767,
+      "vertices": 151915,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -1584,8 +1601,8 @@
       },
       "addedReference": {
         "id": "subaru-22b-sti",
-        "checks": 70,
-        "vertices": 151767,
+        "checks": 71,
+        "vertices": 151915,
         "bodySizeM": [
           1.9286856651306152,
           1.2394999861717224,
@@ -1595,7 +1612,7 @@
           {
             "name": "finite bounded authored geometry",
             "pass": true,
-            "vertices": 151767,
+            "vertices": 151915,
             "bad": 0
           },
           {
@@ -1937,6 +1954,13 @@
             "pass": true,
             "probes": 337,
             "maximumActualTriangleGapM": 0.000005384726361636787
+          },
+          {
+            "name": "steering column seats inside the hub and dashboard",
+            "pass": true,
+            "hubSeated": true,
+            "dashSeated": true,
+            "lengthM": 0.16168178623456636
           },
           {
             "name": "opaque parcel shelf occludes rear axle through rear glazing",

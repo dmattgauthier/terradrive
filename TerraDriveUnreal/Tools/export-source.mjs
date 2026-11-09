@@ -148,7 +148,9 @@ const vehicles=[];for(const spec of VEHICLES){const {view,parts}=prepareNativeVe
  const bodyMaterials=assets.find(a=>a.name===prefix+'_body').slots.map(id=>mats.find(m=>m.id===id));
  const lamps=bodyMaterials.filter(m=>['brake','reverse'].includes(m.role)).map(m=>({material:m.id,role:m.role}));
  const exhaustSlots=bodyMaterials.filter(m=>m.role==='exhaust').map(m=>m.id);
- vehicles.push({...spec,asset:prefix,lamps,...(exhaustSlots.length?{exhaustSlots}:{}),nativeModel:{...view.root.userData.nativeFidelity,construction:view.root.userData.nativeConstruction,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?{...view.root.userData.visualModel,refinement:view.root.userData.bodyRefinement}:view.root.userData.bodyRefinement}});
+ const rearReservoirSlots=bodyMaterials.filter(m=>m.role==='rearReservoir').map(m=>m.id);
+ vehicles.push({...spec,asset:prefix,lamps,...(exhaustSlots.length?{exhaustSlots}:{}),
+  ...(rearReservoirSlots.length?{rearReservoirSlots}:{}),nativeModel:{...view.root.userData.nativeFidelity,construction:view.root.userData.nativeConstruction,upgradeTireBeads:true,bodyShape:spec.bodyStyle==='urus'?{...view.root.userData.visualModel,refinement:view.root.userData.bodyRefinement}:view.root.userData.bodyRefinement}});
  view.dispose();console.log('Vehicle exported',spec.name);}
 // Export the actual shared scenery geometry and original placements.
 const world=Object.create(OffroadWorld.prototype);Object.assign(world,{terrain,scene:new THREE.Scene(),groundMeshes:new Map(),spec:VEHICLES[0],clock:0,_textureLoader:{load(url){return new THREE.Texture();}}});

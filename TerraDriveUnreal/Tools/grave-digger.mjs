@@ -425,6 +425,14 @@ function tire(spec,m) {
   const carcass=mesh(group,new T.LatheGeometry(profile.map(p=>new T.Vector2(...p)),112),m.rubber);
   carcass.rotation.z=Math.PI/2;
   carcass.name='monster-bulged-66in-carcass';
+  const moldings=[.61,.83].map(factor=>{
+    const radius=r*factor;
+    const end=profile.findIndex(([outer])=>outer>=radius);
+    const [a,b]=[profile[end-1],profile[end]];
+    const axial=Math.abs(lerp(a[1],b[1],(radius-a[0])/(b[0]-a[0])));
+    // Seat each molding slightly into the same straight profile used by the lathe.
+    return [radius,axial-.0007];
+  });
   for(let i=0;i<24;i++) {
     for(const side of [-1,1]) {
       const pitch=i*Math.PI/12+(side>0?.022:0);
@@ -446,7 +454,8 @@ function tire(spec,m) {
   }
   for(const side of [-1,1]) {
     ring(group,m.rubber,[side*w*.466,0,0],bead*1.09,.008);
-    for(const factor of [.61,.83])ring(group,m.rubber,[side*w*.516,0,0],r*factor,.0035);
+    for(const [radius,axial] of moldings)ring(group,m.rubber,[side*axial,0,0],radius,.0035)
+      .name='monster-sidewall-molding';
     for(let i=0;i<28;i++) {
       const a=i*Math.PI/14;
       rod(group,m.tread,[side*w*.505,Math.cos(a)*r*.848,Math.sin(a)*r*.848],
@@ -500,6 +509,8 @@ function addChassis(g,m,green) {
     [-.89,.675,.775,.719,1.718],[-.12,.689,.775,.707,1.751],
     [.67,.674,.835,.702,1.842],[1.44,.575,.959,.663,1.949],[2.073,.503,1.143,.555,1.899]
   ];
+  const rearMetal=m.satinMetal.clone(),rearCollar=m.dark.clone(),rearHose=m.black.clone();
+  rearMetal.userData.nativeRole=rearCollar.userData.nativeRole=rearHose.userData.nativeRole='rearReservoir';
   const point=(bay,side,upper)=>[side*bay[upper?3:1],bay[upper?4:2],bay[0]];
   for(const side of [-1,1]) {
     for(let i=0;i<bays.length;i++) {
@@ -520,14 +531,20 @@ function addChassis(g,m,green) {
       [[side*.668,1.772,1.39],[side*.725,2.409,.532],.032],
       [[side*.641,1.509,-2.13],[side*.755,2.413,-1.155],.031]
     ])rod(g,green,a,b,r);
-    // Reservoir bodies stay on the sprung frame. The main shocks and
-    // links are drawn by the existing moving running-gear assemblies.
-    for(const z of [-1.528,1.381]) {
-      cylinder(g,m.satinMetal,[side*.650,1.564,z],.047,.256,'y',18);
-      for(const y of [1.482,1.643])cylinder(g,m.dark,[side*.650,y,z],.049,.033,'y',18);
-      curve(g,m.black,[[side*.650,1.693,z],[side*.625,1.758,z+.10],
-        [side*.682,1.629,z+.21],[side*.712,1.508,z+.19]],.011);
-    }
+    // Mount the rear reservoirs and their lines inboard of the steered tires.
+    const x=side*.300,y=1.728,z=-1.475;
+    cylinder(g,rearMetal,[x,y,z],.047,.256,'y',18).name='monster-rear-reservoir';
+    for(const offset of [-.082,.079])cylinder(g,rearCollar,[x,y+offset,z],.049,.033,'y',18)
+      .name='monster-rear-reservoir-collar';
+    rod(g,rearCollar,[x,y+.079,z-.040],[x,1.857,-1.560],.017,12).name='monster-rear-reservoir-mount';
+    curve(g,rearHose,[[x,y+.126,z],[x,1.924,-1.493],
+      [side*.207,1.918,-1.542],[side*.180,1.857,-1.560]],.011).name='monster-rear-reservoir-hose';
+
+    const frontZ=1.381;
+    cylinder(g,m.satinMetal,[side*.650,1.564,frontZ],.047,.256,'y',18);
+    for(const y of [1.482,1.643])cylinder(g,m.dark,[side*.650,y,frontZ],.049,.033,'y',18);
+    curve(g,m.black,[[side*.650,1.693,frontZ],[side*.625,1.758,frontZ+.10],
+      [side*.682,1.629,frontZ+.21],[side*.712,1.508,frontZ+.19]],.011);
   }
   for(const bay of bays) {
     for(const upper of [false,true])rod(g,green,point(bay,-1,upper),point(bay,1,upper),.034);

@@ -140,6 +140,14 @@ export function inspectAddedReference(view,spec,parts){
    seam(screen,(u,v)=>near(v,0),sill);
    seam(sill,(u,v)=>near(v,1),front?'22b-crowned-bonnet':'22b-rounded-trunk-deck');
   }
+  const column=meshByName('22b-steering-column');
+  const length=column.geometry.parameters.height;
+  const [wheelEnd,dashEnd]=[-length/2,length/2].map(y=>column.localToWorld(new T.Vector3(0,y,0)));
+  const columnAxis=dashEnd.clone().sub(wheelEnd).normalize();
+  const seatsInside=(point,part)=>[columnAxis,columnAxis.clone().negate()].every(direction=>
+   new T.Raycaster(point,direction).intersectObject(meshByName(part),false).length>0);
+  const hubSeated=seatsInside(wheelEnd,'22b-steering-hub'),dashSeated=seatsInside(dashEnd,'22b-curved-dash');
+  test('steering column seats inside the hub and dashboard',hubSeated&&dashSeated,{hubSeated,dashSeated,lengthM:length});
   const shelf=meshByName('22b-rear-parcel-shelf');let shelfRays=0,shelfMin=Infinity;
   for(const x of [-.60,-.30,0,.30,.60])for(const z of [-1.42,-1.30,-1.18]){const hit=cast([x,1.5,z],[0,-1,0],[shelf],1)[0];if(hit){shelfRays++;shelfMin=Math.min(shelfMin,view.body.worldToLocal(hit.point.clone()).y);}}
   test('opaque parcel shelf occludes rear axle through rear glazing',!shelf.material.transparent&&shelfRays===15&&shelfMin>.78,{occludedRays:shelfRays,minimumShelfHeightM:shelfMin});
@@ -166,11 +174,38 @@ export function inspectAddedReference(view,spec,parts){
   const headers=exhaust.filter(o=>o.name==='grave-exhaust-header'&&o.geometry.type==='TubeGeometry').length;
   const outlets=exhaust.filter(o=>o.name==='grave-exhaust-outlet'&&o.geometry.type==='CylinderGeometry').length;
   test('all eight exhaust pipes and outlets are tagged for the cooked clearance check',headers===8&&outlets===8&&exhaust.length===16,{headers,outlets});
+  const reservoirs=meshes.filter(o=>o.material.userData.nativeRole==='rearReservoir');
+  const reservoirParts=[['monster-rear-reservoir',2],['monster-rear-reservoir-collar',4],
+   ['monster-rear-reservoir-mount',2],['monster-rear-reservoir-hose',2]];
+  const partCounts=Object.fromEntries(reservoirParts.map(([name])=>[name,reservoirs.filter(o=>o.name===name).length]));
+  test('complete rear reservoir assemblies are tagged for cooked clearance',reservoirs.length===10&&
+   reservoirParts.every(([name,count])=>partCounts[name]===count),{partCounts});
   const headlights=meshes.filter(o=>o.name==='monster-constant-red-headlight');test('constant red headlights stay separate from brake circuit',headlights.length===2&&headlights.every(o=>!o.material.userData.nativeRole&&o.material.emissiveIntensity>.8));
   test('official monster class scale',Math.abs(spec.tireRadius*2/.0254-66)<1e-6&&Math.abs(spec.tireWidth/.0254-43)<1e-6&&Math.abs(spec.suspension.travel/.0254-30)<1e-6);
   test('stock monster tires are not shrunk to upgrade limit',tireDiameterInches(spec.tireRadius,3)>65.99);
   for(const name of ['grave-digger-domed-wagon-roof','grave-digger-domed-narrow-bonnet','monster-deep-25in-beadlock-wheel'])test(name+' present',!!view.body.getObjectByName(name)||!!parts.rim.getObjectByName(name));
   let lugs=0;parts.tire.traverse(o=>{if(o.name==='monster-directional-chevron-lug')lugs++;});test('48 full-width directional chevron half-lugs',lugs===48,{lugs});
+  const carcass=parts.tire.getObjectByName('monster-bulged-66in-carcass'),moldings=[];
+  parts.tire.traverse(o=>{if(o.name==='monster-sidewall-molding')moldings.push(o);});
+  let minimumEmbedM=Infinity,minimumReliefM=Infinity,moldingProbes=0;
+  for(const molding of moldings){
+   const {radius,tube}=molding.geometry.parameters;
+   const outward=new T.Vector3(0,0,Math.sign(molding.position.x)).transformDirection(molding.matrixWorld);
+   const inward=outward.clone().negate();
+   for(let i=0;i<16;i++){
+    const angle=(i+.5)*Math.PI/8;
+    const origin=molding.localToWorld(new T.Vector3(radius*Math.cos(angle),radius*Math.sin(angle),0));
+    origin.addScaledVector(outward,.025);
+    const hit=new T.Raycaster(origin,inward,0,.050).intersectObject(carcass,false)[0];
+    if(!hit)continue;
+    const offset=.025-hit.distance;
+    minimumEmbedM=Math.min(minimumEmbedM,tube+offset);
+    minimumReliefM=Math.min(minimumReliefM,tube-offset);
+    moldingProbes++;
+   }
+  }
+  test('both pairs of sidewall moldings seat in the actual tire carcass',moldings.length===4&&moldingProbes===64&&
+   minimumEmbedM>.001&&minimumReliefM>.001,{moldingProbes,minimumEmbedM,minimumReliefM});
   // Artwork used to be tubes and accidentally counted as chassis structure.
   // Inspect the actual structural rails, extent, and diagonal bracing.
   const frame=meshes.filter(o=>o.geometry.type==='CylinderGeometry'&&o.geometry.parameters.radiusTop>=.025&&o.material.userData.automotive==='paint'&&o.material.color.getHexString()==='39c413');

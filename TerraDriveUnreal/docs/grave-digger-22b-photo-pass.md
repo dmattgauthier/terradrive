@@ -154,3 +154,49 @@ under `Saved/PR13Exhaust`.
 | `grave_digger_body.obj` | `db165177cc0ccc9ed94b35a0dd86fb23e2ed31339c38a9a1cb8408936bdadd63` |
 | `TerraDrive-Windows.ucas` | `aa066c84ba4ce291f130afa8d2a3adced63e7f6568703e88329eb96f4c30d124` |
 | `TerraDrive-Windows.pak` | `90375a56886588ee8a04307222df61fda17bc679fc5c4282c40a078aed19195d` |
+
+## Rear reservoir, sidewall and steering column follow-up
+
+The rear shock reservoirs now mount inboard on Grave Digger's sprung cage.
+Three dedicated material slots identify both canisters, their collars,
+mounts and hoses for the cooked clearance check. A source sweep against
+the merged PR #13 geometry reproduced reservoir overlap at both rear wheels.
+The same sweep found zero intersections with the revised assemblies.
+
+The raised sidewall rings now follow the tire carcass profile. Across 64
+source probes the rings had at least 4.18 mm of embed and 2.75 mm of relief.
+The 22B now has a 161.7 mm steering column seated in both the wheel hub and
+the curved dashboard. The export changed seven meshes belonging to these two
+vehicles. The rebaked stock Grave Digger tire witnesses retained the same
+radius and width. All 100 focused geometry and 327 tire-fit checks passed.
+
+The Windows package read 2,064 cooked reservoir triangles from all three
+material slots. Both stock rear tires cleared the reservoirs and exhaust by
+at least 5 mm from 547.135 mm of rebound through 441.960 mm of bump. The
+fixture swept the entire vertical interval at 52 steering samples per side,
+from outer lock (15.96°) through center to inner lock (34.99°), and padded
+the tire envelope for the motion between samples.
+
+The fresh Windows package passed **458 native checks** with zero runtime
+errors and a peak sampled GPU temperature of 58.0 C. The runs used isolated
+settings, offscreen 1600×900 rendering and a 20 FPS cap.
+
+| Suite | Passing checks | Coverage |
+| --- | ---: | --- |
+| Grave Digger and 22B art | 22 | Twenty new captures, including the inboard reservoirs, seated sidewall rings and 22B steering column |
+| Expanded roster | 286 | Eight stock clearance cases, including both rear reservoir sweeps |
+| Grave Digger real-time rollover | 59 | Nine poses and constructed support checks |
+| 22B rollover with 50-inch tires | 91 | Ten poses, including oblique impacts |
+
+The stock clearance fixture checks cooked geometry at a fixed clock. Grave
+Digger's rollover suite uses real elapsed time. Its 90° dirt-side pose met
+the 4 cm tire-to-ground tolerance at −1.430 in in this run. The package,
+hash-matched receipts, captures and earlier source probe attempt are under
+`Saved/PR13MeshReview`.
+
+| Tested input | SHA-256 |
+| --- | --- |
+| Staged game executable | `c051af02e2189e505f7b27e94cd5ad3ed38e569216b43e39901a729fccfe5d7b` |
+| Manifest of 221 source inputs | `3978401fcad564d33e7fd6ece2b6037e773f2678b044ead2676537ccf4645c0b` |
+| `TerraDrive-Windows.ucas` | `b2cbf8e2f2f4d3135879efb20852dda4ad11452902e1d2aa6d509ad858e07130` |
+| `TerraDrive-Windows.pak` | `6108b2a3ae3e91fc76a1506762c27ade20e2e86318271a216333f655d031b13e` |
