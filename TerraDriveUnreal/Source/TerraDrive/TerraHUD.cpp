@@ -100,7 +100,9 @@ void ATerraHUD::DrawHUD() {
   }
   const double Now=GetWorld()->GetRealTimeSeconds();
   if(LastNotice!=V->Notice){LastNotice=V->Notice;NoticeChangedAt=Now;}
-  FString Notice=V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):!V->HasPropulsionEnergy()?
-      TEXT("EMPTY  /  Stop, then charge or refuel [")+V->ControlLabel(A::Garage)+TEXT("] or Esc"):(Now-NoticeChangedAt<5?LastNotice:FString());
+  const bool Recent=Now-NoticeChangedAt<5;
+  FString Notice=Recent&&LastNotice==ATerraVehicle::RecoveryBlockedNotice?LastNotice:
+    V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):!V->HasPropulsionEnergy()?
+      TEXT("EMPTY  /  Stop, then charge or refuel [")+V->ControlLabel(A::Garage)+TEXT("] or Esc"):(Recent?LastNotice:FString());
   if(!Notice.IsEmpty())Text(Notice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
 }

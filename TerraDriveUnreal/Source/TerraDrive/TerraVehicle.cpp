@@ -310,44 +310,89 @@ bool ATerraVehicle::RecoverInPlace() {
   // when the nose is effectively vertical and has no horizontal heading.
   if(Forward.IsNearlyZero())Forward=GetActorRightVector().Cross(FVector::UpVector);
   const FRotator Upright(0,Forward.Rotation().Yaw,0);
+  Forward=Upright.Vector();
   const FQuat Rotation=Upright.Quaternion();
+  if(Old.ContainsNaN())return false;
+
+  const FVector Up=FVector::UpVector;
+  const float RadiusCM=Radius*100, RideCM=ExpectedRideHeight()*100;
+  const float Ground=Terrain->Height(Old.X,Old.Y);
   FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraLocalRecovery),true,this);
-  const float HalfLength=Number(TEXT("length"),4.8f)*50,HalfWidth=FMath::Max(Track+Width,Number(TEXT("width"),1.8f))*50;
-  float Height=Terrain->Height(Old.X,Old.Y)+ExpectedRideHeight()*100+15;
-  auto Floor=[&](FVector P){
-    const float Ground=Terrain->Height(P.X,P.Y);FHitResult Hit;
-    const float Top=FMath::Max(Ground+650.f,float(Old.Z+200.f));
-    return GetWorld()->LineTraceSingleByChannel(Hit,FVector(P.X,P.Y,Top),FVector(P.X,P.Y,Ground-200),ECC_Visibility,Query)&&Hit.ImpactNormal.Z>.25f?FMath::Max(Ground,float(Hit.ImpactPoint.Z)):Ground;
-  };
-  // Tire supports establish normal ride height, including upslope wheels.
-  for(int I=0;I<WheelCount();++I){const FVector Offset=Rotation.RotateVector(FVector(AxleOffsetM(I/2)*100,(I%2?1:-1)*Track*50,0));
-    Height=FMath::Max(Height,Floor(Old+Offset)+ExpectedRideHeight()*100+15);
-  }
-  // Belly/end footprint keeps the upright body out of boulders and ledges.
-  const float BodyBottom=FMath::Min(-22.f,(Number(TEXT("clearance"),.22f)-CG)*100);
-  for(int X=-5;X<=5;++X)for(int Y=-2;Y<=2;++Y){
-    const FVector Offset=Rotation.RotateVector(FVector(HalfLength*X/5,HalfWidth*Y/2,0));
-    Height=FMath::Max(Height,Floor(Old+Offset)-BodyBottom+12);
-  }
-  FVector Position(Old.X,Old.Y,Height);
-  if(Position.ContainsNaN()||Height-Terrain->Height(Old.X,Old.Y)>1800){Notice=TEXT("Recovery space is obstructed. Use Restart route in the pause menu.");return false;}
-  // Reject remaining solid overlaps rather than teleporting into a narrow rock
-  // missed between the support probes. Retry upward only, preserving XY.
-  bool Clear=false;FComponentQueryParams BodyQuery(SCENE_QUERY_STAT(TerraRecoverBody),this);
-  for(int Attempt=0;Attempt<13&&!Clear;++Attempt){
-    TArray<FOverlapResult> Overlaps;Clear=true;
-    // UE filters a welded body's shapes by their original component owner.
-    // Query each active member, including all twelve coachwork convex hulls.
-    UPrimitiveComponent* Members[]={Chassis.Get(),FrontCollision.Get(),RearCollision.Get(),CoachworkCollision.Get(),RoofCollision.Get()};
+  FHitResult FloorHit;
+  const float ReferenceTop=FMath::Max(float(Old.Z),Ground)+FMath::Max(110.f,RadiusCM*1.5f);
+  float ReferenceFloor=Ground;
+  if(GetWorld()->LineTraceSingleByChannel(FloorHit,FVector(Old.X,Old.Y,ReferenceTop),
+      FVector(Old.X,Old.Y,Ground-10),ECC_Visibility,Query)&&!FloorHit.bStartPenetrating)
+    ReferenceFloor=FMath::Max(Ground,float(FloorHit.ImpactPoint.Z));
+
+  // Search on this level. Picking the top of an adjacent rock face can leave
+  // the chassis temporarily clear while the truck falls back into the wall.
+  const float HighFloor=ReferenceFloor+FMath::Max(90.f,RadiusCM*1.4f);
+  const float LowFloor=ReferenceFloor-FMath::Max(210.f,RadiusCM*2.6f);
+  const float ProbeHeight=HighFloor+RadiusCM+15.f;
+  const float HeightSpread=FMath::Min(65.f,85.f*(FMath::Min(ReboundTravel(0),ReboundTravel(AxleCount()-1))+
+      FMath::Min(BumpTravel(true),BumpTravel(false))));
+  const float Widths[]={Width*100,Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth*100};
+  FComponentQueryParams BodyQuery(SCENE_QUERY_STAT(TerraRecoverBody),this);
+  UPrimitiveComponent* Members[]={Chassis.Get(),FrontCollision.Get(),RearCollision.Get(),CoachworkCollision.Get(),RoofCollision.Get()};
+  TArray<FOverlapResult> Overlaps;
+  auto BodyClear=[&](const FVector& Position){
     for(auto* Member:Members){
-      if(Member->GetCollisionEnabled()==ECollisionEnabled::NoCollision)continue;
+      if(!Member->IsQueryCollisionEnabled())continue;
       const FTransform Relative=Member==Chassis?FTransform::Identity:Member->GetRelativeTransform();
       const FTransform Pose=Relative*FTransform(Rotation,Position);
-      if(Member->ComponentOverlapMulti(Overlaps,GetWorld(),Pose.GetLocation(),Pose.GetRotation(),ECC_Visibility,BodyQuery)){Clear=false;break;}
+      Overlaps.Reset();
+      if(Member->ComponentOverlapMulti(Overlaps,GetWorld(),Pose.GetLocation(),Pose.GetRotation(),ECC_Visibility,BodyQuery))return false;
     }
-    if(!Clear)Position.Z+=20;
+    return true;
+  };
+
+  FVector Position;
+  auto FindLanding=[&](const FVector& Center){
+    if(TerraSim::OutsideProvingGround(Center.X,Center.Y,0))return false;
+    float Highest=-UE_BIG_NUMBER,Lowest=UE_BIG_NUMBER;
+    FVector Tires[MaxWheels];
+    for(int I=0;I<WheelCount();++I){
+      const FVector Offset=Rotation.RotateVector(FVector(AxleOffsetM(I/2)*100,(I%2?1:-1)*Track*50,0));
+      const FVector Mount(Center.X+Offset.X,Center.Y+Offset.Y,ProbeHeight);
+      const auto Support=Terrain->CastTireSupport(Mount,Up,Forward,RadiusCM,Widths[I>=2],
+        0,ProbeHeight-LowFloor,this);
+      if(!Support.Hit||Support.Normal.Z<.65f||Support.Point.Z<LowFloor||Support.Point.Z>HighFloor)return false;
+      Tires[I]=Mount-Up*Support.Distance;
+      Highest=FMath::Max(Highest,float(Tires[I].Z));
+      Lowest=FMath::Min(Lowest,float(Tires[I].Z));
+      if(Highest-Lowest>HeightSpread)return false;
+    }
+    const FVector Landing(Center.X,Center.Y,Highest+RideCM-RadiusCM);
+    // Check the welded coachwork at placement and just above loaded height.
+    // A narrow obstacle can fit between the tire columns.
+    if(!BodyClear(Landing+Up*5)||!BodyClear(Landing+Up*15))return false;
+    for(int I=0;I<WheelCount();++I){
+      // This inscribed box detects a rigid obstacle inside a tire's core
+      // without testing an oversized sphere or rejecting normal tread contact.
+      const auto Core=FCollisionShape::MakeBox(FVector(RadiusCM*.68f,Widths[I>=2]*.46f,RadiusCM*.67f));
+      Overlaps.Reset();
+      GetWorld()->OverlapMultiByChannel(Overlaps,Tires[I],Rotation,ECC_Visibility,Core,Query);
+      for(const auto& Hit:Overlaps)
+        if(Hit.bBlockingHit&&Hit.Component.IsValid()&&!Hit.Component->ComponentHasTag(TEXT("TerraGround")))return false;
+    }
+    Position=Landing+Up*15;
+    return true;
+  };
+
+  bool Clear=FindLanding(Old);
+  if(!Clear){
+    // Small rings retain the projected heading and prefer the closest
+    // tested landing. Keep the search local even if the route spawn is clear.
+    const FVector Bearings[]={FVector(-1,0,0),FVector(0,1,0),FVector(0,-1,0),FVector(1,0,0),
+      FVector(-.7071,.7071,0),FVector(-.7071,-.7071,0),FVector(.7071,.7071,0),FVector(.7071,-.7071,0)};
+    for(float Distance:{100.f,200.f,350.f,500.f,750.f,1000.f,1200.f}){
+      for(const FVector& Bearing:Bearings)
+        if(FindLanding(Old+Rotation.RotateVector(Bearing*Distance))){Clear=true;break;}
+      if(Clear)break;
+    }
   }
-  if(!Clear){Notice=TEXT("No clear upright space here. Use Restart route in the pause menu.");return false;}
+  if(!Clear){Notice=RecoveryBlockedNotice;return false;}
   Terrain->BreakTireMarks();
   Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
   SetActorLocationAndRotation(Position,Upright,false,nullptr,ETeleportType::TeleportPhysics);
@@ -357,7 +402,9 @@ bool ATerraVehicle::RecoverInPlace() {
   ReverseReleaseRequired=false;RequireControlRelease=true;RecoveryBrakeHold=true;SpawnCooldown=.7f;
   WinchAttached=Reeling=false;PreviousRoutePosition=Position;
   Parcels.Empty();for(auto& Budget:SprayBudget)Budget=0;for(auto Mesh:SprayMeshes)Mesh->ClearInstances();
-  Notice=TEXT("Recovered here. Challenge progress, damage and fuel are retained.");
+  Notice=FVector::DistSquared2D(Old,Position)<1.f
+    ?TEXT("Recovered here. Challenge progress, damage and fuel are retained.")
+    :TEXT("Recovered on nearby ground. Challenge progress, damage and fuel are retained.");
   return true;
 }
 
@@ -444,6 +491,7 @@ void ATerraVehicle::Input(float Dt) {
     Throttle=Brake=Steer=0;Reeling=false;HandleMenuKey(Key);return;
   }
   if (Garage) { Throttle=Steer=0; Brake=1; return; }
+  if(Press(A::Recover)){RecoverInPlace();return;}
   if(RequireControlRelease){
     Throttle=Steer=0;Brake=RecoveryBrakeHold?1.f:0.f;Reeling=false;
     const bool Held=Down(A::Forward)||Down(A::Reverse)||Down(A::SteerLeft)||Down(A::SteerRight)||Down(A::HoldBrake)||Down(A::WinchReel)||
@@ -452,8 +500,6 @@ void ATerraVehicle::Input(float Dt) {
     if(Held)return;
     RequireControlRelease=false;RecoveryBrakeHold=false;
   }
-  if (Press(A::Recover))
-    { RecoverInPlace(); return; }
   if (Press(A::NextChallenge)) TeleportRoute(RouteIndex + 1);
   if (Press(A::RearLock)) ToggleLocker(false);
   if (Press(A::FrontLock)) ToggleLocker(true);

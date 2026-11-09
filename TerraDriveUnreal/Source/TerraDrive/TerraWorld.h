@@ -98,6 +98,7 @@ public:
                             bool *RigidEncountered=nullptr) const;
   FTerraSupport CastTireSupport(FVector Mount,FVector Up,FVector Forward,
       float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const;
+  bool TraceRaisedGround(FVector Point,FHitResult& Hit,int32& TraceCount) const;
   float Height(float X, float Y) const;
   float SnowDrift(float X,float Y) const;
   float DeepMudWeight(float X,float Y) const;

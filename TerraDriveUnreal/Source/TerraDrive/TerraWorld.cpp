@@ -238,6 +238,23 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
   }
   return S;
 }
+bool ATerraWorld::TraceRaisedGround(FVector Point,FHitResult& Hit,int32& TraceCount) const {
+  // Granite Trials is a continuous raised height surface. Unlike a bridge,
+  // its collision triangles have no playable space under their top face.
+  static const FName HeightfieldTag(TEXT("TerraRaisedGround"));
+  for(const auto& Component:ConstructedMeshes){
+    if(!Component||!Component->IsQueryCollisionEnabled()||!Component->ComponentHasTag(HeightfieldTag))continue;
+    const FBox Box=Component->Bounds.GetBox();
+    if(Point.X<Box.Min.X||Point.X>Box.Max.X||Point.Y<Box.Min.Y||Point.Y>Box.Max.Y||Point.Z>Box.Max.Z+60)continue;
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(TerraRaisedGround),true);
+    ++TraceCount;
+    if(Component->LineTraceComponent(Hit,FVector(Point.X,Point.Y,Box.Max.Z+10),
+        FVector(Point.X,Point.Y,Box.Min.Z-10),Query)&&Hit.ImpactNormal.Z>.15f&&
+        Hit.ImpactPoint.Z>=Height(Point.X,Point.Y)-4.f)return true;
+  }
+  return false;
+}
+
 FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM,
     float MinCM,float MaxCM) const {
   FTerraSupport Result;
@@ -898,6 +915,7 @@ void ATerraWorld::LoadScenery() {
       const bool Physical = Visual == Collision || Pass == 1;
       C->SetCollisionProfileName(Physical ? TEXT("BlockAll") : TEXT("NoCollision"));
       C->ComponentTags.Add(TEXT("TerraConstructed"));
+      if(Physical&&Visual==TEXT("granite_trials"))C->ComponentTags.Add(TEXT("TerraRaisedGround"));
       if (O->GetIntegerField(TEXT("surface")) == 4) C->ComponentTags.Add(TEXT("TerraRock"));
       C->SetVisibility(Pass == 0);
       C->SetCastShadow(Pass == 0);

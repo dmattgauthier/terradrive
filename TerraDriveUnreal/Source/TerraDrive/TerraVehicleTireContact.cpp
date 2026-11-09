@@ -133,24 +133,27 @@ void ATerraVehicle::UpdateRolledTireContacts(float Dt) {
       float Clearance=(Point.Z-Ground.Height)*Normal.Z;
       bool Natural=true;
       float Friction=FMath::Clamp(Ground.Mu,.25f,1.05f);
-      // A short real ray along the potential support also catches a rock,
-      // ramp, bridge or other upper rigid surface. Natural mesh collision is
-      // excluded in favor of its current deformed field above.
-      FHitResult Hit;++RolledTireTraces;
-      const FVector Start=Wheel.Center+Normal*10.f;
-      const FVector EndPoint=Point-Normal*12.f;
-      if(GetWorld()->LineTraceSingleByChannel(Hit,Start,EndPoint,ECC_Visibility,Query)&&Hit.Component.IsValid()&&
-          !Hit.Component->ComponentHasTag(TEXT("TerraGround"))&&!Hit.bStartPenetrating){
+      auto ConsiderRigid=[&](const FHitResult& Hit,bool RaisedGround){
         const FVector RigidNormal=Hit.ImpactNormal.GetSafeNormal();
-        if(RigidNormal.Z>.15f&&FVector::DotProduct(Up,RigidNormal)<.5f){
-          const FVector RigidPoint=CarcassSupport(Wheel.Center,Axis,F,RigidNormal,Profile,End);
-          const float RigidClearance=FVector::DotProduct(RigidPoint-Hit.ImpactPoint,RigidNormal);
-          // The ray must hit near the actual carcass, not a distant surface
-          // whose infinite mathematical plane crosses a tire elsewhere.
-          if(FVector::DistSquared(RigidPoint,Hit.ImpactPoint)<FMath::Square(Radius*45+20)&&RigidClearance<Clearance){
-            Point=RigidPoint;Normal=RigidNormal;Clearance=RigidClearance;Natural=false;Friction=.85f;
-          }
-        }
+        if(RigidNormal.Z<=.15f||FVector::DotProduct(Up,RigidNormal)>=.5f)return false;
+        const FVector RigidPoint=CarcassSupport(Wheel.Center,Axis,F,RigidNormal,Profile,End);
+        const FVector Delta=RigidPoint-Hit.ImpactPoint;
+        const float RigidClearance=FVector::DotProduct(Delta,RigidNormal);
+        // On a continuous rock pad depth is real even if the hub is already
+        // under the triangles. A log, bridge or loop still needs a nearby hit.
+        const FVector Offset=RaisedGround?FVector::VectorPlaneProject(Delta,RigidNormal):Delta;
+        if(Offset.SizeSquared()>=FMath::Square(Radius*45+20)||RigidClearance>=Clearance)return false;
+        Point=RigidPoint;Normal=RigidNormal;Clearance=RigidClearance;Natural=false;Friction=.85f;
+        return true;
+      };
+      FHitResult Hit;++RolledTireTraces;
+      const FVector Start=Wheel.Center+Normal*10.f,EndPoint=Point-Normal*12.f;
+      const bool HasRigidSupport=GetWorld()->LineTraceSingleByChannel(Hit,Start,EndPoint,ECC_Visibility,Query)&&
+        Hit.Component.IsValid()&&!Hit.Component->ComponentHasTag(TEXT("TerraGround"))&&
+        !Hit.bStartPenetrating&&ConsiderRigid(Hit,false);
+      if(!HasRigidSupport){
+        const FVector DeckProbe=CarcassSupport(Wheel.Center,Axis,F,FVector::UpVector,Profile,End);
+        if(Terrain->TraceRaisedGround(DeckProbe,Hit,RolledTireTraces))ConsiderRigid(Hit,true);
       }
       if(FVector::DotProduct(Up,Normal)>.5f||Normal.Z<.15f)continue;
       const float NormalSpeed=FVector::DotProduct(Chassis->GetPhysicsLinearVelocityAtPoint(Point)+GravityDelta,Normal);
@@ -169,7 +172,7 @@ void ATerraVehicle::UpdateRolledTireContacts(float Dt) {
   for(int I=RolledBodySupports.Num()-1;I>=0;--I){
     const auto& Cached=RolledBodySupports[I];auto* Surface=Cached.Surface.Get();
     bool Valid=Surface&&NowSeconds>=Cached.Time&&NowSeconds-Cached.Time<=.20f;
-    FVector Point,Normal,SurfacePoint;float Clearance=0;
+    FVector Point=FVector::ZeroVector,Normal=FVector::ZeroVector,SurfacePoint;float Clearance=0;
     if(Valid){
       Point=GetActorTransform().TransformPosition(Cached.BodyLocalPoint);
       SurfacePoint=Surface->GetComponentTransform().TransformPosition(Cached.SurfaceLocalPoint);

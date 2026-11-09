@@ -124,6 +124,10 @@ void ATerraGameMode::Tick(float Dt) {
       FScreenshotRequest::RequestScreenshot(Directory/Name,true,false);
     }
   };
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraGraveRecoveryOnly"))){
+    if(TerraRecoveryValidation::TickGrave(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRecoveryOnly"))){
     if(TerraRecoveryValidation::Tick(V,Dt,Check,Capture))FinishValidation();return;
   }
