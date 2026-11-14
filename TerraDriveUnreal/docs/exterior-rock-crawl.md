@@ -90,3 +90,30 @@ The SHA-256 of the sorted build-input hash manifest was
 The validation package was archived separately from the installed game.
 These fixed-clock runs measured functional behavior. Uncapped throughput
 and long-session temperatures remain unmeasured.
+
+## Export reuse and active HUD notices
+
+The build checks the terrain, world manifest, and import manifest against
+the completed export before reusing them. A regression test interrupts
+publication after both manifests are replaced and before the terrain is
+replaced. The build refuses the mixed files, and a complete retry restores
+reuse. The five export regression tests also cover missing completion records
+and a mismatch in each of the three files. A full export and a retry with
+`world.json` absent matched the previously validated output byte for byte.
+The terrain validator checked 14,036 cells across all four challenge footprints.
+
+The HUD now resolves route hints as it draws them. The native fixture starts
+a route, observes the default key on-screen, pauses and rebinds the key, then
+resumes to verify the updated notice. It repeats the sequence with a reset
+and verifies that the notice still expires on its original timer.
+
+The new Windows executable passed 238 offscreen functional checks at fixed
+20 Hz. This includes 163 interface checks, 27 challenge checks and 48 recovery
+checks. All three runs exited with zero runtime errors. The peak GPU
+temperature was 60.84 °C. The isolated package combined the new executable
+with the five byte-identical content files from the preceding full cook.
+
+The tested executable SHA-256 was
+`ae1ec51dc63ea4b7939ae2b4f6b75ed752c8768504f5011110081450cce33e19`.
+The SHA-256 of the sorted game build-input hash manifest was
+`65988cd1edb09bc9371f841b006502f56f477ffed38499ab3985f203aa4a0977`.

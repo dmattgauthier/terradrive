@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import readline from 'node:readline';
 import assert from 'node:assert/strict';
 import {tireDiameterInches} from './tire-size-geometry.mjs';
+import {beginSourceExport,publishSourceExport,verifySourceExport} from './source-export-state.mjs';
 const rootDefault=path.resolve(import.meta.dirname,'..');
 const spacing=.025,margin=.040,stepAngle=2*Math.PI/180;
 export function fitAxles(spec,radius){
@@ -107,25 +108,35 @@ export function deriveTireFits(spec,samples){
  }
  return fits;
 }
-export async function bakeTireFits(root=rootDefault){
- const manifestPath=path.join(root,'SourceAssets','import.json'),worldPath=path.join(root,'Content','NativeData','world.json');
- const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8')),world=JSON.parse(fs.readFileSync(worldPath,'utf8'));
+export async function bakeTireFits(root,manifest){
  const materials=new Map(manifest.materials.map(m=>[m.id,m])),evidence=path.join(root,'Saved','ExpandedRosterFidelity','TireFit');fs.mkdirSync(evidence,{recursive:true});
  const results=[];
  for(const spec of manifest.vehicles){
-  if(spec.tireRadius*2/.0254>=50){spec.tireFits=[];world.vehicles.find(v=>v.id===spec.id).tireFits=[];continue;}
+  if(spec.tireRadius*2/.0254>=50){spec.tireFits=[];continue;}
   const name=spec.asset+'_body',asset=manifest.assets.find(a=>a.name===name),cache=path.join(evidence,name+'.json');let data;
   if(fs.existsSync(cache)){const old=JSON.parse(fs.readFileSync(cache,'utf8'));if(old.bodySha256===asset.sha256&&old.version===2)data=old;}
-  if(!data){data={version:2,...await bodySamples(path.join(root,'SourceAssets',name+'.obj'),spec,materials)};assert.equal(data.bodySha256,asset.sha256,'tire fitting mesh matches export manifest');fs.writeFileSync(cache,JSON.stringify(data));}
-  const tireFits=deriveTireFits(spec,data.samples);spec.tireFits=tireFits;world.vehicles.find(v=>v.id===spec.id).tireFits=tireFits;
+  if(!data){
+   data={version:2,...await bodySamples(path.join(root,'SourceAssets',name+'.obj'),spec,materials)};
+   assert.equal(data.bodySha256,asset.sha256,'tire fitting mesh matches export manifest');
+   const pending=`${cache}.${process.pid}.tmp`;
+   try{fs.writeFileSync(pending,JSON.stringify(data));fs.renameSync(pending,cache);}
+   finally{fs.rmSync(pending,{force:true});}
+  }
+  const tireFits=deriveTireFits(spec,data.samples);spec.tireFits=tireFits;
   results.push({id:spec.id,bodySha256:data.bodySha256,sourceVertices:data.sourceVertices,selectedFaces:data.selectedFaces,coverageCells:data.coverageCells,tireFits});
   console.log(JSON.stringify({tireFit:spec.id,coverageCells:data.coverageCells,fits:tireFits.map(f=>({stage:f.stage,inches:f.diameterInches,liftM:f.liftM,trackExtraM:f.trackExtraM}))}));
  }
- fs.writeFileSync(manifestPath,JSON.stringify(manifest));fs.writeFileSync(worldPath,JSON.stringify(world));
  const report={revision:2,kind:'source-geometry',nativeAcceptance:false,sampleSpacingM:spacing,marginM:margin,
   steering:'Full 34-degree input with Ackermann and factory rear steering; two-degree angular sampling',
   suspension:'Complete upward sweep through stock bump; every upgraded suspension has greater lift than its additional bump',
   wheels:'All four wheel-width/track stages; worst tire compound width; trailing tandem axle extended for an 80 mm gap',vehicles:results};
  fs.writeFileSync(path.join(evidence,'fit-report.json'),JSON.stringify(report,null,2)+'\n');return report;
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===path.resolve(import.meta.filename))await bakeTireFits();
+if(process.argv[1]&&path.resolve(process.argv[1])===path.resolve(import.meta.filename)){
+ verifySourceExport(rootDefault);
+ const manifest=JSON.parse(fs.readFileSync(path.join(rootDefault,'SourceAssets','import.json'),'utf8'));
+ const terrain=fs.readFileSync(path.join(rootDefault,'Content','NativeData','terrain.bin'));
+ beginSourceExport(rootDefault);
+ await bakeTireFits(rootDefault,manifest);
+ publishSourceExport(rootDefault,manifest,terrain);
+}

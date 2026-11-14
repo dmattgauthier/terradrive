@@ -89,14 +89,12 @@ void ATerraHUD::DrawHUD() {
   Text(Details,White,20*S,Y-38*S,.83f,Canvas->SizeX-40*S,true);
   if(!V->RouteStatus.IsEmpty())Text(V->RouteStatus,White,20*S,Y-21*S,.8f,Canvas->SizeX-40*S,true);
   float NoticeY=Y-61*S;
-  if(V->Terrain&&V->Terrain->Routes.IsValidIndex(V->RouteIndex)){
-    const auto& Route=V->Terrain->Routes[V->RouteIndex];
-    if(Route.Gates.IsValidIndex(V->GateIndex)&&Route.GateNotes.IsValidIndex(V->GateIndex)){
-      const auto& Tip=Route.GateNotes[V->GateIndex];
-      if(!Tip.IsEmpty()){
-        Text(Tip,Mint,20*S,NoticeY,.9f,Canvas->SizeX-40*S,true);
-        NoticeY-=20*S;
-      }
+  const FTerraRoute* Route=V->Terrain&&V->Terrain->Routes.IsValidIndex(V->RouteIndex)?&V->Terrain->Routes[V->RouteIndex]:nullptr;
+  if(Route&&Route->Gates.IsValidIndex(V->GateIndex)&&Route->GateNotes.IsValidIndex(V->GateIndex)){
+    const auto& Tip=Route->GateNotes[V->GateIndex];
+    if(!Tip.IsEmpty()){
+      Text(Tip,Mint,20*S,NoticeY,.9f,Canvas->SizeX-40*S,true);
+      NoticeY-=20*S;
     }
   }
   const double Now=GetWorld()->GetRealTimeSeconds();
@@ -106,5 +104,9 @@ void ATerraHUD::DrawHUD() {
   VisibleNotice=Recent&&RecoveryBlocked?LastNotice:
     V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):!V->HasPropulsionEnergy()?
       TEXT("EMPTY  /  Stop, then charge or refuel [")+V->ControlLabel(A::Garage)+TEXT("] or Esc"):(Recent?LastNotice:FString());
-  if(!VisibleNotice.IsEmpty())Text(VisibleNotice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S,true);
+  if(!VisibleNotice.IsEmpty()){
+    // A binding change updates the displayed hint without restarting its lifetime.
+    if(Route&&VisibleNotice==Route->Hint)VisibleNotice=V->RouteHint(VisibleNotice);
+    Text(VisibleNotice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S,true);
+  }
 }

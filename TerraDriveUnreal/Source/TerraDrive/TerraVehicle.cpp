@@ -436,7 +436,7 @@ void ATerraVehicle::TeleportRoute(int Index) {
   SetActorLocationAndRotation(RouteSpawnPosition(Route) + FVector(0,0,ExpectedRideHeight()*100+16),
       FRotator(0,Route.Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
   PreviousRoutePosition = GetActorLocation();
-  Notice = RouteHint(Route.Hint);
+  Notice = Route.Hint;
 }
 
 FString ATerraVehicle::RouteHint(const FString& Hint)const {

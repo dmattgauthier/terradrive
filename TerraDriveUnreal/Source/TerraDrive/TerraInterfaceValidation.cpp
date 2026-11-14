@@ -28,11 +28,12 @@ struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TerraSim::UpgradeSetup Builds[ATerraVehicle::VehicleCount];
   int Phase=0,Model=0,OriginalVehicle=0,OriginalGraphics=0;
+  int HintRoute=INDEX_NONE;
   float Time=0,PausedRouteTime=0,MaximumCoupling=0,InitialShaftDifference=0;
   float MaximumPausedPositionDelta=0,MaximumPausedVelocityDelta=0;
   int PausedSamples=0;
   bool PausedRotationStable=true,PausedWorldStable=true,PausedRouteStable=true;
-  double PausedWorldTime=0;
+  double PausedWorldTime=0,HintSampleAt=0;
   FVector PausedPosition,PausedVelocity;
   FQuat PausedRotation;
   FString Directory;
@@ -260,29 +261,29 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     const bool HintKeys=V->RebindControl(A::Forward,EKeys::E,Error,false)&&V->RebindControl(A::Crawl,EKeys::H,Error,false)&&V->RebindControl(A::DescentAssist,EKeys::O,Error,false);
     Menu->ShowPage(3);
     bool CrawlHint=false,DescentHint=false;
-    TArray<int> HintRoutes;
+    int CrawlRoute=INDEX_NONE;
     for(int I=0;I<V->Terrain->Routes.Num();++I){
       const auto& Hint=V->Terrain->Routes[I].Hint;
       if(Hint.Contains(TEXT("Shift+W"))){
-        HintRoutes.Add(I);V->TeleportRoute(I);
+        CrawlRoute=I;
         const FString Expected=Hint.Replace(TEXT("Shift+W"),TEXT("H+E"));
-        CrawlHint=V->Notice==Expected&&ChallengeShowsHint(*Menu,I,Expected);
+        CrawlHint=ChallengeShowsHint(*Menu,I,Expected);
       }
       if(Hint.Contains(TEXT("K descent assist"))){
-        HintRoutes.Add(I);V->TeleportRoute(I);
+        State.HintRoute=I;
         const FString Expected=Hint.Replace(TEXT("K descent assist"),TEXT("O descent assist"));
-        DescentHint=V->Notice==Expected&&ChallengeShowsHint(*Menu,I,Expected);
+        DescentHint=ChallengeShowsHint(*Menu,I,Expected);
       }
     }
-    Check(TEXT("crawl hint updates in the same pause menu and in the route notice"),HintKeys&&CrawlHint);
-    Check(TEXT("descent hint updates in the same pause menu and in the route notice"),HintKeys&&DescentHint);
-    V->TeleportRoute(0);
+    Check(TEXT("crawl hint updates in the same pause menu"),HintKeys&&CrawlHint);
+    Check(TEXT("descent hint updates in the same pause menu"),HintKeys&&DescentHint);
     Check(TEXT("successful control save writes the full rebound map"),HintKeys&&V->SaveControls(File(TEXT("controls-roundtrip.json"))));
     Menu->ShowPage(1);
     Check(TEXT("resetting defaults restores the standard garage key"),V->ResetControls(false)&&V->ControlKey(A::Garage)==TerraControls::DefaultKey(A::Garage));
     Menu->ShowPage(3);
-    bool DefaultHints=HintRoutes.Num()==2;
-    for(const int I:HintRoutes)DefaultHints&=ChallengeShowsHint(*Menu,I,V->Terrain->Routes[I].Hint);
+    const bool DefaultHints=CrawlRoute!=INDEX_NONE&&State.HintRoute!=INDEX_NONE&&
+      ChallengeShowsHint(*Menu,CrawlRoute,V->Terrain->Routes[CrawlRoute].Hint)&&
+      ChallengeShowsHint(*Menu,State.HintRoute,V->Terrain->Routes[State.HintRoute].Hint);
     Check(TEXT("resetting defaults updates both hints without reopening the pause menu"),DefaultHints);
     Menu->ShowPage(1);
     const bool Reloaded=V->LoadControls(File(TEXT("controls-roundtrip.json")))&&V->ControlKey(A::Garage)==EKeys::B;
@@ -331,7 +332,39 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   }break;
   case 24:if(State.Time>.25f){
     Check(TEXT("reset defaults persists the complete standard layout"),V->ResetControls()&&V->ControlKey(A::Garage)==TerraControls::DefaultKey(A::Garage)&&V->LoadControls(V->ControlsPath()));
-    V->SetGarage(true);Next(25);
+    if(!V->Terrain->Routes.IsValidIndex(State.HintRoute)){Check(TEXT("HUD notice fixture has a descent route"),false);Restore(V);return true;}
+    V->TeleportRoute(State.HintRoute);Stop(V);Next(33);
+  }break;
+  case 33:if(State.Time>.1f){
+    const FString& Hint=V->Terrain->Routes[State.HintRoute].Hint;
+    Check(TEXT("route travel draws the default descent key in the HUD"),HUD->VisibleNotice==Hint);
+    State.HintSampleAt=V->GetWorld()->GetRealTimeSeconds();
+    V->SetPauseMenu(true);Next(34);
+  }break;
+  case 34:{
+    FString Error;
+    Check(TEXT("descent key rebinds while the original route notice is active"),V->PauseMenuOpen&&V->RebindControl(A::DescentAssist,EKeys::O,Error,false));
+    V->SetPauseMenu(false);Next(35);
+  }break;
+  case 35:if(State.Time>.1f){
+    const FString& Hint=V->Terrain->Routes[State.HintRoute].Hint;
+    Check(TEXT("resuming draws the rebound key in the existing route notice"),
+      V->RouteIndex==State.HintRoute&&HUD->VisibleNotice==Hint.Replace(TEXT("K descent assist"),TEXT("O descent assist")));
+    V->SetPauseMenu(true);Next(36);
+  }break;
+  case 36:{
+    Check(TEXT("descent key resets without restarting the route"),V->PauseMenuOpen&&V->ResetControls(false));
+    V->SetPauseMenu(false);Next(37);
+  }break;
+  case 37:if(State.Time>.1f){
+    Check(TEXT("resuming draws the default key in the existing route notice"),
+      V->RouteIndex==State.HintRoute&&HUD->VisibleNotice==V->Terrain->Routes[State.HintRoute].Hint);
+    Next(38);
+  }break;
+  case 38:if(V->GetWorld()->GetRealTimeSeconds()-State.HintSampleAt>5.05){
+    Check(TEXT("rebinding and reset preserve the original HUD notice expiration"),
+      V->RouteIndex==State.HintRoute&&HUD->VisibleNotice.IsEmpty());
+    V->TeleportRoute(0);V->SetGarage(true);Next(25);
   }break;
   case 25:if(State.Time>.5f){
     const auto Garage=V->GetGarageWidget();const bool Handled=Garage.IsValid()&&Garage->OnPreviewKeyDown(FGeometry(),FKeyEvent(EKeys::Escape,FModifierKeysState(),0,false,0,0)).IsEventHandled();

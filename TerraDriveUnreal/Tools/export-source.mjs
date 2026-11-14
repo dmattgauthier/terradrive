@@ -28,9 +28,13 @@ import {createChallengeView} from '../../TerraDrive-v1.13/dist/src/challenge-vie
 import {buildRockCourses,challengeCollisionMesh,inQuarry} from './offroad-courses.mjs';
 import {vehicleAdditions,suspensionModels,environmentModels} from './native-models.mjs';
 import {refineVehicle,brakeCaliperModel,brakeRotorModel} from './vehicle-fidelity.mjs';
+import {beginSourceExport,publishSourceExport} from './source-export-state.mjs';
+import {bakeTireFits} from './tire-fit.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeData');
+const manifestPath=path.join(out,'import.json');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
+beginSourceExport(root);
 buildGardenGeology(data);
 globalThis.document={createElement(){return {width:0,height:0,getContext:()=>({fillRect(){},fillText(){},putImageData(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})})}}};
 const mats=[],matIds=new Map(),assets=[],tints=new Map();
@@ -39,8 +43,8 @@ const mats=[],matIds=new Map(),assets=[],tints=new Map();
 const materialKeys=['color','roughness','metallic','opacity','vertexColors','diffuse','alpha','alphaTest','clearcoat','coatRoughness','emissive','role','automotive','automotiveOwner','normal','roughMap'];
 const materialKey=d=>JSON.stringify(materialKeys.map(k=>d[k]??null)),previousMaterials=new Map();
 let nextMaterial=0;
-if(fs.existsSync(path.join(out,'import.json'))){
- for(const m of JSON.parse(fs.readFileSync(path.join(out,'import.json'),'utf8')).materials){
+if(fs.existsSync(manifestPath)){
+ for(const m of JSON.parse(fs.readFileSync(manifestPath,'utf8')).materials){
   const key=materialKey(m);if(!previousMaterials.has(key))previousMaterials.set(key,[]);
   previousMaterials.get(key).push(m.id);nextMaterial=Math.max(nextMaterial,Number(m.id.slice(2))+1);
  }
@@ -226,20 +230,9 @@ addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x),landmarks);
 applySlateRimPilot(manifest,field);
 applySlateRimExtension(manifest,field);
 addTerrainChallenges(manifest,field);
-fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
-fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
-// Tire fit is derived from these exact exported coachwork triangles, then
-// written to both vehicle manifests before the editor imports any assets.
-await (await import('./tire-fit.mjs')).bakeTireFits(root);
+// Fit the exact exported coachwork before publishing either manifest.
+await bakeTireFits(root,manifest);
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));
-// Only publish the completed field. Keep the temporary file outside NativeData
-// so the cooker cannot stage it after an interrupted export.
-const pendingField=path.join(root,'Content',`terrain-${process.pid}.tmp`);
-try{
- fs.writeFileSync(pendingField,field);
- fs.renameSync(pendingField,path.join(data,'terrain.bin'));
-}finally{
- fs.rmSync(pendingField,{force:true});
-}
+publishSourceExport(root,manifest,field);
 console.log('Export complete:',assets.length,'meshes,',placements.length,'instance groups,',trees.length,'trees');
 

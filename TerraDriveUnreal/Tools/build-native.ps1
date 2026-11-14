@@ -6,6 +6,13 @@ $project=Join-Path $projectRoot 'TerraDrive.uproject'
 $env:UBA_ROOT=Join-Path $projectRoot 'Saved\UBA'
 $env:uebp_LogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
 $env:uebp_FinalLogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
+function Confirm-SourceExport {
+    & node (Join-Path $PSScriptRoot 'source-export-state.mjs')
+    if ($LASTEXITCODE) { throw 'Native source export verification failed' }
+}
+if ($ImportAssets -and $SkipExport) {
+    Confirm-SourceExport
+}
 if (!$SkipBuild) {
     & "$engineRoot\Engine\Build\BatchFiles\Build.bat" TerraDriveEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE -NoUBA -MaxParallelActions=2
     if ($LASTEXITCODE) { throw 'Editor compilation failed' }
@@ -14,6 +21,7 @@ if ($ImportAssets) {
     if (!$SkipExport) {
         & node (Join-Path $PSScriptRoot 'export-source.mjs')
         if ($LASTEXITCODE) { throw 'Source conversion failed' }
+        Confirm-SourceExport
     }
     & node (Join-Path $PSScriptRoot 'bake-vehicle-ground-probes.mjs')
     if($LASTEXITCODE){throw 'Vehicle lower-body probe generation failed'}
@@ -55,6 +63,7 @@ if ($ImportAssets) {
     if (!(Test-Path -LiteralPath $importMarker) -or (Get-Item -LiteralPath $importMarker).LastWriteTime -lt $started -or !(Test-Path -LiteralPath (Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'))) { throw "Asset import did not produce a fresh completion marker and map. Inspect the batch logs in Saved/Logs." }
 }
 if ($Package) {
+    Confirm-SourceExport
     & node (Join-Path $PSScriptRoot 'garden-geology.mjs')
     if($LASTEXITCODE){throw 'Garden geology cache generation failed'}
     foreach ($required in @('Content\Maps\ProvingGround.umap','Content\NativeData\world.json','Content\NativeData\terrain.bin','Content\NativeData\vehicle-ground-probes.json','Content\NativeData\vehicle-collision.json','Content\NativeData\vehicle-tire-probes.json')) {
