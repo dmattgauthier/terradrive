@@ -13,6 +13,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Widgets/Layout/SScrollBox.h"
+#include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/Layout/SSpacer.h"
 #include "Widgets/Layout/SWidgetSwitcher.h"
 #include "Widgets/Text/STextBlock.h"
@@ -249,7 +250,10 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
     List->AddSlot().AutoHeight().Padding(0,0,0,8)
     [SNew(SButton).ButtonStyle(&ButtonStyle()).ContentPadding(FMargin(18,10))
       .ButtonColorAndOpacity_Lambda([this,I]{return Vehicle.IsValid()&&Vehicle->VehicleIndex==I?FLinearColor(.19,.33,.26):Ink;})
-      .OnClicked_Lambda([this,I]{if(Vehicle.IsValid())Vehicle->SelectVehicle(I);return FReply::Handled();})
+      .OnClicked_Lambda([this,I]{
+        if(Vehicle.IsValid()){Vehicle->SelectVehicle(I);RefreshTireOptions();}
+        return FReply::Handled();
+      })
       [SNew(SVerticalBox)
         +SVerticalBox::Slot().AutoHeight()
         [SNew(SHorizontalBox)
@@ -287,13 +291,15 @@ TSharedRef<SWidget> STerraGarage::VehiclePage() {
         ]]]];
 }
 TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
-  auto Stages=SNew(SHorizontalBox);
-  for(int S=0;S<4;++S){
-    Stages->AddSlot().AutoWidth().Padding(3,0)
-    [SNew(SBox).WidthOverride(S==0?64:Part==TerraSim::CenterDifferential?96:Part>=TerraSim::Drivetrain?59:46).HeightOverride(34)
+  auto Stages=SNew(SUniformGridPanel).SlotPadding(FMargin(3,2));
+  const int LastStage=Vehicle.IsValid()?Vehicle->UpgradeMaxStage(Part):0;
+  const float Width=Part==TerraSim::CenterDifferential||Part==TerraSim::Suspension?96:Part>=TerraSim::Drivetrain?64:52;
+  for(int S=0;S<=LastStage;++S){
+    Stages->AddSlot(S%4,S/4)
+    [SNew(SBox).WidthOverride(Width).HeightOverride(34)
       [SNew(SButton).ButtonStyle(&ButtonStyle()).HAlign(HAlign_Center).VAlign(VAlign_Center)
-        .IsEnabled_Lambda([this,Part,S]{return Vehicle.IsValid()&&(Part!=TerraSim::Electrical||Vehicle->HasElectrical())&&(Part!=TerraSim::CenterDifferential||S==0||Vehicle->CenterLockUpgradeAvailable())&&(Part!=TerraSim::TireSize||S==0||(!Vehicle->Tracks&&Vehicle->SpecValue(TEXT("tireRadius"),.42f)*200/2.54f<50));})
-        .ToolTipText_Lambda([this,Part,S]{return Part==TerraSim::TireSize&&S>0&&Vehicle.IsValid()&&Vehicle->Tracks?FText::FromString(TEXT("Remove tracks before fitting a larger tire kit.")):FText::GetEmpty();})
+        .IsEnabled_Lambda([this,Part,S]{return Vehicle.IsValid()&&Vehicle->UpgradeUnavailableReason(Part,S).IsEmpty();})
+        .ToolTipText_Lambda([this,Part,S]{return Vehicle.IsValid()?FText::FromString(Vehicle->UpgradeUnavailableReason(Part,S)):FText::GetEmpty();})
         .ButtonColorAndOpacity_Lambda([this,Part,S]{return Vehicle.IsValid()&&Vehicle->UpgradeStage(Part)==S?FLinearColor(.28,.49,.34):FLinearColor(.07,.10,.11);})
         .OnClicked_Lambda([this,Part,S]{if(Vehicle.IsValid())Vehicle->SetUpgrade(Part,S);return FReply::Handled();})
         [SNew(STextBlock).Text_Lambda([this,Part,S]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeStageName(Part,S):TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(White)]]];
@@ -310,15 +316,98 @@ TSharedRef<SWidget> STerraGarage::UpgradeRow(int Part) {
         [SNew(STextBlock).Text_Lambda([this,Part]{return FText::FromString(Vehicle.IsValid()?Vehicle->UpgradeEffect(Part):TEXT(""));}).Font(Font(10,true)).ColorAndOpacity(Mint).AutoWrapText(true)]]
       +SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12,0)[Stages]];
 }
+void STerraGarage::RefreshTireOptions(){
+  if(!Vehicle.IsValid()||!DiameterOptions.IsValid()||TireOptionsVehicle==Vehicle->VehicleIndex)return;
+  TireOptionsVehicle=Vehicle->VehicleIndex;
+  const int LastStage=Vehicle->UpgradeMaxStage(TerraSim::TireSize);
+  DiameterOptions->ClearChildren();
+  DiameterButtons.Reset(LastStage+1);
+  DiameterButtons.SetNum(LastStage+1);
+  constexpr int Columns=6;
+  int Tile=0;
+  for(int Stage=0;Stage<=LastStage;++Stage){
+    const int Required=Vehicle->RequiredTireSuspensionStage(Stage);
+    if(Required<0)continue;
+    const auto Requirement=Stage==0?FString(TEXT("Factory size")):
+      Required>0?FString::Printf(TEXT("Suspension %s+"),*Vehicle->UpgradeStageName(TerraSim::Suspension,Required)):
+      FString(TEXT("Stock suspension"));
+    DiameterOptions->AddSlot(Tile%Columns,Tile/Columns)
+      [SAssignNew(DiameterButtons[Stage],SButton).ButtonStyle(&ButtonStyle())
+        .ContentPadding(FMargin(7,7)).HAlign(HAlign_Center).VAlign(VAlign_Center)
+        .IsEnabled_Lambda([this,Stage]{return Vehicle.IsValid()&&Vehicle->UpgradeUnavailableReason(TerraSim::TireSize,Stage).IsEmpty();})
+        .ToolTipText_Lambda([this,Stage]{return Vehicle.IsValid()?FText::FromString(Vehicle->UpgradeUnavailableReason(TerraSim::TireSize,Stage)):FText::GetEmpty();})
+        .ButtonColorAndOpacity_Lambda([this,Stage]{return Vehicle.IsValid()&&Vehicle->UpgradeStage(TerraSim::TireSize)==Stage?FLinearColor(.28,.49,.34):FLinearColor(.09,.14,.14);})
+        .OnClicked_Lambda([this,Stage]{if(Vehicle.IsValid())Vehicle->SetUpgrade(TerraSim::TireSize,Stage);return FReply::Handled();})
+        [SNew(SVerticalBox)
+          +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+          [Label(Vehicle->UpgradeStageName(TerraSim::TireSize,Stage),14,White,true)]
+          +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0,3,0,0)
+          [Label(Requirement,10,Muted)]]];
+    ++Tile;
+  }
+}
+
+TSharedRef<SWidget> STerraGarage::TireRow(){
+  DiameterOptions=SNew(SUniformGridPanel).SlotPadding(FMargin(3,2)).MinDesiredSlotWidth(98);
+  RefreshTireOptions();
+
+  auto Compounds=SNew(SHorizontalBox);
+  const TCHAR* CompoundNames[]={TEXT("FACTORY"),TEXT("TRAIL"),TEXT("EXPEDITION"),TEXT("COMPETITION")};
+  CompoundButtons.SetNum(UE_ARRAY_COUNT(CompoundNames));
+  for(int Stage=0;Stage<CompoundButtons.Num();++Stage){
+    Compounds->AddSlot().FillWidth(1).Padding(3,0)
+      [SAssignNew(CompoundButtons[Stage],SButton).ButtonStyle(&ButtonStyle())
+        .ContentPadding(FMargin(8,9)).HAlign(HAlign_Center)
+        .IsEnabled_Lambda([this,Stage]{return Vehicle.IsValid()&&Vehicle->UpgradeUnavailableReason(TerraSim::Tires,Stage).IsEmpty();})
+        .ToolTipText_Lambda([this,Stage]{return Vehicle.IsValid()?FText::FromString(Vehicle->UpgradeUnavailableReason(TerraSim::Tires,Stage)):FText::GetEmpty();})
+        .ButtonColorAndOpacity_Lambda([this,Stage]{return Vehicle.IsValid()&&Vehicle->UpgradeStage(TerraSim::Tires)==Stage?FLinearColor(.28,.49,.34):FLinearColor(.09,.14,.14);})
+        .OnClicked_Lambda([this,Stage]{if(Vehicle.IsValid())Vehicle->SetUpgrade(TerraSim::Tires,Stage);return FReply::Handled();})
+        [Label(CompoundNames[Stage],11,White,true)]];
+  }
+
+  return SNew(SBorder).BorderImage(&Card).BorderBackgroundColor(FLinearColor(.055,.08,.083,.98)).Padding(14,10)
+    [SNew(SVerticalBox)
+      +SVerticalBox::Slot().AutoHeight()
+      [SNew(SHorizontalBox)
+        +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center)[Label(TEXT("TIRES"),13,White,true)]
+        +SHorizontalBox::Slot().AutoWidth()
+        [SNew(SButton).ButtonStyle(&ButtonStyle()).ButtonColorAndOpacity(FLinearColor(.14,.23,.21))
+          .ContentPadding(FMargin(9,5))
+          .Visibility_Lambda([this]{
+            if(!Vehicle.IsValid()||Vehicle->Tracks)return EVisibility::Collapsed;
+            const int Installed=Vehicle->UpgradeStage(TerraSim::Suspension);
+            const int LastStage=Vehicle->UpgradeMaxStage(TerraSim::TireSize);
+            for(int Stage=1;Stage<=LastStage;++Stage)
+              if(Vehicle->RequiredTireSuspensionStage(Stage)>Installed)return EVisibility::Visible;
+            return EVisibility::Collapsed;
+          })
+          .OnClicked_Lambda([this]{ShowUpgradePart(TerraSim::Suspension);return FReply::Handled();})
+          [Label(TEXT("VIEW SUSPENSION"),10,Mint,true)]]]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,5,0,8)
+      [SNew(STextBlock).Text_Lambda([this]{return Vehicle.IsValid()?FText::FromString(Vehicle->UpgradeEffect(TerraSim::TireSize)):FText::GetEmpty();})
+        .Font(Font(10,true)).ColorAndOpacity(Mint).AutoWrapText(true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(3,0,0,4)[Label(TEXT("DIAMETER"),10,Muted,true)]
+      +SVerticalBox::Slot().AutoHeight()[DiameterOptions.ToSharedRef()]
+      +SVerticalBox::Slot().AutoHeight().Padding(3,5,0,0)
+      [SNew(STextBlock).Text(FText::FromString(TEXT("Remove tracks to change tire size.")))
+        .Visibility_Lambda([this]{return Vehicle.IsValid()&&Vehicle->Tracks?EVisibility::Visible:EVisibility::Collapsed;})
+        .Font(Font(10)).ColorAndOpacity(Muted)]
+      +SVerticalBox::Slot().AutoHeight().Padding(3,9,0,4)[Label(TEXT("COMPOUND"),10,Muted,true)]
+      +SVerticalBox::Slot().AutoHeight()[Compounds]];
+}
+
 TSharedRef<SWidget> STerraGarage::UpgradePage() {
   auto Rows=SNew(SVerticalBox);
-  UpgradeRows.Reset();
+  UpgradeRows.SetNum(TerraSim::PartCount);
   for(int I=0;I<TerraSim::PartCount;++I){
+    if(I==TerraSim::TireSize)continue;
     if(I==0||I==TerraSim::Drivetrain)Rows->AddSlot().AutoHeight().Padding(3,I?14:0,0,8)
       [Label(I?TEXT("DRIVE, ENERGY & AIR"):TEXT("CHASSIS & GRIP"),10,Mint,true)];
-    auto Row=UpgradeRow(I);UpgradeRows.Add(Row);
+    auto Row=I==TerraSim::Tires?TireRow():UpgradeRow(I);
+    UpgradeRows[I]=Row;
     Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[Row];
   }
+  UpgradeRows[TerraSim::TireSize]=UpgradeRows[TerraSim::Tires];
   auto Sheet=SNew(SVerticalBox)
     +SVerticalBox::Slot().AutoHeight()[Label(TEXT("THE BUILD SHEET"),11,Mint,true)]
     +SVerticalBox::Slot().AutoHeight().Padding(0,10,0,14)
@@ -333,7 +422,6 @@ TSharedRef<SWidget> STerraGarage::UpgradePage() {
     +SVerticalBox::Slot().AutoHeight().Padding(0,4,0,14)
     [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->DriveDescription():TEXT(""));}).Font(Font(12,true)).ColorAndOpacity(White).AutoWrapText(true)]
     +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,14)[PressureControls(Vehicle)]
-    +SVerticalBox::Slot().AutoHeight()[Label(TEXT("I   TRAIL   /   II   EXPEDITION\nIII   COMPETITION"),10,Mint,true)]
     +SVerticalBox::Slot().AutoHeight().Padding(0,9,0,0)
     [SNew(STextBlock).Text(FText::FromString(TEXT("Changes apply immediately. Each vehicle remembers its build and pressure target."))).Font(Font(10)).ColorAndOpacity(Muted).AutoWrapText(true)];
   return SNew(SHorizontalBox)
@@ -341,20 +429,23 @@ TSharedRef<SWidget> STerraGarage::UpgradePage() {
       [SNew(SBorder).BorderImage(&Panel).Padding(20)[SNew(SScrollBox)+SScrollBox::Slot()[Sheet]]]]
     +SHorizontalBox::Slot().FillWidth(1)
       [SNew(SVerticalBox)
-        +SVerticalBox::Slot().AutoHeight().Padding(3,0,0,8)[Label(FString::Printf(TEXT("%d UPGRADE SYSTEMS   /   STOCK + THREE STAGES"),int(TerraSim::PartCount)),11,Mint,true)]
+        +SVerticalBox::Slot().AutoHeight().Padding(3,0,0,8)[Label(TEXT("UPGRADES"),11,Mint,true)]
         +SVerticalBox::Slot().FillHeight(1)[SAssignNew(UpgradeScroll,SScrollBox)+SScrollBox::Slot()[Rows]]];
 }
 void STerraGarage::ShowUpgradePart(int Part){
+  RefreshTireOptions();
+  if(Part==TerraSim::TireSize)Part=TerraSim::Tires;
   if(!Pages.IsValid()||!UpgradeScroll.IsValid()||!UpgradeRows.IsValidIndex(Part))return;
   Page=1;Pages->SetActiveWidgetIndex(1);
   PendingUpgradePart=Part;UpgradeScrollAttempts=8;
   // The final row can grow after a vehicle change. Resolve the end offset
   // after Slate lays out the new descriptions, rather than using old geometry.
-  if(Part==TerraSim::PartCount-1)UpgradeScroll->ScrollToEnd();
+  if(Part==TerraSim::CenterDifferential)UpgradeScroll->ScrollToEnd();
   else UpgradeScroll->ScrollDescendantIntoView(UpgradeRows[Part],false,EDescendantScrollDestination::Center);
 }
 void STerraGarage::Tick(const FGeometry& Geometry,const double Time,const float Dt){
   SCompoundWidget::Tick(Geometry,Time,Dt);
+  RefreshTireOptions();
   if(Page!=1||!UpgradeScroll.IsValid()||!UpgradeRows.IsValidIndex(PendingUpgradePart))return;
   const auto& R=UpgradeRows[PendingUpgradePart]->GetCachedGeometry();const auto& S=UpgradeScroll->GetCachedGeometry();
   const auto RT=R.LocalToAbsolute(FVector2D::ZeroVector),RB=R.LocalToAbsolute(R.GetLocalSize());
@@ -363,6 +454,6 @@ void STerraGarage::Tick(const FGeometry& Geometry,const double Time,const float 
   if(UpgradeScrollAttempts--<=0){PendingUpgradePart=-1;return;}
   // Auto-wrapped descriptions acquire their final height after the first
   // visible layout. Keep the requested row in view through that short change.
-  if(PendingUpgradePart==TerraSim::PartCount-1)UpgradeScroll->ScrollToEnd();
+  if(PendingUpgradePart==TerraSim::CenterDifferential)UpgradeScroll->ScrollToEnd();
   else UpgradeScroll->ScrollDescendantIntoView(UpgradeRows[PendingUpgradePart],false,EDescendantScrollDestination::Center);
 }

@@ -26,7 +26,7 @@ void Saves(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check)
   const FString Current=S.Folder/TEXT("current.json"),Legacy=S.Folder/TEXT("legacy7.json");
   bool Saved=V->SaveGarage(Current);FString Text;TSharedPtr<FJsonObject> R;
   Saved&=FFileHelper::LoadFileToString(Text,*Current)&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),R)&&R.IsValid();
-  Check(TEXT("v9 garage writes all twelve native vehicle profiles"),Saved&&R->GetNumberField(TEXT("version"))==9&&R->GetArrayField(TEXT("builds")).Num()==ATerraVehicle::VehicleCount,ATerraVehicle::VehicleCount);
+  Check(TEXT("v10 garage writes all twelve native vehicle profiles"),Saved&&R->GetNumberField(TEXT("version"))==TerraSim::GarageSaveVersion&&R->GetArrayField(TEXT("builds")).Num()==ATerraVehicle::VehicleCount,ATerraVehicle::VehicleCount);
   if(!Saved)return;
   for(const TCHAR* K:{TEXT("builds"),TEXT("fuelLevels"),TEXT("batteryCharge"),TEXT("pressureTargets")}){auto A=R->GetArrayField(K);A.SetNum(9);R->SetArrayField(K,A);}
   // A historical v7 profile has thirteen slots, even though current saves

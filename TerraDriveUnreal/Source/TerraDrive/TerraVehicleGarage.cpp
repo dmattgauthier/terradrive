@@ -10,6 +10,7 @@
 #include "Chaos/KinematicTargets.h"
 #include "Components/RectLightComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/GameViewportClient.h"
 #include "Framework/Application/SlateApplication.h"
 #include "GameFramework/PlayerController.h"
@@ -20,6 +21,52 @@
 #include "Misc/Parse.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+
+namespace {
+struct FTireFit {
+  int Diameter=0,MinimumSuspension=0;
+  float TrackExtra=0,BumpFront=1.f,BumpRear=1.f,Steering=ATerraVehicle::SteeringLockDegrees;
+  FString BodyAsset;
+};
+
+const FJsonObject* VehicleSpec(const ATerraWorld* Terrain,int Index){
+  const TArray<TSharedPtr<FJsonValue>>* Specs=nullptr;
+  if(!Terrain||!Terrain->Data.IsValid()||!Terrain->Data->TryGetArrayField(TEXT("vehicles"),Specs)||!Specs->IsValidIndex(Index))return nullptr;
+  const auto* Object=(*Specs)[Index]->AsObject().Get();
+  return Object;
+}
+
+bool FindTireFit(const FJsonObject* Spec,int Stage,FTireFit& Result){
+  const TArray<TSharedPtr<FJsonValue>>* Fits=nullptr;
+  if(!Spec||Stage<1||Stage>TerraSim::MaxTireSizeStage||!Spec->TryGetArrayField(TEXT("tireFits"),Fits)||!Fits->IsValidIndex(Stage-1))return false;
+  const auto Fit=(*Fits)[Stage-1]->AsObject();
+  if(!Fit.IsValid())return false;
+  double Diameter=0,Minimum=0,Track=0,Front=0,Rear=0,Steering=0,Lift=0;
+  if(Fit->GetIntegerField(TEXT("stage"))!=Stage||
+     !Fit->TryGetNumberField(TEXT("diameterInches"),Diameter)||!FMath::IsFinite(Diameter)||Diameter<25||Diameter>50||FMath::FloorToDouble(Diameter)!=Diameter||
+     !Fit->TryGetNumberField(TEXT("minimumSuspensionStage"),Minimum)||!(Minimum>=1&&Minimum<=3)||FMath::FloorToDouble(Minimum)!=Minimum||
+     !Fit->TryGetNumberField(TEXT("trackExtraM"),Track)||!(Track>=0&&Track<=.65)||
+     !Fit->TryGetNumberField(TEXT("maximumBumpFrontM"),Front)||!(Front>=.055&&Front<=1)||
+     !Fit->TryGetNumberField(TEXT("maximumBumpRearM"),Rear)||!(Rear>=.055&&Rear<=1)||
+     !Fit->TryGetNumberField(TEXT("maximumSteeringDegrees"),Steering)||!(Steering>=18&&Steering<=ATerraVehicle::SteeringLockDegrees)||
+     !Fit->TryGetNumberField(TEXT("liftM"),Lift)||Lift!=0)return false;
+  Result={int(Diameter),int(Minimum),float(Track),float(Front),float(Rear),float(Steering),FString()};
+  Fit->TryGetStringField(TEXT("bodyAsset"),Result.BodyAsset);
+  return true;
+}
+
+int ResolveSavedTireStage(const FJsonObject* Spec,float Diameter,int& Suspension,bool UpgradeLegacySuspension){
+  int Pick=0,BestDiameter=0,Required=0;
+  FTireFit Fit;
+  for(int Stage=1;FindTireFit(Spec,Stage,Fit);++Stage){
+    if(Fit.Diameter>Diameter+.01f||Fit.Diameter<=BestDiameter||
+       (!UpgradeLegacySuspension&&Fit.MinimumSuspension>Suspension))continue;
+    Pick=Stage;BestDiameter=Fit.Diameter;Required=Fit.MinimumSuspension;
+  }
+  if(UpgradeLegacySuspension)Suspension=FMath::Max(Suspension,Required);
+  return Pick;
+}
+}
 
 FString ATerraVehicle::GaragePath() const { FString Path=FPaths::ProjectSavedDir()/TEXT("garage-builds.json");FParse::Value(FCommandLine::Get(),TEXT("TerraGarage="),Path);return Path; }
 void ATerraVehicle::OrbitGarageCamera(float YawDelta,float PitchDelta){
@@ -36,14 +83,18 @@ void ATerraVehicle::SetGarageView(int View){
   if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
 }
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
-  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),9);
+  auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),TerraSim::GarageSaveVersion);
   Root->SetBoolField(TEXT("damageEnabled"),DamageEnabled);
   Root->SetBoolField(TEXT("energyUsageEnabled"),EnergyUsageEnabled);
   Root->SetNumberField(TEXT("vehicle"),VehicleIndex);
   TArray<TSharedPtr<FJsonValue>> Cars;
-  for(const auto &Build:Builds){
+  for(int I=0;I<VehicleCount;++I){
+    const auto& Build=Builds[I];
+    FTireFit Fit;
+    FindTireFit(VehicleSpec(Terrain,I),Build.Stage[TerraSim::TireSize],Fit);
     TArray<TSharedPtr<FJsonValue>> Stages;
-    for(int S:Build.Stage)Stages.Add(MakeShared<FJsonValueNumber>(S));
+    for(int Part=0;Part<TerraSim::PartCount;++Part)
+      Stages.Add(MakeShared<FJsonValueNumber>(Part==TerraSim::TireSize?Fit.Diameter:Build.Stage[Part]));
     Cars.Add(MakeShared<FJsonValueArray>(Stages));
   }
   Root->SetArrayField(TEXT("builds"),Cars);
@@ -63,7 +114,7 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())return false;
   double Version=0,Selected=0;
   const TArray<TSharedPtr<FJsonValue>> *Cars=nullptr;
-  if(!Root->TryGetNumberField(TEXT("version"),Version)||(Version!=1&&Version!=2&&Version!=3&&Version!=4&&Version!=5&&Version!=6&&Version!=7&&Version!=8&&Version!=9)||
+  if(!Root->TryGetNumberField(TEXT("version"),Version)||(!(Version>=1&&Version<=TerraSim::GarageSaveVersion)||FMath::FloorToDouble(Version)!=Version)||
       !Root->TryGetArrayField(TEXT("builds"),Cars)||Cars->Num()!=(Version==1?5:Version<4?6:Version<8?9:Version==8?10:VehicleCount))return false;
   TerraSim::UpgradeSetup Loaded[VehicleCount];
   for(int I=0;I<Cars->Num();++I){
@@ -72,6 +123,17 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
     double Values[TerraSim::PartCount]={};
     for(int P=0;P<Stages->Num();++P)if(!(*Stages)[P].IsValid()||!(*Stages)[P]->TryGetNumber(Values[P]))return false;
     if(!TerraSim::DecodeUpgradeStages(Values,Stages->Num(),int(Version),I!=2||(Version>=4&&Values[TerraSim::EVSwap]>0),Loaded[I],I==4||I==7))return false;
+    const FJsonObject* CarSpec=VehicleSpec(Terrain,I);
+    int& Size=Loaded[I].Stage[TerraSim::TireSize];
+    const bool Legacy=Version<TerraSim::GarageSaveVersion;
+    float Diameter=Size;
+    if(Legacy&&CarSpec){
+      const float Stock=CarSpec->GetNumberField(TEXT("tireRadius"))*200/2.54f;
+      if(Size>0)Diameter=TerraSim::LegacyTireKitDiameterInches(Stock,Size);
+      else if(Stock<50&&Loaded[I].Stage[TerraSim::Tires]>0)
+        Diameter=FMath::RoundToFloat(Stock*(1+.04f*Loaded[I].Stage[TerraSim::Tires]));
+    }
+    Size=ResolveSavedTireStage(CarSpec,Diameter,Loaded[I].Stage[TerraSim::Suspension],Legacy&&Size>0);
   }
   if(Root->HasField(TEXT("vehicle"))&&(!Root->TryGetNumberField(TEXT("vehicle"),Selected)||!FMath::IsFinite(Selected)||Selected<0||Selected>=Cars->Num()||std::floor(Selected)!=Selected))return false;
   float Air[VehicleCount]={},Charge[VehicleCount],Fuel[VehicleCount];for(int I=0;I<VehicleCount;++I)Charge[I]=Fuel[I]=.75f;
@@ -183,27 +245,39 @@ void ATerraVehicle::ApplyUpgrades(){
     Tuning.HardwareMass*=.30f;
   }
   const float StockRadius=Number(TEXT("tireRadius"),.42f);
-  const int SizeStage=UpgradeStage(TerraSim::TireSize);
-  TireKitLift=0;
-  if(SizeStage>0&&StockRadius*200/2.54f<50){
-    const float KitRadius=TerraSim::TireKitDiameterInches(StockRadius*200/2.54f,SizeStage)*.0127f;
-    Tuning.TireRadius=KitRadius/StockRadius;
-    // The lift follows radius growth, preserving full-bump upper tire clearance.
-    // Added track and width require longer steering/axle links, drawn dynamically.
-    TireKitLift=KitRadius-StockRadius+.025f;
-    float FitTrack=FMath::Max(0.f,KitRadius-StockRadius)*.55f;
-    const TArray<TSharedPtr<FJsonValue>>* Fits=nullptr;
-    if(Spec->TryGetArrayField(TEXT("tireFits"),Fits))for(const auto& Entry:*Fits){const auto Fit=Entry->AsObject();
-      if(Fit.IsValid()&&Fit->GetIntegerField(TEXT("stage"))==SizeStage){
-        TireKitLift=FMath::Max(TireKitLift,float(Fit->GetNumberField(TEXT("liftM"))));
-        FitTrack=FMath::Max(FitTrack,float(Fit->GetNumberField(TEXT("trackExtraM"))));break;
+  int& SizeStage=Builds[VehicleIndex].Stage[TerraSim::TireSize];
+  const FString BaseAsset=Spec->GetStringField(TEXT("asset"));
+  const auto LoadMesh=[](const FString& Name){return LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Name));};
+  FTireFit Fit;
+  UStaticMesh* TireMesh=nullptr;
+  if(!Tracks){
+    if(FindTireFit(Spec.Get(),SizeStage,Fit)&&UpgradeStage(TerraSim::Suspension)>=Fit.MinimumSuspension){
+      TireMesh=LoadMesh(BaseAsset+FString::Printf(TEXT("_tire_size%d_0"),SizeStage));
+      if(TireMesh&&!Fit.BodyAsset.IsEmpty()&&!LoadMesh(Fit.BodyAsset))TireMesh=nullptr;
+    }
+    if(!TireMesh){SizeStage=0;Fit=FTireFit();TireMesh=LoadMesh(BaseAsset+TEXT("_tire"));}
+    const FString BodyAsset=Fit.BodyAsset.IsEmpty()?BaseAsset+TEXT("_body"):Fit.BodyAsset;
+    if(!Body->GetStaticMesh()||Body->GetStaticMesh()->GetName()!=BodyAsset){
+      if(auto* NewBody=LoadMesh(BodyAsset)){
+        Body->EmptyOverrideMaterials();
+        Body->SetStaticMesh(NewBody);
+        ConfigureLamps();
+        RebuildDamageVisuals();
+        ConfigureCoachworkCollision();
       }
     }
-    Tuning.Lift+=TireKitLift;
+    for(auto Wheel:Wheels)Wheel->SetStaticMesh(TireMesh);
+  }
+  TireKitSteeringDegrees=Fit.Steering;
+  TireKitBumpFront=Fit.BumpFront;
+  TireKitBumpRear=Fit.BumpRear;
+  if(Fit.Diameter>0){
+    const float KitRadius=Fit.Diameter*.0127f;
+    Tuning.TireRadius=KitRadius/StockRadius;
     Tuning.TireWidth*=FMath::Sqrt(Tuning.TireRadius);
-    Tuning.Track+=FitTrack;
+    Tuning.Track+=Fit.TrackExtra;
     Tuning.HardwareMass+=(KitRadius-StockRadius)*220.f;
-  }else if(StockRadius*200/2.54f>=50){Tuning.TireRadius=1;}
+  }
   EngineUpgrade=Builds[VehicleIndex].Stage[TerraSim::Engine];
   LiftUpgrade=Builds[VehicleIndex].Stage[TerraSim::Suspension];
   const auto Capabilities=DriveCapabilities();
@@ -225,16 +299,10 @@ void ATerraVehicle::ApplyUpgrades(){
   Damping=S->GetNumberField(TEXT("damping"))*Tuning.Damping;
   Rest=S->GetNumberField(TEXT("restLength"));
   Droop=Number(TEXT("droopTravel"),.16f)+Tuning.Travel;
-  TireVisualScale=SizeStage>0&&StockRadius*200/2.54f<50?1.f:Tuning.TireRadius;WidthVisualScale=Tuning.TireWidth;
+  TireVisualScale=1.f;WidthVisualScale=Tuning.TireWidth;
   Chassis->SetMassOverrideInKg(NAME_None,Mass+(Tracks?380:0));
   Chassis->SetAngularDamping(.6f*Tuning.Stability);
   Chassis->SetCenterOfMass(FVector(0,0,-2.f*Builds[VehicleIndex].Stage[TerraSim::Frame]));
-  if(!Tracks){
-    const int Stage=UpgradeStage(TerraSim::Tires);
-    const FString Name=Spec->GetStringField(TEXT("asset"))+TEXT("_tire")+(SizeStage>0&&StockRadius*200/2.54f<50?FString::Printf(TEXT("_size%d_0"),SizeStage):(Stage?FString::Printf(TEXT("_%d"),Stage):TEXT("")));
-    auto *Mesh=LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Name));
-    for(auto W:Wheels)W->SetStaticMesh(Mesh);
-  }
   for(int I=0;I<Wheels.Num();++I){
     const float AxleWidth=I>=2?Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))/Number(TEXT("tireWidth"),.285f):1.f;
     Wheels[I]->SetRelativeScale3D(Tracks?FVector::OneVector:FVector(TireVisualScale,WidthVisualScale*AxleWidth,TireVisualScale));
@@ -251,15 +319,38 @@ void ATerraVehicle::ApplyUpgrades(){
   }
   UpdateVisualDetails();
 }
+int ATerraVehicle::UpgradeMaxStage(int Part) const{
+  if(Part!=TerraSim::TireSize)return 3;
+  int Stage=1;
+  FTireFit Fit;
+  while(FindTireFit(Spec.Get(),Stage,Fit))++Stage;
+  return Stage-1;
+}
+int ATerraVehicle::RequiredTireSuspensionStage(int Stage) const{
+  if(Stage==0)return 0;
+  FTireFit Fit;
+  return FindTireFit(Spec.Get(),Stage,Fit)?Fit.MinimumSuspension:-1;
+}
+FString ATerraVehicle::UpgradeUnavailableReason(int Part,int Stage) const{
+  if(Stage<0||(Part!=TerraSim::TireSize&&Stage>3))return TEXT("Unavailable for this vehicle");
+  if(Part==TerraSim::TireSize&&Stage>0){
+    if(Tracks)return TEXT("Remove the tracks before changing tire diameter");
+    const int Required=RequiredTireSuspensionStage(Stage);
+    if(Required<0)return TEXT("Unavailable for this vehicle");
+    if(Required>UpgradeStage(TerraSim::Suspension))
+      return FString::Printf(TEXT("Requires suspension %s"),*UpgradeStageName(TerraSim::Suspension,Required));
+  }
+  if(Part==TerraSim::Suspension&&Stage<RequiredTireSuspensionStage(UpgradeStage(TerraSim::TireSize)))
+    return TEXT("Fit smaller tires before lowering the suspension");
+  return FString();
+}
 void ATerraVehicle::SetUpgrade(int Part,int Stage,bool Persist){
   if(Part<0||Part>=TerraSim::PartCount||(!Garage&&!AutoTest))return;
   if(Part==TerraSim::Electrical&&!HasElectrical())return;
-  if(Part==TerraSim::TireSize&&Stage>0&&Tracks){
-    Notice=TEXT("Remove tracks before selecting a tire diameter kit. Your installed tracks are unchanged.");return;
-  }
-  if(Part==TerraSim::TireSize&&Number(TEXT("tireRadius"),.42f)*200/2.54f>=50&&Stage>0)return;
+  const FString Unavailable=UpgradeUnavailableReason(Part,Stage);
+  if(!Unavailable.IsEmpty()){Notice=Unavailable;return;}
   if(Part==TerraSim::CenterDifferential&&Stage>0&&!CenterLockUpgradeAvailable())return;
-  Builds[VehicleIndex].Stage[Part]=FMath::Clamp(Stage,0,3);
+  Builds[VehicleIndex].Stage[Part]=Stage;
   if(Part==TerraSim::Drivetrain&&Stage>0)FourDrive=HasFourDrive();
   if(Part==TerraSim::EVSwap){
     FourDrive=IsFactoryElectric()||Stage!=1;Gear=0;
@@ -322,7 +413,7 @@ FString ATerraVehicle::UpgradeName(int Part) const{
 }
 FString ATerraVehicle::UpgradeDescription(int Part) const{
   if(Part==TerraSim::TireSize&&Tracks)return TEXT("Remove the fitted tracks before choosing larger tires. Track pods keep their own factory dimensions; your tire-diameter selections are retained when fitting is rejected.");
-  if(Part==TerraSim::TireSize)return Number(TEXT("tireRadius"),.42f)*200/2.54f>=50?TEXT("Factory monster tires already exceed 50 inches. Their 66-inch diameter is retained."):TEXT("Larger tires up to 50 inches, with matching lift, wider stance and extended links. Stock rims stay fitted. More rotating mass and taller effective gearing reduce acceleration and braking response.");
+  if(Part==TerraSim::TireSize)return Number(TEXT("tireRadius"),.42f)*200/2.54f>=50?TEXT("Factory monster tires already exceed 50 inches. Their 66-inch diameter is retained."):TEXT("Choose a diameter and compound. Larger sizes can require upgraded suspension and reshaped wheel openings. Stock rims stay fitted.");
   if(Part==TerraSim::Differentials&&AxleCount()==3)return FString::Printf(TEXT("Front and rear axle locks are retained. %s operates the front axle; %s operates both rear cross-axle locks. Stop to engage; stage III adds unlocked limited-slip preload."),*ControlLabel(TerraControls::Action::FrontLock),*ControlLabel(TerraControls::Action::RearLock));
   if(Part==TerraSim::Portals&&Number(TEXT("factoryPortalLiftM"),0)>0)return TEXT("Factory portal housings are already fitted. Stages reinforce and regear the existing wheel ends, with a small additional drop. Their added clearance is shown on each stage.");
   if(Part==TerraSim::TireAir&&Number(TEXT("factoryTireAirStage"),0)>0)return TEXT("Fast factory CTIS is already fitted. STOCK and the KEEP stage selections retain its inflation, deflation and speed limits. Lower PSI helps soft ground but adds steering squirm and hurts road braking.");
@@ -330,7 +421,7 @@ FString ATerraVehicle::UpgradeDescription(int Part) const{
   if(Part==TerraSim::Differentials)return FString::Printf(TEXT("Add a locker on the main drive axle, then both axles; stage III adds limited-slip preload when unlocked. %s rear / %s front; stop to engage."),*ControlLabel(TerraControls::Action::RearLock),*ControlLabel(TerraControls::Action::FrontLock));
   const TCHAR *Descriptions[]={TEXT("Longer articulation, controlled damping and added clearance."),
     TEXT("Stronger torque delivery at every engine speed."),
-    TEXT("Larger, wider tires with a higher traction limit."),
+    TEXT("Select a diameter and a compound. The compound changes width and grip at the selected diameter."),
     TEXT("Lighter rotating assembly and a wider stance."),
     TEXT("Reinforcement, lower center of mass and impact resistance."),
     TEXT("Lighter panels, skid protection and reduced drag."),
@@ -349,8 +440,12 @@ FString ATerraVehicle::UpgradeDescription(int Part) const{
   return Descriptions[Part];
 }
 FString ATerraVehicle::UpgradeStageName(int Part,int Stage) const {
-  if(Part==TerraSim::TireSize&&Stage==0)return TEXT("DEFAULT");
-  if(Part==TerraSim::TireSize)return FString::Printf(TEXT("%.0f IN"),TerraSim::TireKitDiameterInches(Number(TEXT("tireRadius"),.42f)*200/2.54f,Stage));
+  if(Part==TerraSim::TireSize){
+    FTireFit Fit;
+    if(FindTireFit(Spec.Get(),Stage,Fit))return FString::Printf(TEXT("%d IN"),Fit.Diameter);
+    const float Stock=Number(TEXT("tireRadius"),.42f)*200/2.54f;
+    return Stage==0?FString::Printf(TEXT("%.1f IN"),Stock):FString();
+  }
   if(Stage==0)return TEXT("STOCK");
   if(Part==TerraSim::EVSwap)return IsFactoryElectric()?(Stage==1?TEXT("350HP"):Stage==2?TEXT("500HP"):TEXT("700HP")):(Stage==1?TEXT("SINGLE"):Stage==2?TEXT("DUAL"):TEXT("QUAD"));
   if(Part==TerraSim::CenterDifferential)return Stage==1?TEXT("SELECTABLE"):Stage==2?TEXT("HEAVY DUTY"):TEXT("EXPEDITION");
@@ -366,8 +461,8 @@ FString ATerraVehicle::UpgradeStageName(int Part,int Stage) const {
 FString ATerraVehicle::UpgradeEffect(int Part) const{
   const int S=UpgradeStage(Part);
   switch(Part){
-  case TerraSim::TireSize:return FString::Printf(TEXT("%.1f in diameter / +%.1f in fitting lift / %.1f in tread width"),TireDiameter(),TerraUnits::Inches(TireKitLift),TerraUnits::Inches(Width));
-  case TerraSim::Suspension:return FString::Printf(TEXT("+%.1f in travel  /  +%.1f in spring lift  /  +%.0f%% damping"),TerraUnits::Inches(Tuning.Travel),TerraUnits::Inches(Tuning.Lift-Tuning.PortalLift-TireKitLift),(Tuning.Damping-1)*100);
+  case TerraSim::TireSize:return FString::Printf(TEXT("%.1f in diameter / %.1f in tread width / %.0f deg steering lock"),TireDiameter(),TerraUnits::Inches(Width),TireKitSteeringDegrees);
+  case TerraSim::Suspension:return FString::Printf(TEXT("+%.1f in travel  /  +%.1f in spring lift  /  +%.0f%% damping"),TerraUnits::Inches(Tuning.Travel),TerraUnits::Inches(Tuning.Lift-Tuning.PortalLift),(Tuning.Damping-1)*100);
   case TerraSim::Engine:return FString::Printf(TEXT("+%.0f%% output  /  %.0f hp total"),(Tuning.Power-1)*100,PowerHP());
   case TerraSim::Tires:return FString::Printf(TEXT("%.1f in diameter  /  %.1f in width  /  +%.0f%% grip"),TireDiameter(),TerraUnits::Inches(Width),(Tuning.Grip-1)*100);
   case TerraSim::Wheels:return FString::Printf(TEXT("%.0f%% less rotational inertia  /  +%.1f in track"),(1-Tuning.WheelInertia)*100,TerraUnits::Inches(Tuning.Track));

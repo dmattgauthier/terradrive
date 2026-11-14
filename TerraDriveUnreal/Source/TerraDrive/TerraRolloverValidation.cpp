@@ -52,7 +52,7 @@ bool Load(){
   }
   if(!TerraTireProbeValidation::Load())return false;
   FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverTireSize="),State.TireSize);
-  if(State.TireSize<0||State.TireSize>3)return false;
+  if(State.TireSize<0||State.TireSize>TerraSim::MaxTireSizeStage)return false;
   const bool Quick=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverQuick"));
   int QuickVehicle=3;FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverQuickVehicle="),QuickVehicle);
   if(QuickVehicle<0||QuickVehicle>=ATerraVehicle::VehicleCount)return false;
@@ -73,7 +73,13 @@ bool Load(){
 void Prepare(ATerraVehicle* V,const FCase& C){
   // Exercise the player's menu selection/upgrade/return path before each drop.
   // Auto-weld readiness must be established after the kinematic garage closes.
-  V->SetGarage(true);V->SelectVehicle(C.Vehicle);V->ResetUpgrades(false);if(State.TireSize>0)V->SetUpgrade(TerraSim::TireSize,State.TireSize,false);V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;V->Terrain->ResetSoil();
+  V->SetGarage(true);V->SelectVehicle(C.Vehicle);V->ResetUpgrades(false);
+  const int Size=FMath::Min(State.TireSize,V->UpgradeMaxStage(TerraSim::TireSize));
+  if(Size>0){
+    V->SetUpgrade(TerraSim::Suspension,V->RequiredTireSuspensionStage(Size),false);
+    V->SetUpgrade(TerraSim::TireSize,Size,false);
+  }
+  V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;V->Terrain->ResetSoil();
   V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
   // Let activation/re-welding complete before applying the independent drop
   // pose. A same-frame teleport can be replaced by pending physics state.
@@ -136,7 +142,7 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
         State.Samples>=8&&TerraTireProbeValidation::Matches(V)&&State.MinimumTireClearance>=-4.f&&
         State.MaximumCandidates<=V->WheelCount()*2&&State.MaximumTraces<=V->WheelCount()*2,State.MinimumTireClearance/2.54f);
       UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLOVER_TIRES vehicle=%d sizeStage=%d clearanceIn=%.3f candidates=%d traces=%d"),
-        C.Vehicle,State.TireSize,State.MinimumTireClearance/2.54f,State.MaximumCandidates,State.MaximumTraces);
+        C.Vehicle,V->UpgradeStage(TerraSim::TireSize),State.MinimumTireClearance/2.54f,State.MaximumCandidates,State.MaximumTraces);
       Check(Name+TEXT(" retains its source surface probes"),State.Probes[C.Vehicle].Num()>=64,State.Probes[C.Vehicle].Num());
       Check(Name+TEXT(" cannot apply tire drive while overturned"),!State.PoweredWhileOverturned,State.OverturnedSeen?1:0);
       if(!State.Camera.IsValid())State.Camera=V->GetWorld()->SpawnActor<ACameraActor>();

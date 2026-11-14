@@ -14,7 +14,7 @@
 namespace TerraMechanicalValidation {
 namespace {
 constexpr int PortalStages=4;
-constexpr int MigrationChecks=8,PersistenceChecks=3,CapabilityChecksPerVehicle=8,
+constexpr int MigrationChecks=9,PersistenceChecks=3,CapabilityChecksPerVehicle=8,
   StationaryChecksPerTrial=10,GrowthChecksPerVehicle=PortalStages-1,SpinChecksPerVehicle=4,
   TrackTireChecksPerVehicle=4,TrackCapableVehicles=ATerraVehicle::VehicleCount-3;
 struct FState {
@@ -55,7 +55,13 @@ bool WriteFixture(int Version,int Cars,int Parts,bool Invalid=false){
   TArray<TSharedPtr<FJsonValue>> Builds;
   for(int I=0;I<Cars;I++){
     TArray<TSharedPtr<FJsonValue>> Stages;
-    for(int P=0;P<Parts;P++)Stages.Add(MakeShared<FJsonValueNumber>(Invalid&&I==3&&P==4?.5:I==2&&P==TerraSim::Electrical?0:(P+I)%4));
+    for(int P=0;P<Parts;P++){
+      double Stage=(P+I)%4;
+      if(P==TerraSim::Tires||(I==2&&P==TerraSim::Electrical))Stage=0;
+      if(Version==9&&P==TerraSim::TireSize)Stage=3;
+      if(Invalid&&I==3&&P==4)Stage=.5;
+      Stages.Add(MakeShared<FJsonValueNumber>(Stage));
+    }
     Builds.Add(MakeShared<FJsonValueArray>(Stages));
   }
   Root->SetArrayField(TEXT("builds"),Builds);
@@ -73,12 +79,28 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
   const bool BeforeEnergy=V->EnergyUsageEnabled,BeforeDamage=V->DamageEnabled;
   const int BeforeLastVehicle=V->SavedVehicleSelection();
   const bool PlanWritten=WriteFixturePlan();
-  for(int Version:{1,2,3,4,5,6,7,8}){
-    const int Cars=Version==1?5:Version<4?6:Version<8?9:10,Parts=TerraSim::UpgradeStageCountForVersion(Version);
+  const auto& Specs=V->Terrain->Data->GetArrayField(TEXT("vehicles"));
+  for(int Version:{1,2,3,4,5,6,7,8,9}){
+    const int Cars=Version==1?5:Version<4?6:Version<8?9:Version==8?10:ATerraVehicle::VehicleCount;
+    const int Parts=TerraSim::UpgradeStageCountForVersion(Version);
     bool Valid=PlanWritten&&WriteFixture(Version,Cars,Parts)&&V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
-    for(int I=0;I<ATerraVehicle::VehicleCount;I++)for(int P=0;P<TerraSim::PartCount;P++){
-      const int Expected=I>=Cars||P>=Parts?0:I==2&&P==TerraSim::Electrical?0:Version<=4&&(I==4||I==7)&&P==TerraSim::EVSwap?0:(P+I)%4;
-      Valid&=V->Builds[I].Stage[P]==Expected;
+    for(int I=0;I<ATerraVehicle::VehicleCount;++I){
+      // An old maximum kit selected 50 inches. The current largest fit may
+      // be smaller, and the saved suspension must support that fit.
+      int Size=0,MinimumSuspension=0;
+      if(Version==9){
+        const auto& Fits=Specs[I]->AsObject()->GetArrayField(TEXT("tireFits"));
+        Size=Fits.Num();
+        if(Size>0)MinimumSuspension=Fits.Last()->AsObject()->GetIntegerField(TEXT("minimumSuspensionStage"));
+      }
+      for(int P=0;P<TerraSim::PartCount;++P){
+        int Expected=(P+I)%4;
+        if(I>=Cars||P>=Parts||P==TerraSim::Tires||(I==2&&P==TerraSim::Electrical)||
+           (Version<=4&&(I==4||I==7)&&P==TerraSim::EVSwap))Expected=0;
+        if(P==TerraSim::TireSize)Expected=Size;
+        if(P==TerraSim::Suspension)Expected=FMath::Max(Expected,MinimumSuspension);
+        Valid&=V->Builds[I].Stage[P]==Expected;
+      }
     }
     if(Version>=7){
       Valid&=!V->EnergyUsageEnabled;
@@ -88,29 +110,32 @@ void SaveChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
         Valid&=FMath::Abs(V->FuelProfiles[I]-(I<Cars?.3f+I*.03f:.75f))<.0001f;
       }
     }
-    Check(FString::Printf(TEXT("v%d garage migration retains old stages and profiles and defaults appended cars and hardware"),Version),Valid,Version);
+    const FString Label=Version==9?TEXT("v9 explicit kits migrate to supported diameters and required spring hardware"):
+      FString::Printf(TEXT("v%d garage migration retains old stages and profiles and defaults appended cars and hardware"),Version);
+    Check(Label,Valid,Version);
   }
   TerraSim::UpgradeSetup Loaded[ATerraVehicle::VehicleCount];for(int I=0;I<ATerraVehicle::VehicleCount;I++)Loaded[I]=V->Builds[I];
   const bool Rejected=WriteFixture(2,6,7,true)&&!V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
   Check(TEXT("malformed legacy garage rejects atomically"),Rejected&&SameBuilds(V,Loaded),Rejected?1:0);
-  const bool FutureRejected=WriteFixture(10,ATerraVehicle::VehicleCount,TerraSim::PartCount)&&!V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
-  Check(TEXT("unsupported future garage rejects without changing loaded builds"),FutureRejected&&SameBuilds(V,Loaded),10);
+  const bool FutureRejected=WriteFixture(TerraSim::GarageSaveVersion+1,ATerraVehicle::VehicleCount,TerraSim::PartCount)&&!V->LoadGarage(Fixture(TEXT("mechanical-migration.json")));
+  Check(TEXT("unsupported future garage rejects without changing loaded builds"),FutureRejected&&SameBuilds(V,Loaded),TerraSim::GarageSaveVersion+1);
   for(int I=0;I<ATerraVehicle::VehicleCount;I++){
     V->Builds[I]={};
-    for(int P=0;P<TerraSim::PartCount;++P)V->Builds[I].Stage[P]=I==2&&P==TerraSim::Electrical?0:(P+I)%4;
+    for(int P=0;P<TerraSim::PartCount;++P)
+      V->Builds[I].Stage[P]=P==TerraSim::TireSize||(I==2&&P==TerraSim::Electrical)?0:(P+I)%4;
     Loaded[I]=V->Builds[I];
   }
-  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v9.json")));
+  bool RoundTrip=V->SaveGarage(Fixture(TEXT("mechanical-v10.json")));
   FString Json;TSharedPtr<FJsonObject> Root;
-  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v9.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
+  bool Shape=FFileHelper::LoadFileToString(Json,*Fixture(TEXT("mechanical-v10.json")))&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)&&Root.IsValid();
   if(Shape){
     double Version=0;const TArray<TSharedPtr<FJsonValue>>* Cars=nullptr;
-    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==9&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
+    Shape=Root->TryGetNumberField(TEXT("version"),Version)&&Version==TerraSim::GarageSaveVersion&&Root->TryGetArrayField(TEXT("builds"),Cars)&&Cars->Num()==ATerraVehicle::VehicleCount;
     if(Shape)for(const auto& Car:*Cars){const TArray<TSharedPtr<FJsonValue>>* Parts=nullptr;Shape&=Car->TryGetArray(Parts)&&Parts->Num()==TerraSim::PartCount;}
   }
   for(auto& B:V->Builds)B={};
-  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v9.json")))&&SameBuilds(V,Loaded);
-  Check(TEXT("v9 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
+  RoundTrip&=Shape&&V->LoadGarage(Fixture(TEXT("mechanical-v10.json")))&&SameBuilds(V,Loaded);
+  Check(TEXT("v10 garage round trip persists every ordered upgrade for the complete vehicle roster"),RoundTrip,TerraSim::PartCount);
   for(int I=0;I<ATerraVehicle::VehicleCount;I++){
     V->Builds[I]=State.Before[I];V->PressureProfiles[I]=BeforeAir[I];V->BatteryProfiles[I]=BeforeCharge[I];V->FuelProfiles[I]=BeforeFuel[I];
   }
@@ -148,22 +173,26 @@ void CapabilityChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,flo
 void TrackTireChecks(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
   if(V->VehicleIndex==2||V->WheelCount()==6||V->SpecValue(TEXT("monsterTruck"))>0)return;
   const FString Label=FString::Printf(TEXT("vehicle %d tire kit / track "),V->VehicleIndex);
-  V->Speed=0;V->ResetUpgrades(false);V->SetUpgrade(TerraSim::TireSize,3,false);
+  V->Speed=0;V->ResetUpgrades(false);
+  const int Size=V->UpgradeMaxStage(TerraSim::TireSize);
+  const int Required=V->RequiredTireSuspensionStage(Size);
+  V->SetUpgrade(TerraSim::Suspension,Required,false);
+  V->SetUpgrade(TerraSim::TireSize,Size,false);
   const float KitDiameter=V->TireDiameter();const auto KitMesh=V->Wheels[0]->GetStaticMesh();
   V->SetTracks(true);
   Check(Label+TEXT("rejects tracks without changing the selected kit or tire mesh"),
-    !V->Tracks&&V->UpgradeStage(TerraSim::TireSize)==3&&KitMesh&&V->Wheels[0]->GetStaticMesh()==KitMesh&&
-    FMath::IsNearlyEqual(V->TireDiameter(),KitDiameter)&&V->Notice.Contains(TEXT("DEFAULT")),V->TireDiameter());
+    Size>0&&!V->Tracks&&V->UpgradeStage(TerraSim::TireSize)==Size&&KitMesh&&V->Wheels[0]->GetStaticMesh()==KitMesh&&
+    FMath::IsNearlyEqual(V->TireDiameter(),KitDiameter)&&V->Notice.Contains(TEXT("factory diameter")),V->TireDiameter());
   V->SetUpgrade(TerraSim::TireSize,0,false);V->SetTracks(true);
   const float TrackDiameter=V->TireDiameter();const auto TrackMesh=V->Wheels[0]->GetStaticMesh();
   Check(Label+TEXT("accepts stock-diameter track pods as the positive control"),V->Tracks&&TrackMesh&&TrackMesh!=KitMesh&&
     V->UpgradeStage(TerraSim::TireSize)==0&&V->Wheels[0]->GetComponentScale().Equals(FVector::OneVector,.0001f),TrackDiameter);
-  V->SetUpgrade(TerraSim::TireSize,3,false);
+  V->SetUpgrade(TerraSim::TireSize,Size,false);
   Check(Label+TEXT("rejects larger tires without changing installed pods or their radius"),V->Tracks&&
     V->UpgradeStage(TerraSim::TireSize)==0&&V->Wheels[0]->GetStaticMesh()==TrackMesh&&
-    FMath::IsNearlyEqual(V->TireDiameter(),TrackDiameter)&&V->Notice.Contains(TEXT("Remove tracks")),V->TireDiameter());
-  V->SetTracks(false);V->SetUpgrade(TerraSim::TireSize,3,false);
-  Check(Label+TEXT("accepts the retained size option after track removal"),!V->Tracks&&V->UpgradeStage(TerraSim::TireSize)==3&&
+    FMath::IsNearlyEqual(V->TireDiameter(),TrackDiameter)&&V->Notice.Contains(TEXT("Remove the tracks")),V->TireDiameter());
+  V->SetTracks(false);V->SetUpgrade(TerraSim::TireSize,Size,false);
+  Check(Label+TEXT("accepts the retained size option after track removal"),Size>0&&!V->Tracks&&V->UpgradeStage(TerraSim::TireSize)==Size&&
     V->Wheels[0]->GetStaticMesh()==KitMesh&&FMath::IsNearlyEqual(V->TireDiameter(),KitDiameter),V->TireDiameter());
   V->ResetUpgrades(false);
 }

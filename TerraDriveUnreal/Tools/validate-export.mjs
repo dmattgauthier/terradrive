@@ -53,14 +53,18 @@ for(const v of data.vehicles){
  const w=world.vehicles.find(x=>x.id===v.id);assert.ok(w,'matching native vehicle');
  assert.deepEqual(w.tireFits,v.tireFits,'source/native tire fitting parity');
  if(v.monsterTruck){assert.deepEqual(v.tireFits,[]);continue;}
- assert.equal(v.tireFits.length,3,'three body-derived tire fitting stages');
- for(let i=0;i<3;i++){const f=v.tireFits[i];assert.equal(f.stage,i+1);assert.ok(f.diameterInches>v.tireRadius*2/.0254&&f.diameterInches<=50);
-  assert.ok(Number.isFinite(f.liftM)&&f.liftM>=0&&f.liftM<1.25,'bounded fitting lift');
-  assert.ok(Number.isFinite(f.trackExtraM)&&f.trackExtraM>=0&&f.trackExtraM<=1.10,'bounded fitting track');
-  assert.ok(f.marginM>=.04&&f.clearanceM>=0,'conservative geometry margin');
+ assert.ok(v.tireFits.length>=3,'multiple body-derived tire fitting stages');
+ let previousDiameter=v.tireRadius*2/.0254,previousSuspension=1;
+ for(const [i,f] of v.tireFits.entries()){
+  assert.equal(f.stage,i+1);assert.ok(f.diameterInches>previousDiameter&&f.diameterInches<=50);
+  assert.equal(f.liftM,0,'local wheelhouse clearance adds no chassis lift');
+  assert.ok(f.minimumSuspensionStage>=previousSuspension&&f.minimumSuspensionStage<=3,'progressive suspension requirements');
+  assert.ok(f.trackExtraM>0&&f.trackExtraM<=.18,'bounded fitting track');
+  assert.ok(f.marginM>=.02&&f.maximumBumpFrontM>=.10&&f.maximumBumpRearM>=.10&&f.maximumSteeringDegrees>=27,'usable suspension and steering movement');
+  assert.ok(data.assets.some(a=>a.name===f.bodyAsset),'corresponding relieved wheelhouse body');
   assert.equal(f.axleOffsetsM.length,v.wheelCount===6?3:2);
+  previousDiameter=f.diameterInches;previousSuspension=f.minimumSuspensionStage;
  }
- assert.equal(v.tireFits[2].diameterInches,50);
 }
 assert.ok(data.vehicles[10].monsterTruck&&data.vehicles[10].droopTravel>.4&&data.vehicles[10].bodyWidthM<2.1);
 assert.ok(Math.abs(data.vehicles[11].fuelCapacityGallons*3.785411784-60)<1e-6);
@@ -120,15 +124,42 @@ assert.ok(fault.paintRock&&fault.paintedCells>1000,'exposed bedrock is present i
 assert.ok(faultHeight(30)-faultHeight(0)>6,'fault-line climb rises over six metres');
 const apronGrade=(faultHeight(6)-faultHeight(2))/4;
 assert.ok(apronGrade>.14&&apronGrade<.24,'moderate lead-in before the shelves');
-for(const s of [10,13.5,17,20.5,24]){
+for(const s of [10,17,20.5,24]){
  const grade=faultHeight(s+.5)-faultHeight(s-.5);
  assert.ok(grade>.37&&grade<.62,'ledge has a steep but continuous face');
 }
+const notchGrade=faultHeight(14)-faultHeight(13);
+assert.ok(notchGrade>.60&&notchGrade<.73,'diagonal notch has a steep exit face');
 for(const [s,side] of [[12,-1],[15,1],[18.5,-1],[22,1]]){
  const front=faultHeight(s+1.5,1)-faultHeight(s+1.5,-1);
  const rear=faultHeight(s-1.5,1)-faultHeight(s-1.5,-1);
  assert.ok(side*(front-rear)>.90,'alternating ledges unload opposite diagonal pairs');
 }
+// Granite uses the ordinary metre-mesh diagonal at both driving lines.
+function faultMeshHeight(x,y){
+ const i=Math.floor(x),j=Math.floor(y),u=x-i,v=y-j;
+ const a=faultHeight(i,j),b=faultHeight(i+1,j),c=faultHeight(i,j+1),d=faultHeight(i+1,j+1);
+ return u+v<=1?a+(b-a)*u+(c-a)*v:d+(c-d)*(1-u)+(b-d)*(1-v);
+}
+const stockRubicon=data.vehicles[0],halfBase=stockRubicon.wheelbase/2,halfTrack=stockRubicon.track/2;
+const stockAxleStep=(s,t)=>faultMeshHeight(s,t+halfTrack)-faultMeshHeight(s,t-halfTrack);
+const notchTwist=(s,t)=>stockAxleStep(s+halfBase,t)-stockAxleStep(s-halfBase,t);
+for(const s of [11.25,11.5,11.75])for(const t of [-.55,-.25,0]){
+ assert.ok(notchTwist(s,t)<-1.27,'the center notch sustains opposing low corners');
+}
+const benchCenter=2.15;
+for(let s=5;s<=26;s+=.25){
+ assert.ok(Math.abs(notchTwist(s,benchCenter))<.46,'right bench maintains paired wheel support');
+ assert.ok(Math.abs(stockAxleStep(s,benchCenter)/stockRubicon.track)<.28,'right bench limits off-camber tilt');
+ for(const t of [benchCenter-halfTrack,benchCenter+halfTrack]){
+  assert.equal(b[faultSample(s,t)+8],4,'right bench remains on dry bedrock');
+  assert.ok(faultMeshHeight(s+.5,t)-faultMeshHeight(s-.5,t)<.72,'right bench eases the climb face');
+ }
+}
+const benchStakes=data.nativeDetails.find(g=>g.asset==='trail_challenge_blue');
+assert.ok(benchStakes.snapToGround&&!benchStakes.solid);
+const shortBluePosts=benchStakes.instances.filter(p=>p.p[1]===(faultY+3.5)*100&&p.s[2]<1);
+assert.deepEqual(shortBluePosts.map(p=>p.p[0]/100-faultX),[5,9,15,21,26]);
 const expedition=data.perimeterTrail,expeditionRoute=data.routes[expedition.routeIndex];
 assert.equal(expedition.routeIndex,13);
 assert.equal(expeditionRoute.name,'Perimeter Expedition');
@@ -260,14 +291,7 @@ for(const v of data.vehicles){
  const maximum=vertices.reduce((maximum,p)=>Math.max(maximum,Math.hypot(p[0],p[2])),0);
  assert.ok(maximum>rimRadius*.97&&maximum<rimRadius*1.06,v.name+' rim matches its factory diameter');
  assert.equal(v.nativeModel.upgradeTireBeads,true);
- const stockTire=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
- const stockMin=stockTire.reduce((n,p)=>Math.min(n,Math.hypot(p[0],p[2])),Infinity),stockMax=stockTire.reduce((n,p)=>Math.max(n,Math.hypot(p[0],p[2])),0);
- for(let stage=1;stage<=3;stage++){
-  const scale=v.monsterTruck?1:1+.04*stage,upgraded=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire_'+stage+'.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
-  const minimum=upgraded.reduce((n,p)=>Math.min(n,Math.hypot(p[0],p[2])*scale),Infinity),maximum=upgraded.reduce((n,p)=>Math.max(n,Math.hypot(p[0],p[2])*scale),0);
-  assert.ok(Math.abs(minimum-stockMin)<.05,v.name+' upgraded bead stays seated at stage '+stage);
-  assert.ok(Math.abs(maximum/stockMax-scale)<.005,v.name+' tread reaches physical size at stage '+stage);
- }
+ assert.ok(!data.assets.some(a=>[1,2,3].some(stage=>a.name===v.asset+'_tire_'+stage)),v.name+' compounds share factory size geometry');
 }
 // Explicit diameter kits retain the real stock wheel bead; compound stage
 // changes width/traction in native code and shares one immutable mesh per size.
@@ -276,10 +300,10 @@ for(const v of data.vehicles){
  const bead=Number(v.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100;
  const stock=fs.readFileSync(path.join(root,'SourceAssets',v.asset+'_tire.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
  const stockMin=stock.reduce((a,p)=>Math.min(a,Math.hypot(p[0],p[2])),Infinity),stockWidth=stock.reduce((a,p)=>[Math.min(a[0],p[1]),Math.max(a[1],p[1])],[Infinity,-Infinity]);
- for(let stage=1;stage<=3;stage++){
-  const name=v.asset+'_tire_size'+stage+'_0';assert.ok(data.assets.some(a=>a.name===name),'explicit tire mesh '+name);
+ for(const fit of v.tireFits){
+  const name=v.asset+'_tire_size'+fit.stage+'_0';assert.ok(data.assets.some(a=>a.name===name),'explicit tire mesh '+name);
   const positions=fs.readFileSync(path.join(root,'SourceAssets',name+'.obj'),'utf8').split('\n').filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
-  const radial=positions.map(p=>Math.hypot(p[0],p[2])),min=radial.reduce((a,b)=>Math.min(a,b),Infinity),max=radial.reduce((a,b)=>Math.max(a,b),0),diameter=Math.ceil(stockIn+(50-stockIn)*stage/3),width=positions.reduce((a,p)=>[Math.min(a[0],p[1]),Math.max(a[1],p[1])],[Infinity,-Infinity]);
+  const radial=positions.map(p=>Math.hypot(p[0],p[2])),min=radial.reduce((a,b)=>Math.min(a,b),Infinity),max=radial.reduce((a,b)=>Math.max(a,b),0),diameter=fit.diameterInches,width=positions.reduce((a,p)=>[Math.min(a[0],p[1]),Math.max(a[1],p[1])],[Infinity,-Infinity]);
   assert.ok(Math.abs(min-stockMin)<.02,v.name+' explicit kit bead stays seated');assert.ok(Math.abs(max-diameter*.0254*50)<.6,v.name+' explicit kit reaches selected diameter');assert.deepEqual(width,stockWidth,v.name+' size mesh avoids applying width scale twice');assert.ok(min<=bead+.05,v.name+' unchanged bead seat');
  }
 }
@@ -295,7 +319,7 @@ for(const group of [...data.placements,...data.nativeDetails])for(const i of gro
 const details=data.nativeDetails.reduce((n,g)=>n+g.instances.length,0),solid=data.nativeDetails.filter(g=>g.solid).reduce((n,g)=>n+g.instances.length,0);
 const tinted=new Set();for(const group of [...data.placements,...data.nativeDetails])
  if(group.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))for(const slot of data.assets.find(a=>a.name===group.asset).slots)tinted.add(slot);
-for(const m of data.materials)assert.equal(m.instanceTint,tinted.has(m.id));
+for(const m of data.materials)assert.equal(m.instanceTint??false,tinted.has(m.id));
 assert.ok(details>500&&solid>20);
 for(const group of data.nativeDetails)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(i.s.every(s=>s>0));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};

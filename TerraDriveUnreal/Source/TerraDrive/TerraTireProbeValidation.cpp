@@ -9,8 +9,7 @@
 namespace TerraTireProbeValidation {
 namespace {
 struct FProfile {FName Asset;TArray<FVector> Points;FMeshEnvelope Envelope;};
-struct FVehicleProfiles {FProfile Sizes[4],Compounds[3];};
-FVehicleProfiles Profiles[ATerraVehicle::VehicleCount];bool Ready=false;
+TArray<FProfile> Profiles[ATerraVehicle::VehicleCount];bool Ready=false;
 
 bool ReadProfile(const TSharedPtr<FJsonValue>& Value,int Stage,FProfile& P){
   const auto Item=Value->AsObject();const TArray<TSharedPtr<FJsonValue>>* Points=nullptr;
@@ -32,13 +31,11 @@ bool ReadProfile(const TSharedPtr<FJsonValue>& Value,int Stage,FProfile& P){
 }
 const FProfile* MatchedProfile(const ATerraVehicle* V){
   if(!Ready||V->VehicleIndex<0||V->VehicleIndex>=ATerraVehicle::VehicleCount||V->Tracks||V->Wheels.Num()!=V->WheelCount())return nullptr;
-  const auto& Set=Profiles[V->VehicleIndex];
-  const int Size=V->UpgradeStage(TerraSim::TireSize),Compound=V->UpgradeStage(TerraSim::Tires);
-  if(Size<0||Size>=UE_ARRAY_COUNT(Set.Sizes)||Compound<0||Compound>UE_ARRAY_COUNT(Set.Compounds))return nullptr;
-  const FProfile* P=&Set.Sizes[Size];
-  // Diameter kits use their own mesh. At factory diameter, compounds use
-  // bead-remapped meshes with different sidewall vertices from stock.
-  if(Compound>0&&P->Asset==Set.Sizes[0].Asset)P=&Set.Compounds[Compound-1];
+  const auto& Sizes=Profiles[V->VehicleIndex];
+  const int Size=V->UpgradeStage(TerraSim::TireSize);
+  if(Sizes.Num()!=V->UpgradeMaxStage(TerraSim::TireSize)+1||!Sizes.IsValidIndex(Size))return nullptr;
+  // Compound changes leave the fitted wheel envelope and mesh unchanged.
+  const FProfile* P=&Sizes[Size];
   if(P->Points.IsEmpty())return nullptr;
   for(const auto& Wheel:V->Wheels)
     if(!Wheel||!Wheel->GetStaticMesh()||Wheel->GetStaticMesh()->GetFName()!=P->Asset)return nullptr;
@@ -52,19 +49,13 @@ bool Load(){
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)||!Root.IsValid()||
       !Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=ATerraVehicle::VehicleCount)return false;
   const int Version=Root->GetIntegerField(TEXT("version"));
-  if(Version!=1&&Version!=2)return false;
+  if(Version!=3)return false;
   for(int I=0;I<Vehicles->Num();++I){
-    auto& Set=Profiles[I];
+    auto& Sizes=Profiles[I];
     const auto Vehicle=(*Vehicles)[I]->AsObject();const TArray<TSharedPtr<FJsonValue>>* Stages=nullptr;
-    if(!Vehicle.IsValid()||!Vehicle->TryGetArrayField(TEXT("stages"),Stages)||Stages->Num()!=4)return false;
-    for(int S=0;S<4;++S)if(!ReadProfile((*Stages)[S],S,Set.Sizes[S]))return false;
-    // Older cooks contain exact stock and diameter-kit probes only.
-    for(auto& P:Set.Compounds)P=FProfile();
-    if(Version==2){
-      const TArray<TSharedPtr<FJsonValue>>* Compounds=nullptr;
-      if(!Vehicle->TryGetArrayField(TEXT("compounds"),Compounds)||Compounds->Num()!=3)return false;
-      for(int S=0;S<3;++S)if(!ReadProfile((*Compounds)[S],S+1,Set.Compounds[S]))return false;
-    }
+    if(!Vehicle.IsValid()||!Vehicle->TryGetArrayField(TEXT("stages"),Stages)||Stages->IsEmpty())return false;
+    Sizes.SetNum(Stages->Num());
+    for(int S=0;S<Sizes.Num();++S)if(!ReadProfile((*Stages)[S],S,Sizes[S]))return false;
   }
   Ready=true;return true;
 }

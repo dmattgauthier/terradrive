@@ -10,10 +10,12 @@ try {
   const {assets, vehicles} = JSON.parse(read('SourceAssets/import.json'));
   const byName = new Map(assets.map(asset => [asset.name, asset]));
   const bodyAssets = vehicles.map(vehicle => byName.get(vehicle.asset + '_body'));
+  const variants = vehicles.flatMap((vehicle,index)=>
+    [...new Set(vehicle.tireFits?.map(fit=>fit.bodyAsset).filter(Boolean))].map(name=>({index,vehicle,name})));
   const files = ['vehicle-ground-probes.json', 'vehicle-collision.json'];
   const hashes = files.map(file => {
     const bytes = read('Content/NativeData/' + file);
-    const baked = JSON.parse(bytes).vehicles;
+    const {vehicles:baked, variants:bakedVariants=[]} = JSON.parse(bytes);
     if (!vehicles.length || baked?.length !== vehicles.length) {
       throw new Error(`${file} does not cover the exported vehicle roster`);
     }
@@ -22,6 +24,16 @@ try {
       if (row?.index !== index || row.id !== vehicle.id || row.asset !== asset?.name ||
           !/^[0-9a-f]{64}$/.test(asset?.sha256) || row.objSha256 !== asset.sha256) {
         throw new Error(`${file} does not match the exported body for ${vehicle.id}`);
+      }
+    }
+    if (bakedVariants.length !== variants.length) {
+      throw new Error(file+' does not cover the exported tire-clearance variants');
+    }
+    for (const {index,vehicle,name} of variants) {
+      const row = bakedVariants.find(item=>item.asset===name), asset = byName.get(name);
+      if (row?.index !== index || row.id !== vehicle.id ||
+          !/^[0-9a-f]{64}$/.test(asset?.sha256) || row.objSha256 !== asset.sha256) {
+        throw new Error(file+' does not match the exported clearance body for '+name);
       }
     }
     return digest(bytes);

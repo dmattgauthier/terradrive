@@ -8,7 +8,6 @@ import * as THREE from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {Terrain} from './native-terrain.mjs';
 import {buildGardenGeology} from './garden-geology.mjs';
 import {VEHICLES} from './native-vehicles.mjs';
-import {resizeTireObj,tireDiameterInches} from './tire-size-geometry.mjs';
 import {prepareNativeVehicle} from './vehicle-realism.mjs';
 import {refineExpRoof} from './refine-exp-roof.mjs';
 import {bodyRefinement} from './body-refinement.mjs';
@@ -87,41 +86,6 @@ function exportObj(name,group,excludeCanvas=false){
  }});
  const obj=lines.join('\n');fs.writeFileSync(path.join(out,name+'.obj'),obj);assets.push({name,slots,sha256:crypto.createHash('sha256').update(obj).digest('hex')});return name;
 }
-// Compensate the component's radial scale at the bead. The outer tread still
-// reaches the upgraded physical radius; only sidewall height grows, not the
-// wheel's seating diameter. Transform normals with the radial Jacobian too.
-function exportTireStages(prefix,spec){
- const base=assets.find(a=>a.name===prefix+'_tire'),lines=fs.readFileSync(path.join(out,base.name+'.obj'),'utf8').split('\n');
- const positions=lines.filter(l=>l.startsWith('v ')).map(l=>l.slice(2).split(' ').map(Number));
- const bead=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100,outer=spec.tireRadius*100;
- for(let stage=1;stage<=3;stage++){
-  const scale=spec.monsterTruck?1:1+.04*stage,k=(outer*scale-bead)/(outer-bead);let vi=0,ni=0;
-  const obj=lines.map(line=>{
-   if(line.startsWith('v ')){
-    const [x,y,z]=positions[vi++],r=Math.hypot(x,z),radial=(r<bead?r:bead+(r-bead)*k)/scale;
-    return `v ${x*radial/r} ${y} ${z*radial/r}`;
-   }
-   if(line.startsWith('vn ')){
-    const [x,,z]=positions[ni++],r=Math.hypot(x,z),erx=x/r,erz=z/r;
-    const radial=(r<bead?r:bead+(r-bead)*k)/scale,a=(r<bead?1:k)/scale,b=radial/r;
-    const n=line.slice(3).split(' ').map(Number),dot=n[0]*erx+n[2]*erz;
-    const nx=(n[0]-dot*erx)/b+dot*erx/a,nz=(n[2]-dot*erz)/b+dot*erz/a,len=Math.hypot(nx,n[1],nz);
-    return `vn ${nx/len} ${n[1]/len} ${nz/len}`;
-   }return line;
-  }).join('\n');
-  const name=prefix+'_tire_'+stage;fs.writeFileSync(path.join(out,name+'.obj'),obj);
-  assets.push({name,slots:[...base.slots],sha256:crypto.createHash('sha256').update(obj).digest('hex')});
- }
-}
-function exportSizedTires(prefix,spec){
- if(spec.tireRadius*2/.0254>=50)return;
- const base=assets.find(a=>a.name===prefix+'_tire'),source=fs.readFileSync(path.join(out,base.name+'.obj'),'utf8');
- const bead=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100;
- for(let stage=1;stage<=3;stage++){
-  const diameter=tireDiameterInches(spec.tireRadius,stage),obj=resizeTireObj(source,spec.tireRadius*100,diameter*.0254*.5*100,bead),name=prefix+'_tire_size'+stage+'_0';
-  fs.writeFileSync(path.join(out,name+'.obj'),obj);assets.push({name,slots:[...base.slots],sha256:crypto.createHash('sha256').update(obj).digest('hex')});
- }
-}
 const terrain=new Terrain(),surfaces=['dirt','asphalt','mud','wetland','rock','sand','snow'];
 // Start each export from the source samples, including on a retry after an
 // interrupted publication. Course grades and painted surfaces are applied once.
@@ -143,7 +107,7 @@ for(let row=0;row<n;row++){
 }
 const vehicles=[];for(const spec of VEHICLES){const {view,parts}=prepareNativeVehicle(spec);
  if(spec.bodyStyle==='earthcruiser')view.root.userData.nativeFidelity.roofDamageTopology=refineExpRoof(view.body);
- const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportSizedTires(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);
+ const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);
  const bodyMaterials=assets.find(a=>a.name===prefix+'_body').slots.map(id=>mats.find(m=>m.id===id));
  const lamps=bodyMaterials.filter(m=>['brake','reverse'].includes(m.role)).map(m=>({material:m.id,role:m.role}));
  const exhaustSlots=bodyMaterials.filter(m=>m.role==='exhaust').map(m=>m.id);

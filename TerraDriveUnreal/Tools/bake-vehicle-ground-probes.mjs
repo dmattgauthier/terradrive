@@ -79,22 +79,25 @@ export async function bakeVehicleGroundProbes(root=project){
   const output={version:1,algorithm:'lower-body-spatial-minima-v1',
     algorithmSha256:hash(fs.readFileSync(script)),
     coordinates:'Unreal mesh-local centimetres: OBJ X,-Y,Z; transform with the Body component',
-    grid:[NX,NY],vehicles:[]};
-  for(const [index,vehicle] of world.vehicles.entries()){
-    const obj=vehicle.asset+'_body.obj',file=path.join(root,'SourceAssets',obj);
+    grid:[NX,NY],vehicles:[],variants:[]};
+  const variants=world.vehicles.flatMap((vehicle,index)=>
+    [...new Set(vehicle.tireFits?.map(fit=>fit.bodyAsset).filter(Boolean))].map(asset=>({index,vehicle,asset,variant:true})));
+  const bodies=world.vehicles.map((vehicle,index)=>({index,vehicle,asset:vehicle.asset+'_body',variant:false}));
+  for(const {index,vehicle,asset,variant} of [...bodies,...variants]){
+    const obj=asset+'.obj',file=path.join(root,'SourceAssets',obj);
     const before=fs.statSync(file),bounds=await scanBounds(file),probes=await selectProbes(file,bounds),after=fs.statSync(file);
     assert.equal(after.size,before.size,'unchanged model length during extraction');
     assert.equal(after.mtimeMs,before.mtimeMs,'unchanged model during extraction');
-    const exported=manifest.assets.find(a=>a.name===vehicle.asset+'_body');
+    const exported=manifest.assets.find(a=>a.name===asset);
     assert.equal(exported?.sha256,bounds.objSha256,'probe source matches the imported model manifest');
-    output.vehicles.push({index,id:vehicle.id,asset:vehicle.asset+'_body',objSource:obj,
+    (variant?output.variants:output.vehicles).push({index,id:vehicle.id,asset,objSource:obj,
       objSha256:bounds.objSha256,sourceVertexCount:bounds.count,
       boundsCM:{min:bounds.min,max:bounds.max},probeCount:probes.length,probes});
   }
   const target=path.join(root,'Content','NativeData','vehicle-ground-probes.json');
   const bytes=JSON.stringify(output,null,2)+'\n';fs.writeFileSync(target,bytes);
-  const report={path:target,sha256:hash(bytes),vehicles:output.vehicles.map(v=>({
-    index:v.index,id:v.id,objSha256:v.objSha256,sourceVertexCount:v.sourceVertexCount,
+  const report={path:target,sha256:hash(bytes),vehicles:[...output.vehicles,...output.variants].map(v=>({
+    index:v.index,id:v.id,asset:v.asset,objSha256:v.objSha256,sourceVertexCount:v.sourceVertexCount,
     probeCount:v.probeCount,regions:Object.fromEntries([...new Set(v.probes.map(p=>p.region))].map(r=>[r,v.probes.filter(p=>p.region===r).length]))})),pass:true};
   console.log(JSON.stringify(report));return report;
 }

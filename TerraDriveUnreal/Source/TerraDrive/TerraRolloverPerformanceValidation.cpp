@@ -40,7 +40,7 @@ bool Load(ATerraVehicle* V){
   }
   if(!TerraTireProbeValidation::Load())return false;
   FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverTireSize="),State.TireSize);
-  if(State.TireSize<0||State.TireSize>3)return false;
+  if(State.TireSize<0||State.TireSize>TerraSim::MaxTireSizeStage)return false;
   FString Build;FParse::Value(FCommandLine::Get(),TEXT("TerraPerfBuild="),Build);
   if(!Build.IsEmpty()){
     if(!V->LoadGarage(Build))return false;
@@ -127,7 +127,12 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     V->SetGarage(true);
     // Start each copied-build pose from the same loaded profile.
     V->SelectVehicle(C.Vehicle,!State.UsingSavedBuild);
-    if(State.TireSize>0)V->SetUpgrade(TerraSim::TireSize,State.TireSize,false);
+    if(State.TireSize>0){
+      const int Size=FMath::Min(State.TireSize,V->UpgradeMaxStage(TerraSim::TireSize));
+      const int Required=V->RequiredTireSuspensionStage(Size);
+      if(V->UpgradeStage(TerraSim::Suspension)<Required)V->SetUpgrade(TerraSim::Suspension,Required,false);
+      V->SetUpgrade(TerraSim::TireSize,Size,false);
+    }
     V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;
     if(State.UsingSavedBuild){
       const float ExpectedPressure=SavedPressure>0?SavedPressure:V->SpecValue(TEXT("stockPSIFront"),V->SpecValue(TEXT("stockPSI"),35));

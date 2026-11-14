@@ -129,7 +129,8 @@ public:
   bool RecoverInPlace();
   static constexpr const TCHAR* RecoveryBlockedNotice=TEXT("No safe recovery nearby. Use Restart route in the pause menu.");
   double RecoveryBlockedAt=0;
-  float TireKitLift=0;
+  float TireKitSteeringDegrees=SteeringLockDegrees;
+  float TireKitBumpFront=1.f,TireKitBumpRear=1.f;
   FString VehicleName, SurfaceName, Notice;
   float Mass = 2100, Speed = 0, RPM = 700, Steer = 0, Throttle = 0, Brake = 0,
         Pressure = 35, Damage = 0, WinchTension = 0;
@@ -233,6 +234,9 @@ public:
   float PressureProfiles[VehicleCount]={};
   float BatteryProfiles[VehicleCount]={.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f,.75f};
   FString DriveDescription() const;
+  int UpgradeMaxStage(int Part) const;
+  int RequiredTireSuspensionStage(int Stage) const;
+  FString UpgradeUnavailableReason(int Part,int Stage) const;
   int UpgradeStage(int Part) const { return Builds[VehicleIndex].Stage[Part]; }
   bool HasElectrical() const { return VehicleIndex != 2||IsElectric(); }
   float PowerHP() const;
@@ -266,6 +270,13 @@ private:
   bool RequireControlRelease=false,RecoveryBrakeHold=false;
   TSharedPtr<FTerraDamageVisualCache> DamageVisualCache;
   bool PrepareDamageMesh();
+  struct FPanelImpact {
+    FVector Point,Normal;
+    TerraSim::DamageResponse Shape;
+  };
+  TArray<FPanelImpact> PanelImpacts;
+  int ApplyPanelImpact(const FPanelImpact& Impact);
+  void RebuildDamageVisuals();
   void ConfigureCoachworkCollision();
   float NextBodyDiagnosticTime=0;
   TArray<FTerraBodyGroundContact> PendingBodyGroundContacts;
