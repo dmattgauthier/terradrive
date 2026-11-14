@@ -8,8 +8,8 @@
   "vehicles": [
     {
       "id": "wrangler-rubicon",
-      "bodySha256": "4707025de044fbe207e257f2dce6b4c72ffffb78a0de2e0d6d21a45f80cc2436",
-      "coverageCells": 14413,
+      "bodySha256": "5113f3bc08a3affe01c63f8f1f4635d4a3a72fb3ce5c6d9f1b2b91fc6e17c6ec",
+      "coverageCells": 14253,
       "previousFormulaOverlapM": 0.4943258500482962,
       "fits": [
         {
@@ -100,7 +100,7 @@
     },
     {
       "id": "bronco-badlands",
-      "bodySha256": "6defa1a919acefbafa1aca1c92f35331629a528f2f28baa833b9fc34dfbd1fd2",
+      "bodySha256": "67f90983a453a75413f01d5e6e2389411bd8d7d24bed08c055ce41b1993f9083",
       "coverageCells": 14495,
       "previousFormulaOverlapM": 0.5044997042247785,
       "fits": [
@@ -192,7 +192,7 @@
     },
     {
       "id": "civic-sport",
-      "bodySha256": "80b8f537227365edb2edf0bc71d212342ccff87f999d8c36781f79a261d133d2",
+      "bodySha256": "20f982145d1fccbe5bf408ad0618912e555a81c64e2bfc65193651c1840c5d83",
       "coverageCells": 13319,
       "previousFormulaOverlapM": 0.5019992520980198,
       "fits": [
@@ -284,7 +284,7 @@
     },
     {
       "id": "sprinter-2500",
-      "bodySha256": "7d1581b16519d3e4911b4737978c2083d927eba675f7fcf76913c1e973760df3",
+      "bodySha256": "f87b586d67621a2c0d34d56b37ed0f3ff44f3b7259d7035942e107342eb20c1f",
       "coverageCells": 17901,
       "previousFormulaOverlapM": 0.46029999332427973,
       "fits": [
@@ -376,7 +376,7 @@
     },
     {
       "id": "hummer-ev-suv-3x",
-      "bodySha256": "4d1bacdd49cd7b80810c0a72bd266273fae576bd248f8c2686d2d46fcd1fe281",
+      "bodySha256": "f5c9e9845528536a8e790ba27a5a483568dff64b6abe49fd2bf9d7aea639879d",
       "coverageCells": 15799,
       "previousFormulaOverlapM": 0.7627508311929134,
       "fits": [
@@ -468,8 +468,8 @@
     },
     {
       "id": "urus-performante",
-      "bodySha256": "d205778eb7aedce0c92dc82e367341f43e9659f7ea62af150dfa60311aab26cd",
-      "coverageCells": 15343,
+      "bodySha256": "63ce121701d0a756336143e0b233e7006a063e0693bda8d0485ba7fff2740ce4",
+      "coverageCells": 15490,
       "previousFormulaOverlapM": 0.6621500056205765,
       "fits": [
         {
@@ -560,7 +560,7 @@
     },
     {
       "id": "earthcruiser-exp",
-      "bodySha256": "630c2914f1b2d00d7b2687fe3145a6f05ce6971843a2f78fca6b01fee8100840",
+      "bodySha256": "3ad9ba59e5ffe4fe8dbc062a776f8f5dcab283352b71162a71547e74e10130c3",
       "coverageCells": 16578,
       "previousFormulaOverlapM": 0.6992157111401882,
       "fits": [
@@ -652,8 +652,8 @@
     },
     {
       "id": "mercedes-g580-ev",
-      "bodySha256": "6959b62a20aae41dabc380b55d7396512748e482f114f3ec005a25c7229593e8",
-      "coverageCells": 13278,
+      "bodySha256": "da7a063afb8175ee463a1aa46953506ecab1296e2c2a4fc54afb47ea83202a1d",
+      "coverageCells": 13693,
       "previousFormulaOverlapM": 0.6466336866002076,
       "fits": [
         {
@@ -744,8 +744,8 @@
     },
     {
       "id": "mercedes-amg-g63",
-      "bodySha256": "c18af74cb80b8e1455901a5fe2dbe3836494309f198f216c1e66ced13245ba94",
-      "coverageCells": 12612,
+      "bodySha256": "0dc871277bf684c839ebce0c0b06d2c94bb1f0d946ec635d9212dd21d39ee425",
+      "coverageCells": 12620,
       "previousFormulaOverlapM": 0.41726454433728305,
       "fits": [
         {
@@ -836,8 +836,8 @@
     },
     {
       "id": "mercedes-amg-g63-6x6",
-      "bodySha256": "cafba4155da402afb4bf2e8bec7cbd172d5de34b14979634df1339f622323a8d",
-      "coverageCells": 18228,
+      "bodySha256": "7c52189ccadeeb02c89c06a6fe4ac3eb35af912fe460f7631a8713f63cbeaadf",
+      "coverageCells": 18266,
       "previousFormulaOverlapM": 0.4434869758613078,
       "fits": [
         {
@@ -931,7 +931,7 @@
     },
     {
       "id": "subaru-22b-sti",
-      "bodySha256": "c8ff4ede0fa4976a8f6643bf855aa0738dc9b72349b097a0f7d6b31b5a2359ca",
+      "bodySha256": "eadaa89e3a8627cb2ca6ff214d4a1dc5ade5222da57a0a11f453ab4767f72fa7",
       "coverageCells": 11901,
       "previousFormulaOverlapM": 0.37596974366073926,
       "fits": [

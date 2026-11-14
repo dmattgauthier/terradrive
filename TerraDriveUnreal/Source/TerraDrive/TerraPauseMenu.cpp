@@ -29,10 +29,12 @@ void STerraPauseMenu::Construct(const FArguments& Args){
   SetCanTick(true);
   auto Navigation=SNew(SVerticalBox);
   auto Add=[&](const FString& Text,int Index,TFunction<FReply()> Click){
+    auto Button=SNew(SButton).ButtonStyle(&Style()).ContentPadding(FMargin(18,15)).HAlign(HAlign_Left)
+      .ButtonColorAndOpacity_Lambda([this,Index]{return Page==Index?FLinearColor(.19f,.35f,.27f):FLinearColor(.085f,.14f,.14f);})
+      .OnClicked_Lambda([Click]{return Click();})[Label(Text,15,White,true)];
     Navigation->AddSlot().AutoHeight().Padding(0,0,0,10)
-      [SNew(SButton).ButtonStyle(&Style()).ContentPadding(FMargin(18,15)).HAlign(HAlign_Left)
-        .ButtonColorAndOpacity_Lambda([this,Index]{return Page==Index?FLinearColor(.19f,.35f,.27f):FLinearColor(.085f,.14f,.14f);})
-        .OnClicked_Lambda([Click]{return Click();})[Label(Text,15,White,true)]];
+      [Button];
+    return Button;
   };
   Add(TEXT("RESUME"),-1,[this]{if(Vehicle.IsValid())Vehicle->SetPauseMenu(false);return FReply::Handled();});
   Navigation->AddSlot().AutoHeight().Padding(0,0,0,10)
@@ -47,7 +49,8 @@ void STerraPauseMenu::Construct(const FArguments& Args){
         if(Vehicle.IsValid()&&!Vehicle->Garage){Vehicle->SetPauseMenu(false);Vehicle->RecoverInPlace();}
         return FReply::Handled();
       })[Label(TEXT("RECOVER HERE"),15,White,true)]];
-  Add(TEXT("RESTART ROUTE"),-4,[this]{if(Vehicle.IsValid()){Vehicle->SetPauseMenu(false);if(Vehicle->RouteIndex>=0)Vehicle->TeleportRoute(Vehicle->RouteIndex);else Vehicle->TeleportZone(Vehicle->Zone);}return FReply::Handled();});
+  RestartRoute=Add(TEXT("RESTART ROUTE"),-4,[this]{if(Vehicle.IsValid()){Vehicle->SetPauseMenu(false);if(Vehicle->RouteIndex>=0)Vehicle->TeleportRoute(Vehicle->RouteIndex);else Vehicle->TeleportZone(Vehicle->Zone);}return FReply::Handled();});
+  Add(TEXT("CHALLENGES"),3,[this]{ShowPage(3);return FReply::Handled();});
   Add(TEXT("CONTROLS"),1,[this]{ShowPage(1);return FReply::Handled();});
   Add(TEXT("GRAPHICS"),2,[this]{ShowPage(2);return FReply::Handled();});
   Add(TEXT("EXIT GAME"),-2,[this]{RequestExit();return FReply::Handled();});
@@ -72,7 +75,8 @@ void STerraPauseMenu::Construct(const FArguments& Args){
               [SAssignNew(Pages,SWidgetSwitcher)
                 +SWidgetSwitcher::Slot()[HomePage()]
                 +SWidgetSwitcher::Slot()[ControlsPage()]
-                +SWidgetSwitcher::Slot()[STerraGarage::GraphicsPage()]]]]]]]];
+                +SWidgetSwitcher::Slot()[STerraGarage::GraphicsPage()]
+                +SWidgetSwitcher::Slot()[ChallengesPage()]]]]]]]];
 }
 TSharedRef<SWidget> STerraPauseMenu::HomePage(){
   return SNew(SBorder).BorderImage(&Card).BorderBackgroundColor(FLinearColor(.055f,.095f,.095f)).Padding(28)
@@ -118,8 +122,47 @@ TSharedRef<SWidget> STerraPauseMenu::ControlsPage(){
     [SNew(SBox).MinDesiredHeight(44)[SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Status);}).Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]]
     +SVerticalBox::Slot().FillHeight(1)[SAssignNew(ControlsScroll,SScrollBox)+SScrollBox::Slot()[List]];
 }
+TSharedRef<SWidget> STerraPauseMenu::ChallengesPage(){
+  auto List=SNew(SScrollBox);
+  if(Vehicle.IsValid()&&Vehicle->Terrain){
+    const auto& Routes=Vehicle->Terrain->Routes;
+    ChallengeButtons.SetNum(Routes.Num());
+    // The newest trails appear first. Both travel paths use the same routes.
+    for(int Index=Routes.Num()-1;Index>=0;--Index){
+      const auto& Route=Routes[Index];
+      List->AddSlot().Padding(0,0,0,7)
+        [SAssignNew(ChallengeButtons[Index],SButton).ButtonStyle(&Style()).ContentPadding(FMargin(15,10)).HAlign(HAlign_Fill)
+          .ButtonColorAndOpacity(FLinearColor(.085f,.14f,.14f))
+          .IsEnabled_Lambda([this]{return Vehicle.IsValid()&&!Vehicle->Garage;})
+          .OnClicked_Lambda([this,Index]{
+            if(ATerraVehicle* V=Vehicle.Get();V&&!V->Garage){
+              V->SetPauseMenu(false);
+              V->TeleportRoute(Index);
+            }
+            return FReply::Handled();
+          })
+          [SNew(SVerticalBox)
+            +SVerticalBox::Slot().AutoHeight()[Label(Route.Name,15,White,true)]
+            +SVerticalBox::Slot().AutoHeight().Padding(0,4,0,0)
+            [SNew(STextBlock)
+              .Text_Lambda([Driver=Vehicle,Hint=Route.Hint]{
+                const auto* V=Driver.Get();
+                return V?FText::FromString(V->RouteHint(Hint)):FText::GetEmpty();
+              })
+              .Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]]];
+    }
+  }
+  return SNew(SVerticalBox)
+    +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,12)[Label(TEXT("CHOOSE A CHALLENGE"),20,Mint,true)]
+    +SVerticalBox::Slot().AutoHeight().Padding(0,0,0,8)
+      [SNew(STextBlock).Text(FText::FromString(TEXT("Leave the garage to start a challenge."))).Font(Font(12))
+        .ColorAndOpacity(Muted).Visibility_Lambda([this]{
+          return Vehicle.IsValid()&&Vehicle->Garage?EVisibility::Visible:EVisibility::Collapsed;
+        })]
+    +SVerticalBox::Slot().FillHeight(1)[List];
+}
 void STerraPauseMenu::ShowPage(int Index){
-  Page=FMath::Clamp(Index,0,2);WaitingForBinding=false;BindingAction=TerraControls::Action::Count;
+  Page=FMath::Clamp(Index,0,3);WaitingForBinding=false;BindingAction=TerraControls::Action::Count;
   if(Pages.IsValid())Pages->SetActiveWidgetIndex(Page);
 }
 void STerraPauseMenu::Tick(const FGeometry& Geometry,double CurrentTime,float DeltaTime){

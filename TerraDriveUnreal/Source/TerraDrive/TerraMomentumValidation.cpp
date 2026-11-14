@@ -16,7 +16,7 @@
 
 namespace TerraMomentumValidation {
 namespace {
-constexpr int BoundaryTrialCount=7,ChecksPerBoundary=4,ChecksPerRiseVehicle=9,BarrierChecks=2;
+constexpr int BoundaryTrialCount=7,ChecksPerBoundary=5,ChecksPerRiseVehicle=9,BarrierChecks=2;
 struct FTrial {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TWeakObjectPtr<UProceduralMeshComponent> Bump;
@@ -27,7 +27,8 @@ struct FTrial {
       RisePeakCompression=0,RisePeakPitch=0,BrakePeakCompression=0,BrakePeakPitch=0,
       MinimumVisibleClearance=10000,RiseVisibleClearance=10000,PeakDeceleration=0;
   float LoadedDistance[ATerraVehicle::MaxWheels]={};
-  int PairMask=0,EncounteredMask=0;
+  int PairMask=0,EncounteredMask=0,NaturalContacts=0,MixedContacts=0;
+  float ContactCoverageError=0;
   FVector Start=FVector::ZeroVector,Direction=FVector::ForwardVector,BumpCenter=FVector::ZeroVector,LastPosition=FVector::ZeroVector;
   TArray<FVector> BodyProbes[ATerraVehicle::VehicleCount];
   FString ProbeAssets[ATerraVehicle::VehicleCount];
@@ -103,6 +104,7 @@ void Launch(ATerraVehicle *V,float Speed){
   State.PeakLoss=State.PeakCompression=State.PeakPitch=State.PeakDeceleration=0;State.MinimumClearance=10000;
   State.RisePeakCompression=State.RisePeakPitch=State.BrakePeakCompression=State.BrakePeakPitch=0;
   State.MinimumVisibleClearance=State.RiseVisibleClearance=10000;State.LastPosition=State.Start;State.EncounteredMask=0;
+  State.NaturalContacts=State.MixedContacts=0;State.ContactCoverageError=0;
   V->ResetContactTelemetry();V->TestBrake=0;
   const FVector Forward=V->GetActorForwardVector();
   V->Chassis->SetPhysicsLinearVelocity(Forward*Speed*100);
@@ -215,10 +217,25 @@ bool Tick(ATerraVehicle *V,float Dt,TFunctionRef<void(const FString&,bool,float)
       Launch(V,12);
     }else if(State.Phase==2){
       RecordMotion(V,Dt);
+      for(int I=0;I<V->WheelCount();++I){
+        const auto& Wheel=V->WheelState[I];
+        if(!Wheel.ContactValid||Wheel.Constructed||Wheel.Load<=50)continue;
+        const auto Blend=V->Terrain->SurfaceBlend(Wheel.Contact.X,Wheel.Contact.Y);
+        State.ContactCoverageError=FMath::Max3(State.ContactCoverageError,
+          FMath::Abs(Wheel.Ground.PavementCoverage-Blend.Weight[1]),
+          FMath::Abs(Wheel.Ground.SnowCoverage-Blend.Weight[6]));
+        ++State.NaturalContacts;
+        const float Coverage=Blend.Weight[(State.PairMask&(1<<1))?1:6];
+        if(Coverage>.05f&&Coverage<.95f)++State.MixedContacts;
+      }
       if(State.Travel>=State.Span*2||State.Time>5){
         Check(TEXT("coast ")+State.Name+TEXT(" crosses both sides without throttle or brake"),State.Travel>=State.Span*2&&V->Throttle==0&&V->Brake==0&&
             (State.EncounteredMask&State.PairMask)==State.PairMask&&V->ObjectBodyHits==0,State.Travel);
         Check(TEXT("coast ")+State.Name+TEXT(" retains rolling momentum"),State.LastSpeed>2,State.LastSpeed);
+        const bool HasPavementOrSnow=(State.PairMask&((1<<1)|(1<<6)))!=0;
+        Check(TEXT("coast ")+State.Name+TEXT(" uses terrain coverage at the loaded tire contacts"),
+          State.NaturalContacts>0&&(!HasPavementOrSnow||State.MixedContacts>0)&&State.ContactCoverageError<.001f,
+          State.ContactCoverageError);
         Check(TEXT("coast ")+State.Name+TEXT(" has no abrupt frame speed collapse"),State.Frames>12&&State.PeakLoss<.38f&&State.PeakDeceleration<15,State.PeakLoss);
         UE_LOG(LogTemp,Display,TEXT("TERRA_MOMENTUM_BOUNDARY name=%s travel=%.3f speed=%.3f min=%.3f frameLoss=%.4f deceleration=%.3f coverageMask=%d pairMask=%d terrainHits=%d terrainImpact=%.3f objectHits=%d frames=%d"),
             *State.Name,State.Travel,State.LastSpeed,State.MinimumSpeed,State.PeakLoss,State.PeakDeceleration,State.EncounteredMask,State.PairMask,V->TerrainBodyHits,V->TerrainImpactMPS,V->ObjectBodyHits,State.Frames);

@@ -43,9 +43,10 @@ void ATerraHUD::DrawHUD() {
   // At 720p every fitted card stays inside the viewport; higher resolutions
   // scale text and line art together rather than stretching bitmap icons.
   const float Q=S*Fit,Y=Canvas->SizeY-12*S-H*Fit;LastStatusTop=Y;VehicleSafeBottom=Y-85*S;float X=(Canvas->SizeX-Total*Fit)*.5f;
-  auto Text=[&](const FString& T,FLinearColor Color,float PX,float PY,float Size,float Width){
+  auto Text=[&](const FString& T,FLinearColor Color,float PX,float PY,float Size,float Width,bool Backing=false){
     float TW=0,TH=0;Canvas->StrLen(GEngine->GetSmallFont(),T,TW,TH);
     const float Scale=FMath::Min(Size*Q,Width/FMath::Max(1.f,TW));
+    if(Backing)DrawRect(FLinearColor(.018f,.032f,.038f,.84f),PX-4*Q,PY-2*Q,TW*Scale+8*Q,TH*Scale+4*Q);
     DrawText(T,Color,PX,PY,GEngine->GetSmallFont(),Scale);
   };
   for(const auto& C:Cards){
@@ -85,25 +86,31 @@ void ATerraHUD::DrawHUD() {
   if(V->DescentAssist)Details+=TEXT("   /   DESCENT [")+V->ControlLabel(A::DescentAssist)+TEXT("]");
   if(V->Tracks)Details+=TEXT("   /   TRACKS [")+V->ControlLabel(A::Tracks)+TEXT("]");
   if(V->WinchAttached)Details+=FString::Printf(TEXT("   /   WINCH %.0f lbf ["),TerraUnits::PoundsForce(V->WinchTension))+V->ControlLabel(A::WinchReel)+TEXT("]");
-  Text(Details,White,20*S,Y-38*S,.83f,Canvas->SizeX-40*S);
-  if(!V->RouteStatus.IsEmpty())Text(V->RouteStatus,Muted,20*S,Y-21*S,.8f,Canvas->SizeX-40*S);
+  Text(Details,White,20*S,Y-38*S,.83f,Canvas->SizeX-40*S,true);
+  if(!V->RouteStatus.IsEmpty())Text(V->RouteStatus,White,20*S,Y-21*S,.8f,Canvas->SizeX-40*S,true);
   float NoticeY=Y-61*S;
-  if(V->Terrain&&V->Terrain->Routes.IsValidIndex(V->RouteIndex)){
-    const auto& Route=V->Terrain->Routes[V->RouteIndex];
-    if(Route.Gates.IsValidIndex(V->GateIndex)&&Route.GateNotes.IsValidIndex(V->GateIndex)){
-      const auto& Tip=Route.GateNotes[V->GateIndex];
-      if(!Tip.IsEmpty()){
-        Text(Tip,Mint,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
-        NoticeY-=20*S;
-      }
+  const FTerraRoute* Route=V->Terrain&&V->Terrain->Routes.IsValidIndex(V->RouteIndex)?&V->Terrain->Routes[V->RouteIndex]:nullptr;
+  if(Route&&Route->Gates.IsValidIndex(V->GateIndex)&&Route->GateNotes.IsValidIndex(V->GateIndex)){
+    const auto& Tip=Route->GateNotes[V->GateIndex];
+    if(!Tip.IsEmpty()){
+      Text(Tip,Mint,20*S,NoticeY,.9f,Canvas->SizeX-40*S,true);
+      NoticeY-=20*S;
     }
   }
   const double Now=GetWorld()->GetRealTimeSeconds();
-  if(LastNotice!=V->Notice){LastNotice=V->Notice;NoticeChangedAt=Now;}
+  const uint64 RouteNoticeId=V->RouteNoticeId();
+  if(LastNotice!=V->Notice||(Route&&V->Notice==Route->Hint&&LastRouteNoticeId!=RouteNoticeId)){
+    LastNotice=V->Notice;NoticeChangedAt=Now;
+  }
+  LastRouteNoticeId=RouteNoticeId;
   const bool RecoveryBlocked=LastNotice==ATerraVehicle::RecoveryBlockedNotice;
   const bool Recent=Now-(RecoveryBlocked?V->RecoveryBlockedAt:NoticeChangedAt)<5;
   VisibleNotice=Recent&&RecoveryBlocked?LastNotice:
     V->Overturned?TEXT("ROLLED OVER  /  Recover [")+V->ControlLabel(A::Recover)+TEXT("]"):!V->HasPropulsionEnergy()?
       TEXT("EMPTY  /  Stop, then charge or refuel [")+V->ControlLabel(A::Garage)+TEXT("] or Esc"):(Recent?LastNotice:FString());
-  if(!VisibleNotice.IsEmpty())Text(VisibleNotice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S);
+  if(!VisibleNotice.IsEmpty()){
+    // A binding change updates the displayed hint without restarting its lifetime.
+    if(Route&&VisibleNotice==Route->Hint)VisibleNotice=V->RouteHint(VisibleNotice);
+    Text(VisibleNotice,Amber,20*S,NoticeY,.9f,Canvas->SizeX-40*S,true);
+  }
 }

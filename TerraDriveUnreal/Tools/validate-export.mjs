@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Terrain} from './native-terrain.mjs';
 import {makePerimeterTrail,perimeterMask} from './perimeter-trail.mjs';
+import {terrainChallengeRelief,terrainChallengeSurface} from './terrain-challenges.mjs';
 import {inQuarry} from './offroad-courses.mjs';
 import {validateGardenGeology} from './garden-geology.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -35,13 +36,13 @@ assert.ok(data.fabScenery.groups.reduce((sum,g)=>sum+g.instances.length,0)>100);
 assert.equal(b.readUInt32LE(0),0x54445256);assert.equal(b.readUInt32LE(4),1601);
 assert.equal(b.length,16+1601*1601*9);
 const terrain=new Terrain(),perimeter=makePerimeterTrail((x,y)=>terrain.heightAt(-y,x));let maxError=0;
-const expectedHeightAt=(x,y,at)=>perimeter.grade(x,y,terrain.heightAt(-y,x),b[at+8],b.readFloatLE(at+4));
+const expectedHeightAt=(x,y,at)=>perimeter.grade(x,y,terrain.heightAt(-y,x),b[at+8],b.readFloatLE(at+4))+terrainChallengeRelief(x,y);
 for(let i=0;i<1000;i++){
  const row=(i*383+19)%1601,col=(i*701+31)%1601,offset=16+(row*1601+col)*9;
  const x=400-col*.5,z=-400+row*.5,s=terrain.sample(x,z);
- const expectedHeight=perimeter.grade(z,-x,s.height,b[offset+8],s.waterDepth);
+ const expectedHeight=expectedHeightAt(z,-x,offset);
  maxError=Math.max(maxError,Math.abs(b.readFloatLE(offset)-expectedHeight));
- assert.equal(data.surfaces[b[offset+8]],s.surface);
+ assert.equal(b[offset+8],terrainChallengeSurface(z,-x,data.surfaces.indexOf(s.surface)));
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
 assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,12);assert.equal(data.zones.length,9);
@@ -80,7 +81,54 @@ assert.equal(six.features.frontLocker,true);assert.equal(six.features.rearLocker
 assert.equal(six.factoryTireAirStage,3);assert.ok(six.factoryPortalLiftM>.1&&six.clearance>.4);
 assert.ok(Math.abs(six.tireRadius-.4699)<1e-7);assert.equal(six.rimDiameterInches,18);
 assert.equal(six.gears.length,7);assert.equal(six.nativeModel.construction.threeAxleBody,true);
-assert.equal(data.routes.length,14);assert.equal(data.constructed.length,2);
+assert.equal(data.routes.length,18);assert.equal(data.constructed.length,2);
+assert.deepEqual(data.terrainChallenges.map(c=>[c.routeIndex,c.surface]),[[14,0],[15,5],[16,6],[17,4]]);
+assert.deepEqual(world.terrainChallenges,data.terrainChallenges,'source and native challenge metadata agree');
+let challengeTerrainSamples=0;
+for(const course of data.terrainChallenges){
+ const route=data.routes[course.routeIndex];
+ assert.deepEqual(world.routes[course.routeIndex],route,route.name+' source and native route agree');
+ assert.ok(course.changedCells>300);
+ assert.equal(route.gates.length,6);
+ assert.equal(route.gateNotes.length,6);
+ assert.equal(route.gateHeadings.length,6);
+ const [startX,startY]=route.spawn.map(v=>v/100),finishX=route.gates.at(-1)[0]/100;
+ for(let x=startX;x<=finishX;x++)for(let y=startY-2;y<=startY+2;y+=.5){
+  const at=16+(Math.round((x+400)*2)*1601+Math.round((y+400)*2))*9;
+  assert.equal(b[at+8],course.surface,route.name+' surface across the tire lanes');
+  assert.ok(b.readFloatLE(at+4)<.02,route.name+' dry lane');
+ }
+ for(const [x,y,z] of [route.spawn,...route.gates]){
+  const at=16+(Math.round((x/100+400)*2)*1601+Math.round((y/100+400)*2))*9;
+  assert.equal(b[at+8],course.surface,route.name+' native surface');
+  assert.ok(Math.abs(b.readFloatLE(at)*100-z)<.51,route.name+' marker height');
+ }
+ for(let x=course.minX;x<=course.maxX;x+=.5)for(let y=course.minY;y<=course.maxY;y+=.5){
+  const sample=terrain.sample(-y,x),at=16+(Math.round((x+400)*2)*1601+Math.round((y+400)*2))*9;
+  const cell=route.name+' at '+x+','+y;
+  assert.equal(b[at+8],terrainChallengeSurface(x,y,data.surfaces.indexOf(sample.surface)),cell+' surface');
+  assert.ok(Math.abs(b.readFloatLE(at+4)-sample.waterDepth)<1e-5,cell+' water depth');
+  assert.ok(Math.abs(b.readFloatLE(at)-expectedHeightAt(x,y,at))<1e-4,cell+' relief is applied once');
+  challengeTerrainSamples++;
+ }
+}
+const fault=data.terrainChallenges.at(-1),faultRoute=data.routes[fault.routeIndex];
+const [faultX,faultY]=faultRoute.spawn.map(v=>v/100);
+const faultSample=(s,t)=>16+(Math.round((faultX+s+400)*2)*1601+Math.round((faultY+t+400)*2))*9;
+const faultHeight=(s,t=0)=>b.readFloatLE(faultSample(s,t));
+assert.ok(fault.paintRock&&fault.paintedCells>1000,'exposed bedrock is present in the native field');
+assert.ok(faultHeight(30)-faultHeight(0)>6,'fault-line climb rises over six metres');
+const apronGrade=(faultHeight(6)-faultHeight(2))/4;
+assert.ok(apronGrade>.14&&apronGrade<.24,'moderate lead-in before the shelves');
+for(const s of [10,13.5,17,20.5,24]){
+ const grade=faultHeight(s+.5)-faultHeight(s-.5);
+ assert.ok(grade>.37&&grade<.62,'ledge has a steep but continuous face');
+}
+for(const [s,side] of [[12,-1],[15,1],[18.5,-1],[22,1]]){
+ const front=faultHeight(s+1.5,1)-faultHeight(s+1.5,-1);
+ const rear=faultHeight(s-1.5,1)-faultHeight(s-1.5,-1);
+ assert.ok(side*(front-rear)>.90,'alternating ledges unload opposite diagonal pairs');
+}
 const expedition=data.perimeterTrail,expeditionRoute=data.routes[expedition.routeIndex];
 assert.equal(expedition.routeIndex,13);
 assert.equal(expeditionRoute.name,'Perimeter Expedition');
@@ -251,6 +299,7 @@ for(const m of data.materials)assert.equal(m.instanceTint,tinted.has(m.id));
 assert.ok(details>500&&solid>20);
 for(const group of data.nativeDetails)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(i.s.every(s=>s>0));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};
+report.challengeTerrainSamples=challengeTerrainSamples;
 report.vehicleTopology=data.vehicles.map(v=>({id:v.id,wheels:v.wheelCount??4,axles:v.axleCount??2,referenceCraftRevision:v.nativeModel.referenceCraftRevision}));
 report.gradedTrailSamples=gradedSamples;report.terrainGrade=data.terrainGrade;
 report.shiftedQuarryMarkers=shiftedQuarryMarkers;

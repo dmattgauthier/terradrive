@@ -7,7 +7,9 @@ export const hoodRows=[[.72,1.156,.81],[1.08,1.125,.849],[1.50,1.091,.870],[1.93
 export const hood=(x,z,off=0)=>{
   const t=x/station(hoodRows,z,2),a=Math.abs(t),fade=smooth(z,.72,1.03)*(1-smooth(z,2.05,2.40));
   const ridge=.42+.24*smooth(z,.75,2.15);
-  const blade=.029*gauss(a,ridge,.044)-.008*gauss(a,ridge+.078,.055);
+  // The brochure shows a shallow pressed brow. Widen the shoulder of
+  // each ridge and roll into the trough instead of two peaked channels.
+  const blade=.022*gauss(a,ridge,.065)-.005*gauss(a,ridge+.103,.071);
   const shoulder=.034*gauss(a,.86,.075)+.008*gauss(a,.98,.13);
   const sweep=.122*smooth(z,1.84,2.48)*Math.abs(t)**1.85;
   return[x,station(hoodRows,z,1)+.039*(1-t*t)+fade*(blade+shoulder)+off,z-sweep];

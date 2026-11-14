@@ -15,7 +15,8 @@ import {bodyRefinement} from './body-refinement.mjs';
 import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
 import {quarryTrail} from './quarry-trail.mjs';
-import {addPerimeterTrail,trailLookup} from './perimeter-trail.mjs';
+import {addPerimeterTrail} from './perimeter-trail.mjs';
+import {addTerrainChallenges} from './terrain-challenges.mjs';
 import {applySlateRimExtension,applySlateRimPilot} from './slate-rim-pilot.mjs';
 import {refineRockPlacements} from './rock-fidelity.mjs';
 import {DEEP_MUD,deepMudWaterAsset,adventureRoutes} from './deep-mud.mjs';
@@ -27,9 +28,14 @@ import {createChallengeView} from '../../TerraDrive-v1.13/dist/src/challenge-vie
 import {buildRockCourses,challengeCollisionMesh,inQuarry} from './offroad-courses.mjs';
 import {vehicleAdditions,suspensionModels,environmentModels} from './native-models.mjs';
 import {refineVehicle,brakeCaliperModel,brakeRotorModel} from './vehicle-fidelity.mjs';
+import {beginSourceExport,publishSourceExport} from './source-export-state.mjs';
+import {bakeTireFits} from './tire-fit.mjs';
+import {readCachedJson} from './read-cached-json.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeData');
+const manifestPath=path.join(out,'import.json');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(data,{recursive:true});
+beginSourceExport(root);
 buildGardenGeology(data);
 globalThis.document={createElement(){return {width:0,height:0,getContext:()=>({fillRect(){},fillText(){},putImageData(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})})}}};
 const mats=[],matIds=new Map(),assets=[],tints=new Map();
@@ -38,8 +44,10 @@ const mats=[],matIds=new Map(),assets=[],tints=new Map();
 const materialKeys=['color','roughness','metallic','opacity','vertexColors','diffuse','alpha','alphaTest','clearcoat','coatRoughness','emissive','role','automotive','automotiveOwner','normal','roughMap'];
 const materialKey=d=>JSON.stringify(materialKeys.map(k=>d[k]??null)),previousMaterials=new Map();
 let nextMaterial=0;
-if(fs.existsSync(path.join(out,'import.json'))){
- for(const m of JSON.parse(fs.readFileSync(path.join(out,'import.json'),'utf8')).materials){
+const cachedMaterials=readCachedJson(manifestPath)?.materials;
+if(Array.isArray(cachedMaterials)){
+ for(const m of cachedMaterials){
+  if(typeof m?.id!=='string'||!/^M_\d+$/.test(m.id))continue;
   const key=materialKey(m);if(!previousMaterials.has(key))previousMaterials.set(key,[]);
   previousMaterials.get(key).push(m.id);nextMaterial=Math.max(nextMaterial,Number(m.id.slice(2))+1);
  }
@@ -115,33 +123,24 @@ function exportSizedTires(prefix,spec){
  }
 }
 const terrain=new Terrain(),surfaces=['dirt','asphalt','mud','wetland','rock','sand','snow'];
-const n=1601,step=.5,bytes=Buffer.alloc(16+n*n*9);bytes.writeUInt32LE(0x54445256,0);bytes.writeUInt32LE(n,4);bytes.writeFloatLE(step,8);bytes.writeFloatLE(-400,12);
-if(!fs.existsSync(path.join(data,'terrain.bin'))){let offset=16;for(let row=0;row<n;row++){for(let col=0;col<n;col++){const z=-400+row*step,x=400-col*step,s=terrain.sample(x,z);bytes.writeFloatLE(s.height,offset);bytes.writeFloatLE(s.waterDepth,offset+4);bytes[offset+8]=surfaces.indexOf(s.surface);offset+=9;}if(row%400===0)console.log('Terrain row',row,'/',n);}fs.writeFileSync(path.join(data,'terrain.bin'),bytes);}
-// Rewrite only the native trail's height band, including its feathered edges.
-// Existing surfaces/water and all samples outside this band remain unchanged.
-const field=fs.readFileSync(path.join(data,'terrain.bin'));
-// A subsequent export can start from an already cooked height field. Restore
-// the previous corridor before laying out a revised trail, so old cuts vanish.
-const priorWorld=path.join(data,'world.json');
-const priorTrail=fs.existsSync(priorWorld)?JSON.parse(fs.readFileSync(priorWorld)).perimeterTrail:null;
-if(priorTrail){
- const oldCorridor=trailLookup(priorTrail.samples);
- for(let row=0;row<n;row++)for(let col=0;col<n;col++){
-  const x=-400+row*step,y=-400+col*step;
-  if(oldCorridor(x,y))field.writeFloatLE(terrain.heightAt(-y,x),16+(row*n+col)*9);
+// Start each export from the source samples, including on a retry after an
+// interrupted publication. Course grades and painted surfaces are applied once.
+const n=1601,step=.5,origin=-400,field=Buffer.alloc(16+n*n*9);
+field.writeUInt32LE(0x54445256,0);
+field.writeUInt32LE(n,4);
+field.writeFloatLE(step,8);
+field.writeFloatLE(origin,12);
+let offset=16;
+for(let row=0;row<n;row++){
+ const x=origin+row*step;
+ for(let col=0;col<n;col++,offset+=9){
+  const y=origin+col*step,sample=terrain.sample(-y,x);
+  field.writeFloatLE(sample.height,offset);
+  field.writeFloatLE(sample.waterDepth,offset+4);
+  field[offset+8]=surfaces.indexOf(sample.surface);
  }
+ if(row%400===0)console.log('Terrain row',row,'/',n);
 }
-for(let row=940;row<=1400;row++)for(let col=50;col<=520;col++){
- const ux=-400+row*.5,uy=-400+col*.5;
- field.writeFloatLE(terrain.heightAt(-uy,ux),16+(row*n+col)*9);
-}
-fs.writeFileSync(path.join(data,'terrain.bin'),field);
-// Update the new mud basin only; preserve all other reference samples.
-for(let row=502;row<=670;row++)for(let col=646;col<=750;col++){
- const ux=-400+row*.5,uy=-400+col*.5,s=terrain.sample(-uy,ux),offset=16+(row*n+col)*9;
- field.writeFloatLE(s.height,offset);field.writeFloatLE(s.waterDepth,offset+4);field[offset+8]=surfaces.indexOf(s.surface);
-}
-fs.writeFileSync(path.join(data,'terrain.bin'),field);
 const vehicles=[];for(const spec of VEHICLES){const {view,parts}=prepareNativeVehicle(spec);
  if(spec.bodyStyle==='earthcruiser')view.root.userData.nativeFidelity.roofDamageTopology=refineExpRoof(view.body);
  const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportSizedTires(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);
@@ -211,6 +210,15 @@ for(let i=trees.length-1;i>=0;--i)if(trailDistance(trees[i].p)<340+trees[i].radi
 }
 for(const group of placements)if(group.crushable)group.instances=group.instances.filter(p=>trailDistance(p.p)>300);
 for(const group of environment.placements)if(!/^scan_(?:mountainside|boulder_01|grass_medium_01)_/.test(group.asset))group.instances=group.instances.filter(p=>trailDistance(p.p)>(group.solid?500:300));
+for(const [name,color] of [['amber','#ffae43'],['blue','#40b6e3']]){
+ const post=new THREE.Group();
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(.044,.065,.80,12),new THREE.MeshStandardMaterial({color:'#30383a',roughness:.71}));
+ base.position.y=.40;
+ const cap=new THREE.Mesh(new THREE.CylinderGeometry(.052,.052,.25,12),new THREE.MeshStandardMaterial({color,roughness:.46}));
+ cap.position.y=.68;
+ post.add(base,cap);
+ exportObj('trail_challenge_'+name,post);
+}
 const tinted=new Set();
 for(const g of [...placements,...environment.placements])if(g.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
@@ -224,12 +232,10 @@ manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.w
 addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x),landmarks);
 applySlateRimPilot(manifest,field);
 applySlateRimExtension(manifest,field);
-fs.writeFileSync(path.join(data,'terrain.bin'),field);
-fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
-fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
-// Tire fit is derived from these exact exported coachwork triangles, then
-// written to both vehicle manifests before the editor imports any assets.
-await (await import('./tire-fit.mjs')).bakeTireFits(root);
+addTerrainChallenges(manifest,field);
+// Fit the exact exported coachwork before publishing either manifest.
+await bakeTireFits(root,manifest);
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));
+publishSourceExport(root,manifest,field);
 console.log('Export complete:',assets.length,'meshes,',placements.length,'instance groups,',trees.length,'trees');
 

@@ -16,6 +16,7 @@ public:
   float LastStatusBottom=0,LastStatusTop=0,VehicleSafeBottom=0;
 private:
   FString LastNotice;
+  uint64 LastRouteNoticeId=0;
   double NoticeChangedAt=0;
 };
 UCLASS()

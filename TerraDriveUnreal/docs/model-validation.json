@@ -3,8 +3,8 @@
   "vehicles": [
     {
       "vehicle": "Jeep Wrangler Rubicon",
-      "vertices": 417924,
-      "normalizedFraction": 0.999983250543161,
+      "vertices": 424259,
+      "normalizedFraction": 0.9999740724415982,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -22,8 +22,8 @@
     },
     {
       "vehicle": "Ford Bronco Badlands",
-      "vertices": 393200,
-      "normalizedFraction": 0.9999898270600204,
+      "vertices": 388940,
+      "normalizedFraction": 0.9999897156373734,
       "visibility": [
         {
           "pane": "recessed cowl",
@@ -45,8 +45,8 @@
     },
     {
       "vehicle": "Honda Civic Sport",
-      "vertices": 286181,
-      "normalizedFraction": 0.9998707111932658,
+      "vertices": 286235,
+      "normalizedFraction": 0.9998707355843974,
       "visibility": [
         {
           "pane": "open lower mesh",
@@ -64,8 +64,8 @@
     },
     {
       "vehicle": "Mercedes-Benz Sprinter 2500",
-      "vertices": 566833,
-      "normalizedFraction": 0.9999876506837111,
+      "vertices": 566875,
+      "normalizedFraction": 0.999987651598677,
       "visibility": [
         {
           "pane": "waist swage",
@@ -82,8 +82,8 @@
     },
     {
       "vehicle": "GMC HUMMER EV SUV",
-      "vertices": 352140,
-      "normalizedFraction": 0.9997983756460499,
+      "vertices": 352260,
+      "normalizedFraction": 0.9997984443308919,
       "visibility": [
         {
           "pane": "recessed bonnet vent",
@@ -104,8 +104,8 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 731799,
-      "normalizedFraction": 0.9995654544485576,
+      "vertices": 772784,
+      "normalizedFraction": 0.9995885007971179,
       "visibility": [
         {
           "pane": "windshield",
@@ -117,11 +117,11 @@
         },
         {
           "pane": "bonnet vent",
-          "firstSurfaceYM": 1.075374458364992
+          "firstSurfaceYM": 1.074969660221413
         },
         {
           "pane": "hatch plate well",
-          "firstSurfaceZM": -2.453108983562355
+          "firstSurfaceZM": -2.4637399266623623
         },
         {
           "pane": "roof crown",
@@ -134,7 +134,7 @@
         },
         {
           "pane": "sculpted door",
-          "shoulderOutsetM": 0.06542347369729085
+          "shoulderOutsetM": 0.07880488214464598
         },
         {
           "pane": "partitioned bonnet and open intake",
@@ -154,8 +154,8 @@
     },
     {
       "vehicle": "EarthCruiser EXP",
-      "vertices": 211779,
-      "normalizedFraction": 0.999981112386025,
+      "vertices": 213341,
+      "normalizedFraction": 0.999981250673804,
       "visibility": [],
       "tire": {
         "revision": 3,
@@ -171,8 +171,8 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 211779,
-          "triangles": 324149,
+          "vertices": 213341,
+          "triangles": 326315,
           "materialObjects": 26,
           "bounds": [
             [
@@ -210,13 +210,13 @@
           {
             "case": "unit source shading normals",
             "pass": true,
-            "normalizedFraction": 0.999981112386025
+            "normalizedFraction": 0.999981250673804
           },
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 324149,
-            "vertices": 211779,
+            "triangles": 326315,
+            "vertices": 213341,
             "materialObjects": 26
           },
           {
@@ -389,8 +389,8 @@
     },
     {
       "vehicle": "Mercedes-Benz G 580 with EQ Technology",
-      "vertices": 231839,
-      "normalizedFraction": 0.9999827466474579,
+      "vertices": 236914,
+      "normalizedFraction": 0.9999831162362713,
       "visibility": [],
       "tire": {
         "revision": 15,
@@ -406,14 +406,14 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 231839,
-          "triangles": 365033,
+          "vertices": 236914,
+          "triangles": 371219,
           "materialObjects": 25,
           "bounds": [
             [
               -1.091744303703308,
               0.2505000013113022,
-              -2.4064909040192304
+              -2.4049901921387917
             ],
             [
               1.091744303703308,
@@ -469,13 +469,13 @@
           {
             "case": "unit source shading normals",
             "pass": true,
-            "normalizedFraction": 0.9999827466474579
+            "normalizedFraction": 0.9999831162362713
           },
           {
             "case": "bounded original body geometry and material budget",
             "pass": true,
-            "triangles": 365033,
-            "vertices": 231839,
+            "triangles": 371219,
+            "vertices": 236914,
             "materialObjects": 25
           },
           {
@@ -541,7 +541,7 @@
           {
             "case": "body and selected rear hardware follow the reference length envelope",
             "pass": true,
-            "sourceLengthM": 4.741490904066728,
+            "sourceLengthM": 4.739990192186289,
             "referenceM": 4.728,
             "toleranceM": 0.06
           },
@@ -641,12 +641,12 @@
           {
             "case": "bonnet has restrained physical transverse crown",
             "pass": true,
-            "crownM": 0.046960416251156545
+            "crownM": 0.04722620075313033
           },
           {
             "case": "drawn door sheet has physical shoulder relief",
             "pass": true,
-            "reliefM": 0.012116647239867051
+            "reliefM": 0.012093599883096662
           },
           {
             "case": "metal roof has a shallow transverse crown",
@@ -681,9 +681,10 @@
             "selectedRimInches": 20
           },
           {
-            "case": "electric grille uses the distinct recessed closed black panel",
+            "case": "electric louvers sit forward of the closed black panel",
             "pass": true,
-            "panelZM": 2.197275532782078
+            "panelZM": 2.197275532782078,
+            "louverZM": 2.232199938595295
           }
         ],
         "limitations": [
@@ -695,8 +696,8 @@
     },
     {
       "vehicle": "Mercedes-AMG G 63 4x4 squared",
-      "vertices": 257706,
-      "normalizedFraction": 0.9999844784366682,
+      "vertices": 241959,
+      "normalizedFraction": 0.9996817642658467,
       "visibility": [],
       "tire": {
         "revision": 24,
@@ -712,13 +713,13 @@
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 257706,
-          "triangles": 387342,
+          "vertices": 241959,
+          "triangles": 360964,
           "bounds": [
             [
               -1.098000000026077,
-              0.5291305184364319,
-              -2.5524946599585916
+              0.5294999983012676,
+              -2.591899999894202
             ],
             [
               1.098000000026077,
@@ -731,20 +732,20 @@
           {
             "case": "finite source positions and normals",
             "pass": true,
-            "vertices": 257706,
+            "vertices": 241959,
             "nonfinite": 0
           },
           {
             "case": "unit shading normals",
             "pass": true,
-            "nonunit": 4,
-            "normalizedFraction": 0.9999844784366682
+            "nonunit": 77,
+            "normalizedFraction": 0.9996817642658467
           },
           {
             "case": "bounded triangle budget without cab duplication",
             "pass": true,
-            "triangles": 387342,
-            "vertices": 257706
+            "triangles": 360964,
+            "vertices": 241959
           },
           {
             "case": "roof and roll bar follow the selected reference envelope within one inch",
@@ -755,7 +756,7 @@
           {
             "case": "body length follows the selected reference envelope",
             "pass": true,
-            "actualM": 4.887494660006089,
+            "actualM": 4.9268999999417,
             "referenceStatus": "Retained modern-G donor envelope."
           },
           {
@@ -836,25 +837,19 @@
             "pass": true
           },
           {
-            "case": "covered spare remains round and matches the larger tires",
+            "case": "exposed spare is round and matches the larger tires",
             "pass": true,
             "diametersM": [
-              0.9163000341176385,
-              0.9163000341176386,
-              0.2834842049215265
+              0.9162999987602234,
+              0.9162999987602234,
+              0.24000000208616257
             ]
           },
           {
-            "case": "variant badge has clear space beside the enlarged spare",
+            "case": "4x4 marking fits the lower-half carrier, leaving the wheel visible above",
             "pass": true,
-            "badgeX": [
-              -0.8303152555046341,
-              -0.6002764475703071
-            ],
-            "spareX": [
-              -0.45815001705881925,
-              0.45815001705881925
-            ]
+            "carrierTopY": 0.30299999678134926,
+            "wheelCenterY": 0.4590000000000001
           },
           {
             "case": "front and rear fender exteriors are explicit closed surfaces",
@@ -866,36 +861,36 @@
             "case": "fender exterior faces out g63-squared-carbon-extension-outer--1--1.445",
             "pass": true,
             "normal": [
-              -0.9932064414024353,
-              0.0033176573924720287,
-              -0.11631845682859421
+              -1,
+              9.770824505039855e-8,
+              0
             ]
           },
           {
             "case": "fender exterior faces out g63-squared-carbon-extension-outer--1-1.445",
             "pass": true,
             "normal": [
-              -0.9932064414024353,
-              0.003317735157907009,
-              -0.11631835997104645
+              -1,
+              9.770824505039855e-8,
+              0
             ]
           },
           {
             "case": "fender exterior faces out g63-squared-carbon-extension-outer-1--1.445",
             "pass": true,
             "normal": [
-              0.9932064414024353,
-              0.0033176573924720287,
-              -0.11631845682859421
+              1,
+              9.770824505039855e-8,
+              0
             ]
           },
           {
             "case": "fender exterior faces out g63-squared-carbon-extension-outer-1-1.445",
             "pass": true,
             "normal": [
-              0.9932064414024353,
-              0.003317735157907009,
-              -0.11631835997104645
+              1,
+              9.770824505039855e-8,
+              0
             ]
           },
           {
@@ -913,8 +908,8 @@
     },
     {
       "vehicle": "Mercedes-Benz G 63 AMG 6x6",
-      "vertices": 246222,
-      "normalizedFraction": 0.99997563174696,
+      "vertices": 241368,
+      "normalizedFraction": 0.9999751416923536,
       "visibility": [],
       "tire": {
         "revision": 24,
@@ -926,16 +921,16 @@
         "vehicle": "Mercedes-Benz G 63 AMG 6x6",
         "id": "mercedes-amg-g63-6x6",
         "style": "g63six",
-        "checks": 72,
+        "checks": 73,
         "pass": true,
         "sourceOnly": true,
         "geometry": {
-          "vertices": 246222,
-          "triangles": 388845,
+          "vertices": 241368,
+          "triangles": 374698,
           "bounds": [
             [
               -1.098000000026077,
-              0.5994999991059304,
+              0.5450000166893005,
               -2.918499999806285
             ],
             [
@@ -949,20 +944,20 @@
           {
             "case": "finite source positions and normals",
             "pass": true,
-            "vertices": 246222,
+            "vertices": 241368,
             "nonfinite": 0
           },
           {
             "case": "unit shading normals",
             "pass": true,
             "nonunit": 6,
-            "normalizedFraction": 0.99997563174696
+            "normalizedFraction": 0.9999751416923536
           },
           {
             "case": "bounded triangle budget without cab duplication",
             "pass": true,
-            "triangles": 388845,
-            "vertices": 246222
+            "triangles": 374698,
+            "vertices": 241368
           },
           {
             "case": "roof and roll bar follow the selected reference envelope within one inch",
@@ -1080,6 +1075,11 @@
           {
             "case": "classic front retains two projector assemblies",
             "pass": true
+          },
+          {
+            "case": "classic front has open grille cells, separate bumper DRLs and vented skid plate",
+            "pass": true,
+            "cells": 80
           },
           {
             "case": "classic cabin has separate analogue binnacle and tablet",
@@ -1429,7 +1429,7 @@
     },
     {
       "vehicle": "Grave Digger",
-      "vertices": 187129,
+      "vertices": 190725,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -1441,7 +1441,7 @@
       "addedReference": {
         "id": "grave-digger",
         "checks": 25,
-        "vertices": 187129,
+        "vertices": 190725,
         "bodySizeM": [
           1.9999902248382568,
           2.458979520251848,
@@ -1451,7 +1451,7 @@
           {
             "name": "finite bounded authored geometry",
             "pass": true,
-            "vertices": 187129,
+            "vertices": 190725,
             "bad": 0
           },
           {
@@ -1590,7 +1590,7 @@
     },
     {
       "vehicle": "Subaru Impreza 22B STI",
-      "vertices": 151915,
+      "vertices": 152241,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -1602,7 +1602,7 @@
       "addedReference": {
         "id": "subaru-22b-sti",
         "checks": 71,
-        "vertices": 151915,
+        "vertices": 152241,
         "bodySizeM": [
           1.9286856651306152,
           1.2394999861717224,
@@ -1612,7 +1612,7 @@
           {
             "name": "finite bounded authored geometry",
             "pass": true,
-            "vertices": 151915,
+            "vertices": 152241,
             "bad": 0
           },
           {
@@ -2003,6 +2003,6 @@
       "pass": true
     }
   ],
-  "newExpeditionChecks": 156,
+  "newExpeditionChecks": 157,
   "pass": true
 }

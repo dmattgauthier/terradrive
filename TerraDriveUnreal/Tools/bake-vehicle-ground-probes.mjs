@@ -98,4 +98,4 @@ export async function bakeVehicleGroundProbes(root=project){
     probeCount:v.probeCount,regions:Object.fromEntries([...new Set(v.probes.map(p=>p.region))].map(r=>[r,v.probes.filter(p=>p.region===r).length]))})),pass:true};
   console.log(JSON.stringify(report));return report;
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===script)await bakeVehicleGroundProbes();
+if(process.argv[1]&&fs.existsSync(process.argv[1])&&fs.realpathSync.native(process.argv[1])===fs.realpathSync.native(script))await bakeVehicleGroundProbes();

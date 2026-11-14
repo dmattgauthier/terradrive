@@ -135,6 +135,27 @@ int main(){
     check(TerraSim::FootprintLength(5200,16,.285f,.42f,false)>roadPatch*1.4f,"airing down expands actual soil footprint");
     check(TerraSim::FootprintLength(5200,16,.285f,.42f,true)==1.35f,"tracks retain their full supported length");
     check(TerraSim::PressureGrip(16,37,true,false)>1.1f&&TerraSim::PressureGrip(16,37,false,false)<1,"low pressure trades road precision for loose terrain grip");
+    check(TerraSim::LongitudinalContactScale(0)==5&&TerraSim::LongitudinalContactScale(1)==10,
+          "pure pavement and off-road tire stiffness retain their authored limits");
+    check(TerraSim::TrackGripScale(0)==.84f&&TerraSim::TrackGripScale(1)==1.5f,
+          "pure snow and non-snow track grip retain their authored limits");
+    check(TerraSim::LongitudinalContactScale(-.1f)==5&&TerraSim::LongitudinalContactScale(1.1f)==10&&
+          TerraSim::TrackGripScale(-.1f)==.84f&&TerraSim::TrackGripScale(1.1f)==1.5f,
+          "contact response stays bounded outside the coverage range");
+    check(TerraSim::TrackGripScale(.49f)<TerraSim::TrackGripScale(.51f)&&
+          TerraSim::TrackGripScale(.51f)-TerraSim::TrackGripScale(.49f)<.014f,
+          "track grip changes continuously as snow becomes the dominant surface");
+    for(float dt:{1.f/20,1.f/30,1.f/60}){
+        constexpr float load=5000, mass=500, speed=12, slipSpeed=1, lateral=1000, limit=4000;
+        const auto force=[&](float pavement){
+            const float stiffness=TerraSim::ContactStiffness(
+                load*TerraSim::LongitudinalContactScale(pavement)/speed,mass,dt);
+            return TerraSim::CombinedTireForces(stiffness*slipSpeed,lateral,limit,limit).Longitudinal;
+        };
+        const float offRoad=force(0),road=force(1),before=force(.49f),after=force(.51f);
+        check(offRoad<before&&before<after&&after<road&&after-before<(road-offRoad)*.03f,
+              "braking and drive force build gradually across a mixed pavement contact");
+    }
     const float grip=TerraSim::TerrainGrip(.6f,5000,5000,37,37,true,false,0,0,0,10);
     check(TerraSim::TerrainGrip(.6f,5000,5000,37,37,true,false,0,2,0,10)<grip,"sustained wheelspin churns loose soil");
     check(TerraSim::TerrainGrip(.6f,5000,5000,37,37,true,false,0,0,.4f,15)<grip,"standing water reduces high speed tire grip");

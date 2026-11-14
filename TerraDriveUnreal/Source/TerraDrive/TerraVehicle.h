@@ -62,6 +62,8 @@ public:
   void SelectVehicle(int Index, bool StoreCurrentProfile = true);
   void TeleportZone(int Index);
   void TeleportRoute(int Index);
+  FString RouteHint(const FString& Hint)const;
+  uint64 RouteNoticeId() const { return RouteNoticeSerial; }
   void ToggleLocker(bool Front);
   UFUNCTION()
   void OnBodyHit(UPrimitiveComponent *Hit, UPrimitiveComponent *Other,
@@ -278,6 +280,8 @@ private:
   TArray<FTerraParcel> Parcels;
   FVector Anchor;
   FVector PreviousRoutePosition;
+  uint64 RouteNoticeSerial=0;
+  FVector RouteSpawnPosition(const FTerraRoute& Route) const;
   bool NearCamera = false;
   bool ReverseReleaseRequired=false;
   float GarageYaw=145,GaragePitch=-12,GarageDistance=1050;

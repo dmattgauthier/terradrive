@@ -3,6 +3,7 @@ import fs from 'node:fs';import path from 'node:path';import crypto from 'node:c
 import {perimeterMask,trailLookup} from './perimeter-trail.mjs';
 import {slateRimVisualCoverage} from './slate-rim-pilot.mjs';
 import {graniteApron,graniteVisualRock,quarryLaneMask} from './granite-ground.mjs';
+import {readCachedJson} from './read-cached-json.mjs';
 const root=path.resolve(import.meta.dirname,'..'),source=path.join(root,'SourceAssets'),data=path.join(root,'Content/NativeData');
 const bytes=fs.readFileSync(path.join(data,'terrain.bin')),n=bytes.readUInt32LE(4),step=bytes.readFloatLE(8),origin=bytes.readFloatLE(12),count=n*n;
 if(bytes.readUInt32LE(0)!==0x54445256||n!==1601)throw Error('Unexpected source field');
@@ -21,7 +22,27 @@ const hash=crypto.createHash('sha256').update(bytes).update(fs.readFileSync(impo
  .update(fs.readFileSync(new URL('./offroad-courses.mjs',import.meta.url)))
  .update(JSON.stringify(world.quarryTrail?.samples??null)).digest('hex');
 const reportFile=path.join(root,'Saved/terrain-transitions.json');
-if(fs.existsSync(reportFile)&&JSON.parse(fs.readFileSync(reportFile)).signature===hash&&['TerrainBlendA.tga','TerrainBlendB.tga','TerrainTrail.tga'].every(f=>fs.existsSync(path.join(source,f)))&&['terrain-blend.bin','terrain-transitions.json'].every(f=>fs.existsSync(path.join(data,f)))){console.log('Terrain transition masks unchanged');process.exit(0);}
+const outputs={
+ trail:'SourceAssets/TerrainTrail.tga',blendA:'SourceAssets/TerrainBlendA.tga',blendB:'SourceAssets/TerrainBlendB.tga',
+ physical:'Content/NativeData/terrain-blend.bin',fixtures:'Content/NativeData/terrain-transitions.json'
+};
+const digest=contents=>crypto.createHash('sha256').update(contents).digest('hex');
+function matchesOutputs(hashes){
+ if(!hashes)return false;
+ try{
+  return Object.values(outputs).every(file=>hashes[file]===digest(fs.readFileSync(path.join(root,file))));
+ }catch(error){
+  if(error.code==='ENOENT')return false;
+  throw error;
+ }
+}
+const cached=readCachedJson(reportFile);
+if(cached?.signature===hash&&matchesOutputs(cached.outputSHA256)){console.log('Terrain transition masks unchanged');process.exit(0);}
+const outputSHA256={};
+function writeOutput(file,contents){
+ fs.writeFileSync(path.join(root,file),contents);
+ outputSHA256[file]=digest(contents);
+}
 const surfaces=new Uint8Array(count);for(let i=0;i<count;i++)surfaces[i]=bytes[16+i*9+8];
 const f=new Float64Array(n),d=new Float64Array(n),v=new Int32Array(n),z=new Float64Array(n+1);
 function line(){let k=0;v[0]=0;z[0]=-Infinity;z[1]=Infinity;
@@ -67,7 +88,7 @@ for(let i=0;i<count;i++){
   if(exposed[i]>slate)graniteApronPixels++;
  }else worn[i]=lane;
 }
-fs.writeFileSync(path.join(source,'TerrainTrail.tga'),trailMask);
+writeOutput(outputs.trail,trailMask);
 for(let group=0;group<2;group++){
  const tga=Buffer.alloc(18+count*4);tga[2]=2;tga.writeUInt16LE(n,12);tga.writeUInt16LE(n,14);tga[16]=32;tga[17]=0x28;
  for(let i=0;i<count;i++){
@@ -77,15 +98,17 @@ for(let group=0;group<2;group++){
   // Blend B alpha carries the pre-worn trail independent of physical cover.
   tga[at+3]=group?worn[i]:coverage[i*7+3];
  }
- fs.writeFileSync(path.join(source,group?'TerrainBlendB.tga':'TerrainBlendA.tga'),tga);
+ writeOutput(group?outputs.blendB:outputs.blendA,tga);
 }
-const native=Buffer.alloc(16+coverage.length);native.writeUInt32LE(0x54425731);native.writeUInt32LE(n,4);native.writeFloatLE(step,8);native.writeFloatLE(origin,12);coverage.copy(native,16);fs.writeFileSync(path.join(data,'terrain-blend.bin'),native);
+const native=Buffer.alloc(16+coverage.length);native.writeUInt32LE(0x54425731);native.writeUInt32LE(n,4);native.writeFloatLE(step,8);native.writeFloatLE(origin,12);coverage.copy(native,16);writeOutput(outputs.physical,native);
 const targets={'0-1':[-186,126],'0-2':[-115,-8],'0-3':[77,24],'0-4':[42,-112],'0-5':[-178,-195],'0-6':[230,136],'2-4':[-115,-48]},fixtures=new Map();
 for(let r=2;r<n-2;r++)for(let c=2;c<n-2;c++){
  const i=r*n+c,a=surfaces[i];for(const [dr,dc] of [[1,0],[0,1]]){const other=surfaces[(r+dr)*n+c+dc];if(a===other)continue;const lo=Math.min(a,other),hi=Math.max(a,other),key=lo+'-'+hi;if(!targets[key])continue;
   const x=origin+(r+dr*.5)*step,y=origin+(c+dc*.5)*step;const score=(x-targets[key][0])**2+(y-targets[key][1])**2;
   if(!fixtures.has(key)||fixtures.get(key).score>score){let nx=dr*(other===hi?1:-1),ny=dc*(other===hi?1:-1);fixtures.set(key,{pair:[lo,hi],name:names[lo]+'-'+names[hi],p:[x*100,y*100],normal:[nx,ny],halfWidthM:widths[lo][hi],score});}
  }}
-const report={version:1,signature:hash,sourceTerrainSHA256:crypto.createHash('sha256').update(bytes).digest('hex'),n,stepM:step,originM:origin,names,halfWidthsM:widths,boundaryPixels,interiorPixels,slateRimVisualPixels,graniteApronPixels,quarryLaneMaskVersion:1,graniteApronVersion:1,coverageAreaM2:totals.map(x=>x*step*step),fixtures:[...fixtures.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(({score,...v})=>v)};
-fs.writeFileSync(reportFile,JSON.stringify(report,null,2));fs.writeFileSync(path.join(data,'terrain-transitions.json'),JSON.stringify({version:1,fixtures:report.fixtures}));
+const report={version:1,signature:hash,sourceTerrainSHA256:digest(bytes),n,stepM:step,originM:origin,names,halfWidthsM:widths,boundaryPixels,interiorPixels,slateRimVisualPixels,graniteApronPixels,quarryLaneMaskVersion:1,graniteApronVersion:1,coverageAreaM2:totals.map(x=>x*step*step),fixtures:[...fixtures.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(({score,...v})=>v)};
+writeOutput(outputs.fixtures,JSON.stringify({version:1,fixtures:report.fixtures}));
+report.outputSHA256=outputSHA256;
+fs.writeFileSync(reportFile,JSON.stringify(report,null,2));
 console.log(JSON.stringify({n,boundaryPixels,interiorPixels,slateRimVisualPixels,graniteApronPixels,fixtures:report.fixtures.map(f=>f.name)}));

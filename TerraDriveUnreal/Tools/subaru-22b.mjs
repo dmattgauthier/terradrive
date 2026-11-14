@@ -1,5 +1,6 @@
 // Original 1998 JDM 22B STI. Published anchors: STI heritage spec; photo-fitted panels.
 import {T,mesh,box,surface,mappedPolygon,line,lerp,station,roundedContour,panelReturn,G,newReferenceView,finishMaterial,rod,cylinder,ring,label,pane,rimBarrel,refineReferenceWheel} from './reference-vehicle-kit.mjs';
+import {instrumentDial} from './cabin-controls.mjs';
 export const SUBARU_22B_SPEC={id:'subaru-22b-sti',name:'Subaru Impreza 22B STI',brand:'Subaru',year:1998,trim:'2.2 turbo boxer / 5-speed / DCCD AWD',bodyStyle:'subaru22b',color:'#075da8',powertrain:'combustion',fuelCapacityGallons:60/3.785411784,powerHP:206000/745.699872,torqueNm:363,torqueLbFt:363/1.3558179483,mass:1270,curbMass:1270,length:4.365,width:1.770,height:1.390,wheelbase:2.520,track:1.49,trackFront:1.48,trackRear:1.50,frontWeightFraction:.58,cgHeight:.50,clearance:.14,tireSize:'235/40R17',tireRadius:.3099,tireWidth:.235,rearTireWidth:.235,tireType:'road-performance',rimDiameterInches:17,stockPSI:32,stockPSIFront:32,stockPSIRear:30,transmissionType:'manual',transmissionName:'5-speed close-ratio manual (automatic shifting in simulator)',gears:[3.083,2.062,1.545,1.151,.825],reverseRatio:3.416,finalDrive:4.444,lowRatio:1,defaultMode:'AWD',driveModes:['AWD'],frontTorqueFraction:.35,dragCoefficient:.36,features:{frontLocker:false,rearLocker:false,centerLocker:true,swayDisconnect:false,tractionControl:false,abs:false,hillDescent:false},engine:{idleRPM:850,redlineRPM:7900,peakTorqueRPM:3200,peakPowerRPM:6000,curve:[[850,90],[1800,190],[2800,350],[3200,363],[5200,350],[6000,327.86],[7200,252],[7900,205]],curveStatus:'Estimated interpolation through manufacturer output peaks'},suspension:{travel:.18,restLength:.30,springRate:29000,damping:3200,antiRoll:16000,frontType:'independent inverted MacPherson struts',rearType:'independent MacPherson struts',parameterStatus:'Simulation rates, damping, rest and travel; not measured Bilstein/Eibach data'},notes:['Original two-door 1998 JDM 22B, distinct from later WRX STI sedans. Driver-adjustable centre coupling is simplified as a centre-lock control.','Factory dimensions, 17-inch BBS wheel/tire designation, rated output and curb mass. Panel coordinates, CG, pressure, torque interpolation and suspension coefficients are photo/simulation estimates.'],sources:['https://www.subaru.co.jp/news/archives/98_1_3/3_16_1.html','https://www.sti.jp/brand/heritage/1998/impreza-22b/','https://collectingcars.com/for-sale/1998-subaru-impreza-sti-22b-5']};
 const frontZ=2.1825;
 const rearZ=-frontZ;
@@ -709,7 +710,9 @@ function addInterior(g,m) {
   }
   const driver=-.342;
   box(g,m.black,[driver,.893,.566],[.312,.145,.189],.054);
-  for(const x of [driver-.070,driver+.069])cylinder(g,m.white,[x,.901,.473],.043,.008,'z',32);
+  for(const [x,angle] of [[driver-.070,-1.58],[driver+.069,-.99]]){
+    instrumentDial(g,{face:m.black,bezel:m.dark,marks:m.white,center:[x,.901,.468],radius:.043,angle});
+  }
   const center=[driver,.894,.348];
   ring(g,m.glossBlack,center,.155,.015,'z').rotation.x=-.26;
   cylinder(g,m.black,center,.068,.032,'z',32).name='22b-steering-hub';

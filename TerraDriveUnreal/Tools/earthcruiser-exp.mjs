@@ -3,6 +3,7 @@
 // No downloaded vehicle mesh, image texture, manufacturer CAD or browser edit.
 // Source axes: X width, Y up from the ground, +Z forward; axle midpoint Z=0.
 import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
+import {instrumentDial,instrumentDisplay} from './cabin-controls.mjs';
 import {VEHICLES as BrowserVehicles} from '../../TerraDrive-v1.13/dist/src/vehicles.js';
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {nativeGeometry as G,mergeStaticMeshes} from './vehicle-geometry.mjs';
@@ -202,6 +203,11 @@ function cab(view){
   box(g,m.interior,[0,1.457,2.093],[1.77,.242,.34],.035);
   box(g,m.dark,[0,1.552,2.038],[.40,.099,.014],.008);
   box(g,m.screen,[0,1.553,2.024],[.228,.071,.009],.005);
+  instrumentDisplay(g,m.satinMetal,[0,1.553,2.017],[.228,.071],'status');
+  box(g,m.dark,[.510,1.574,2.032],[.302,.115,.093],.019).name='exp98-driver-instrument-binnacle';
+  for(const [x,radius,angle] of [[.437,.043,-1.28],[.573,.039,-.73]]){
+    instrumentDial(g,{face:m.black,bezel:m.satinMetal,marks:m.headliner,center:[x,1.575,1.983],radius,angle});
+  }
   for(const x of [-.70,-.50,.49,.70])box(g,m.black,[x,1.553,2.025],[.125,.057,.012],.006);
   for(const s of [-1,1]){
     box(g,m.upholstery,[s*.507,1.135,1.480],[.449,.110,.50],.045);
@@ -229,6 +235,7 @@ function cab(view){
   rod(g,m.dark,[.15,1.32,1.63],[.15,1.48,1.66],.013);cylinder(g,m.black,[.15,1.49,1.66],.027,.045,'y',20);
   const steering=new T.Group();steering.position.set(.51,1.564,1.901);steering.rotation.x=-.35;g.add(steering);
   mesh(steering,new T.TorusGeometry(.156,.017,10,48),m.dark);box(steering,m.interior,[0,0,0],[.113,.095,.040],.018);
+  rod(g,m.dark,[.510,1.564,1.909],[.510,1.503,2.041],.032).name='exp98-steering-column';
   for(const a of [.40,Math.PI-.40,Math.PI*1.5])rod(steering,m.dark,[0,0,0],[Math.cos(a)*.145,Math.sin(a)*.145,0],.014);
 }
 
