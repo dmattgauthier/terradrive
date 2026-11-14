@@ -150,3 +150,40 @@ The tested executable SHA-256 was
 `252961a49cc7a2541b7a3788f8ca057a53d346fa303fc1954e3566aa4d0f36f8`.
 The SHA-256 of the game build-input hash manifest was
 `d6d8def026ce4f521157f802bb0fffd854fd044d69e8a9679137e79ad6b23569`.
+
+## Collision bake, terrain cache and cook reuse
+
+The lower-body probe and coachwork bakers now run through Windows directory
+junctions. The import checks each baked body against the exported OBJ hash
+before recording both JSON files in the import receipt. The terrain baker
+records the hashes of the three texture masks, physical blend and fixture
+data. A truncated or altered output triggers a full rebake even if the old
+report remains.
+
+The Windows cook writes its payload to disk and records a hash of each
+relative path and file's contents in the cook receipt. `-SkipCook` verifies
+that fingerprint and the import receipt before AutomationTool starts.
+
+All 11 Windows source regression tests passed. The three new cases reproduced
+on `29d3b21` and passed with these fixes. They cover a second valid export
+baked through a real junction, a truncated physical mask with a matching
+report, and a replacement cooked tree with matching filenames and sizes.
+The isolated import processed 363 mesh entries. The new terrain outputs,
+coachwork hulls and tire probes matched the preceding validated bytes.
+The lower-body probe geometry matched for all 12 vehicles.
+
+Unreal 5.8.3 completed a full Windows cook with 4,804 files totaling
+2,897,872,761 bytes. A one-byte edit to the cooked asset registry with the
+receipt intact was rejected before AutomationTool started. Restoring that
+file allowed `-Package -SkipCook` to regenerate a package with the same
+executable and staged content hashes as the full cook.
+
+The restaged package passed 288 offscreen functional checks at fixed 20 Hz.
+These include 53 terrain-transition checks, 91 Wrangler rollover checks,
+117 rut checks and 27 challenge checks. All four runs exited with zero
+runtime errors. The peak GPU temperature was 64.34 °C.
+
+- Cooked tree SHA-256 `5dadd30763ae73bae06a8a05ed4a1480c4248b3bcab0fab3ebb47240714a1b1f`
+- Executable SHA-256 `9751cd0719b82e9a62147af6ebc6868bde00c456f6ddb4a2eec5663633421adb`
+- Unreal source and configuration hash manifest SHA-256 `3d72407f026cf8a300f413c16e362057b54ceaa6f25448389bb596fb196e9096`
+- Build recipe hash manifest SHA-256 `52f2870b579894994299eea6671349d226ffdee3abe7323c20eedfb244970ecc`

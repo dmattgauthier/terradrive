@@ -59,4 +59,4 @@ export async function bakeCoachworkCollision(output='Content/NativeData/vehicle-
  }
  const target=path.join(root,output);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,JSON.stringify(data,null,2)+'\n');return data;
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===path.resolve(import.meta.filename)){const i=process.argv.indexOf('--output');await bakeCoachworkCollision(i>=0?process.argv[i+1]:undefined);}
+if(process.argv[1]&&fs.existsSync(process.argv[1])&&fs.realpathSync.native(process.argv[1])===fs.realpathSync.native(import.meta.filename)){const i=process.argv.indexOf('--output');await bakeCoachworkCollision(i>=0?process.argv[i+1]:undefined);}

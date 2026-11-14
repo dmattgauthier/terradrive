@@ -203,11 +203,14 @@ Use `Tools/verify-electric-pressure.ps1` for isolated nine-vehicle factory/conve
 Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison. Each attempt starts with repaired terrain and the same stock setup, so earlier tire ruts and compaction cannot bias the second attempt.
 
 For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds
-and stages the cook recorded for the current asset import. Omit `-SkipCook`
-after asset or rendering-setting changes. `-ImportAssets -SkipExport` reuses
-a verified source export and records the completed mesh import and terrain
-mask bake. Packaging requires that record to match the current export and
-mask. From `TerraDriveUnreal`, recover an interrupted or older export with
+and stages the cook recorded for the current asset import. The Windows cook
+is file-backed so the build can verify the paths and bytes of its complete
+payload before staging. Run a full cook after asset or rendering-setting
+changes or when the current cooked tree has no matching receipt.
+`-ImportAssets -SkipExport` reuses a verified source export. Packaging checks
+the export, physical terrain mask, lower-body probes and coachwork hulls
+against the completed import receipt. From `TerraDriveUnreal`, recover an
+interrupted or older export with
 `Tools/build-native.ps1 -ImportAssets -Package`. If the export already
 verifies and the asset import is missing or stale, run
 `Tools/build-native.ps1 -ImportAssets -SkipExport -Package`. Run
