@@ -30,6 +30,7 @@ import {vehicleAdditions,suspensionModels,environmentModels} from './native-mode
 import {refineVehicle,brakeCaliperModel,brakeRotorModel} from './vehicle-fidelity.mjs';
 import {beginSourceExport,publishSourceExport} from './source-export-state.mjs';
 import {bakeTireFits} from './tire-fit.mjs';
+import {readCachedJson} from './read-cached-json.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'SourceAssets'),data=path.join(root,'Content','NativeData');
 const manifestPath=path.join(out,'import.json');
@@ -43,8 +44,10 @@ const mats=[],matIds=new Map(),assets=[],tints=new Map();
 const materialKeys=['color','roughness','metallic','opacity','vertexColors','diffuse','alpha','alphaTest','clearcoat','coatRoughness','emissive','role','automotive','automotiveOwner','normal','roughMap'];
 const materialKey=d=>JSON.stringify(materialKeys.map(k=>d[k]??null)),previousMaterials=new Map();
 let nextMaterial=0;
-if(fs.existsSync(manifestPath)){
- for(const m of JSON.parse(fs.readFileSync(manifestPath,'utf8')).materials){
+const cachedMaterials=readCachedJson(manifestPath)?.materials;
+if(Array.isArray(cachedMaterials)){
+ for(const m of cachedMaterials){
+  if(typeof m?.id!=='string'||!/^M_\d+$/.test(m.id))continue;
   const key=materialKey(m);if(!previousMaterials.has(key))previousMaterials.set(key,[]);
   previousMaterials.get(key).push(m.id);nextMaterial=Math.max(nextMaterial,Number(m.id.slice(2))+1);
  }

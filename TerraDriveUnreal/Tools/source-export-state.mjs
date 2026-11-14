@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
 const stateFile = 'SourceAssets/export-state.json';
 const pendingFile = 'SourceAssets/export-in-progress';
 const importFile = 'SourceAssets/import.json';
@@ -48,22 +47,14 @@ export function verifySourceExport(root, {allowLegacy = false} = {}) {
     if (fs.existsSync(pending)) throw new Error('the last export did not complete');
     const record = path.join(root, stateFile);
     if (allowLegacy && !fs.existsSync(record)) return;
-    const files = JSON.parse(fs.readFileSync(record, 'utf8'));
+    const recordContents = fs.readFileSync(record, 'utf8');
+    const files = JSON.parse(recordContents);
     for (const file of [importFile, worldFile, terrainFile]) {
       if (files[file] !== digest(fs.readFileSync(path.join(root, file)))) throw new Error(`${file} differs from the completed export`);
     }
     if (fs.existsSync(pending)) throw new Error('a new export started during verification');
+    return digest(recordContents);
   } catch (error) {
     throw new Error(`Cannot reuse native source export: ${error.message}. Run node Tools/export-source.mjs to regenerate it.`);
-  }
-}
-
-if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
-  try {
-    verifySourceExport(projectRoot);
-    console.log('Native terrain and both manifests match the completed export.');
-  } catch (error) {
-    console.error(error.message);
-    process.exitCode = 1;
   }
 }

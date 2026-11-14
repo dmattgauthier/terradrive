@@ -350,19 +350,39 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     const FString& Hint=V->Terrain->Routes[State.HintRoute].Hint;
     Check(TEXT("resuming draws the rebound key in the existing route notice"),
       V->RouteIndex==State.HintRoute&&HUD->VisibleNotice==Hint.Replace(TEXT("K descent assist"),TEXT("O descent assist")));
-    V->SetPauseMenu(true);Next(36);
+    Next(36);
   }break;
-  case 36:{
+  case 36:if(V->GetWorld()->GetRealTimeSeconds()-State.HintSampleAt>5.05){
+    Check(TEXT("rebinding preserves the original HUD notice expiration"),
+      V->RouteIndex==State.HintRoute&&HUD->VisibleNotice.IsEmpty());
+    V->SetPauseMenu(true);Next(37);
+  }break;
+  case 37:{
+    const auto Restart=Menu.IsValid()?Menu->RestartRouteButton():nullptr;
+    V->RouteTime=12.3f;
+    if(Restart.IsValid())Restart->SimulateClick();
+    Check(TEXT("pause menu restarts the same route after rebinding with the old hint expired"),
+      Restart.IsValid()&&!V->PauseMenuOpen&&V->RouteIndex==State.HintRoute&&V->GateIndex==0&&V->RouteTime==0);
+    V->SetPauseMenu(false);Stop(V);Next(38);
+  }break;
+  case 38:if(State.Time>.1f){
+    const FString& Hint=V->Terrain->Routes[State.HintRoute].Hint;
+    Check(TEXT("restarting the same route starts a fresh HUD notice with the rebound key"),
+      HUD->VisibleNotice==Hint.Replace(TEXT("K descent assist"),TEXT("O descent assist")));
+    State.HintSampleAt=V->GetWorld()->GetRealTimeSeconds();
+    V->SetPauseMenu(true);Next(39);
+  }break;
+  case 39:{
     Check(TEXT("descent key resets without restarting the route"),V->PauseMenuOpen&&V->ResetControls(false));
-    V->SetPauseMenu(false);Next(37);
+    V->SetPauseMenu(false);Next(40);
   }break;
-  case 37:if(State.Time>.1f){
+  case 40:if(State.Time>.1f){
     Check(TEXT("resuming draws the default key in the existing route notice"),
       V->RouteIndex==State.HintRoute&&HUD->VisibleNotice==V->Terrain->Routes[State.HintRoute].Hint);
-    Next(38);
+    Next(41);
   }break;
-  case 38:if(V->GetWorld()->GetRealTimeSeconds()-State.HintSampleAt>5.05){
-    Check(TEXT("rebinding and reset preserve the original HUD notice expiration"),
+  case 41:if(V->GetWorld()->GetRealTimeSeconds()-State.HintSampleAt>5.05){
+    Check(TEXT("resetting preserves the restarted HUD notice expiration"),
       V->RouteIndex==State.HintRoute&&HUD->VisibleNotice.IsEmpty());
     V->TeleportRoute(0);V->SetGarage(true);Next(25);
   }break;

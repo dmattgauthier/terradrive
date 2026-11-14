@@ -202,7 +202,24 @@ Use `Tools/verify-electric-pressure.ps1` for isolated nine-vehicle factory/conve
 
 Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison. Each attempt starts with repaired terrain and the same stock setup, so earlier tire ruts and compaction cannot bias the second attempt.
 
-For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Import and packaging check that the terrain and both manifests match a completed export. If that check fails or the existing export predates the completion record, run `node Tools/export-source.mjs` from `TerraDriveUnreal` before reusing the sources. Run `node --test Tools/test-source-export-reuse.mjs` on Windows to exercise the interruption and retry checks. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion. Changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported. OBJ vertex-color variation is currently represented by each material's average source tint.
+For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds
+and stages the cook recorded for the current asset import. Omit `-SkipCook`
+after asset or rendering-setting changes. `-ImportAssets -SkipExport` reuses
+a verified source export and records the completed mesh import and terrain
+mask bake. Packaging requires that record to match the current export and
+mask. From `TerraDriveUnreal`, recover an interrupted or older export with
+`Tools/build-native.ps1 -ImportAssets -Package`. If the export already
+verifies and the asset import is missing or stale, run
+`Tools/build-native.ps1 -ImportAssets -SkipExport -Package`. Run
+`node --test Tools/test-source-export-reuse.mjs` on Windows to exercise the
+interruption and retry checks.
+
+Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion. Changing
+the schema triggers reimport. Material signatures make interrupted imports
+resumable. The native renderer uses screen-space GI/reflections for its
+procedural terrain. Source foliage diffuse textures and alpha masks are
+imported. OBJ vertex-color variation is currently represented by each
+material's average source tint.
 
 For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-native-code.ps1` builds the game target and copies the matching executable/symbols into the packaged folder, checking executable parity and unchanged package sizes/timestamps. It avoids repeatedly archiving unchanged cooked content. It does not cook assets, update external runtime dependencies, or replace the full packaging workflow after content/configuration changes.
 

@@ -98,7 +98,11 @@ void ATerraHUD::DrawHUD() {
     }
   }
   const double Now=GetWorld()->GetRealTimeSeconds();
-  if(LastNotice!=V->Notice){LastNotice=V->Notice;NoticeChangedAt=Now;}
+  const uint64 RouteNoticeId=V->RouteNoticeId();
+  if(LastNotice!=V->Notice||(Route&&V->Notice==Route->Hint&&LastRouteNoticeId!=RouteNoticeId)){
+    LastNotice=V->Notice;NoticeChangedAt=Now;
+  }
+  LastRouteNoticeId=RouteNoticeId;
   const bool RecoveryBlocked=LastNotice==ATerraVehicle::RecoveryBlockedNotice;
   const bool Recent=Now-(RecoveryBlocked?V->RecoveryBlockedAt:NoticeChangedAt)<5;
   VisibleNotice=Recent&&RecoveryBlocked?LastNotice:

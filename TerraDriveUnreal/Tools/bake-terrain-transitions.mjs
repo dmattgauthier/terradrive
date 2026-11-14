@@ -3,6 +3,7 @@ import fs from 'node:fs';import path from 'node:path';import crypto from 'node:c
 import {perimeterMask,trailLookup} from './perimeter-trail.mjs';
 import {slateRimVisualCoverage} from './slate-rim-pilot.mjs';
 import {graniteApron,graniteVisualRock,quarryLaneMask} from './granite-ground.mjs';
+import {readCachedJson} from './read-cached-json.mjs';
 const root=path.resolve(import.meta.dirname,'..'),source=path.join(root,'SourceAssets'),data=path.join(root,'Content/NativeData');
 const bytes=fs.readFileSync(path.join(data,'terrain.bin')),n=bytes.readUInt32LE(4),step=bytes.readFloatLE(8),origin=bytes.readFloatLE(12),count=n*n;
 if(bytes.readUInt32LE(0)!==0x54445256||n!==1601)throw Error('Unexpected source field');
@@ -21,7 +22,7 @@ const hash=crypto.createHash('sha256').update(bytes).update(fs.readFileSync(impo
  .update(fs.readFileSync(new URL('./offroad-courses.mjs',import.meta.url)))
  .update(JSON.stringify(world.quarryTrail?.samples??null)).digest('hex');
 const reportFile=path.join(root,'Saved/terrain-transitions.json');
-if(fs.existsSync(reportFile)&&JSON.parse(fs.readFileSync(reportFile)).signature===hash&&['TerrainBlendA.tga','TerrainBlendB.tga','TerrainTrail.tga'].every(f=>fs.existsSync(path.join(source,f)))&&['terrain-blend.bin','terrain-transitions.json'].every(f=>fs.existsSync(path.join(data,f)))){console.log('Terrain transition masks unchanged');process.exit(0);}
+if(readCachedJson(reportFile)?.signature===hash&&['TerrainBlendA.tga','TerrainBlendB.tga','TerrainTrail.tga'].every(f=>fs.existsSync(path.join(source,f)))&&['terrain-blend.bin','terrain-transitions.json'].every(f=>fs.existsSync(path.join(data,f)))){console.log('Terrain transition masks unchanged');process.exit(0);}
 const surfaces=new Uint8Array(count);for(let i=0;i<count;i++)surfaces[i]=bytes[16+i*9+8];
 const f=new Float64Array(n),d=new Float64Array(n),v=new Int32Array(n),z=new Float64Array(n+1);
 function line(){let k=0;v[0]=0;z[0]=-Infinity;z[1]=Infinity;
@@ -87,5 +88,6 @@ for(let r=2;r<n-2;r++)for(let c=2;c<n-2;c++){
   if(!fixtures.has(key)||fixtures.get(key).score>score){let nx=dr*(other===hi?1:-1),ny=dc*(other===hi?1:-1);fixtures.set(key,{pair:[lo,hi],name:names[lo]+'-'+names[hi],p:[x*100,y*100],normal:[nx,ny],halfWidthM:widths[lo][hi],score});}
  }}
 const report={version:1,signature:hash,sourceTerrainSHA256:crypto.createHash('sha256').update(bytes).digest('hex'),n,stepM:step,originM:origin,names,halfWidthsM:widths,boundaryPixels,interiorPixels,slateRimVisualPixels,graniteApronPixels,quarryLaneMaskVersion:1,graniteApronVersion:1,coverageAreaM2:totals.map(x=>x*step*step),fixtures:[...fixtures.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(({score,...v})=>v)};
-fs.writeFileSync(reportFile,JSON.stringify(report,null,2));fs.writeFileSync(path.join(data,'terrain-transitions.json'),JSON.stringify({version:1,fixtures:report.fixtures}));
+fs.writeFileSync(path.join(data,'terrain-transitions.json'),JSON.stringify({version:1,fixtures:report.fixtures}));
+fs.writeFileSync(reportFile,JSON.stringify(report,null,2));
 console.log(JSON.stringify({n,boundaryPixels,interiorPixels,slateRimVisualPixels,graniteApronPixels,fixtures:report.fixtures.map(f=>f.name)}));

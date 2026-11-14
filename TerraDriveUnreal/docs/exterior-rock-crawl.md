@@ -117,3 +117,36 @@ The tested executable SHA-256 was
 `ae1ec51dc63ea4b7939ae2b4f6b75ed752c8768504f5011110081450cce33e19`.
 The SHA-256 of the sorted game build-input hash manifest was
 `65988cd1edb09bc9371f841b006502f56f477ffed38499ab3985f203aa4a0977`.
+
+## Build verification and route restart
+
+The export verifier runs through a dedicated command entry point. All eight
+source regression tests passed. One uses a real Windows junction to verify
+that the build rejects an interrupted export through an alternate path.
+The package-only regression exercises a legacy import record, a record for
+an older export, a changed terrain mask, and an older cook record. A full
+export in a temporary project also recovered from a truncated legacy import
+manifest and tire-fit cache. A separate retry rebuilt a truncated mask cache
+and reproduced the existing physical blend and transition data byte for byte.
+
+An isolated import processed all 363 mesh entries and completed a full
+Windows cook. The import receipt identifies the verified export and baked
+terrain mask. The cook receipt matches that import. The full-cook executable
+SHA-256 was
+`34d4429a376c04781992e2f5edadc5f28160fceb5bebcdd47cc18249294a2740`.
+That package passed all 27 challenge checks with zero runtime errors.
+
+The native restart fixture starts Brake-control descent, rebinds the descent
+key, and waits for the original notice to expire. It activates Restart Route
+in the pause menu and checks that the HUD displays a fresh hint with the
+rebound key. It then resets the key while the new notice is active and checks
+that the new notice retains its own expiration time.
+
+The new Windows executable passed 241 offscreen functional checks at fixed
+20 Hz with the prior cook's byte-identical staged content. This includes 166
+interface checks, 27 challenge checks, and 48 recovery checks. All three runs
+exited with zero runtime errors. Peak GPU temperature was 65.52 °C.
+The tested executable SHA-256 was
+`252961a49cc7a2541b7a3788f8ca057a53d346fa303fc1954e3566aa4d0f36f8`.
+The SHA-256 of the game build-input hash manifest was
+`d6d8def026ce4f521157f802bb0fffd854fd044d69e8a9679137e79ad6b23569`.

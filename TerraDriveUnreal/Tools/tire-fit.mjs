@@ -7,6 +7,7 @@ import readline from 'node:readline';
 import assert from 'node:assert/strict';
 import {tireDiameterInches} from './tire-size-geometry.mjs';
 import {beginSourceExport,publishSourceExport,verifySourceExport} from './source-export-state.mjs';
+import {readCachedJson} from './read-cached-json.mjs';
 const rootDefault=path.resolve(import.meta.dirname,'..');
 const spacing=.025,margin=.040,stepAngle=2*Math.PI/180;
 export function fitAxles(spec,radius){
@@ -114,7 +115,8 @@ export async function bakeTireFits(root,manifest){
  for(const spec of manifest.vehicles){
   if(spec.tireRadius*2/.0254>=50){spec.tireFits=[];continue;}
   const name=spec.asset+'_body',asset=manifest.assets.find(a=>a.name===name),cache=path.join(evidence,name+'.json');let data;
-  if(fs.existsSync(cache)){const old=JSON.parse(fs.readFileSync(cache,'utf8'));if(old.bodySha256===asset.sha256&&old.version===2)data=old;}
+  const old=readCachedJson(cache);
+  if(old?.bodySha256===asset.sha256&&old.version===2)data=old;
   if(!data){
    data={version:2,...await bodySamples(path.join(root,'SourceAssets',name+'.obj'),spec,materials)};
    assert.equal(data.bodySha256,asset.sha256,'tire fitting mesh matches export manifest');

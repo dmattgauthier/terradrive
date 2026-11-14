@@ -29,10 +29,12 @@ void STerraPauseMenu::Construct(const FArguments& Args){
   SetCanTick(true);
   auto Navigation=SNew(SVerticalBox);
   auto Add=[&](const FString& Text,int Index,TFunction<FReply()> Click){
+    auto Button=SNew(SButton).ButtonStyle(&Style()).ContentPadding(FMargin(18,15)).HAlign(HAlign_Left)
+      .ButtonColorAndOpacity_Lambda([this,Index]{return Page==Index?FLinearColor(.19f,.35f,.27f):FLinearColor(.085f,.14f,.14f);})
+      .OnClicked_Lambda([Click]{return Click();})[Label(Text,15,White,true)];
     Navigation->AddSlot().AutoHeight().Padding(0,0,0,10)
-      [SNew(SButton).ButtonStyle(&Style()).ContentPadding(FMargin(18,15)).HAlign(HAlign_Left)
-        .ButtonColorAndOpacity_Lambda([this,Index]{return Page==Index?FLinearColor(.19f,.35f,.27f):FLinearColor(.085f,.14f,.14f);})
-        .OnClicked_Lambda([Click]{return Click();})[Label(Text,15,White,true)]];
+      [Button];
+    return Button;
   };
   Add(TEXT("RESUME"),-1,[this]{if(Vehicle.IsValid())Vehicle->SetPauseMenu(false);return FReply::Handled();});
   Navigation->AddSlot().AutoHeight().Padding(0,0,0,10)
@@ -47,7 +49,7 @@ void STerraPauseMenu::Construct(const FArguments& Args){
         if(Vehicle.IsValid()&&!Vehicle->Garage){Vehicle->SetPauseMenu(false);Vehicle->RecoverInPlace();}
         return FReply::Handled();
       })[Label(TEXT("RECOVER HERE"),15,White,true)]];
-  Add(TEXT("RESTART ROUTE"),-4,[this]{if(Vehicle.IsValid()){Vehicle->SetPauseMenu(false);if(Vehicle->RouteIndex>=0)Vehicle->TeleportRoute(Vehicle->RouteIndex);else Vehicle->TeleportZone(Vehicle->Zone);}return FReply::Handled();});
+  RestartRoute=Add(TEXT("RESTART ROUTE"),-4,[this]{if(Vehicle.IsValid()){Vehicle->SetPauseMenu(false);if(Vehicle->RouteIndex>=0)Vehicle->TeleportRoute(Vehicle->RouteIndex);else Vehicle->TeleportZone(Vehicle->Zone);}return FReply::Handled();});
   Add(TEXT("CHALLENGES"),3,[this]{ShowPage(3);return FReply::Handled();});
   Add(TEXT("CONTROLS"),1,[this]{ShowPage(1);return FReply::Handled();});
   Add(TEXT("GRAPHICS"),2,[this]{ShowPage(2);return FReply::Handled();});
