@@ -1,5 +1,10 @@
 # Terra Drive native port
 
+**Granite fault-line crawl** adds a six-gate rock ascent to **Esc → Challenges**.
+Use low range on the approach and engage the axle lockers before the staggered
+shelves. The [exterior and rock-crawl notes](docs/exterior-rock-crawl.md) cover
+the photo references, model changes and native drive comparison.
+
 Open **Esc → Challenges** on the trail to choose a route. The three newest
 terrain courses are Pine Ridge cross-axle crawl, Copper Dunes crest run and
 Boreal drift traverse. Each has six marked gates. The new obstacles are part

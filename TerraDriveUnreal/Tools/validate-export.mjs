@@ -5,7 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Terrain} from './native-terrain.mjs';
 import {makePerimeterTrail,perimeterMask} from './perimeter-trail.mjs';
-import {terrainChallengeRelief} from './terrain-challenges.mjs';
+import {terrainChallengeRelief,terrainChallengeSurface} from './terrain-challenges.mjs';
 import {inQuarry} from './offroad-courses.mjs';
 import {validateGardenGeology} from './garden-geology.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -42,7 +42,7 @@ for(let i=0;i<1000;i++){
  const x=400-col*.5,z=-400+row*.5,s=terrain.sample(x,z);
  const expectedHeight=expectedHeightAt(z,-x,offset);
  maxError=Math.max(maxError,Math.abs(b.readFloatLE(offset)-expectedHeight));
- assert.equal(data.surfaces[b[offset+8]],s.surface);
+ assert.equal(b[offset+8],terrainChallengeSurface(z,-x,data.surfaces.indexOf(s.surface)));
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
 }
 assert.ok(maxError<1e-4);assert.equal(data.vehicles.length,12);assert.equal(data.zones.length,9);
@@ -81,8 +81,8 @@ assert.equal(six.features.frontLocker,true);assert.equal(six.features.rearLocker
 assert.equal(six.factoryTireAirStage,3);assert.ok(six.factoryPortalLiftM>.1&&six.clearance>.4);
 assert.ok(Math.abs(six.tireRadius-.4699)<1e-7);assert.equal(six.rimDiameterInches,18);
 assert.equal(six.gears.length,7);assert.equal(six.nativeModel.construction.threeAxleBody,true);
-assert.equal(data.routes.length,17);assert.equal(data.constructed.length,2);
-assert.deepEqual(data.terrainChallenges.map(c=>[c.routeIndex,c.surface]),[[14,0],[15,5],[16,6]]);
+assert.equal(data.routes.length,18);assert.equal(data.constructed.length,2);
+assert.deepEqual(data.terrainChallenges.map(c=>[c.routeIndex,c.surface]),[[14,0],[15,5],[16,6],[17,4]]);
 for(const course of data.terrainChallenges){
  const route=data.routes[course.routeIndex];
  assert.ok(course.changedCells>300);
@@ -100,6 +100,29 @@ for(const course of data.terrainChallenges){
   assert.equal(b[at+8],course.surface,route.name+' native surface');
   assert.ok(Math.abs(b.readFloatLE(at)*100-z)<.51,route.name+' marker height');
  }
+}
+const fault=data.terrainChallenges.at(-1),faultRoute=data.routes[fault.routeIndex];
+const [faultX,faultY]=faultRoute.spawn.map(v=>v/100);
+const faultSample=(s,t)=>16+(Math.round((faultX+s+400)*2)*1601+Math.round((faultY+t+400)*2))*9;
+const faultHeight=(s,t=0)=>b.readFloatLE(faultSample(s,t));
+assert.ok(fault.paintRock&&fault.paintedCells>1000,'exposed bedrock is present in the native field');
+assert.ok(faultHeight(30)-faultHeight(0)>6,'fault-line climb rises over six metres');
+const apronGrade=(faultHeight(6)-faultHeight(2))/4;
+assert.ok(apronGrade>.14&&apronGrade<.24,'moderate lead-in before the shelves');
+for(const s of [10,13.5,17,20.5,24]){
+ const grade=faultHeight(s+.5)-faultHeight(s-.5);
+ assert.ok(grade>.37&&grade<.62,'ledge has a steep but continuous face');
+}
+for(const [s,side] of [[12,-1],[15,1],[18.5,-1],[22,1]]){
+ const front=faultHeight(s+1.5,1)-faultHeight(s+1.5,-1);
+ const rear=faultHeight(s-1.5,1)-faultHeight(s-1.5,-1);
+ assert.ok(side*(front-rear)>.90,'alternating ledges unload opposite diagonal pairs');
+}
+for(let x=fault.minX;x<=fault.maxX;x+=.5)for(let y=fault.minY;y<=fault.maxY;y+=.5){
+ const s=terrain.sample(-y,x),at=faultSample(x-faultX,y-faultY);
+ assert.equal(b[at+8],terrainChallengeSurface(x,y,data.surfaces.indexOf(s.surface)));
+ assert.ok(Math.abs(b.readFloatLE(at+4)-s.waterDepth)<1e-5,'fault line preserves water');
+ assert.ok(Math.abs(b.readFloatLE(at)-expectedHeightAt(x,y,at))<1e-4,'fault line matches the geometry export');
 }
 const expedition=data.perimeterTrail,expeditionRoute=data.routes[expedition.routeIndex];
 assert.equal(expedition.routeIndex,13);

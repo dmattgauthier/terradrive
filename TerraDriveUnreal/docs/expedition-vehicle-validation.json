@@ -1,7 +1,7 @@
 {
   "revision": "expedition-gclass-15",
   "pass": true,
-  "checks": 88,
+  "checks": 157,
   "vehicles": [
     {
       "vehicle": "EarthCruiser EXP",
@@ -11,8 +11,8 @@
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 219678,
-        "triangles": 329064,
+        "vertices": 213341,
+        "triangles": 326315,
         "materialObjects": 26,
         "bounds": [
           [
@@ -38,7 +38,7 @@
         },
         {
           "pane": "cab windscreen",
-          "firstDistanceM": 0.13153384362208786
+          "firstDistanceM": 0.1315253649338035
         }
       ],
       "tests": [
@@ -50,13 +50,13 @@
         {
           "case": "unit source shading normals",
           "pass": true,
-          "normalizedFraction": 1
+          "normalizedFraction": 0.999981250673804
         },
         {
           "case": "bounded original body geometry and material budget",
           "pass": true,
-          "triangles": 329064,
-          "vertices": 219678,
+          "triangles": 326315,
+          "vertices": 213341,
           "materialObjects": 26
         },
         {
@@ -181,7 +181,7 @@
           "case": "cab windscreen has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 0.13153384362208786
+          "firstDistanceM": 0.1315253649338035
         },
         {
           "case": "cab-over pass-through is not filled by an opaque cab wall",
@@ -216,8 +216,8 @@
         {
           "case": "cab-over front has formed depth rather than a single box face",
           "pass": true,
-          "cabUpperZM": 2.1851617033497193,
-          "cabLowerZM": 2.41845758709912
+          "cabUpperZM": 2.1742836007234985,
+          "cabLowerZM": 2.4105868095786733
         }
       ],
       "limitations": [
@@ -233,17 +233,17 @@
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 280010,
-        "triangles": 397492,
-        "materialObjects": 24,
+        "vertices": 236914,
+        "triangles": 371219,
+        "materialObjects": 25,
         "bounds": [
           [
-            -1.096000000094995,
+            -1.091744303703308,
             0.2505000013113022,
-            -2.4064909040192304
+            -2.4049901921387917
           ],
           [
-            1.096000000094995,
+            1.091744303703308,
             1.9870000005364419,
             2.3350000000474975
           ]
@@ -276,15 +276,15 @@
         },
         {
           "pane": "upright windscreen",
-          "firstDistanceM": 3.438726693666352
+          "firstDistanceM": 3.437915857687502
         },
         {
           "pane": "rear door glass",
-          "firstDistanceM": 1.783002053063174
+          "firstDistanceM": 1.7830156869539286
         },
         {
           "pane": "sunroof",
-          "firstDistanceM": 1.014594862936224
+          "firstDistanceM": 1.014597674414
         }
       ],
       "tests": [
@@ -296,14 +296,14 @@
         {
           "case": "unit source shading normals",
           "pass": true,
-          "normalizedFraction": 1
+          "normalizedFraction": 0.9999831162362713
         },
         {
           "case": "bounded original body geometry and material budget",
           "pass": true,
-          "triangles": 397492,
-          "vertices": 280010,
-          "materialObjects": 24
+          "triangles": 371219,
+          "vertices": 236914,
+          "materialObjects": 25
         },
         {
           "case": "body datum agrees with the mechanical CG and axle midpoint",
@@ -368,14 +368,14 @@
         {
           "case": "body and selected rear hardware follow the reference length envelope",
           "pass": true,
-          "sourceLengthM": 4.741490904066728,
+          "sourceLengthM": 4.739990192186289,
           "referenceM": 4.728,
           "toleranceM": 0.06
         },
         {
           "case": "mirror and external trim span stays within the selected envelope",
           "pass": true,
-          "sourceWidthWithMirrorsM": 2.19200000018999,
+          "sourceWidthWithMirrorsM": 2.183488607406616,
           "referenceM": 2.187,
           "toleranceM": 0.06,
           "referenceStatus": "manufacturer mirror width"
@@ -451,29 +451,29 @@
           "case": "upright windscreen has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 3.438726693666352
+          "firstDistanceM": 3.437915857687502
         },
         {
           "case": "rear door glass has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 1.783002053063174
+          "firstDistanceM": 1.7830156869539286
         },
         {
           "case": "sunroof has a genuine first-hit glass opening",
           "pass": true,
           "firstMaterialRole": "glass",
-          "firstDistanceM": 1.014594862936224
+          "firstDistanceM": 1.014597674414
         },
         {
           "case": "bonnet has restrained physical transverse crown",
           "pass": true,
-          "crownM": 0.04265906954735588
+          "crownM": 0.04722620075313033
         },
         {
           "case": "drawn door sheet has physical shoulder relief",
           "pass": true,
-          "reliefM": 0.0123803028850904
+          "reliefM": 0.012093599883096662
         },
         {
           "case": "metal roof has a shallow transverse crown",
@@ -508,9 +508,10 @@
           "selectedRimInches": 20
         },
         {
-          "case": "electric grille uses the distinct recessed closed black panel",
+          "case": "electric louvers sit forward of the closed black panel",
           "pass": true,
-          "panelZM": 2.197275532782078
+          "panelZM": 2.197275532782078,
+          "louverZM": 2.232199938595295
         }
       ],
       "limitations": [
@@ -519,296 +520,710 @@
       ]
     },
     {
-      "vehicle": "Mercedes-AMG G 63",
+      "vehicle": "Mercedes-AMG G 63 4x4 squared",
       "id": "mercedes-amg-g63",
       "style": "g63",
-      "checks": 32,
+      "checks": 28,
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 292569,
-        "triangles": 409899,
-        "materialObjects": 23,
+        "vertices": 241959,
+        "triangles": 360964,
         "bounds": [
           [
             -1.098000000026077,
-            0.31849999910593035,
-            -2.5524946599585916
+            0.5294999983012676,
+            -2.591899999894202
           ],
           [
             1.098000000026077,
-            1.979659914970398,
+            2.2655000005662442,
             2.3350000000474975
           ]
         ]
       },
-      "glazing": [
-        {
-          "pane": "front side -1",
-          "firstDistanceM": 2.1400481960856217
-        },
-        {
-          "pane": "rear side -1",
-          "firstDistanceM": 2.1400756911343732
-        },
-        {
-          "pane": "rear quarter -1",
-          "firstDistanceM": 2.140088629258735
-        },
-        {
-          "pane": "front side 1",
-          "firstDistanceM": 2.1400481960856217
-        },
-        {
-          "pane": "rear side 1",
-          "firstDistanceM": 2.1400756911343732
-        },
-        {
-          "pane": "rear quarter 1",
-          "firstDistanceM": 2.140088629258735
-        },
-        {
-          "pane": "upright windscreen",
-          "firstDistanceM": 3.438726693666352
-        },
-        {
-          "pane": "rear door glass",
-          "firstDistanceM": 1.7830020530631736
-        },
-        {
-          "pane": "sunroof",
-          "firstDistanceM": 1.0215948686692142
-        }
-      ],
       "tests": [
         {
-          "case": "finite original body vertices and normal streams",
+          "case": "finite source positions and normals",
           "pass": true,
+          "vertices": 241959,
           "nonfinite": 0
         },
         {
-          "case": "unit source shading normals",
+          "case": "unit shading normals",
           "pass": true,
-          "normalizedFraction": 1
+          "nonunit": 77,
+          "normalizedFraction": 0.9996817642658467
         },
         {
-          "case": "bounded original body geometry and material budget",
+          "case": "bounded triangle budget without cab duplication",
           "pass": true,
-          "triangles": 409899,
-          "vertices": 292569,
-          "materialObjects": 23
+          "triangles": 360964,
+          "vertices": 241959
         },
         {
-          "case": "body datum agrees with the mechanical CG and axle midpoint",
+          "case": "roof and roll bar follow the selected reference envelope within one inch",
           "pass": true,
-          "bodyOffset": [
-            0,
-            -0.8,
-            -0.1156000000000001
+          "actualM": 2.2655000005662442,
+          "referenceStatus": "Photo-based variant envelope; not a certified dimension drawing."
+        },
+        {
+          "case": "body length follows the selected reference envelope",
+          "pass": true,
+          "actualM": 4.9268999999417,
+          "referenceStatus": "Retained modern-G donor envelope."
+        },
+        {
+          "case": "mirror envelope is bounded while factory flares span the catalog width",
+          "pass": true,
+          "actualM": 2.196000000052154
+        },
+        {
+          "case": "body uses the actual simulator CG",
+          "pass": true,
+          "bodyY": -1.03,
+          "cg": 1.03
+        },
+        {
+          "case": "detached wheel assets are centred at their export hubs",
+          "pass": true,
+          "wheelCount": 4
+        },
+        {
+          "case": "tire outer radius agrees with the physical tire",
+          "pass": true,
+          "renderM": 0.4597250638105403,
+          "physicsM": 0.45815
+        },
+        {
+          "case": "tire section width retains its source dimension",
+          "pass": true,
+          "renderM": 0.3366499999191614,
+          "physicsM": 0.325
+        },
+        {
+          "case": "bead-seat wheel size is independent of the larger tire",
+          "pass": true,
+          "renderRadiusM": 0.28107640147209173,
+          "beadRadiusM": 0.2794
+        },
+        {
+          "case": "front door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400756911343732
+        },
+        {
+          "case": "front door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400756911343732
+        },
+        {
+          "case": "windshield is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 3.437915857687502
+        },
+        {
+          "case": "squared conversion retains the 113.8-inch wheelbase",
+          "pass": true,
+          "wheelbaseM": 2.89
+        },
+        {
+          "case": "newer 4x4 squared uses 22-inch wheels with 325/55 tires",
+          "pass": true,
+          "tireSize": "325/55R22"
+        },
+        {
+          "case": "squared has four wide carbon arch faces",
+          "pass": true
+        },
+        {
+          "case": "roof lamps are two separate recessed factory modules",
+          "pass": true
+        },
+        {
+          "case": "exposed spare is round and matches the larger tires",
+          "pass": true,
+          "diametersM": [
+            0.9162999987602234,
+            0.9162999987602234,
+            0.24000000208616257
           ]
         },
         {
-          "case": "four detached split wheel rigs retain their export hub pivots",
+          "case": "4x4 marking fits the lower-half carrier, leaving the wheel visible above",
           "pass": true,
-          "wheelHubSourcePositions": [
+          "carrierTopY": 0.30299999678134926,
+          "wheelCenterY": 0.4590000000000001
+        },
+        {
+          "case": "front and rear fender exteriors are explicit closed surfaces",
+          "pass": true,
+          "faces": 4,
+          "joinedTandem": false
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer--1--1.445",
+          "pass": true,
+          "normal": [
+            -1,
+            9.770824505039855e-8,
+            0
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer--1-1.445",
+          "pass": true,
+          "normal": [
+            -1,
+            9.770824505039855e-8,
+            0
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer-1--1.445",
+          "pass": true,
+          "normal": [
+            1,
+            9.770824505039855e-8,
+            0
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-squared-carbon-extension-outer-1-1.445",
+          "pass": true,
+          "normal": [
+            1,
+            9.770824505039855e-8,
+            0
+          ]
+        },
+        {
+          "case": "brake and reverse remain distinct exported dynamic materials",
+          "pass": true
+        }
+      ],
+      "limitations": [
+        "Original photographic reconstruction, not manufacturer CAD or production-game scan.",
+        "Variant dimension and axle envelopes are reference estimates; a first-party dimension sheet was not inspectable.",
+        "Native collision, six-wheel behavior and rendering require separate integration verification."
+      ]
+    },
+    {
+      "vehicle": "Mercedes-Benz G 63 AMG 6x6",
+      "id": "mercedes-amg-g63-6x6",
+      "style": "g63six",
+      "checks": 73,
+      "pass": true,
+      "sourceOnly": true,
+      "geometry": {
+        "vertices": 241368,
+        "triangles": 374698,
+        "bounds": [
+          [
+            -1.098000000026077,
+            0.5450000166893005,
+            -2.918499999806285
+          ],
+          [
+            1.098000000026077,
+            2.3259999752044678,
+            2.9900000000474973
+          ]
+        ]
+      },
+      "tests": [
+        {
+          "case": "finite source positions and normals",
+          "pass": true,
+          "vertices": 241368,
+          "nonfinite": 0
+        },
+        {
+          "case": "unit shading normals",
+          "pass": true,
+          "nonunit": 6,
+          "normalizedFraction": 0.9999751416923536
+        },
+        {
+          "case": "bounded triangle budget without cab duplication",
+          "pass": true,
+          "triangles": 374698,
+          "vertices": 241368
+        },
+        {
+          "case": "roof and roll bar follow the selected reference envelope within one inch",
+          "pass": true,
+          "actualM": 2.3259999752044678,
+          "referenceStatus": "Photo-based variant envelope; not a certified dimension drawing."
+        },
+        {
+          "case": "body length follows the selected reference envelope",
+          "pass": true,
+          "actualM": 5.908499999853783,
+          "referenceStatus": "Variant dimension estimate."
+        },
+        {
+          "case": "mirror envelope is bounded while factory flares span the catalog width",
+          "pass": true,
+          "actualM": 2.196000000052154
+        },
+        {
+          "case": "body uses the actual simulator CG",
+          "pass": true,
+          "bodyY": -1.06,
+          "cg": 1.06
+        },
+        {
+          "case": "detached wheel assets are centred at their export hubs",
+          "pass": true,
+          "wheelCount": 6
+        },
+        {
+          "case": "tire outer radius agrees with the physical tire",
+          "pass": true,
+          "renderM": 0.4714442803048171,
+          "physicsM": 0.4699
+        },
+        {
+          "case": "tire section width retains its source dimension",
+          "pass": true,
+          "renderM": 0.3289549999191614,
+          "physicsM": 0.3175
+        },
+        {
+          "case": "bead-seat wheel size is independent of the larger tire",
+          "pass": true,
+          "renderRadiusM": 0.2285999953746796,
+          "beadRadiusM": 0.2286
+        },
+        {
+          "case": "front door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door -1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.140075691134373
+        },
+        {
+          "case": "front door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.1400481960856217
+        },
+        {
+          "case": "rear door 1 is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.140075691134373
+        },
+        {
+          "case": "windshield is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 2.7829158576875015
+        },
+        {
+          "case": "all three axle positions retain the selected 123-inch first wheelbase and 43-inch tandem spacing",
+          "pass": true,
+          "axles": [
+            2.1,
+            -1.02,
+            -2.12
+          ],
+          "referenceStatus": "Variant wheelbase estimates."
+        },
+        {
+          "case": "six-wheel geometry uses explicit CG-relative hardpoints",
+          "pass": true,
+          "offsetZ": 0
+        },
+        {
+          "case": "rear cab window is actual first-hit glazing",
+          "pass": true,
+          "firstDistanceM": 0.3489999771118164
+        },
+        {
+          "case": "cargo bed is open over its bamboo floor -1.85",
+          "pass": true,
+          "firstSurfaceM": 0.973000000372529
+        },
+        {
+          "case": "cargo bed is open over its bamboo floor -2.35",
+          "pass": true,
+          "firstSurfaceM": 0.973000000372529
+        },
+        {
+          "case": "pickup has distinct tailgate and closed cab back",
+          "pass": true
+        },
+        {
+          "case": "classic AMG front uses twin blades instead of thirteen modern slats",
+          "pass": true
+        },
+        {
+          "case": "classic front has one emblem with no retained donor badge group",
+          "pass": true
+        },
+        {
+          "case": "classic front retains two projector assemblies",
+          "pass": true
+        },
+        {
+          "case": "classic front has open grille cells, separate bumper DRLs and vented skid plate",
+          "pass": true,
+          "cells": 80
+        },
+        {
+          "case": "classic cabin has separate analogue binnacle and tablet",
+          "pass": true
+        },
+        {
+          "case": "factory front roof spoiler has two recessed LED housings",
+          "pass": true
+        },
+        {
+          "case": "lower cab repair faces outward -1",
+          "pass": true,
+          "meanNormalX": 1
+        },
+        {
+          "case": "lower cab repair faces outward 1",
+          "pass": true,
+          "meanNormalX": 1
+        },
+        {
+          "case": "both faces have original perforated beadlock wheel plates",
+          "pass": true,
+          "faces": 2
+        },
+        {
+          "case": "pickup carries only the dedicated running boards",
+          "pass": true,
+          "donorStepParts": 0
+        },
+        {
+          "case": "main hoop reaches above the cab instead of peaking halfway up the bed",
+          "pass": true,
+          "cabRoofM": 2.26,
+          "hoopTopM": 2.3259999752044678
+        },
+        {
+          "case": "main hoop is immediately behind the cab and spans the pickup shoulders",
+          "pass": true,
+          "bounds": [
             [
-              0,
-              0,
-              0
+              -0.7649999856948853,
+              2.259000062942505,
+              -1.128499984741211
             ],
             [
-              0,
-              0,
-              0
-            ],
-            [
-              0,
-              0,
-              0
-            ],
-            [
-              0,
-              0,
-              0
+              0.7649999856948853,
+              2.3259999752044678,
+              -1.0614999532699585
             ]
           ]
         },
         {
-          "case": "factory tire radius agrees with the physics tire",
+          "case": "native stock envelope includes the new bar and wider fenders",
           "pass": true,
-          "radiusM": 0.3974935763604206,
-          "physicsRadiusM": 0.3974
+          "heightM": 2.326,
+          "widthM": 2.185
         },
         {
-          "case": "factory tire width includes shoulders without width inflation",
+          "case": "running board clears both adjacent tire profiles through travel -1",
           "pass": true,
-          "widthM": 0.30586999991916136,
-          "physicsWidthM": 0.295
+          "middleGapM": 0.1019823965218617,
+          "frontGapM": 0.07072111060140696
         },
         {
-          "case": "factory wheel diameter stays at the selected bead seat",
+          "case": "roll-bar upright mounts to the front bed shoulder -1",
           "pass": true,
-          "renderRadiusM": 0.28107640147209173,
-          "nominalRadiusM": 0.2794
-        },
-        {
-          "case": "stock roof follows the sourced closed-roof height",
-          "pass": true,
-          "sourceTopYM": 1.979659914970398,
-          "referenceM": 1.979,
-          "toleranceM": 0.025
-        },
-        {
-          "case": "body and selected rear hardware follow the reference length envelope",
-          "pass": true,
-          "sourceLengthM": 4.887494660006089,
-          "referenceM": 4.873,
-          "toleranceM": 0.06
-        },
-        {
-          "case": "mirror and external trim span stays within the selected envelope",
-          "pass": true,
-          "sourceWidthWithMirrorsM": 2.196000000052154,
-          "referenceM": 2.187,
-          "toleranceM": 0.06,
-          "referenceStatus": "manufacturer mirror width"
-        },
-        {
-          "case": "visual axle hardpoints retain the published wheelbase",
-          "pass": true,
-          "wheelbaseM": 2.89,
-          "axlesInContactDatumM": [
-            1.445,
-            -1.445
-          ],
-          "axlesInCGFrameM": [
-            1.3294,
-            -1.5606000000000002
-          ],
-          "note": "Detached wheel meshes remain at their hub pivots; native placement at these mechanical hardpoints is verified separately."
-        },
-        {
-          "case": "brake and reverse use separate dynamic material roles",
-          "pass": true,
-          "dynamicMeshCounts": {
-            "brake": 3,
-            "reverse": 2
-          }
-        },
-        {
-          "case": "unmeasured suspension calibration is labeled and primary sources retained",
-          "pass": true,
-          "suspensionStatus": "Simulation wheel-rate/rest/travel/damping calibration; not measured Mercedes suspension.",
-          "sources": [
-            "https://www.mbusa.com/en/future-vehicles/2025-mercedes-benz-electric-g-class",
-            "https://www.mbusa.com/en/vehicles/model/g-class/suv/g63w4"
+          "bounds": [
+            [
+              -0.9834262132644653,
+              1.4508475065231323,
+              -1.1283081769943237
+            ],
+            [
+              -0.7649999856948853,
+              2.32580828666687,
+              -0.9716917872428894
+            ]
           ]
         },
         {
-          "case": "front side -1 has a genuine first-hit glass opening",
+          "case": "rear stay slopes from roof height and turns down to its rear foot -1",
           "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1400481960856217
+          "bounds": [
+            [
+              -0.9798902273178101,
+              1.4448877573013306,
+              -2.533175468444824
+            ],
+            [
+              -0.7950849533081055,
+              2.3212411403656006,
+              -1.0862282514572144
+            ]
+          ]
         },
         {
-          "case": "rear side -1 has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1400756911343732
-        },
-        {
-          "case": "rear quarter -1 has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 2.140088629258735
-        },
-        {
-          "case": "front side 1 has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1400481960856217
-        },
-        {
-          "case": "rear side 1 has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 2.1400756911343732
-        },
-        {
-          "case": "rear quarter 1 has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 2.140088629258735
-        },
-        {
-          "case": "upright windscreen has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 3.438726693666352
-        },
-        {
-          "case": "rear door glass has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 1.7830020530631736
-        },
-        {
-          "case": "sunroof has a genuine first-hit glass opening",
-          "pass": true,
-          "firstMaterialRole": "glass",
-          "firstDistanceM": 1.0215948686692142
-        },
-        {
-          "case": "bonnet has restrained physical transverse crown",
-          "pass": true,
-          "crownM": 0.04184931231983424
-        },
-        {
-          "case": "drawn door sheet has physical shoulder relief",
-          "pass": true,
-          "reliefM": 0.0123803028850904
-        },
-        {
-          "case": "metal roof has a shallow transverse crown",
-          "pass": true,
-          "crownM": 0.0073632739238997935
-        },
-        {
-          "case": "four formed wheel extensions are distinct from the cab shell",
+          "case": "stainless bar is explicitly structural for rollover collision -1",
           "pass": true
         },
         {
-          "case": "rear attachment and exhaust geometry identify the actual variant",
+          "case": "one joined rear fender spans both actual tandem tire centres -1",
           "pass": true,
-          "variant": "g63"
+          "fenderZM": [
+            -2.7750000953674316,
+            -0.4300000071525574
+          ],
+          "axleZM": [
+            -1.02,
+            -2.12
+          ]
         },
         {
-          "case": "rear reflectors are static and only lamps receive brake commands",
+          "case": "front wheel opening contains no retained rounded donor paint crescent -1",
           "pass": true,
-          "brakeEmitters": 3,
-          "reverseEmitters": 2
+          "openingProbes": 27,
+          "oldPaint": 0
         },
         {
-          "case": "native capability metadata distinguishes virtual and mechanical differentials",
+          "case": "tire silhouette is clear of bed and cab sheets at axle 0 side -1",
           "pass": true,
-          "electricMotors": 0,
-          "lowRatio": 2.93
+          "probes": 62,
+          "blocked": 0,
+          "failures": []
         },
         {
-          "case": "selected factory rim has open original spokes on both faces",
+          "case": "tire silhouette is clear of bed and cab sheets at axle 1 side -1",
           "pass": true,
-          "spokeBranches": 40,
-          "selectedRimInches": 22
+          "probes": 62,
+          "blocked": 0,
+          "failures": []
         },
         {
-          "case": "AMG vertical grille bars stand in front of the dark backing",
+          "case": "tire silhouette is clear of bed and cab sheets at axle 2 side -1",
           "pass": true,
-          "setbackM": 0.0418371878862378
+          "probes": 62,
+          "blocked": 0,
+          "failures": []
+        },
+        {
+          "case": "upper sheet faces upward g63-six-carbon-front-arch-crown--1",
+          "pass": true,
+          "meanNormalY": 0.7406264281905858
+        },
+        {
+          "case": "upper sheet faces upward g63-six-carbon-tandem-arch-crown--1",
+          "pass": true,
+          "meanNormalY": 0.8525044069880933
+        },
+        {
+          "case": "upper sheet faces upward g63-six-painted-bed-rail--1",
+          "pass": true,
+          "meanNormalY": 0.9736835294592697
+        },
+        {
+          "case": "upper sheet faces upward g63-six-tandem-inner-tub-crown--1",
+          "pass": true,
+          "meanNormalY": 0.9227728403823072
+        },
+        {
+          "case": "running board clears both adjacent tire profiles through travel 1",
+          "pass": true,
+          "middleGapM": 0.1019823965218617,
+          "frontGapM": 0.07072111060140696
+        },
+        {
+          "case": "roll-bar upright mounts to the front bed shoulder 1",
+          "pass": true,
+          "bounds": [
+            [
+              0.7649999856948853,
+              1.4508475065231323,
+              -1.1283081769943237
+            ],
+            [
+              0.9834262132644653,
+              2.32580828666687,
+              -0.9716917872428894
+            ]
+          ]
+        },
+        {
+          "case": "rear stay slopes from roof height and turns down to its rear foot 1",
+          "pass": true,
+          "bounds": [
+            [
+              0.7950849533081055,
+              1.4448877573013306,
+              -2.533175468444824
+            ],
+            [
+              0.9798902273178101,
+              2.3212411403656006,
+              -1.0862282514572144
+            ]
+          ]
+        },
+        {
+          "case": "stainless bar is explicitly structural for rollover collision 1",
+          "pass": true
+        },
+        {
+          "case": "one joined rear fender spans both actual tandem tire centres 1",
+          "pass": true,
+          "fenderZM": [
+            -2.7750000953674316,
+            -0.4300000071525574
+          ],
+          "axleZM": [
+            -1.02,
+            -2.12
+          ]
+        },
+        {
+          "case": "front wheel opening contains no retained rounded donor paint crescent 1",
+          "pass": true,
+          "openingProbes": 27,
+          "oldPaint": 0
+        },
+        {
+          "case": "tire silhouette is clear of bed and cab sheets at axle 0 side 1",
+          "pass": true,
+          "probes": 62,
+          "blocked": 0,
+          "failures": []
+        },
+        {
+          "case": "tire silhouette is clear of bed and cab sheets at axle 1 side 1",
+          "pass": true,
+          "probes": 62,
+          "blocked": 0,
+          "failures": []
+        },
+        {
+          "case": "tire silhouette is clear of bed and cab sheets at axle 2 side 1",
+          "pass": true,
+          "probes": 62,
+          "blocked": 0,
+          "failures": []
+        },
+        {
+          "case": "upper sheet faces upward g63-six-carbon-front-arch-crown-1",
+          "pass": true,
+          "meanNormalY": 0.7406264281905858
+        },
+        {
+          "case": "upper sheet faces upward g63-six-carbon-tandem-arch-crown-1",
+          "pass": true,
+          "meanNormalY": 0.8525044069880933
+        },
+        {
+          "case": "upper sheet faces upward g63-six-painted-bed-rail-1",
+          "pass": true,
+          "meanNormalY": 0.9736835294592697
+        },
+        {
+          "case": "upper sheet faces upward g63-six-tandem-inner-tub-crown-1",
+          "pass": true,
+          "meanNormalY": 0.9227728403823072
+        },
+        {
+          "case": "classic pickup roof is solid painted metal instead of the donor panoramic glass",
+          "pass": true,
+          "mesh": "g63-six-longitudinal-roof-pressing-0"
+        },
+        {
+          "case": "rear lamps use the wide horizontal factory layout",
+          "pass": true
+        },
+        {
+          "case": "optional slider and mounts clear both tire profiles in side view -1",
+          "pass": true,
+          "middleGapM": 0.13698242274790562,
+          "frontGapM": 0.10572113682745088
+        },
+        {
+          "case": "optional armor and outriggers clear all three moving tire volumes -1",
+          "pass": true,
+          "probes": 216,
+          "blocked": 0
+        },
+        {
+          "case": "optional slider and mounts clear both tire profiles in side view 1",
+          "pass": true,
+          "middleGapM": 0.13698242274790562,
+          "frontGapM": 0.10572113682745088
+        },
+        {
+          "case": "optional armor and outriggers clear all three moving tire volumes 1",
+          "pass": true,
+          "probes": 216,
+          "blocked": 0
+        },
+        {
+          "case": "front and rear fender exteriors are explicit closed surfaces",
+          "pass": true,
+          "faces": 4,
+          "joinedTandem": true
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-front-arch-outer--1",
+          "pass": true,
+          "normal": [
+            -1,
+            -5.859261964502593e-10,
+            0
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-tandem-arch-outer--1",
+          "pass": true,
+          "normal": [
+            -1,
+            -1.431947538321765e-7,
+            0
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-front-arch-outer-1",
+          "pass": true,
+          "normal": [
+            1,
+            -5.859261964502593e-10,
+            0
+          ]
+        },
+        {
+          "case": "fender exterior faces out g63-six-carbon-tandem-arch-outer-1",
+          "pass": true,
+          "normal": [
+            1,
+            -1.431947538321765e-7,
+            0
+          ]
+        },
+        {
+          "case": "brake and reverse remain distinct exported dynamic materials",
+          "pass": true
         }
       ],
       "limitations": [
-        "Offline source geometry; no native rendered acceptance.",
-        "Overall dimensions are sourced; panel stations, CG, suspension calibration and selected mirror/overhang fits include estimates."
+        "Original photographic reconstruction, not manufacturer CAD or production-game scan.",
+        "Variant dimension and axle envelopes are reference estimates; a first-party dimension sheet was not inspectable.",
+        "Native collision, six-wheel behavior and rendering require separate integration verification."
       ]
     }
   ],

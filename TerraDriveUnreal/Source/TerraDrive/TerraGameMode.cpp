@@ -46,6 +46,7 @@
 #include "TerraRutTransitionValidation.h"
 #include "TerraPerimeterValidation.h"
 #include "TerraChallengeValidation.h"
+#include "TerraRockCrawlValidation.h"
 #include "TerraExpandedValidation.h"
 #include "TerraRecoveryValidation.h"
 #include "Misc/App.h"
@@ -55,7 +56,8 @@ ATerraGameMode::ATerraGameMode() {
   HUDClass = ATerraHUD::StaticClass();
   PrimaryActorTick.bCanEverTick = true;
   PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))||
-    FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraChallengesOnly"));
+    FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"))||
+    FParse::Param(FCommandLine::Get(),TEXT("TerraChallengesOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraRockCrawlOnly"));
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
@@ -138,6 +140,10 @@ void ATerraGameMode::Tick(float Dt) {
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraRockCrawlOnly"))){
+    if(TerraRockCrawlValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraChallengesOnly"))){

@@ -126,10 +126,11 @@ const field=fs.readFileSync(path.join(data,'terrain.bin'));
 const priorWorld=path.join(data,'world.json');
 const priorData=fs.existsSync(priorWorld)?JSON.parse(fs.readFileSync(priorWorld)):null;
 const priorTrail=priorData?.perimeterTrail;
-for(const {minX,maxX,minY,maxY} of priorData?.terrainChallenges??[]){
+for(const {minX,maxX,minY,maxY,paintRock} of priorData?.terrainChallenges??[]){
  for(let x=minX;x<=maxX;x+=step)for(let y=minY;y<=maxY;y+=step){
-  const row=Math.round((x+400)/step),col=Math.round((y+400)/step);
-  field.writeFloatLE(terrain.heightAt(-y,x),16+(row*n+col)*9);
+  const row=Math.round((x+400)/step),col=Math.round((y+400)/step),at=16+(row*n+col)*9;
+  field.writeFloatLE(terrain.heightAt(-y,x),at);
+  if(paintRock)field[at+8]=surfaces.indexOf(terrain.sample(-y,x).surface);
  }
 }
 if(priorTrail){

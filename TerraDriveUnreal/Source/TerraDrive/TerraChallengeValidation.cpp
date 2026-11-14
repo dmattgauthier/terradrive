@@ -32,7 +32,7 @@ bool Tick(ATerraVehicle* Vehicle,float Delta,
   if(Run.Vehicle.Get()!=Vehicle){
     Run=FRun{};
     Run.Vehicle=Vehicle;
-    const bool Complete=World->Routes.Num()==FirstRoute+CourseCount;
+    const bool Complete=World->Routes.Num()>=FirstRoute+CourseCount;
     Check(TEXT("all three terrain challenges appear after the existing routes"),Complete,World->Routes.Num());
     if(!Complete)return true;
     Vehicle->SetGarage(true);

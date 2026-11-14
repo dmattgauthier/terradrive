@@ -1,8 +1,8 @@
 {
-  "revision": 25,
+  "revision": 31,
   "sourceOnly": true,
   "pass": true,
-  "checks": 95,
+  "checks": 101,
   "vehicles": [
     {
       "vehicle": "Mercedes-AMG G 63 4x4 squared",
@@ -12,13 +12,13 @@
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 337935,
-        "triangles": 451323,
+        "vertices": 241959,
+        "triangles": 360964,
         "bounds": [
           [
             -1.098000000026077,
-            0.5291305184364319,
-            -2.5524946599585916
+            0.5294999983012676,
+            -2.591899999894202
           ],
           [
             1.098000000026077,
@@ -31,20 +31,20 @@
         {
           "case": "finite source positions and normals",
           "pass": true,
-          "vertices": 337935,
+          "vertices": 241959,
           "nonfinite": 0
         },
         {
           "case": "unit shading normals",
           "pass": true,
-          "nonunit": 4,
-          "normalizedFraction": 0.9999881634042049
+          "nonunit": 77,
+          "normalizedFraction": 0.9996817642658467
         },
         {
           "case": "bounded triangle budget without cab duplication",
           "pass": true,
-          "triangles": 451323,
-          "vertices": 337935
+          "triangles": 360964,
+          "vertices": 241959
         },
         {
           "case": "roof and roll bar follow the selected reference envelope within one inch",
@@ -55,7 +55,7 @@
         {
           "case": "body length follows the selected reference envelope",
           "pass": true,
-          "actualM": 4.887494660006089,
+          "actualM": 4.9268999999417,
           "referenceStatus": "Retained modern-G donor envelope."
         },
         {
@@ -115,7 +115,7 @@
         {
           "case": "windshield is actual first-hit glazing",
           "pass": true,
-          "firstDistanceM": 3.438726693666352
+          "firstDistanceM": 3.437915857687502
         },
         {
           "case": "squared conversion retains the 113.8-inch wheelbase",
@@ -136,25 +136,19 @@
           "pass": true
         },
         {
-          "case": "covered spare remains round and matches the larger tires",
+          "case": "exposed spare is round and matches the larger tires",
           "pass": true,
           "diametersM": [
-            0.9163000341176385,
-            0.9163000341176386,
-            0.2834842049215265
+            0.9162999987602234,
+            0.9162999987602234,
+            0.24000000208616257
           ]
         },
         {
-          "case": "variant badge has clear space beside the enlarged spare",
+          "case": "4x4 marking fits the lower-half carrier, leaving the wheel visible above",
           "pass": true,
-          "badgeX": [
-            -0.8303152555046341,
-            -0.6002764475703071
-          ],
-          "spareX": [
-            -0.45815001705881925,
-            0.45815001705881925
-          ]
+          "carrierTopY": 0.30299999678134926,
+          "wheelCenterY": 0.4590000000000001
         },
         {
           "case": "front and rear fender exteriors are explicit closed surfaces",
@@ -166,36 +160,36 @@
           "case": "fender exterior faces out g63-squared-carbon-extension-outer--1--1.445",
           "pass": true,
           "normal": [
-            -0.9932064414024353,
-            0.0033176573924720287,
-            -0.11631845682859421
+            -1,
+            9.770824505039855e-8,
+            0
           ]
         },
         {
           "case": "fender exterior faces out g63-squared-carbon-extension-outer--1-1.445",
           "pass": true,
           "normal": [
-            -0.9932064414024353,
-            0.003317735157907009,
-            -0.11631835997104645
+            -1,
+            9.770824505039855e-8,
+            0
           ]
         },
         {
           "case": "fender exterior faces out g63-squared-carbon-extension-outer-1--1.445",
           "pass": true,
           "normal": [
-            0.9932064414024353,
-            0.0033176573924720287,
-            -0.11631845682859421
+            1,
+            9.770824505039855e-8,
+            0
           ]
         },
         {
           "case": "fender exterior faces out g63-squared-carbon-extension-outer-1-1.445",
           "pass": true,
           "normal": [
-            0.9932064414024353,
-            0.003317735157907009,
-            -0.11631835997104645
+            1,
+            9.770824505039855e-8,
+            0
           ]
         },
         {
@@ -213,16 +207,16 @@
       "vehicle": "Mercedes-Benz G 63 AMG 6x6",
       "id": "mercedes-amg-g63-6x6",
       "style": "g63six",
-      "checks": 67,
+      "checks": 73,
       "pass": true,
       "sourceOnly": true,
       "geometry": {
-        "vertices": 294908,
-        "triangles": 443915,
+        "vertices": 241368,
+        "triangles": 374698,
         "bounds": [
           [
             -1.098000000026077,
-            0.5994999991059304,
+            0.5450000166893005,
             -2.918499999806285
           ],
           [
@@ -236,20 +230,20 @@
         {
           "case": "finite source positions and normals",
           "pass": true,
-          "vertices": 294908,
+          "vertices": 241368,
           "nonfinite": 0
         },
         {
           "case": "unit shading normals",
           "pass": true,
           "nonunit": 6,
-          "normalizedFraction": 0.9999796546719655
+          "normalizedFraction": 0.9999751416923536
         },
         {
           "case": "bounded triangle budget without cab duplication",
           "pass": true,
-          "triangles": 443915,
-          "vertices": 294908
+          "triangles": 374698,
+          "vertices": 241368
         },
         {
           "case": "roof and roll bar follow the selected reference envelope within one inch",
@@ -320,7 +314,7 @@
         {
           "case": "windshield is actual first-hit glazing",
           "pass": true,
-          "firstDistanceM": 2.7837266936663516
+          "firstDistanceM": 2.7829158576875015
         },
         {
           "case": "all three axle positions retain the selected 123-inch first wheelbase and 43-inch tandem spacing",
@@ -369,6 +363,11 @@
           "pass": true
         },
         {
+          "case": "classic front has open grille cells, separate bumper DRLs and vented skid plate",
+          "pass": true,
+          "cells": 80
+        },
+        {
           "case": "classic cabin has separate analogue binnacle and tablet",
           "pass": true
         },
@@ -390,6 +389,11 @@
           "case": "both faces have original perforated beadlock wheel plates",
           "pass": true,
           "faces": 2
+        },
+        {
+          "case": "pickup carries only the dedicated running boards",
+          "pass": true,
+          "donorStepParts": 0
         },
         {
           "case": "main hoop reaches above the cab instead of peaking halfway up the bed",
@@ -418,6 +422,12 @@
           "pass": true,
           "heightM": 2.326,
           "widthM": 2.185
+        },
+        {
+          "case": "running board clears both adjacent tire profiles through travel -1",
+          "pass": true,
+          "middleGapM": 0.1019823965218617,
+          "frontGapM": 0.07072111060140696
         },
         {
           "case": "roll-bar upright mounts to the front bed shoulder -1",
@@ -513,6 +523,12 @@
           "case": "upper sheet faces upward g63-six-tandem-inner-tub-crown--1",
           "pass": true,
           "meanNormalY": 0.9227728403823072
+        },
+        {
+          "case": "running board clears both adjacent tire profiles through travel 1",
+          "pass": true,
+          "middleGapM": 0.1019823965218617,
+          "frontGapM": 0.07072111060140696
         },
         {
           "case": "roll-bar upright mounts to the front bed shoulder 1",
@@ -619,10 +635,22 @@
           "pass": true
         },
         {
+          "case": "optional slider and mounts clear both tire profiles in side view -1",
+          "pass": true,
+          "middleGapM": 0.13698242274790562,
+          "frontGapM": 0.10572113682745088
+        },
+        {
           "case": "optional armor and outriggers clear all three moving tire volumes -1",
           "pass": true,
           "probes": 216,
           "blocked": 0
+        },
+        {
+          "case": "optional slider and mounts clear both tire profiles in side view 1",
+          "pass": true,
+          "middleGapM": 0.13698242274790562,
+          "frontGapM": 0.10572113682745088
         },
         {
           "case": "optional armor and outriggers clear all three moving tire volumes 1",

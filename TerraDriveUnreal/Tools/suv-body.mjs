@@ -306,7 +306,25 @@ export function buildSUV(view, geometry, bronco) {
         }
       }
       for (const az of [f, r]) view._fender(side, az, half, bronco);
-      roundedBox(g, m.black, side * (half + 0.054), 0.476, -0.07, 0.10, 0.075, 1.92, 0.018);
+      if(bronco)roundedBox(g, m.black, side * (half + 0.054), 0.476, -0.07, 0.10, 0.075, 1.92, 0.018);
+      else{
+        // Rubicon's wheel-to-wheel rail hugs the rocker and rises into capped ends.
+        const railPoint=(z,t)=>{
+          const cap=THREE.MathUtils.smoothstep(Math.abs(z+.06),.83,.99);
+          return [side*(half+.022+.043*Math.cos(t)*(.99-.27*cap)),
+            .464+.023*cap+.042*Math.sin(t),z];
+        };
+        const rail=surface(g,m.black,46,28,(u,v)=>railPoint(-1.05+1.98*u,v*Math.PI*2),side>0);
+        rail.name='wrangler-formed-rubicon-rock-rail';
+        for(const z of [-1.05,.93])
+          surface(g,m.black,2,28,(u,v)=>{
+            const point=railPoint(z,v*Math.PI*2),center=railPoint(z,0);
+            return [THREE.MathUtils.lerp(side*(half+.022),point[0],u),
+              THREE.MathUtils.lerp(center[1],point[1],u),z];
+          },(z<0)!=(side<0));
+        for(const z of [-.78,-.20,.42,.76])
+          roundedBox(g,m.dark,side*(half-.013),.500,z,.084,.046,.047,.008);
+      }
       // The two molded mirror shells have different silhouettes. A swept cap
       // rounds into the outer rim and leaves the convex glass inside its reveal.
       // Normalizing the outline retains Ford's 2.189 m standard-mirror width.
@@ -503,13 +521,24 @@ export function buildSUV(view, geometry, bronco) {
       roundedBox(g,m.dark,side*.779,.532,tail-.194,.156,.065,.017,.006);
       roundedBox(g,m.redPaint,side*.779,.534,tail-.204,.115,.032,.008,.004);
     }
-    // A separately mounted plate pocket, rear recovery eye and visible fasteners.
-    roundedBox(g,m.black,.600,.482,tail-.251,.338,.170,.035,.009);
-    roundedBox(g,m.dark,.600,.489,tail-.272,.302,.132,.008,.004);
-    for(const x of [.491,.709])cylinder(g,m.satinMetal||m.chrome,x,.537,tail-.278,.005,.008,'z',8);
-    roundedBox(g,m.black,.600,.581,tail-.265,.137,.028,.039,.006);
-    const rearHook=new THREE.Mesh(new THREE.TorusGeometry(.046,.013,8,24,Math.PI*1.55),bronco?m.dark:m.redPaint);
-    rearHook.rotation.x=Math.PI/2;finish(rearHook,g,-.578,.416,tail-.113);
+    // Production North American Wrangler places the plate low on the rear bumper.
+    const plateX=.600,plateY=.482,plateZ=tail-.251;
+    roundedBox(g,m.black,plateX,plateY,plateZ,.338,.170,.035,.009);
+    roundedBox(g,m.dark,plateX,plateY+.007,plateZ-.021,.302,.132,.008,.004);
+    for(const x of [plateX-.109,plateX+.109])
+      cylinder(g,m.satinMetal||m.chrome,x,plateY+.055,plateZ-.027,.005,.008,'z',8);
+    roundedBox(g,m.black,plateX,plateY+.099,plateZ-.014,.137,.028,.039,.006);
+    if(!bronco){
+      for(const x of [plateX-.039,plateX+.039])
+        roundedBox(g,m.lens,x,plateY+.087,plateZ-.028,.020,.006,.010,.002);
+      const hook=curvedLine(g,m.redPaint,[[-.535,.472,tail+.025],[-.535,.403,tail-.032],
+        [-.535,.398,tail-.128],[-.535,.416,tail-.185],[-.535,.455,tail-.199],[-.535,.478,tail-.177]],.013);
+      hook.name='wrangler-forged-rear-recovery-hook';
+      roundedBox(g,m.dark,-.535,.464,tail+.006,.085,.074,.116,.009);
+    }else{
+      const hook=new THREE.Mesh(new THREE.TorusGeometry(.046,.013,8,24,Math.PI*1.55),m.dark);
+      hook.rotation.x=Math.PI/2;finish(hook,g,-.578,.416,tail-.113);
+    }
     // Angled lower protection panel with folded edges; no floating horizontal slab.
     surface(g,m.dark,30,10,(u,v)=>[(u*2-1)*THREE.MathUtils.lerp(.52,.66,v),THREE.MathUtils.lerp(.398,.519,v),THREE.MathUtils.lerp(nose-.243,nose+.156,v)],true);
     for(const x of [-.42,0,.42]) curvedLine(g,m.black,[[x,.401,nose-.226],[x,.451,nose-.069],[x,.510,nose+.129]],.005);
@@ -628,7 +657,11 @@ export function buildSUV(view, geometry, bronco) {
         const p=broncoBumperPoint(side*.459,.611);finish(new THREE.Mesh(eye,m.dark),g,p[0],p[1],p[2]+.013);
         roundedBox(g,m.black,p[0],p[1],p[2]-.010,.106,.139,.032,.014);
       } else {
-        const hook=new THREE.Mesh(new THREE.TorusGeometry(.054,.015,8,24,Math.PI*1.4),m.redPaint);hook.rotation.x=Math.PI/2;finish(hook,g,side*.51,.694,nose+.25);
+        const x=side*.51;
+        roundedBox(g,m.black,x,.754,nose+.135,.093,.013,.097,.009);
+        const hook=curvedLine(g,m.redPaint,[[x,.752,nose+.116],[x,.784,nose+.152],
+          [x,.790,nose+.200],[x,.776,nose+.236],[x,.751,nose+.250],[x,.731,nose+.232]],.016);
+        hook.name='wrangler-forged-front-recovery-hook';
       }
     }
     const spareRise=Math.max(0,spec.tireRadius-(spec.visualBase?.tireRadius??spec.tireRadius));

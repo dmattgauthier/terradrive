@@ -8,8 +8,8 @@
   "vehicles": [
     {
       "id": "wrangler-rubicon",
-      "bodySha256": "db50c7b098774d39f73feb8aa0aad26e555fb8f4e56dfcb3edcf293833d5d180",
-      "coverageCells": 14413,
+      "bodySha256": "5113f3bc08a3affe01c63f8f1f4635d4a3a72fb3ce5c6d9f1b2b91fc6e17c6ec",
+      "coverageCells": 14253,
       "previousFormulaOverlapM": 0.4943258500482962,
       "fits": [
         {
@@ -468,8 +468,8 @@
     },
     {
       "id": "urus-performante",
-      "bodySha256": "2eb7d5588375f6f80b4c19907a549f1744fa406094743e4827442c8722bccafc",
-      "coverageCells": 15343,
+      "bodySha256": "63ce121701d0a756336143e0b233e7006a063e0693bda8d0485ba7fff2740ce4",
+      "coverageCells": 15490,
       "previousFormulaOverlapM": 0.6621500056205765,
       "fits": [
         {
@@ -652,8 +652,8 @@
     },
     {
       "id": "mercedes-g580-ev",
-      "bodySha256": "0d3887ab8ae3ac2cd07ab3f7b03717b400f2fe2af7e3315535b048bbed4dda7c",
-      "coverageCells": 13278,
+      "bodySha256": "da7a063afb8175ee463a1aa46953506ecab1296e2c2a4fc54afb47ea83202a1d",
+      "coverageCells": 13693,
       "previousFormulaOverlapM": 0.6466336866002076,
       "fits": [
         {
@@ -744,8 +744,8 @@
     },
     {
       "id": "mercedes-amg-g63",
-      "bodySha256": "610e3e67a45437e51c8da39e43a1bacb213db95aeec08ba26a9a2e5faf6b6741",
-      "coverageCells": 12612,
+      "bodySha256": "1095982b7fc369cba1ddc3bc81cfcd97a6c67b9ed0930e0f194938b2e990560c",
+      "coverageCells": 12620,
       "previousFormulaOverlapM": 0.41726454433728305,
       "fits": [
         {
@@ -836,8 +836,8 @@
     },
     {
       "id": "mercedes-amg-g63-6x6",
-      "bodySha256": "707c43b7ce92b8ddb8226bbb9c3d52612226a269fc43dc249f011b7c0d2ee1e5",
-      "coverageCells": 18228,
+      "bodySha256": "7c52189ccadeeb02c89c06a6fe4ac3eb35af912fe460f7631a8713f63cbeaadf",
+      "coverageCells": 18266,
       "previousFormulaOverlapM": 0.4434869758613078,
       "fits": [
         {

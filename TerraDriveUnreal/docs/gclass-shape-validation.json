@@ -1,15 +1,15 @@
 {
-  "revision": 24,
+  "revision": 31,
   "sourceOnly": true,
   "pass": true,
-  "checks": 93,
+  "checks": 96,
   "minimumVerticalSlope": 0.2255394776701225,
   "variants": [
     {
       "vehicle": "mercedes-g580-ev",
-      "checks": 46,
+      "checks": 49,
       "pass": true,
-      "bonnetPeakYM": 1.3400955200195312,
+      "bonnetPeakYM": 1.3503376245498657,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
@@ -102,7 +102,7 @@
         {
           "name": "final-space hood joint descends without an S-shaped wave -1",
           "pass": true,
-          "maximumChordErrorM": 0.000743168131386529,
+          "maximumChordErrorM": 0.0006333285834090319,
           "descentM": 0.1536998301744461,
           "spanM": 1.4728370755910873
         },
@@ -316,7 +316,7 @@
         {
           "name": "final-space hood joint descends without an S-shaped wave 1",
           "pass": true,
-          "maximumChordErrorM": 0.000743168131386529,
+          "maximumChordErrorM": 0.0006333285834090319,
           "descentM": 0.1536998301744461,
           "spanM": 1.4728370755910873
         },
@@ -461,17 +461,17 @@
           "name": "bonnet nose is a thin rolled return across the entire width",
           "pass": true,
           "minimumM": 0.023999929428100586,
-          "maximumM": 0.024000167846679688
+          "maximumM": 0.024000048637390137
         },
         {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.2500954866409302
+          "heightReliefM": 0.26033759117126465
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
           "pass": true,
-          "heightM": 1.302012382424233,
+          "heightM": 1.3020334750892855,
           "amgReferenceM": 1.246,
           "evRaisedHood": true
         },
@@ -537,8 +537,8 @@
           "name": "actual fascia triangles retain outward winding around the lamps",
           "pass": true,
           "reversedTriangles": 0,
-          "minimumTriangleNormalZ": 0.05715830881067314,
-          "triangles": 4068
+          "minimumTriangleNormalZ": 0.05206831215440991,
+          "triangles": 1057
         },
         {
           "name": "formed fascia has separate circular lamps and a drawing-width grille opening",
@@ -607,6 +607,20 @@
               "thicknessY": 0.031849995255470276
             }
           ]
+        },
+        {
+          "name": "EV quarter charge door has a body-colored panel and separate gap",
+          "pass": true,
+          "widthM": 0.24173498153686523
+        },
+        {
+          "name": "Black Panel has four louvers and separate bright trim and light guide",
+          "pass": true
+        },
+        {
+          "name": "EV charging box has a crowned lid separate from its mounting box",
+          "pass": true,
+          "lidDepthM": 0.013300418853759766
         }
       ]
     },
@@ -614,7 +628,7 @@
       "vehicle": "mercedes-amg-g63",
       "checks": 45,
       "pass": true,
-      "bonnetPeakYM": 1.3122601509094238,
+      "bonnetPeakYM": 1.3132526874542236,
       "sideGlassWidthsM": [
         0.7953252643346786,
         0.6822550296783447,
@@ -707,7 +721,7 @@
         {
           "name": "final-space hood joint descends without an S-shaped wave -1",
           "pass": true,
-          "maximumChordErrorM": 0.000743168131386529,
+          "maximumChordErrorM": 0.0006333285834090319,
           "descentM": 0.1536998301744461,
           "spanM": 1.4728370755910873
         },
@@ -912,7 +926,7 @@
         {
           "name": "final-space hood joint descends without an S-shaped wave 1",
           "pass": true,
-          "maximumChordErrorM": 0.000743168131386529,
+          "maximumChordErrorM": 0.0006333285834090319,
           "descentM": 0.1536998301744461,
           "spanM": 1.4728370755910873
         },
@@ -1053,7 +1067,7 @@
         {
           "name": "bonnet is a compound sheet with measurable height relief",
           "pass": true,
-          "heightReliefM": 0.24026012420654297
+          "heightReliefM": 0.24125266075134277
         },
         {
           "name": "hood over the front axle follows the 49-inch drawing datum",
@@ -1124,8 +1138,8 @@
           "name": "actual fascia triangles retain outward winding around the lamps",
           "pass": true,
           "reversedTriangles": 0,
-          "minimumTriangleNormalZ": 0.03906001725647136,
-          "triangles": 4203
+          "minimumTriangleNormalZ": 0.045763521652134036,
+          "triangles": 1995
         },
         {
           "name": "formed fascia has separate circular lamps and a drawing-width grille opening",

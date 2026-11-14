@@ -44,8 +44,8 @@ for(const spec of [G580,standardG63]){
     const shoulder=object((ev?'g580-soft-bonnet-shoulder-':'g63-pressed-wing-shoulder-')+side),n=midNormal(shoulder),extent=bounds(shoulder).getSize(new T.Vector3());
     const returnNormal=new T.Vector3().fromBufferAttribute(shoulder.geometry.attributes.normal,3*49+24),edgeNormal=new T.Vector3().fromBufferAttribute(shoulder.geometry.attributes.normal,19*49+24);
     check('front wing has a flat ledge and a distinct outward hood return '+side,n.y>.97&&Math.abs(n.x)<.10&&returnNormal.x*side>.45&&edgeNormal.x*side>.20&&extent.y>.060,{ledgeNormal:n.toArray(),returnNormal:returnNormal.toArray(),edgeNormal:edgeNormal.toArray()});
-    const joint=object('gclass-low-clamshell-hood-seam-'+side).geometry.attributes.position,stations=[];
-    for(let i=0;i<joint.count;i+=9){const c=new T.Vector3();for(let j=0;j<8;j++)c.add(new T.Vector3().fromBufferAttribute(joint,i+j));stations.push(c.multiplyScalar(1/8));}
+    const seam=object('gclass-low-clamshell-hood-seam-'+side),joint=seam.geometry.attributes.position,stations=[];
+    for(let i=0;i<seam.userData.continuousReveal.stations*9;i+=9){const c=new T.Vector3();for(let j=0;j<8;j++)c.add(new T.Vector3().fromBufferAttribute(joint,i+j));stations.push(c.multiplyScalar(1/8));}
     const first=stations[0],last=stations.at(-1),descent=first.y-last.y;
     const seamDeviation=Math.max(...stations.map(p=>Math.abs(p.y-(first.y+(last.y-first.y)*(p.z-first.z)/(last.z-first.z)))));
     check('final-space hood joint descends without an S-shaped wave '+side,seamDeviation<.0015&&descent>.13&&descent<.17,{maximumChordErrorM:seamDeviation,descentM:descent,spanM:last.z-first.z});
@@ -116,6 +116,18 @@ for(const spec of [G580,standardG63]){
   check('formed fascia has separate circular lamps and a drawing-width grille opening',openRays===32&&solidRays===32&&grilleRays.every(r=>r.solid===r.expectedSolid),{openRays,solidRays,misses,grilleRays,referenceGrilleWidthM:397/(898/1.979)});
   const molding=[];view.body.traverse(o=>{if(o.name==='gclass-level-protective-molding'){const b=new T.Box3().setFromObject(o);molding.push({centerY:b.getCenter(new T.Vector3()).y+spec.cgHeight,thicknessY:b.max.y-b.min.y});}});
   check('all eight protective molding sections stay level across the nose',molding.length===8&&molding.every(r=>Math.abs(r.centerY-.995)<.0001&&Math.abs(r.thicknessY-.049*.65)<.0001),{sections:molding});
+  if(ev){
+    const pressed=object('g580-body-color-charge-door'),gap=object('g580-charge-door-panel-gap');
+    const bodyBounds=new T.Box3().setFromObject(pressed).getSize(new T.Vector3());
+    check('EV quarter charge door has a body-colored panel and separate gap',
+      pressed.material===view.materials.paint&&gap.material===view.materials.gTrim&&bodyBounds.z>.23&&bodyBounds.z<.30,{widthM:bodyBounds.z});
+    const led=object('g580-black-panel-light-guide'),chrome=object('g580-black-panel-chrome-border');
+    check('Black Panel has four louvers and separate bright trim and light guide',
+      view.body.getObjectsByProperty('name','g580-black-panel-louver').length===4&&led.material!==chrome.material,{});
+    const lid=object('g580-design-box-compound-lid');
+    check('EV charging box has a crowned lid separate from its mounting box',
+      bounds(lid).getSize(new T.Vector3()).z>.007&&!!object('g580-design-box-mount'),{lidDepthM:bounds(lid).getSize(new T.Vector3()).z});
+  }
   if(!ev){const spare=new T.Box3().setFromObject(object('g63-covered-factory-spare')).getSize(new T.Vector3());check('round covered spare remains round after the body proportion fit',Math.abs(spare.x-spare.y)<.0001,{diametersM:[spare.x,spare.y]});}
   rows.push({vehicle:spec.id,checks:tests.length,pass:true,bonnetPeakYM:bn.max.y,sideGlassWidthsM:glass[0],tests});view.dispose();
 }
@@ -123,6 +135,6 @@ assert.ok(rows[0].bonnetPeakYM-rows[1].bonnetPeakYM>.020,'EV raised bonnet is ph
 let minimumVerticalSlope=Infinity;
 for(let z=-2.7;z<=2.4;z+=.031)for(let y=0;y<=2.1;y+=.013){const slope=(gClassCoachworkPoint(0,y+.0001,z)[1]-gClassCoachworkPoint(0,y-.0001,z)[1])/.0002;minimumVerticalSlope=Math.min(minimumVerticalSlope,slope);}
 assert.ok(minimumVerticalSlope>.1,'reference fit does not fold any body sheet');
-const report={revision:24,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','G63 row exercises the standard donor fixture shared by the portal variants; current 4x4 squared and 6x6 geometry is checked separately in gclass-variants-validation.json.','Native rendered comparison remains required.']};
+const report={revision:31,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','G63 row exercises the standard donor fixture shared by the portal variants; current 4x4 squared and 6x6 geometry is checked separately in gclass-variants-validation.json.','Native rendered comparison remains required.']};
 fs.writeFileSync(new URL('../docs/gclass-shape-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.vehicle,checks:r.checks,glass:r.sideGlassWidthsM,bonnetPeakYM:r.bonnetPeakYM}))}));
