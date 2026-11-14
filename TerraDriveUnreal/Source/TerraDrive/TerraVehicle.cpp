@@ -421,18 +421,29 @@ bool ATerraVehicle::RecoverInPlace() {
   return true;
 }
 
+FVector ATerraVehicle::RouteSpawnPosition(const FTerraRoute& Route) const {
+  FVector Start=Route.Spawn;
+  if(Route.TerrainStart)Start.Z=Terrain->Height(Start.X,Start.Y);
+  return Start;
+}
+
 void ATerraVehicle::TeleportRoute(int Index) {
   if (!Terrain || Terrain->Routes.IsEmpty()) return;
   const int R = (Index + Terrain->Routes.Num()) % Terrain->Routes.Num();
   const auto &Route = Terrain->Routes[R];
   TeleportZone(Route.Zone);
   RouteIndex = R; GateIndex = 0; RouteTime = 0;
-  SetActorLocationAndRotation(Route.Spawn + FVector(0,0,CG*100+16+Tuning.Lift*100+(Radius-Number(TEXT("tireRadius"),.42f))*100),
+  SetActorLocationAndRotation(RouteSpawnPosition(Route) + FVector(0,0,ExpectedRideHeight()*100+16),
       FRotator(0,Route.Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
   PreviousRoutePosition = GetActorLocation();
+  Notice = Route.Hint;
+  ++RouteNoticeSerial;
+}
+
+FString ATerraVehicle::RouteHint(const FString& Hint)const {
   // Older cooked route data contains default key names. Resolve those legacy
   // phrases at display time so preserved terrain data follows custom controls.
-  Notice = Route.Hint.Replace(TEXT("Shift+W"),*(ControlLabel(TerraControls::Action::Crawl)+TEXT("+")+ControlLabel(TerraControls::Action::Forward)))
+  return Hint.Replace(TEXT("Shift+W"),*(ControlLabel(TerraControls::Action::Crawl)+TEXT("+")+ControlLabel(TerraControls::Action::Forward)))
       .Replace(TEXT("K descent assist"),*(ControlLabel(TerraControls::Action::DescentAssist)+TEXT(" descent assist")));
 }
 void ATerraVehicle::ToggleLocker(bool Front) {
@@ -474,7 +485,7 @@ void ATerraVehicle::UpdateRoute(float Dt) {
     if (FVector::DotProduct(PreviousRoutePosition-G,GateForward)<0 && FVector::DotProduct(P-G,GateForward)>=0 &&
         FMath::Abs(FVector::DotProduct(P-G,GateSide)) < Route.GateWidth*50 && FMath::Abs(P.Z-G.Z)<300) {
       ++GateIndex;
-      if(GateIndex==Route.Gates.Num()&&!Route.GateNotes.IsEmpty())Notice=TEXT("Perimeter Expedition complete");
+      if(GateIndex==Route.Gates.Num()&&!Route.GateNotes.IsEmpty())Notice=Route.Name+TEXT(" complete");
     }
     PreviousRoutePosition = P;
   }
@@ -708,6 +719,9 @@ void ATerraVehicle::Simulate(float Dt) {
       W.Ground.Normal = Support.Normal;
       if (Support.Constructed) {
         W.Ground.Surface = Support.Surface; W.Ground.Water = W.Ground.Softness = W.Ground.MaxSink = 0;
+        // A bridge or obstacle uses its own surface, even above snow or pavement.
+        W.Ground.PavementCoverage=Support.Surface==1?1.f:0.f;
+        W.Ground.SnowCoverage=0;
         W.Ground.Mu = (Support.Surface==4 ? .90f:.98f)*(Terrain->Rain?.76f:1.f);
         W.Ground.Rolling = .018f;
       }
@@ -732,7 +746,7 @@ void ATerraVehicle::Simulate(float Dt) {
     const auto Air=TerraSim::EvaluateTirePressure(WheelPressure(I),Placard,StaticLoad,Number(TEXT("mass"),2100)*9.81f*AxleLoadFraction(I/2)*.5f,Speed,W.Ground.Softness,Tracks);
     const float BaseGrip=TerraSim::TerrainGrip(W.Ground.Mu,W.Load,StaticLoad,Placard,Placard,
         W.Ground.MaxSink>0,Tracks,W.Ground.Packing,W.Slip,W.Ground.Water/100,W.LongSpeed)*Tuning.Grip*
-        (Tracks?(W.Ground.Surface==6?1.5f:.84f):1.f);
+        (Tracks?TerraSim::TrackGripScale(W.Ground.SnowCoverage):1.f);
     W.Grip=BaseGrip*Air.LongitudinalGrip;W.SideGrip=BaseGrip*Air.LateralGrip;W.CorneringResponse=Air.CorneringStiffness;
     Capacities[I] = W.Load*W.Grip*Radius;
   }
@@ -820,7 +834,9 @@ void ATerraVehicle::Simulate(float Dt) {
   for(int I=0;I<Count;++I){
     const auto &W=WheelState[I];
     const float Share=Mass*AxleLoadFraction(I/2)*.5f;
-    Stiffness[I]=TerraSim::ContactStiffness(W.Load*(W.Ground.Surface==1?10.f:5.f)/FMath::Max(2.f,FMath::Abs(W.LongSpeed)),Share,Dt);
+    const float RawStiffness=W.Load*TerraSim::LongitudinalContactScale(W.Ground.PavementCoverage)/
+      FMath::Max(2.f,FMath::Abs(W.LongSpeed));
+    Stiffness[I]=TerraSim::ContactStiffness(RawStiffness,Share,Dt);
     const bool Driven=DrivenWheel(I);
     const float EngineBrake=!Electric&&Driven&&Throttle<.05f&&LowRange?Mass*9.81f*R*.035f*(4.f/Count):0.f;
     const float Rut=TerraSim::RutResistance(W.RutDepth,R,W.Ground.Softness,W.Ground.Packing,Tracks);

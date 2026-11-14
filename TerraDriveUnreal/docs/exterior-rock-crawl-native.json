@@ -1,0 +1,351 @@
+{
+  "previousReviewCommit": "9cb98c86080325317024d63305eb3bba3b668956",
+  "engine": "5.8.3",
+  "build": "Candidate5",
+  "package": {
+    "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+    "stagedContent": [
+      {
+        "path": "TerraDrive/Content/Paks/global.ucas",
+        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/global.utoc",
+        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+        "sha256": "37b3e29c6583c9895e38d2e8fdebe71b05d10c0ed29d52a3d5fc7e1907696250"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+        "sha256": "8009a74f4c4654e668639bfb33721c0c7438d4e83733281f3617fa9f750a3c4f"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+        "sha256": "fd75a7b3773d0a79f6edaf933d730472ccfb7c369c47fe0c67e186e597adbfca"
+      }
+    ],
+    "changedMeshes": 1,
+    "sourceInputsSha256": "c3373f17d69625af313186fb8c55b7e8ec7673eec4de96310b38c8694eb483c1",
+    "sourceFileCount": 227
+  },
+  "previousCook": {
+    "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+    "stagedContent": [
+      {
+        "path": "TerraDrive/Content/Paks/global.ucas",
+        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/global.utoc",
+        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+        "sha256": "83529648682f88361be24a133111a393967992606336e4f6f36bbbce05dc51d7"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+        "sha256": "f2cdf223d87a61b79c966942c7ef10cf626bfdad5d4a7f98e436fa0ec3f39376"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+        "sha256": "ef0385b59532423e807f6550673fe406b6761eae69c9e25a5cc307745c7ca356"
+      }
+    ],
+    "changedMeshes": 5,
+    "sourceInputsSha256": "226de11a9be0db742648e6c930a21b2d1d63a126d0c876ae9da8a31ce9eb32cf",
+    "sourceFileCount": 227,
+    "cookedContentSource": "Saved/ExteriorRockCrawl/Candidate3/Windows",
+    "codeOnlyChanges": [
+      "Source/TerraDrive/TerraRockCrawlValidation.cpp"
+    ]
+  },
+  "recordedNativeChecks": 539,
+  "nativeChecksOnInstalledPackage": 199,
+  "nativeChecksOnPreviousCook": 340,
+  "suites": {
+    "RockCrawl": {
+      "checks": 18,
+      "captures": 5,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 61.5,
+      "package": "Candidate5",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate5/Native/RockCrawl/receipt.json"
+    },
+    "ArtUrus": {
+      "checks": 11,
+      "captures": 10,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 61.73,
+      "package": "Candidate5",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate5/Native/ArtUrus/receipt.json"
+    },
+    "Movement": {
+      "checks": 145,
+      "captures": 19,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 58.21,
+      "package": "Candidate5",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate5/Native/Movement/receipt.json"
+    },
+    "Quarry": {
+      "checks": 25,
+      "captures": 15,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 60.39,
+      "package": "Candidate5",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate5/Native/Quarry/receipt.json"
+    },
+    "Challenges": {
+      "checks": 22,
+      "captures": 7,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 58.44,
+      "package": "Candidate4",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate4/Native/Challenges/receipt.json"
+    },
+    "Art": {
+      "checks": 132,
+      "captures": 120,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 58.75,
+      "package": "Candidate4",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate4/Native/Art/receipt.json"
+    },
+    "Ruts": {
+      "checks": 117,
+      "captures": 16,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 59.96,
+      "package": "Candidate4",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate4/Native/Ruts/receipt.json"
+    },
+    "GraveRecovery": {
+      "checks": 34,
+      "captures": 6,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 63.91,
+      "package": "Candidate4",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate4/Native/GraveRecovery/receipt.json"
+    },
+    "SixWheel": {
+      "checks": 35,
+      "captures": 6,
+      "runtimeErrors": 0,
+      "clock": "paced fixed20Hz functional verification",
+      "peakTemperatureC": 64.34,
+      "package": "Candidate4",
+      "executableSha256": "9044138a0a01782cc921892018a18fcee9f1e65081eca96b2a306a98b4e1f928",
+      "receipt": "Saved/ExteriorRockCrawl/Candidate4/Native/SixWheel/receipt.json"
+    }
+  },
+  "revisedMeshHashes": [
+    {
+      "index": 0,
+      "name": "wrangler_rubicon_body",
+      "sha256": "5113f3bc08a3affe01c63f8f1f4635d4a3a72fb3ce5c6d9f1b2b91fc6e17c6ec"
+    },
+    {
+      "index": 55,
+      "name": "urus_performante_body",
+      "sha256": "63ce121701d0a756336143e0b233e7006a063e0693bda8d0485ba7fff2740ce4"
+    },
+    {
+      "index": 77,
+      "name": "mercedes_g580_ev_body",
+      "sha256": "da7a063afb8175ee463a1aa46953506ecab1296e2c2a4fc54afb47ea83202a1d"
+    },
+    {
+      "index": 88,
+      "name": "mercedes_amg_g63_body",
+      "sha256": "1095982b7fc369cba1ddc3bc81cfcd97a6c67b9ed0930e0f194938b2e990560c"
+    },
+    {
+      "index": 99,
+      "name": "mercedes_amg_g63_6x6_body",
+      "sha256": "7c52189ccadeeb02c89c06a6fe4ac3eb35af912fe460f7631a8713f63cbeaadf"
+    }
+  ],
+  "rockCrawl": {
+    "route": "Granite fault-line crawl",
+    "vehicle": "Stock Jeep Wrangler Rubicon",
+    "crawlThrottleCeiling": 0.28,
+    "trials": [
+      {
+        "mode": "4H open",
+        "gates": 0,
+        "travelFt": 2.86,
+        "uphillPitchDegrees": 8.97,
+        "maximumLaneErrorInches": 4.43,
+        "peakLowSpeedWheelTorqueLbFt": 918.24,
+        "rockContactFrames": 1161,
+        "crossAxleFrames": 0,
+        "coupledWheelSpeedFrames": 0,
+        "movingFrames": 0,
+        "timedTrialSeconds": 58.049,
+        "terrainBodyHits": 0,
+        "objectHits": 0
+      },
+      {
+        "mode": "4L open",
+        "gates": 6,
+        "travelFt": 131.74,
+        "uphillPitchDegrees": 28.53,
+        "maximumLaneErrorInches": 33.67,
+        "peakLowSpeedWheelTorqueLbFt": 4776.97,
+        "rockContactFrames": 801,
+        "crossAxleFrames": 0,
+        "coupledWheelSpeedFrames": 3,
+        "movingFrames": 670,
+        "timedTrialSeconds": 40.05,
+        "terrainBodyHits": 1,
+        "objectHits": 0
+      },
+      {
+        "mode": "4L locked",
+        "gates": 6,
+        "travelFt": 131.63,
+        "uphillPitchDegrees": 33.91,
+        "maximumLaneErrorInches": 48.48,
+        "peakLowSpeedWheelTorqueLbFt": 5845.24,
+        "rockContactFrames": 623,
+        "crossAxleFrames": 9,
+        "coupledWheelSpeedFrames": 568,
+        "movingFrames": 568,
+        "timedTrialSeconds": 31.15,
+        "terrainBodyHits": 1,
+        "objectHits": 0
+      }
+    ],
+    "assertions": [
+      {
+        "case": "new hard rock crawl has a native route",
+        "value": 18.0,
+        "pass": true
+      },
+      {
+        "case": "opens the rock crawl through the pause menu with marked gates",
+        "value": 6.0,
+        "pass": true
+      },
+      {
+        "case": "4H open starts settled in the requested configuration",
+        "value": 1.0,
+        "pass": true
+      },
+      {
+        "case": "4H open encounters real rock under loaded tires",
+        "value": 1161.0,
+        "pass": true
+      },
+      {
+        "case": "4H open stays in the lane and upright",
+        "value": 11.2533,
+        "pass": true
+      },
+      {
+        "case": "4L open starts settled in the requested configuration",
+        "value": 4.0,
+        "pass": true
+      },
+      {
+        "case": "4L open encounters real rock under loaded tires",
+        "value": 801.0,
+        "pass": true
+      },
+      {
+        "case": "4L open stays in the lane and upright",
+        "value": 85.5083,
+        "pass": true
+      },
+      {
+        "case": "4L locked starts settled in the requested configuration",
+        "value": 4.0,
+        "pass": true
+      },
+      {
+        "case": "4L locked encounters real rock under loaded tires",
+        "value": 623.0,
+        "pass": true
+      },
+      {
+        "case": "4L locked stays in the lane and upright",
+        "value": 123.1348,
+        "pass": true
+      },
+      {
+        "case": "low range increases applied wheel torque at crawl speed",
+        "value": 5231.7305,
+        "pass": true
+      },
+      {
+        "case": "low range improves open-axle progress at matched crawl demand",
+        "value": 3928.4321,
+        "pass": true
+      },
+      {
+        "case": "locked trial climbs a steep rock grade",
+        "value": 33.9133,
+        "pass": true
+      },
+      {
+        "case": "staggered shelves unload one wheel on each axle",
+        "value": 9.0,
+        "pass": true
+      },
+      {
+        "case": "both locks couple their wheel speeds while driving",
+        "value": 1.0,
+        "pass": true
+      },
+      {
+        "case": "locking both axles improves the matched low-range climb",
+        "value": 8.8999,
+        "pass": true
+      },
+      {
+        "case": "stock Wrangler in low range with both axle locks completes the crawl",
+        "value": 6.0,
+        "pass": true
+      }
+    ]
+  },
+  "sourceChecks": {
+    "portablePhysics": 726,
+    "tireFit": 327,
+    "unchangedPriorRoutes": 17,
+    "rockCrawlChangedHeightCells": 2129,
+    "paintedRockCells": 1546,
+    "changedWaterCells": 0,
+    "changedFootprintBoundsM": [
+      233,
+      279,
+      -128.5,
+      -115.5
+    ]
+  },
+  "visualReview": {
+    "revisedVehicles": 5,
+    "matchedViewsPerVehicle": 6,
+    "rawCrawlCaptures": 5
+  },
+  "scope": "Offscreen capped functional tests. Earlier receipts use identical gameplay source, with the pre-correction Urus hatch. The final cook was verified with the Urus art, rock crawl, driving, and full quarry tests."
+}

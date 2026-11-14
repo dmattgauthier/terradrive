@@ -28,11 +28,15 @@ public:
   TSharedPtr<SWidget> ControlRow(TerraControls::Action A)const{return Rows.IsValidIndex(int(A))?Rows[int(A)]:nullptr;}
   TSharedPtr<SScrollBox> ControlsScrollBox()const{return ControlsScroll;}
   TSharedPtr<SButton> RecoverButton()const{return RecoverHere;}
+  TSharedPtr<SButton> RestartRouteButton()const{return RestartRoute;}
+  TSharedPtr<SButton> ChallengeButton(int Index)const{return ChallengeButtons.IsValidIndex(Index)?ChallengeButtons[Index]:nullptr;}
 private:
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TSharedPtr<SWidgetSwitcher> Pages;
   TSharedPtr<SScrollBox> ControlsScroll;
   TSharedPtr<SButton> RecoverHere;
+  TSharedPtr<SButton> RestartRoute;
+  TArray<TSharedPtr<SButton>> ChallengeButtons;
   TArray<TSharedPtr<SWidget>> Rows;
   bool WaitingForBinding=false,ExitRequested=false;
   TerraControls::Action BindingAction=TerraControls::Action::Count;
@@ -40,4 +44,5 @@ private:
   FString Status=TEXT("Select a control, then press its new key. Changes save immediately.");
   TSharedRef<SWidget> HomePage();
   TSharedRef<SWidget> ControlsPage();
+  TSharedRef<SWidget> ChallengesPage();
 };

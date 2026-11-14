@@ -5,6 +5,15 @@ struct TerraSurface {
     float2 i=floor(p),f=frac(p);f=f*f*(3-2*f);
     return lerp(lerp(hash(i),hash(i+float2(1,0)),f.x),lerp(hash(i+float2(0,1)),hash(i+1),f.x),f.y);
   }
+  // Value noise and its continuous analytical gradient share four hashes.
+  float grain(float2 p,out float2 gradient) {
+    float2 cell=floor(p),f=frac(p);
+    float2 weight=f*f*(3-2*f);
+    float a=hash(cell),b=hash(cell+float2(1,0));
+    float c=hash(cell+float2(0,1)),d=hash(cell+1);
+    gradient=6*f*(1-f)*float2(lerp(b-a,d-c,weight.y),lerp(c-a,d-b,weight.x));
+    return lerp(lerp(a,b,weight.x),lerp(c,d,weight.x),weight.y);
+  }
   float2 rotate(float2 p,float quarter) {
     if(quarter<.5)return p;if(quarter<1.5)return float2(-p.y,p.x);
     if(quarter<2.5)return -p;return float2(p.y,-p.x);
@@ -68,7 +77,14 @@ if(Biome==4){b*=smoothstep(.25,.88,n.z);c=max(c,(1-n.z)*.65);}
 if(Biome==1){b*=.15;c*=.10;}
 if(Biome==5){b*=.54;c*=.28;}
 if(Biome==6){b=.12+smoothstep(.34,.73,patches)*.62;c=(1-smoothstep(.38,.75,n.z))*.74;}
-if(Biome==0){b*=1-QuarryPath;c=lerp(c,.15,QuarryPath);}
+if(Biome==0){
+  // Traffic wears the centre of the lane; grass and stones meet in a wider
+  // shoulder that breaks up in patches rather than tracing a uniform edge.
+  float shoulder=4*QuarryPath*(1-QuarryPath);
+  float stoneScatter=smoothstep(.40,.68,grit);
+  b*=1-smoothstep(.05,.93,QuarryPath);
+  c=saturate(lerp(c,.07+.36*stoneScatter,QuarryPath)+.28*shoulder*stoneScatter);
+}
 // A continuous low-amplitude domain warp breaks the surviving photograph
 // motifs without new texture reads. Derivatives still follow the warped UVs.
 float3 texP=p;
@@ -77,6 +93,9 @@ texP.xy+=warp*.48;
 // Evaluate gradients before zero-contribution branches. SampleGrad then
 // remains defined at quad boundaries where only some pixels need a layer.
 float3 tx=ddx(texP),ty=ddy(texP);
+float3 worldDx=ddx(p),worldDy=ddy(p);
+float pixelFootprint=max(length(worldDx.xy),length(worldDy.xy));
+float nearDetail=1-smoothstep(.018,.085,pixelFootprint);
 float3 ac,bc,cc,an,bn,cn;float ar,br,cr;
 f.layer(Primary,PrimarySampler,NormalMap,NormalMapSampler,RoughMap,RoughMapSampler,texP/Scales.x,tx/Scales.x,ty/Scales.x,n,0,NormalSigns.x,RoughChannels.x,ac,an,ar);
 // Smoothstep has genuinely zero coverage across whole patches, especially
@@ -90,8 +109,6 @@ if(Biome==5)cc*=float3(.62,.57,.47);
 float3 color=lerp(lerp(ac,bc,b),cc,c);
 float3 relief=lerp(lerp(an,bn,b),cn,c);
 float rough=lerp(lerp(ar,br,b),cr,c);
-float pixelFootprint=max(length(ddx(p.xy)),length(ddy(p.xy)));
-float nearDetail=1-smoothstep(.018,.085,pixelFootprint);
 float grassCover=(Biome==0||Biome==3)?b*(1-c):0;
 if(grassCover>.01){
   // Meadow reads as groups of living blades, dry growth and exposed root
@@ -101,8 +118,18 @@ if(grassCover>.01){
   float3 growth=lerp(float3(.69,.83,.60),float3(1.05,.92,.63),dry);
   color=lerp(color,color*growth,grassCover*.36);
   color=lerp(color,ac*float3(.83,.75,.61),roots*grassCover*.22);
-  float soilGrain=f.noise(p.xy*19+warp*4);
-  color*=1+(soilGrain-.5)*grassCover*nearDetail*.17;
+  // Expose dry stems and root grit at ground level. Share the same noise
+  // for colour and relief so that stems do not look painted onto the soil.
+  if(nearDetail>0){
+    float2 across=float2(.94,.342),along=float2(-.342,.94);
+    float2 q=float2(dot(p.xy,across)*24,dot(p.xy,along)*9)+warp*3;
+    float2 grainSlope;
+    float groundGrain=f.grain(q,grainSlope);
+    float visible=grassCover*nearDetail*smoothstep(.65,1,Wear);
+    color*=1+(groundGrain-.5)*visible*.24;
+    relief+=float3((across*grainSlope.x+along*grainSlope.y*.375)*visible*.17,0);
+  }
+  rough+=lerp(-.045,.07,dry)*grassCover;
   relief+=bn*grassCover*.30;
 }
 float broad=lerp(.78,1.13,smoothstep(.16,.84,macro));
@@ -166,22 +193,25 @@ if(Biome==5){
   color*=1+sin(windPhase)*nearDetail*(1-packed)*.025;
 }
 if(Biome==4){
-  // The garden's physical half-metre mesh carries the silhouette. The same
-  // acquired scan layers now read at stone scale; low-contrast mineral
-  // streaks and sheltered lichen break up broad faces without collision
-  // displacement, additional texture fetches or a repeated crack decal.
-  float veinWarp=f.noise(p.xy*.31+17);
-  float mineralBand=f.noise(float2(p.z*.83+veinWarp*.65,p.x*.12+p.y*.17));
+  // Inclined bedding reads across laterally adjacent rock faces. Give its
+  // narrow mineral streaks a matching roughness and a shallow normal, with
+  // the procedural detail filtered by the projected world-space footprint.
+  float3 seamAxis=float3(.14,-.22,.966);
+  float seamHeight=dot(p,seamAxis);
+  float seamFootprint=max(abs(dot(worldDx,seamAxis)),abs(dot(worldDy,seamAxis)));
+  float veinWarp=f.noise(p.xy*.31+17)-.5;
+  float2 seamSlope;
+  float mineralBand=f.grain(float2(seamHeight*1.65+veinWarp*.58,p.x*.09+p.y*.14),seamSlope);
+  float seam=smoothstep(.48,.77,mineralBand);
+  float exposedFace=1-smoothstep(.45,.88,n.z);
+  float bedding=exposedFace*(1-smoothstep(.055,.28,seamFootprint));
   float lichen=smoothstep(.57,.78,f.noise(p.xy*.67+p.z*.15))*smoothstep(.42,.88,n.z);
-  color*=lerp(float3(.87,.88,.90),float3(1.08,1.06,1.02),mineralBand);
+  float3 mineralTint=lerp(float3(.75,.80,.86),float3(1.17,1.10,.99),seam);
+  color*=lerp(1,mineralTint,lerp(.19,.74,bedding));
   color=lerp(color,color*float3(.82,.92,.72),lichen*.24);
-  Roughness=clamp(Roughness+lichen*.055,.62,.99);
-  SurfaceNormal=normalize(n+relief*.78);
-}
-if(grassCover>.01){
-  float2 q=p.xy*17+warp*3;
-  float2 aggregate=float2(f.noise(q+float2(.12,0))-f.noise(q-float2(.12,0)),f.noise(q+float2(0,.12))-f.noise(q-float2(0,.12)));
-  SurfaceNormal=normalize(SurfaceNormal+float3(aggregate*.26*grassCover*nearDetail*(1-floorWear),0));
+  Roughness=clamp(Roughness+lichen*.055+(seam-.5)*bedding*.16,.62,.99);
+  float3 seamTangent=seamAxis-n*dot(seamAxis,n);
+  SurfaceNormal=normalize(n+relief*.78+seamTangent*seamSlope.x*bedding*.26);
 }
 if(Biome==6){
   // The Winter Scene's clean snow and crushed snow-road scans remain visible

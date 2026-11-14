@@ -1,5 +1,6 @@
 // Authored cabin surfaces using the original Performante brochure interior.
 import {T,mesh,box,surface,mappedPolygon,curve,lerp,station} from './body-surface.mjs';
+import {instrumentDisplay} from './cabin-controls.mjs';
 export function urusCabin(g,m,carbon,{sidePoint,belt}){
  const stitch=new T.MeshStandardMaterial({color:'#b7a334',roughness:.86}),metal=new T.MeshStandardMaterial({color:'#687176',metalness:.8,roughness:.3});
  const screen=new T.MeshStandardMaterial({color:'#101e27',roughness:.23,emissive:'#163544',emissiveIntensity:.10});
@@ -23,11 +24,11 @@ export function urusCabin(g,m,carbon,{sidePoint,belt}){
  }
  box(g,m.interior,[.40,1.065,.41],[.43,.15,.26],.035);
  const cluster=box(g,screen,[.40,1.045,.264],[.35,.105,.012],.013);cluster.rotation.x=-.18;
- for(const x of [.49,.31]){const dial=mesh(g,new T.TorusGeometry(.037,.002,6,40),metal,[x,1.048,.252]);dial.rotation.x=.10;}
+ instrumentDisplay(g,m.satinMetal,[.40,1.044,.255],[.35,.105],'sport',-.18);
  // The two stacked center screens incline toward the driver.
- for(const [y,z,w,h]of [[.965,.242,.30,.128],[.808,.135,.285,.126]]){
+ for(const [y,z,w,h,layout]of [[.965,.242,.30,.128,'navigation'],[.808,.135,.285,.126,'status']]){
   const display=box(g,screen,[0,y,z],[w,h,.014],.012);display.rotation.x=-.29;
-  for(let k=0;k<4;k++)box(g,metal,[-w*.35+k*w*.23,y-.04,z-.012],[.027,.003,.002],.001);
+  instrumentDisplay(g,m.satinMetal,[0,y-.003,z-.010],[w,h],layout,-.29);
  }
  const console=box(g,carbon,[0,.726,-.11],[.30,.18,.75],.024);console.rotation.x=-.07;
  const cover=box(g,m.redPaint||m.interior,[0,.820,.04],[.045,.018,.048],.005);cover.rotation.x=-.30;

@@ -1,6 +1,7 @@
 // Original contemporary Grave Digger interpretation from Monster Jam photographs.
 // Official class dimensions and tires anchor scale; chassis/body stations are estimates.
 import {T,mesh,box,surface,mappedPolygon,line,curve,lerp,station,roundedContour,panelReturn,newReferenceView,finishMaterial,rod,cylinder,ring,label,pane,rimBarrel,refineReferenceWheel} from './reference-vehicle-kit.mjs';
+import {instrumentDial} from './cabin-controls.mjs';
 export const GRAVE_DIGGER_SPEC={id:'grave-digger',name:'Grave Digger',brand:'Monster Jam',year:2024,trim:'Supercharged methanol V8 / tube chassis / 66-inch tires',bodyStyle:'monster',monsterTruck:1,droopTravel:.42,wheelInertia:48,color:'#111518',powertrain:'combustion',fuelCapacityGallons:30,bodyWidthM:2.0,powerHP:1500,torqueNm:2000,torqueLbFt:2000/1.3558179483,mass:12000*.45359237,curbMass:12000*.45359237,length:17*.3048,width:12.5*.3048,height:10.5*.3048,wheelbase:3.50,track:2.72,trackFront:2.72,trackRear:2.72,frontWeightFraction:.5,cgHeight:1.45,clearance:.65,tireSize:'66X43R25',tireRadius:66*.0254/2,tireWidth:43*.0254,rearTireWidth:43*.0254,tireType:'mud-terrain',rimDiameterInches:25,stockPSI:23,stockPSIFront:23,stockPSIRear:23,transmissionType:'automatic',transmissionName:'Two-speed racing automatic',gears:[1.8,1],reverseRatio:1.8,finalDrive:12,lowRatio:1,defaultMode:'4H',driveModes:['4H'],frontTorqueFraction:.5,dragCoefficient:.70,topSpeedMPH:75,features:{frontLocker:true,rearLocker:true,swayDisconnect:false,tractionControl:false,abs:false,hillDescent:false},engine:{idleRPM:1200,redlineRPM:8500,peakTorqueRPM:5000,peakPowerRPM:7500,curve:[[1200,550],[2500,1250],[4000,1800],[5000,2000],[6500,1820],[7500,1424.2],[8500,1050]],curveStatus:'Simulator curve through representative 1500 hp class output, not a measured Grave Digger dyno'},suspension:{travel:.762,droopTravel:.42,restLength:.94,springRate:105000,damping:12000,antiRoll:14000,frontType:'four-link solid axle with nitrogen shocks',rearType:'four-link solid axle with nitrogen shocks',parameterStatus:'Official class 30-inch travel; estimated spring/damper calibration'},notes:['Reference reconstruction of the modern black/green 1951 Chevy-panel-wagon-inspired body with exposed green tube cage, rear engine and red headlights.','Official class approximate envelope, 12000-pound mass, 1500 hp, 66x43-inch tires and 30-inch travel. Exact chassis number, wheelbase, track, CG, torque, fuel capacity and gearing are estimates.','Stock 66-inch monster tires are retained; the passenger/off-road 50-inch conversion limit does not shrink this truck. Independent rear-steer control is simplified to speed-sensitive coordinated rear steering.'],sources:['https://www.monsterjam.com/en-us/truck/grave-digger/','https://www.monsterjam.com/en-gb/monster-jam-101/']};
 const tailZ=-2.24;
 const roofFront=.16;
@@ -727,11 +728,16 @@ function addCab(g,m) {
   box(g,m.upholstery,[0,2.383,-.107],[.337,.451,.076],.048);
   for(const side of [-1,1]) {
     box(g,m.interior,[side*.232,2.433,-.132],[.101,.472,.157],.041);
-    rod(g,m.upholstery,[side*.120,2.656,-.100],[side*.147,2.167,.112],.022,8);
+    const strap=box(g,m.dark,[side*.133,2.417,.005],[.047,.527,.008],.003);
+    strap.rotation.x=-.408;strap.rotation.z=side*.055;
+    const slider=box(g,m.satinMetal,[side*.136,2.367,.027],[.053,.034,.011],.004);
+    slider.rotation.copy(strap.rotation);
   }
   box(g,m.black,[0,2.730,-.206],[.329,.205,.146],.052);
   box(g,m.satinMetal,[0,2.426,.514],[.471,.119,.125],.026);
-  for(const x of [-.136,-.054,.051,.137])cylinder(g,m.black,[x,2.441,.449],.029,.016,'z',26);
+  for(const [x,angle] of [[-.136,-1.58],[-.054,-.96],[.051,-.23],[.137,.24]]){
+    instrumentDial(g,{face:m.black,bezel:m.satinMetal,marks:m.headliner,center:[x,2.441,.447],radius:.027,angle});
+  }
   ring(g,m.black,[0,2.466,.365],.183,.016,'z').rotation.x=-.24;
   rod(g,m.satinMetal,[0,2.325,.618],[0,2.463,.372],.032,12);
   cylinder(g,m.dark,[0,2.467,.365],.061,.030,'z',24);

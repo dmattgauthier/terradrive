@@ -13,18 +13,30 @@
   "bonnetGridProbes": 90,
   "bonnetTriangles": 32000,
   "bonnetVertexNormals": 16281,
-  "bonnetMinFaceNormalY": 0.7301392439903893,
-  "bonnetMinVertexNormalY": 0.7500830888748169,
+  "bonnetMinFaceNormalY": 0.8972863495043552,
+  "bonnetMinVertexNormalY": 0.9052474498748779,
   "paintedIntrusions": 0,
   "opticalDepthM": [
-    0.005396529626395363,
-    0.005386300480522355
+    0.0053997969248866795,
+    0.005389501201360503
   ],
   "exhaustDepthM": [
-    0.061120499280207685,
-    0.06128831176054117,
-    0.06127078809977249,
-    0.061275069288381
+    0.06113245725728289,
+    0.06128734002459746,
+    0.06142580487063354,
+    0.06127446571738604
   ],
+  "radiatorOpenCells": 108,
+  "openRadiatorProbes": 178,
+  "solidRadiatorProbes": 38,
+  "shoulderReliefM": [
+    0.0530026051662309,
+    0.0530026051662309
+  ],
+  "hatchReflection": {
+    "sampledTriangles": 3984,
+    "maxNormalErrorDeg": 1.5204570152187475,
+    "maxChordErrorM": 0.001088271865116841
+  },
   "pass": true
 }

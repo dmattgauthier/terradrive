@@ -1,6 +1,8 @@
 // Original variant coachwork. Factory photographs/dimensions are references,
 // never redistributed meshes. Y up, +Z nose, metres above tyre contact plane.
-import {T,box,mesh,surface,mappedPolygon,line,lerp,smooth} from './body-surface.mjs';
+import {T,box,mesh,surface,mappedPolygon,line,lerp,smooth,station} from './body-surface.mjs';
+import {cellularGrille,panelJoint} from './coachwork-craft.mjs';
+import {gClassSteering,instrumentDial,instrumentDisplay} from './cabin-controls.mjs';
 import {gClassView,gClassRim} from './mercedes-gclass.mjs';
 import {geometryText,refineFactoryWheel} from './vehicle-fidelity.mjs';
 import {SIX_PICKUP,sixOpeningY,buildSixPickup,buildSixRoof} from './g63-six-pickup.mjs';
@@ -57,25 +59,110 @@ function clipCabAtZ(body,cut,select=()=>true,keepField=null){
   o.geometry=geo;g.dispose();if(!P.length)o.visible=false;
  });
 }
-function wideArch(g,m,side,axle,centreY,radius,outer,name){
- // Broad flattened arch cap, outward face, folded inside edge, and a dark
- // return into the wheel cavity. End walls prevent angle-dependent holes.
- const curve=(u,v)=>{const a=lerp(-.10,Math.PI+.10,u),r=radius+.075*v,s=Math.sin(a);return[axle+Math.cos(a)*r,centreY+Math.sign(s)*Math.abs(s)**.58*r];};
- named(surface(g,m,40,3,(u,v)=>{const[z,y]=curve(u,v);return[side*(outer-.010*Math.sin(v*Math.PI)),y,z];},side<0),name+'-outer-'+side+'-'+axle);
- named(surface(g,m,40,2,(u,v)=>{const[z,y]=curve(u,1);return[side*lerp(.88,outer,v),y+.008*Math.sin(v*Math.PI),z];},side>0),name+'-crown-'+side+'-'+axle);
- named(surface(g,m,40,2,(u,v)=>{const[z,y]=curve(u,0);return[side*lerp(outer,.87,v),y-.014*v,z];},side>0),name+'-inner-return-'+side+'-'+axle);
- for(const u of [0,1])named(surface(g,m,2,2,(v,w)=>{const[z,y]=curve(u,v);return[side*lerp(.88,outer,w),y,z];},side*(u?1:-1)>0),name+'-closed-end-'+side+'-'+axle+'-'+u);
+function wideArch(g,m,liner,side,axle,outer,name){
+ // A high, almost level crown and angled legs follow the carbon moulding.
+ // The fender extends into the surrounding body behind the visible edge.
+ const profile=[[-.578,.607],[-.492,.902],[-.403,1.064],[-.332,1.145],[-.234,1.174],
+   [.229,1.174],[.330,1.150],[.420,1.070],[.503,.925],[.569,.602]];
+ const arch=(u,v)=>{
+   const z=lerp(profile[0][0],profile.at(-1)[0],u);
+   const end=1-smooth(Math.abs(z),.31,.55);
+   return[axle+z,station(profile,z,1)+v*(.056+.023*end),end];
+ };
+ named(surface(g,m,56,4,(u,v)=>{
+   const [z,y,end]=arch(u,v);
+   return[side*(outer-.019*(1-end)-.007*(1-Math.sin(v*Math.PI))),y,z];
+ },side>0),name+'-outer-'+side+'-'+axle);
+ for(const [v,material,key] of [[1,m,'crown'],[0,liner,'inner-return']]){
+   named(surface(g,material,56,3,(u,w)=>{
+     const [z,y,end]=arch(u,v),lip=outer-.019*(1-end)-.007;
+     return[side*lerp(.884,lip,w),y+(v?.009:-.012)*Math.sin(w*Math.PI),z];
+   },side*(v?1:-1)<0),name+'-'+key+'-'+side+'-'+axle);
+ }
+ for(const u of [0,1])named(surface(g,m,2,2,(v,w)=>{
+   const [z,y,end]=arch(u,v);
+   return[side*lerp(.884,outer-.019*(1-end)-.007*(1-Math.sin(v*Math.PI)),w),y,z];
+ },side*(u?1:-1)>0),name+'-closed-end-'+side+'-'+axle+'-'+u);
+}
+
+function squaredSpare(g,m,carbon){
+ const holder=named(new T.Group(),'g63-squared-rear-wheel-carrier');
+ holder.position.set(0,1.489,-2.447);
+ g.add(holder);
+ box(holder,m.gTrim,[0,0,.053],[.565,.515,.110],.031);
+ const spare=named(new T.Group(),'g63-squared-exposed-spare');
+ holder.add(spare);
+ const r=G_VARIANTS.squared.tireRadius;
+ // The outer tread runs from low to high along the lathe axis for outward winding.
+ const sidewall=[[.285,.097],[.285,-.092],[.311,-.115],[r*.86,-.119],[r*.95,-.098],
+   [r,-.066],[r,.072],[r*.95,.105],[r*.86,.121],[.311,.117],[.285,.097]];
+ const profile=sidewall.map(p=>new T.Vector2(...p));
+ const segments=72,geometry=new T.LatheGeometry(profile,segments);
+ const normals=geometry.getAttribute('normal');
+ // Both UV seam vertices at the bead need the same unit normal. Use the
+ // adjacent profile edges just as LatheGeometry does for the interior rings.
+ const before=profile.at(-1).clone().sub(profile.at(-2));
+ const after=profile[1].clone().sub(profile[0]);
+ const tangent=before.add(after).normalize();
+ for(let i=0;i<=segments;i++){
+   const phi=i/segments*2*Math.PI,first=i*profile.length;
+   const x=tangent.y*Math.sin(phi),y=-tangent.x,z=tangent.y*Math.cos(phi);
+   normals.setXYZ(first,x,y,z);
+   normals.setXYZ(first+profile.length-1,x,y,z);
+ }
+ const carcass=named(mesh(spare,geometry,m.rubber),'g63-squared-spare-carcass');
+ carcass.rotation.x=Math.PI/2;
+ for(let i=0;i<32;i++){
+   const a=i*2*Math.PI/32;
+   const shoulder=box(spare,m.tread,[Math.cos(a)*(r-.016),Math.sin(a)*(r-.016),-.042],
+     [.023,.051,.073]);
+   shoulder.rotation.z=a;
+ }
+ const wheel=mesh(spare,new T.CylinderGeometry(.285,.285,.083,52),m.gTrim,[0,0,-.050]);
+ wheel.rotation.x=Math.PI/2;
+ mesh(spare,new T.TorusGeometry(.270,.008,7,52),m.gSatin,[0,0,-.095]);
+ for(let i=0;i<10;i++){
+   const a=i*Math.PI/5;
+   const spoke=box(spare,m.gSatin,[Math.cos(a)*.148,Math.sin(a)*.148,-.092],[.215,.016,.017]);
+   spoke.rotation.z=a;
+ }
+ // The carbon carrier cuts across the lower wheel face on the production SUV.
+ const cover=[[-.429,-.204],[-.378,-.345],[-.286,-.417],[.286,-.417],[.378,-.345],[.429,-.204],
+   [.301,-.156],[-.301,-.156]];
+ const carrierMap=(x,y)=>[x,y,-.121-.016*(1-(x/.429)**2)];
+ named(mappedPolygon(holder,carbon,cover,carrierMap,[],true,4),'g63-squared-lower-carbon-spare-cover');
+ const joint=panelJoint(cover.map(p=>carrierMap(...p)),.018,true);
+ const edge=mesh(holder,new T.TubeGeometry(joint,48,.006,5,false),carbon);
+ edge.name='g63-squared-turned-spare-cover-edge';
+ const label=geometryText(holder,'4X4',.208,.075,m.gSatin);
+ label.name='g63-squared-visible-variant-badge';
+ label.position.set(-.016,-.284,-.141);
+ label.rotation.y=Math.PI;
+ const exponent=geometryText(holder,'2',.041,.036,m.gSatin);
+ exponent.name='g63-squared-raised-exponent';
+ exponent.position.set(-.141,-.246,-.141);
+ exponent.rotation.y=Math.PI;
 }
 
 export function gClassSquaredView(spec){
  const view=gClassView({...spec,gClassVariant:'standard',tireRadius:.3974,height:1.979}),g=view.body,m=view.materials;
  view.spec=spec;
  const cab=moveChildren(g,[0,G_VARIANTS.squared.bodyRise,0]);cab.name='g63-squared-raised-production-coachwork';
- const oldFlares=[];cab.traverse(o=>{if(/gclass-(box-shouldered-fender|fender-upper-return|folded-arch-edge|closed-inner-wheelwell)/.test(o.name))oldFlares.push(o);});for(const o of oldFlares)o.removeFromParent();
- const spare=cab.getObjectByName('g63-covered-factory-spare');if(spare)spare.scale.set(.45815/.397,.45815/.397,1);
+ const donorParts=[];
+ cab.traverse(o=>{
+   if(o.userData.gClassRunningBoard||
+     /gclass-(box-shouldered-fender|fender-upper-return|folded-arch-edge|closed-inner-wheelwell|fender-tip-cap|backlight-roof-lip)|g63-covered-factory-spare/.test(o.name)){
+     donorParts.push(o);
+   }
+ });
+ for(const o of donorParts)o.removeFromParent();
  const c=carbon(),black=m.gTrim,metal=m.gSatin;
+ squaredSpare(g,m,c);
+ named(box(g,c,[0,2.209,-2.233],[1.748,.065,.194],.027),'g63-squared-rear-carbon-roof-spoiler');
+ named(box(g,black,[0,.591,-2.191],[1.626,.123,.137],.026),'g63-squared-rear-underride-guard');
  for(const s of [-1,1]){
-  for(const axle of [-1.445,1.445])wideArch(g,c,s,axle,.3974+.271,.455,1.050,'g63-squared-carbon-extension');
+  for(const axle of [-1.445,1.445])wideArch(g,c,black,s,axle,1.050,'g63-squared-carbon-extension');
+  named(box(g,c,[s*.924,1.269,-.697],[.018,.011,.828],.003),'g63-squared-carbon-door-strip-'+s);
   // Width/height come from the actual variant rather than globally scaling
   // the cabin, glass or doors. Rock rails sit beneath the raised body.
   named(box(g,metal,[s*.985,.655,-.08],[.21,.036,2.04],.012),'g63-squared-wide-stainless-step-'+s);
@@ -87,16 +174,15 @@ export function gClassSquaredView(spec){
   box(g,black,[s*.61,2.244,.474],[.356,.024,.009],.006);
   for(let i=0;i<8;i++)box(g,m.drl,[s*.61+(i-3.5)*.040,2.244,.480],[.031,.012,.004]);
  }
- const label=geometryText(g,'4X4/2',.240,.027,metal);label.name='g63-squared-visible-variant-badge';label.position.set(-.721,1.550,-2.405);label.rotation.y=Math.PI;
- view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,bodySurfaceRevision:24,factoryPortalVariant:true,raisedBodyM:.271,wideCarbonArches:true,roofLEDModules:2};
- view.root.userData.visualModel={...view.root.userData.visualModel,version:24,modelYear:2022,variant:'G63 4x4 squared',dimensions:G_VARIANTS.squared,selectedEquipment:'Factory portal stance, 325/55R22 off-road tires, wider carbon arch extensions and recessed roof LEDs'};
- view.root.userData.bodyRefinement={version:24,variant:'g63squared',factoryPortalBodyRiseM:.271,closedArchReturns:true};
+ view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,bodySurfaceRevision:31,factoryPortalVariant:true,raisedBodyM:.271,wideCarbonArches:true,roofLEDModules:2,coveredFactorySpare:false,exposedFactorySpare:true};
+ view.root.userData.visualModel={...view.root.userData.visualModel,version:31,modelYear:2022,variant:'G63 4x4 squared',dimensions:G_VARIANTS.squared,selectedEquipment:'Factory portal stance, 325/55R22 off-road tires, boxed carbon fenders and lower carbon spare-wheel carrier'};
+ view.root.userData.bodyRefinement={version:31,variant:'g63squared',factoryPortalBodyRiseM:.271,closedArchReturns:true};
  return view;
 }
 
 export function gClassSixView(spec){
  const donor={...spec,bodyStyle:'g63',gClassVariant:'standard',height:1.979,wheelbase:2.89,frontWeightFraction:.5,tireRadius:.3974,cgHeight:spec.cgHeight};
- const view=gClassView(donor),g=view.body,m=view.materials;view.spec=spec;
+ const view=gClassView(donor,{classicCabin:true}),g=view.body,m=view.materials;view.spec=spec;
  const headlamps=[];g.traverse(o=>{if(o.name==='gclass-round-multibeam-headlight')headlamps.push(o);});
  for(const lamp of headlamps){
   lamp.clear();lamp.name='g63-six-classic-projector-headlamp';lamp.scale.setScalar(.230/.302);
@@ -111,7 +197,7 @@ export function gClassSixView(spec){
  // holes and cabin. The rear SUV closure/spare are removed, not buried.
  const drop=[];g.traverse(o=>{
   if(o.userData.gClassRunningBoard){drop.push(o);return;}
-  if(/gclass-(box-shouldered-fender|fender-upper-return|folded-arch-edge|closed-inner-wheelwell)|g63-panamericana-grille-bar|gclass-rear-roof-header/.test(o.name)||['gclass-rounded-roof-crown','gclass-rigid-star-badge','gclass-modern-widescreen-frame'].includes(o.name)){drop.push(o);return;}
+  if(/gclass-(box-shouldered-fender|fender-upper-return|folded-arch-edge|closed-inner-wheelwell|fender-tip-cap|front-protection-trim|front-plate-plinth|front-plate-lettering)|g63-panamericana-grille-bar|gclass-rear-roof-header/.test(o.name)||['gclass-rounded-roof-crown','gclass-rigid-star-badge','gclass-modern-widescreen-frame'].includes(o.name)){drop.push(o);return;}
   if(!o.isMesh)return;
   o.geometry.computeBoundingBox();const b=o.geometry.boundingBox,roofInsert=!o.name&&b.min.y>1.93&&b.min.z>-.65&&b.max.z<.35;
   if(roofInsert||o.material===m.screen)drop.push(o);
@@ -143,15 +229,14 @@ export function gClassSixView(spec){
  // The 2014 truck predates the full-width digital dashboard. Its two
  // circular analogue instruments and separate central tablet remain visibly
  // distinct through the actual cab glazing.
- named(box(g,trim,[-.435,1.435,1.100],[.475,.224,.092],.035),'g63-six-analogue-instrument-binnacle');
- for(const x of [-.550,-.335]){
-  const dial=mesh(g,new T.CircleGeometry(.079,48),m.gBlackPanel,[x,1.439,1.047]);dial.rotation.y=Math.PI;
-  const rim=mesh(g,new T.TorusGeometry(.081,.0035,8,48),metal,[x,1.439,1.043]);
-  for(let i=0;i<12;i++){const a=i*Math.PI*2/12;rod(g,metal,[x+Math.cos(a)*.068,1.439+Math.sin(a)*.068,1.041],[x+Math.cos(a)*.075,1.439+Math.sin(a)*.075,1.041],.0012,6);}
-  rod(g,red,[x,1.439,1.038],[x-.035,1.477,1.038],.0025,6);
+ named(box(g,trim,[.402,1.435,1.100],[.443,.212,.092],.035),'g63-six-analogue-instrument-binnacle');
+ for(const [x,angle] of [[.306,-.87],[.499,-1.47]]){
+  instrumentDial(g,{face:m.gBlackPanel,bezel:metal,marks:m.headliner,needle:metal,center:[x,1.439,1.048],radius:.073,angle});
  }
- named(box(g,trim,[.12,1.545,1.080],[.315,.180,.038],.014),'g63-six-separate-command-tablet');
- const screen=box(g,m.screen,[.12,1.545,1.057],[.286,.148,.004]);
+ named(box(g,trim,[-.045,1.545,1.080],[.315,.180,.038],.014),'g63-six-separate-command-tablet');
+ box(g,m.screen,[-.045,1.545,1.057],[.286,.148,.004]);
+ instrumentDisplay(g,metal,[-.045,1.545,1.053],[.286,.148],'navigation');
+ gClassSteering(g,m,[.400,1.335,.869],[.400,1.326,1.091],true);
  const wall=.895;
  // The pickup cab has a real rear wall and independent rear glazing.
  const window=[[-.665,1.544],[.665,1.544],[.665,2.090],[-.665,2.090]];
@@ -162,18 +247,51 @@ export function gClassSixView(spec){
  // narrow rounded header flange instead of leaving an open SUV cross section.
  box(g,paint,[0,2.235,-wall+.016],[1.73,.046,.060],.016);
  buildSixPickup(g,m);
- // Correct-era AMG twin-blade grille, replacing modern vertical bars.
- box(g,trim,[0,1.190,2.890],[.876,.285,.022],.025);
- for(const y of [1.150,1.241])named(box(g,metal,[0,y,2.907],[.846,.025,.025],.006),'g63-six-twin-blade-grille');
- const star=new T.Group();star.name='g63-six-classic-star-badge';star.position.set(0,1.195,2.925);g.add(star);
- const ring=mesh(star,new T.TorusGeometry(.112,.006,8,64),metal);
- for(let i=0;i<3;i++){const a=Math.PI/2+i*2*Math.PI/3;rod(star,metal,[0,0,.002],[Math.cos(a)*.108,Math.sin(a)*.108,.002],.010);}
+ // Open mesh and paired bright blades on the classic W463 fascia.
+ const grille=[[-.425,1.075],[.425,1.075],[.425,1.296],[-.425,1.296]];
+ box(g,trim,[0,1.185,2.856],[.875,.254,.035],.020);
+ for(const [y,w] of [[1.058,.859],[1.309,.865]])box(g,metal,[0,y,2.875],[w,.018,.018]);
+ for(const side of [-1,1]){
+   box(g,metal,[side*.429,1.183,2.878],[.015,.247,.019]);
+   const bezel=box(g,trim,[side*.632,1.073,2.877],[.239,.045,.030],.006);
+   bezel.name='g63-six-separate-lower-drl-housing';
+   for(let i=0;i<6;i++)box(g,m.drl,[side*.632+(i-2.5)*.032,1.073,2.895],[.017,.010,.006]);
+ }
+ cellularGrille(g,m.gGrille,grille,(x,y)=>[x,y,2.884],{
+   pitch:.047,web:.0023,depth:.007,name:'g63-six-open-upper-grille'});
+ for(const y of [1.146,1.216])named(box(g,metal,[0,y,2.907],[.844,.013,.022]),'g63-six-twin-blade-grille');
+ const star=named(new T.Group(),'g63-six-classic-star-badge');
+ star.position.set(0,1.184,2.929);
+ g.add(star);
+ mesh(star,new T.TorusGeometry(.108,.006,8,48),metal);
+ for(let i=0;i<3;i++){
+   const a=Math.PI/2+i*2*Math.PI/3;
+   rod(star,metal,[0,0,.003],[Math.cos(a)*.104,Math.sin(a)*.104,.003],.008);
+ }
+ // The front shield wraps below the bumper and has actual slots, visible
+ // from the low front quarter. Leave the wheel throats and portal stance open.
+ const skidSource=[[-.642,.639],[.642,.639],[.601,.545],[-.601,.545]];
+ const vents=Array.from({length:10},(_,i)=>{
+   const x=(i-4.5)*.116,y=.594;
+   return Array.from({length:12},(_,j)=>{
+     const a=2*Math.PI*j/12;
+     return[x+.041*Math.cos(a),y+.020*Math.sin(a)];
+   });
+ });
+ const skidMap=(x,y)=>[x,y,2.867-.077*(.639-y)/.094-.029*(x/.642)**2];
+ named(mappedPolygon(g,metal,skidSource,skidMap,vents,false,3),'g63-six-vented-front-skid-plate');
+ for(const vent of vents)named(mappedPolygon(g,trim,vent,(x,y)=>{
+   const p=skidMap(x,y);p[2]-=.024;return p;
+ },[],false,1),'g63-six-skid-vent-recess');
+ named(box(g,trim,[0,.944,2.970],[.397,.085,.025],.008),'g63-six-factory-plate-plinth');
+ const plate=geometryText(g,'6X6',.171,.040,metal);
+ plate.position.set(0,.944,2.986);
  for(const x of [-.595,.595])box(g,trim,[x,.665,-.15],[.10,.13,5.30],.010);
  for(const z of [1.60,.62,-.55,-1.55,-2.55])box(g,trim,[0,.645,z],[1.29,.080,.095],.009);
  while(view.wheels.length<6){const w=view._wheel();view.scene.add(w.root);view.wheels.push(w);}
- view.root.userData.nativeConstruction={version:4,bodySurfaceRevision:25,originalGeometry:true,importedManufacturerCAD:false,doubleCabPickup:true,closedCargoBed:true,threeAxleBody:true,frontAxleZ:2.10,middleAxleZ:-1.02,rearAxleZ:-2.12,openGlazing:true,formedBonnet:true,closedArchReturns:true,joinedTandemFenders:true,fullHeightHoop:true};
- view.root.userData.visualModel={type:'Original reference reconstruction; not OEM CAD',version:25,modelYear:2014,variant:'G63 AMG 6x6',dimensions:G_VARIANTS.six,selectedEquipment:'37in tires / 18in beadlock wheels, classic twin-blade grille, bamboo-lined open bed, joined tandem fenders and full-height stainless roll bar'};
- view.root.userData.bodyRefinement={version:25,variant:'g63six',wheelCount:6,closedDoubleCab:true,closedCargoBed:true,continuousDoorJoints:true};
+ view.root.userData.nativeConstruction={version:4,bodySurfaceRevision:31,originalGeometry:true,importedManufacturerCAD:false,doubleCabPickup:true,closedCargoBed:true,threeAxleBody:true,frontAxleZ:2.10,middleAxleZ:-1.02,rearAxleZ:-2.12,openGlazing:true,formedBonnet:true,closedArchReturns:true,joinedTandemFenders:true,fullHeightHoop:true};
+ view.root.userData.visualModel={type:'Original reference reconstruction; not OEM CAD',version:31,modelYear:2014,variant:'G63 AMG 6x6',dimensions:G_VARIANTS.six,selectedEquipment:'37in tires / 18in beadlock wheels, classic twin-blade grille, bamboo-lined open bed, joined tandem fenders and full-height stainless roll bar'};
+ view.root.userData.bodyRefinement={version:31,variant:'g63six',wheelCount:6,closedDoubleCab:true,closedCargoBed:true,continuousDoorJoints:true};
  return view;
 }
 

@@ -73,7 +73,13 @@ export function inspectExpeditionVehicle(view,spec,parts){
     check('native capability metadata distinguishes virtual and mechanical differentials',ev?spec.electricMotors===4:spec.features.frontLocker&&spec.features.rearLocker&&Math.abs(spec.lowRatio-2.93)<1e-6,{electricMotors:spec.electricMotors??0,lowRatio:spec.lowRatio});
     let spokes=0;parts.rim.traverse(o=>{if(o.name==='gclass-'+(ev?'ten':'ten-twin')+'-spoke')spokes++;});
     check('selected factory rim has open original spokes on both faces',spokes===(ev?20:40),{spokeBranches:spokes,selectedRimInches:spec.rimDiameterInches});
-    if(ev){const panel=solid(view,[.360,.910,3],[0,0,-1]);check('electric grille uses the distinct recessed closed black panel',panel.material===view.materials.gBlackPanel&&panel.point.z<2.222,{panelZM:panel.point.z});}
+    if(ev){
+      const gap=solid(view,[.360,.938,3],[0,0,-1]),louver=solid(view,[.360,.917,3],[0,0,-1]);
+      check('electric louvers sit forward of the closed black panel',
+        gap.material===view.materials.gBlackPanel&&gap.point.z<2.222&&
+        (louver.material===view.materials.gGrille||louver.material===view.materials.gSatin)&&louver.point.z-gap.point.z>.012,
+        {panelZM:gap.point.z,louverZM:louver.point.z});
+    }
     else{const bar=solid(view,[.408,.910,3],[0,0,-1]),between=solid(view,[.374,.910,3],[0,0,-1]);check('AMG vertical grille bars stand in front of the dark backing',bar.point.z-between.point.z>.020,{setbackM:bar.point.z-between.point.z});}
   }else{
     pane('camper right pane',[2,2.20,-2.50],[-1,0,0]);pane('camper left pane',[-2,2.20,-2.50],[1,0,0]);

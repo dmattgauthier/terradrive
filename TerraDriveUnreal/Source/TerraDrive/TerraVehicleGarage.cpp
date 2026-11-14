@@ -242,7 +242,7 @@ void ATerraVehicle::ApplyUpgrades(){
   if(Garage){
     const FVector P=GetActorLocation();
     const float Raised=Tuning.Lift+(Radius-Number(TEXT("tireRadius"),.42f));
-    const float Floor=RouteIndex>=0?Terrain->Routes[RouteIndex].Spawn.Z:Terrain->Spawns[Zone].Z;
+    const double Floor=RouteIndex>=0?RouteSpawnPosition(Terrain->Routes[RouteIndex]).Z:Terrain->Spawns[Zone].Z;
     SetActorLocation(FVector(P.X,P.Y,Floor+(CG+Raised)*100),false,nullptr,ETeleportType::TeleportPhysics);
     for(int I=0;I<WheelCount();++I){
       const FVector Local(AxleOffsetM(I/2)*100,(I%2?1:-1)*Track*50,(Radius-CG-Raised)*100);

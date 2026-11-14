@@ -1,5 +1,21 @@
 # Terra Drive native port
 
+**Granite fault-line crawl** adds a six-gate rock ascent to **Esc → Challenges**.
+Use low range on the approach and engage the axle lockers before the staggered
+shelves. The [exterior and rock-crawl notes](docs/exterior-rock-crawl.md) cover
+the photo references, model changes and native drive comparison.
+
+Open **Esc → Challenges** on the trail to choose a route. The three newest
+terrain courses are Pine Ridge cross-axle crawl, Copper Dunes crest run and
+Boreal drift traverse. Each has six marked gates. The new obstacles are part
+of the same terrain surface used for wheel contact.
+
+This pass also refines cockpit instruments across all 12 vehicles, adds
+directional slate bedding and finer meadow variation, and smooths longitudinal
+tire response at pavement and snow boundaries. See the
+[native verification record](docs/terrain-challenge-native.json) for build
+hashes and the checks performed on the Windows package.
+
 The [expanded roster and fidelity update](docs/expanded-roster-fidelity.md) adds
 Grave Digger and the 1998 Impreza 22B STI, tire-size kits through 50 inches,
 recovery at the current position, and a bottom HUD with vehicle-safe camera
@@ -186,7 +202,27 @@ Use `Tools/verify-electric-pressure.ps1` for isolated nine-vehicle factory/conve
 
 Use `Tools/verify-native.ps1 -LockersOnly` for the open/locked climb comparison. Each attempt starts with repaired terrain and the same stock setup, so earlier tire ruts and compaction cannot bias the second attempt.
 
-For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds and stages against existing cooked content. Omit `-SkipCook` after asset or rendering-setting changes. `-SkipExport` reuses existing OBJ sources during material/import work. Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion; changing the schema triggers reimport. Material signatures make interrupted imports resumable. The native renderer uses screen-space GI/reflections for its procedural terrain. Source foliage diffuse textures and alpha masks are imported; OBJ vertex-color variation is currently represented by each material's average source tint.
+For a C++-only change after a successful cook, `-Package -SkipCook` rebuilds
+and stages the cook recorded for the current asset import. The Windows cook
+is file-backed so the build can verify the paths and bytes of its complete
+payload before staging. Run a full cook after asset or rendering-setting
+changes or when the current cooked tree has no matching receipt.
+`-ImportAssets -SkipExport` reuses a verified source export. Packaging checks
+the export, physical terrain mask, lower-body probes and coachwork hulls
+against the completed import receipt. From `TerraDriveUnreal`, recover an
+interrupted or older export with
+`Tools/build-native.ps1 -ImportAssets -Package`. If the export already
+verifies and the asset import is missing or stale, run
+`Tools/build-native.ps1 -ImportAssets -SkipExport -Package`. Run
+`node --test Tools/test-source-export-reuse.mjs` on Windows to exercise the
+interruption and retry checks.
+
+Generated mesh schema 2 accounts for Unreal's OBJ Y-axis conversion. Changing
+the schema triggers reimport. Material signatures make interrupted imports
+resumable. The native renderer uses screen-space GI/reflections for its
+procedural terrain. Source foliage diffuse textures and alpha masks are
+imported. OBJ vertex-color variation is currently represented by each
+material's average source tint.
 
 For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-native-code.ps1` builds the game target and copies the matching executable/symbols into the packaged folder, checking executable parity and unchanged package sizes/timestamps. It avoids repeatedly archiving unchanged cooked content. It does not cook assets, update external runtime dependencies, or replace the full packaging workflow after content/configuration changes.
 

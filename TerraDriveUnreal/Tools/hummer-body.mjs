@@ -1,5 +1,6 @@
 // Native refinement fork; preserved browser source is unchanged.
 import {panelJoint} from './coachwork-craft.mjs';
+import {instrumentDisplay} from './cabin-controls.mjs';
 /**
  * Original MY24 GMC HUMMER EV SUV exterior, constructed from GMC's dimensioned
  * side elevation and published photographs. This is not imported OEM CAD.
@@ -487,6 +488,8 @@ export function buildNativeHummer(view, geometry) {
   roundedBox(g,m.screen,-.196,1.371,.713,.301,.160,.009,.007);
   roundedBox(g,m.black,.488,1.372,.736,.334,.141,.047,.012);
   roundedBox(g,m.screen,.488,1.372,.708,.302,.112,.009,.006);
+  instrumentDisplay(g,m.satinMetal,[.488,1.372,.702],[.302,.112],'energy');
+  instrumentDisplay(g,m.satinMetal,[-.196,1.371,.707],[.301,.160],'navigation');
   for(const x of [-.789,-.477,.194,.808]){
     roundedBox(g,m.grille,x,1.290,.737,.077,.110,.024,.011);
     for(let i=0;i<4;i++)roundedBox(g,m.black,x-.024+i*.016,1.290,.721,.006,.086,.010,.002);

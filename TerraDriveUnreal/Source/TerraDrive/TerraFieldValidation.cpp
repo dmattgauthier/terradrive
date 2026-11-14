@@ -160,7 +160,7 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     S.Stage=6;S.Time=0;return false;
   }
   if(S.Stage==6){
-    Check(TEXT("park bog and perimeter routes preserve the original nine challenges"),V->Terrain->Routes.Num()==14&&V->Terrain->Routes[8].Name.Contains(TEXT("Slate Rim")),V->Terrain->Routes.Num());
+    Check(TEXT("park bog and perimeter routes preserve the original nine challenges"),V->Terrain->Routes.Num()>=14&&V->Terrain->Routes[8].Name.Contains(TEXT("Slate Rim")),V->Terrain->Routes.Num());
     const FVector Center(-10700,-5100,0);const auto Mud=V->Terrain->Sample(Center);
     Check(TEXT("deep mud has a finite two-foot soft layer"),Mud.Surface==2&&Mud.MaxSink>.55f&&Mud.MaxSink<.65f,Mud.MaxSink*39.3701f);
     Check(TEXT("deep mud is wet with lower grip and greater rolling resistance"),Mud.Water>6&&Mud.Softness>.95f&&Mud.Mu<.41f&&Mud.Rolling>.12f,Mud.Water/2.54f);

@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {T} from './body-surface.mjs';
-import {urusView} from './urus-body.mjs';
+import {urusRearSurface,urusView} from './urus-body.mjs';
 import {URUS} from './native-vehicles.mjs';
 import {bodyRefinement} from './body-refinement.mjs';
 // Insets sample each region of the connected mouth without grazing its rim.
@@ -22,7 +22,33 @@ const edgeDistance=(polygon,x,y)=>Math.min(...polygon.map((a,i)=>{
  const b=polygon[(i+1)%polygon.length],dx=b[0]-a[0],dy=b[1]-a[1],u=T.MathUtils.clamp(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1);
  return Math.hypot(x-a[0]-dx*u,y-a[1]-dy*u);
 }));
-const view=urusView(URUS);bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);
+const view=urusView(URUS);
+// Sample the actual interpolated mesh above the plate before the separate
+// whole-body warp. Smooth vertex normals alone miss the large skinny
+// triangles that made the reflected horizon ripple across the hatch.
+const hatchGeometry=view.body.getObjectByName('urus-sculpted-hatch-sheet').geometry;
+const {index:hatchIndex,attributes:{position:hatchPosition,normal:hatchNormal,uv:hatchUV}}=hatchGeometry;
+const hatchNormalErrors=[],hatchChordErrorsM=[];
+const interpolated=new T.Vector3(),sample=new T.Vector3();
+for(let i=0;i<hatchIndex.count;i+=3){
+ const a=hatchIndex.getX(i),b=hatchIndex.getX(i+1),c=hatchIndex.getX(i+2);
+ const x=(hatchUV.getX(a)+hatchUV.getX(b)+hatchUV.getX(c))/3;
+ const y=(hatchUV.getY(a)+hatchUV.getY(b)+hatchUV.getY(c))/3;
+ if(Math.abs(x)>.86||y<.855||y>1.015)continue;
+ const h=.00002;
+ const dx=(urusRearSurface(x+h,y)-urusRearSurface(x-h,y))/(2*h);
+ const dy=(urusRearSurface(x,y+h)-urusRearSurface(x,y-h))/(2*h);
+ interpolated.fromBufferAttribute(hatchNormal,a)
+  .add(sample.fromBufferAttribute(hatchNormal,b))
+  .add(sample.fromBufferAttribute(hatchNormal,c));
+ hatchNormalErrors.push(T.MathUtils.radToDeg(interpolated.angleTo(sample.set(dx,dy,-1))));
+ const chord=(hatchPosition.getZ(a)+hatchPosition.getZ(b)+hatchPosition.getZ(c))/3;
+ hatchChordErrorsM.push(Math.abs(chord-urusRearSurface(x,y)));
+}
+const hatchNormalMaxDeg=Math.max(...hatchNormalErrors),hatchChordMaxM=Math.max(...hatchChordErrorsM);
+assert.ok(hatchNormalErrors.length>1000&&hatchNormalMaxDeg<2&&hatchChordMaxM<.0015,
+  `hatch reflection needs a smooth panel: ${hatchNormalMaxDeg} degrees, ${hatchChordMaxM} metres`);
+bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);
 const fascia=view.body.getObjectByName('urus-perforated-front-fascia'),frame=view.body.getObjectByName('urus-lower-composite-intake-frame');
 assert.ok(fascia&&frame);
 const counts=[0,0,0,0];
@@ -97,6 +123,26 @@ for(const s of [-1,1]){
   assert.ok(Math.abs(halfWidth-URUS.width*.5)<.007,`finished flare matches factory half-width within 7 mm: ${halfWidth}`);
  }
 }
+const radiator=view.body.getObjectByName('urus-recessed-radiator-mesh');
+assert.ok(radiator?.userData.openCells>50,'center intake has a substantial cellular grille');
+let openRadiatorProbes=0,solidRadiatorProbes=0;
+for(let row=0;row<=11;row++)for(let col=0;col<=17;col++){
+ const x=-.42+col*.048,y=.552+row*.016;
+ if(probe([x,y,3],[0,0,-1],radiator).length)solidRadiatorProbes++;
+ else if(probe([x,y,3],[0,0,-1]).some(h=>h.object.name==='urus-main-intake-back'))openRadiatorProbes++;
+}
+assert.ok(openRadiatorProbes>80&&solidRadiatorProbes>20,'radiator mesh has physical webbing with holes exposing the recessed intake');
+const sideSection=(s,y,z)=>probe([s*1.6,y,z],[-s,0,0]).find(h=>h.object.name===('urus-continuous-door-sheet-'+(s>0?'left':'right')));
+const shoulderReliefM=[];
+for(const s of [-1,1]){
+ const waist=sideSection(s,.80,-.12),shoulder=sideSection(s,1.006,-.12);
+ assert.ok(waist&&shoulder,'door character surfaces are continuous');
+ const delta=waist.distance-shoulder.distance;
+ assert.ok(delta>.020,'raised side shoulder remains distinct from drawn waist');
+ shoulderReliefM.push(delta);
+ const rearJoint=view.body.children.filter(o=>o.name==='urus-rear-bumper-joint');
+ assert.equal(rearJoint.length,2,'both rear bumper seams follow the folded end closure');
+}
 const {version:revision,artPilot}=view.root.userData.visualModel;
-const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,pass:true};
+const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,radiatorOpenCells:radiator.userData.openCells,openRadiatorProbes,solidRadiatorProbes,shoulderReliefM,hatchReflection:{sampledTriangles:hatchNormalErrors.length,maxNormalErrorDeg:hatchNormalMaxDeg,maxChordErrorM:hatchChordMaxM},pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();
