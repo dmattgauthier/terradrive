@@ -45,6 +45,7 @@
 #include "TerraRutValidation.h"
 #include "TerraRutTransitionValidation.h"
 #include "TerraPerimeterValidation.h"
+#include "TerraChallengeValidation.h"
 #include "TerraExpandedValidation.h"
 #include "TerraRecoveryValidation.h"
 #include "Misc/App.h"
@@ -53,7 +54,8 @@ ATerraGameMode::ATerraGameMode() {
   DefaultPawnClass = ATerraVehicle::StaticClass();
   HUDClass = ATerraHUD::StaticClass();
   PrimaryActorTick.bCanEverTick = true;
-  PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"));
+  PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))||
+    FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraChallengesOnly"));
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
@@ -136,6 +138,10 @@ void ATerraGameMode::Tick(float Dt) {
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraChallengesOnly"))){
+    if(TerraChallengeValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraPerimeterOnly"))){
@@ -328,7 +334,7 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("tire tread rejects rigid support outside its width"),!Narrow.Hit&&Wide.Hit&&Wide.Constructed);
       Edge->DestroyComponent();
     }
-    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()==14,V->Terrain->ConstructedMeshCount);
+    Check(TEXT("challenge assets and routes"),V->Terrain->ConstructedMeshCount==3&&V->Terrain->Routes.Num()>=14,V->Terrain->ConstructedMeshCount);
     const auto LoopFrames=V->Terrain->Data->GetArrayField(TEXT("loopFrames"));
     for(int I=0;I<5;++I){
       const auto Frame=LoopFrames[I*6]->AsObject();

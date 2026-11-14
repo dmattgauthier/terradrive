@@ -16,7 +16,7 @@
   "slateRimVisualPixels": 43814,
   "graniteApronPixels": 81381,
   "quarryLaneMaskValidated": true,
-  "sourceTerrainSHA256": "04febae6063ca385d27e5843cdfe65fe72690942dd2cd4126c146745d313bd20",
+  "sourceTerrainSHA256": "c06aaf2806c915515d822ec41c3fefcb743df63b12bf56449a9eca35262fe25a",
   "lines": [
     {
       "surfacePair": "dirt-asphalt",

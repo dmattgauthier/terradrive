@@ -1,5 +1,6 @@
 // Native-only coachwork fork; browser source remains immutable.
 import {panelJoint,roundSUVLamp,cellularGrille} from './coachwork-craft.mjs';
+import {instrumentDisplay} from './cabin-controls.mjs';
 export function buildSUV(view, geometry, bronco) {
   const { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText } = geometry;
 
@@ -678,10 +679,7 @@ function buildSUVCabin(view,geometry,{bronco,half,belt,top,roofHalf,tail,roofFro
   const screenWidth=bronco?.270:.290,screenHeight=bronco?.168:.122,screenY=belt-(bronco?.059:.005);
   roundedBox(g,m.black,0,screenY,faceZ-.020,screenWidth+.040,screenHeight+.037,.041,.013);
   roundedBox(g,m.screen,0,screenY+.002,faceZ-.043,screenWidth,screenHeight,.005,.006);
-  // Subtle interface divisions add scale without a photographed dashboard map.
-  for(let i=0;i<4;i++)roundedBox(g,trim,(i-1.5)*screenWidth*.205,screenY-screenHeight*.389,faceZ-.047,screenWidth*.157,.007,.002,.001);
-  roundedBox(g,trim,-screenWidth*.279,screenY+.020,faceZ-.047,screenWidth*.305,.003,.002,.001);
-  roundedBox(g,trim,-screenWidth*.315,screenY+.008,faceZ-.047,screenWidth*.233,.003,.002,.001);
+  instrumentDisplay(g,m.satinMetal,[0,screenY+.002,faceZ-.048],[screenWidth,screenHeight],bronco?'navigation':'status');
   const verticalVent=x=>{
     roundedBox(g,m.black,x,belt-.053,faceZ-.022,.069,.178,.039,.014);
     roundedBox(g,m.grille,x,belt-.053,faceZ-.044,.054,.157,.006,.009);
@@ -732,7 +730,11 @@ function buildSUVCabin(view,geometry,{bronco,half,belt,top,roofHalf,tail,roofFro
   roundedBox(g,m.black,driverX,gaugeY,faceZ-.022,.297,.137,.082,.026);
   if(bronco){
     roundedBox(g,m.screen,driverX-.038,gaugeY,faceZ-.066,.151,.102,.008,.004);
-  }else roundedBox(g,m.screen,driverX,gaugeY,faceZ-.066,.071,.086,.008,.005);
+    instrumentDisplay(g,m.headliner,[driverX-.038,gaugeY,faceZ-.072],[.151,.102],'status');
+  }else{
+    roundedBox(g,m.screen,driverX,gaugeY,faceZ-.066,.071,.086,.008,.005);
+    instrumentDisplay(g,m.headliner,[driverX,gaugeY,faceZ-.072],[.071,.086],'status');
+  }
   for(const dx of bronco?[.090]:[-.094,.094]){
     cylinder(g,m.grille,driverX+dx,gaugeY,faceZ-.063,.049,.010,'z',32);
     cylinder(g,m.black,driverX+dx,gaugeY,faceZ-.070,.044,.008,'z',32);

@@ -198,6 +198,8 @@ FTerraSample ATerraWorld::Sample(FVector P) const {
                      RR[] = {.03, .013, .11, .13, .022, .08, .085},
                      Soft[] = {.06, 0, .83, .92, 0, .75, .88};
   const auto Blend=SurfaceBlend(P.X,P.Y);
+  S.PavementCoverage=Blend.Weight[1];
+  S.SnowCoverage=Blend.Weight[6];
   S.Mu=S.Rolling=S.Softness=S.MaxSink=0;
   for(int K=0;K<7;++K){const float W=Blend.Weight[K];S.Mu+=Mu[K]*W;S.Rolling+=RR[K]*W;S.Softness+=Soft[K]*W;}
   S.MaxSink=SoilSinkLimit(P.X,P.Y,Blend,S.Surface);
@@ -942,6 +944,7 @@ void ATerraWorld::LoadScenery() {
     auto O = V->AsObject(); FTerraRoute R;
     R.Name = O->GetStringField(TEXT("name")); R.Hint = O->GetStringField(TEXT("hint"));
     R.Spawn = Vec(O->GetArrayField(TEXT("spawn"))); R.Yaw = O->GetNumberField(TEXT("yaw"));
+    O->TryGetBoolField(TEXT("terrainStart"),R.TerrainStart);
     R.Zone = O->GetIntegerField(TEXT("zone")); R.GateWidth = O->GetNumberField(TEXT("gateWidth"));
     for (auto G : O->GetArrayField(TEXT("gates"))) R.Gates.Add(Vec(G->AsArray()));
     const TArray<TSharedPtr<FJsonValue>> *Directions = nullptr;
@@ -1096,6 +1099,7 @@ void ATerraWorld::LoadScenery() {
     C->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+O->GetStringField(TEXT("asset")))));
     const bool Solid=O->GetBoolField(TEXT("solid"));
     bool CanCrush=!Solid;O->TryGetBoolField(TEXT("crushable"),CanCrush);
+    bool SnapToGround=false;O->TryGetBoolField(TEXT("snapToGround"),SnapToGround);
     C->SetCollisionProfileName(Solid?TEXT("BlockAll"):TEXT("NoCollision"));
     C->SetNumCustomDataFloats(3);
     C->SetMobility(EComponentMobility::Movable);
@@ -1105,7 +1109,8 @@ void ATerraWorld::LoadScenery() {
     C->RegisterComponent();Scenery.Add(C);
     for(auto I:O->GetArrayField(TEXT("instances"))){
       auto A=I->AsObject();const auto Q=A->GetArrayField(TEXT("q"));
-      const FVector Position=Vec(A->GetArrayField(TEXT("p")));
+      FVector Position=Vec(A->GetArrayField(TEXT("p")));
+      if(SnapToGround)Position.Z=Height(Position.X,Position.Y)-3;
       FVector Scale=Vec(A->GetArrayField(TEXT("s")));
       if(CanCrush&&SurfaceBlend(Position.X,Position.Y).Weight[6]>.65f)Scale=FVector::ZeroVector;
       FTransform Placement(FQuat(Q[0]->AsNumber(),Q[1]->AsNumber(),Q[2]->AsNumber(),Q[3]->AsNumber()),Position,Scale);

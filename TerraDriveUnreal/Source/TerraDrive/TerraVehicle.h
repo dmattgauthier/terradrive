@@ -62,6 +62,7 @@ public:
   void SelectVehicle(int Index, bool StoreCurrentProfile = true);
   void TeleportZone(int Index);
   void TeleportRoute(int Index);
+  FString RouteHint(const FString& Hint)const;
   void ToggleLocker(bool Front);
   UFUNCTION()
   void OnBodyHit(UPrimitiveComponent *Hit, UPrimitiveComponent *Other,

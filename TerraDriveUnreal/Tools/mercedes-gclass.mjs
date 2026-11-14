@@ -2,6 +2,7 @@
 // Metres: Y up, nose +Z; contact plane Y=0; axle midpoint Z=0.
 // Sources, variant choices and estimated quantities: docs/mercedes-gclass-research.md.
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
+import {gClassSteering,instrumentDisplay} from './cabin-controls.mjs';
 import {T,mesh,box,surface,mappedPolygon,line,lerp,smooth,clamp,station} from './body-surface.mjs';
 import {nativeInterior} from './vehicle-cabin.mjs';
 import {geometryText,refineFactoryWheel} from './vehicle-fidelity.mjs';
@@ -208,19 +209,19 @@ function fitCoachworkToReference(g){
 }
 
 /** A complete native view, keeping the established wheel/export interfaces. */
-export function gClassView(spec){
+export function gClassView(spec,{classicCabin=false}={}){
   // Construct only the established rig/material/wheel interface, then replace
   // its temporary native-independent donor coachwork with original G geometry.
   const view=new VehicleView(new T.Scene(),{...spec,bodyStyle:'jeep'});
   view.damageView?.dispose();view.damageView=null;
   const geometries=new Set();view.body.traverse(o=>{if(o.geometry)geometries.add(o.geometry);});view.body.clear();geometries.forEach(g=>g.dispose());
   view.spec=spec;view.lamps=[];view.body.position.set(0,-spec.cgHeight,(.5-(spec.frontWeightFraction??.5))*spec.wheelbase);
-  buildGClass(view,spec);
+  buildGClass(view,spec,classicCabin);
   return view;
 }
 
 /** Build into an empty VehicleView body; does not move physical hardpoints. */
-export function buildGClass(view,spec=view.spec){
+export function buildGClass(view,spec=view.spec,classicCabin=false){
   const ev=isEV(spec),owner=ev?'g580':'g63',g=view.body,m=view.materials,height=ev?1.986:1.979;
   finish(m.paint,'paint',owner);m.paint.color.set(spec.color||(ev?'#557b91':'#536562'));m.paint.metalness=0;m.paint.roughness=.24;m.paint.clearcoat=1;
   const make=(name,config,role='plastic')=>m[name]=finish(new T.MeshPhysicalMaterial(config),role,owner);
@@ -607,6 +608,12 @@ export function buildGClass(view,spec=view.spec){
   else{box(g,trim,[0,.444,.890],[.520,.227,.920],.042);box(g,metal,[0,.341,.859],[.565,.045,.739],.009);}
   box(g,m.interior,[0,.522,-.580],[1.694,.071,2.604],.010);
   fitCoachworkToReference(g);
+  if(!classicCabin){
+    gClassSteering(g,m,gClassCoachworkPoint(.400,1.151,.214),gClassCoachworkPoint(.400,1.124,.411));
+    // Match the fitted screen plane before applying the flat display graphics.
+    instrumentDisplay(g,m.gSatin,gClassCoachworkPoint(.332,1.296,.428),[.427,.151],ev?'energy':'dials');
+    instrumentDisplay(g,m.gSatin,gClassCoachworkPoint(-.132,1.296,.428),[.427,.151],'navigation');
+  }
   view.root.userData.visualModel={type:'Original photo/reference reconstruction, no imported manufacturer CAD',version:16,modelYear:2025,variant:owner,
     selectedEquipment:ev?'20in AMG10spoke wheels, optional Black Panel/LED outline, Design Box':'Optional R20 22in AMG forged multi-spoke wheels / 295/40R22 road tires, stainless covered spare, side exhaust',
     dimensions:GCLASS_LANDMARKS,limitations:['photo-estimated panel curvature and interior','no production UV/normal bake or bespoke LOD authored here','native rendering requires integration verification']};

@@ -1,5 +1,6 @@
 // Native cabin fork: continuous upholstery normals and rounded fittings.
 import {nativeGeometry as geo} from './vehicle-geometry.mjs';
+import {instrumentDisplay} from './cabin-controls.mjs';
 const {THREE,finish,box,roundedBox,surface,curvedLine,cylinder,line}=geo;
 // Tangent derivatives on the unit sphere avoid triangle pinching at shoulders.
 function surfaceNormals(geometry,map){
@@ -123,6 +124,7 @@ export function nativeInterior({ frontZ, rearZ, floor, dashY, dashZ, width, seat
     if(sedan){
       roundedBox(g,m.black,0,dashY+.120,dashZ-.095,.205,.131,.030,.009);
       roundedBox(g,screenMaterial,0,dashY+.130,dashZ-.114,.153,.092,.006,.003);
+      instrumentDisplay(g,m.satinMetal,[0,dashY+.130,dashZ-.119],[.153,.092],'navigation');
       for(const x of [-.081,.081])cylinder(g,m.grille,x,dashY+.072,dashZ-.121,.010,.010,'z',16);
       roundedBox(g,m.grille,0,dashY-.015,dashZ-.174,width*.86,.053,.012,.006);
       for(let i=-26;i<=26;i++)line(g,m.black,[i*width*.016,-.012+dashY,dashZ-.183],[i*width*.016+.014,.010+dashY,dashZ-.183],.0016);
@@ -130,6 +132,7 @@ export function nativeInterior({ frontZ, rearZ, floor, dashY, dashZ, width, seat
       const screenWidth=van?.238:style==='bronco'?.430:.405,screenHeight=van?.146:style==='bronco'?.255:.183;
       roundedBox(g,m.black,0,dashY+.038,dashZ-.164,screenWidth+.032,screenHeight+.029,.035,.008);
       roundedBox(g,screenMaterial,0,dashY+.041,dashZ-.184,screenWidth,screenHeight,.007,.004);
+      instrumentDisplay(g,m.satinMetal,[0,dashY+.041,dashZ-.190],[screenWidth,screenHeight],'status');
       for(const x of [-width*.41,-width*.23,width*.23,width*.41]){
         cylinder(g,m.grille,x,dashY+.024,dashZ-.166,.042,.016,'z',20);
         cylinder(g,m.black,x,dashY+.024,dashZ-.178,.031,.008,'z',20);

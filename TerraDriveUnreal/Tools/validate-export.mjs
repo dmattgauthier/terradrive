@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Terrain} from './native-terrain.mjs';
 import {makePerimeterTrail,perimeterMask} from './perimeter-trail.mjs';
+import {terrainChallengeRelief} from './terrain-challenges.mjs';
 import {inQuarry} from './offroad-courses.mjs';
 import {validateGardenGeology} from './garden-geology.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -35,11 +36,11 @@ assert.ok(data.fabScenery.groups.reduce((sum,g)=>sum+g.instances.length,0)>100);
 assert.equal(b.readUInt32LE(0),0x54445256);assert.equal(b.readUInt32LE(4),1601);
 assert.equal(b.length,16+1601*1601*9);
 const terrain=new Terrain(),perimeter=makePerimeterTrail((x,y)=>terrain.heightAt(-y,x));let maxError=0;
-const expectedHeightAt=(x,y,at)=>perimeter.grade(x,y,terrain.heightAt(-y,x),b[at+8],b.readFloatLE(at+4));
+const expectedHeightAt=(x,y,at)=>perimeter.grade(x,y,terrain.heightAt(-y,x),b[at+8],b.readFloatLE(at+4))+terrainChallengeRelief(x,y);
 for(let i=0;i<1000;i++){
  const row=(i*383+19)%1601,col=(i*701+31)%1601,offset=16+(row*1601+col)*9;
  const x=400-col*.5,z=-400+row*.5,s=terrain.sample(x,z);
- const expectedHeight=perimeter.grade(z,-x,s.height,b[offset+8],s.waterDepth);
+ const expectedHeight=expectedHeightAt(z,-x,offset);
  maxError=Math.max(maxError,Math.abs(b.readFloatLE(offset)-expectedHeight));
  assert.equal(data.surfaces[b[offset+8]],s.surface);
  assert.ok(Math.abs(b.readFloatLE(offset+4)-s.waterDepth)<1e-5);
@@ -80,7 +81,26 @@ assert.equal(six.features.frontLocker,true);assert.equal(six.features.rearLocker
 assert.equal(six.factoryTireAirStage,3);assert.ok(six.factoryPortalLiftM>.1&&six.clearance>.4);
 assert.ok(Math.abs(six.tireRadius-.4699)<1e-7);assert.equal(six.rimDiameterInches,18);
 assert.equal(six.gears.length,7);assert.equal(six.nativeModel.construction.threeAxleBody,true);
-assert.equal(data.routes.length,14);assert.equal(data.constructed.length,2);
+assert.equal(data.routes.length,17);assert.equal(data.constructed.length,2);
+assert.deepEqual(data.terrainChallenges.map(c=>[c.routeIndex,c.surface]),[[14,0],[15,5],[16,6]]);
+for(const course of data.terrainChallenges){
+ const route=data.routes[course.routeIndex];
+ assert.ok(course.changedCells>300);
+ assert.equal(route.gates.length,6);
+ assert.equal(route.gateNotes.length,6);
+ assert.equal(route.gateHeadings.length,6);
+ const [startX,startY]=route.spawn.map(v=>v/100),finishX=route.gates.at(-1)[0]/100;
+ for(let x=startX;x<=finishX;x++)for(let y=startY-2;y<=startY+2;y+=.5){
+  const at=16+(Math.round((x+400)*2)*1601+Math.round((y+400)*2))*9;
+  assert.equal(b[at+8],course.surface,route.name+' surface across the tire lanes');
+  assert.ok(b.readFloatLE(at+4)<.02,route.name+' dry lane');
+ }
+ for(const [x,y,z] of [route.spawn,...route.gates]){
+  const at=16+(Math.round((x/100+400)*2)*1601+Math.round((y/100+400)*2))*9;
+  assert.equal(b[at+8],course.surface,route.name+' native surface');
+  assert.ok(Math.abs(b.readFloatLE(at)*100-z)<.51,route.name+' marker height');
+ }
+}
 const expedition=data.perimeterTrail,expeditionRoute=data.routes[expedition.routeIndex];
 assert.equal(expedition.routeIndex,13);
 assert.equal(expeditionRoute.name,'Perimeter Expedition');

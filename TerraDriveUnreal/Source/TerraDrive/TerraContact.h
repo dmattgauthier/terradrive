@@ -36,6 +36,14 @@ inline float TerrainGrip(float mu,float load,float staticLoad,float psi,float st
     const float film=1.f-std::clamp(water*.55f,0.f,.40f)*std::clamp((std::abs(speed)-4.f)/12.f,0.f,1.f);
     return std::max(.06f,mu*PressureGrip(psi,stockPsi,loose,tracks)*sensitivity*churn*film);
 }
+// The same terrain weights that blend grip and rolling resistance also
+// blend the tire response. A surface label can still change for the HUD.
+inline float LongitudinalContactScale(float pavementCoverage) {
+    return 5.f+5.f*std::clamp(pavementCoverage,0.f,1.f);
+}
+inline float TrackGripScale(float snowCoverage) {
+    return .84f+(1.50f-.84f)*std::clamp(snowCoverage,0.f,1.f);
+}
 inline float RutResistance(float depth,float radius,float softness,float packing,bool tracks) {
     const float penetration=std::clamp(depth/std::max(.1f,radius),0.f,1.f);
     return penetration*softness*(1.f-packing*.45f)*(tracks?.075f:.23f);

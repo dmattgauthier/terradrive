@@ -1,0 +1,263 @@
+{
+  "baseCommit": "2ce5287359abdb5e6f4ae5d1ec0cb40fb346d297",
+  "engine": "5.8.3",
+  "package": {
+    "executableSha256": "08c689e2d0b5963b0295002fb2e389e976df16a3683f68986853f0cb3d925afd",
+    "stagedContent": [
+      {
+        "path": "TerraDrive/Content/Paks/global.ucas",
+        "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/global.utoc",
+        "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+        "sha256": "44b49f16c5fa21c63fcb21c960a5d09797e69f7ea9137af226e87e1d98ee40aa"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+        "sha256": "7d88b9b165f29b95c058021a965f81566200d796a42f2ad95d0cc05e18c8ea71"
+      },
+      {
+        "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+        "sha256": "e10f6360f584b964b11fe1176c63edc64eeee6bd13c7b794c28e2ebe6512333b"
+      }
+    ],
+    "changedMeshes": 14,
+    "sourceInputsSha256": "0913964874bcc8e3e81451efd735f1c4a264778735710c0b83918d8d8b44228e",
+    "sourceFileCount": 225,
+    "cookedContentSource": "Saved/TerrainChallengeFidelity/Candidate3/Windows",
+    "codeOnlyChanges": [
+      "Source/TerraDrive/TerraChallengeValidation.cpp",
+      "Source/TerraDrive/TerraGameMode.cpp",
+      "Source/TerraDrive/TerraHUD.cpp",
+      "Source/TerraDrive/TerraPauseMenu.cpp",
+      "Source/TerraDrive/TerraVehicle.cpp",
+      "Source/TerraDrive/TerraVehicle.h",
+      "Tools/verify-fidelity.ps1"
+    ]
+  },
+  "nativeChecks": 932,
+  "nativeChecksOnFinalExecutable": 203,
+  "nativeSuites": {
+    "Challenges": {
+      "checks": 22,
+      "captures": 7,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 62.59,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate4/Native/Challenges/receipt.json",
+      "executableSha256": "08c689e2d0b5963b0295002fb2e389e976df16a3683f68986853f0cb3d925afd"
+    },
+    "Movement": {
+      "checks": 145,
+      "captures": 19,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 61.65,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate3/Native/Movement/receipt.json",
+      "executableSha256": "4eafd37a4620576f30559167a490b7a72964e63a43a77d3ecc6d13cd6a324590"
+    },
+    "GraveRecovery": {
+      "checks": 34,
+      "captures": 6,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 58.38,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate3/Native/GraveRecovery/receipt.json",
+      "executableSha256": "4eafd37a4620576f30559167a490b7a72964e63a43a77d3ecc6d13cd6a324590"
+    },
+    "Detail": {
+      "checks": 15,
+      "captures": 6,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 58.66,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate3/Native/Detail/receipt.json",
+      "executableSha256": "4eafd37a4620576f30559167a490b7a72964e63a43a77d3ecc6d13cd6a324590"
+    },
+    "Art": {
+      "checks": 132,
+      "captures": 120,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 59.32,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate3/Native/Art/receipt.json",
+      "executableSha256": "4eafd37a4620576f30559167a490b7a72964e63a43a77d3ecc6d13cd6a324590"
+    },
+    "Ruts": {
+      "checks": 117,
+      "captures": 16,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 58.78,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate3/Native/Ruts/receipt.json",
+      "executableSha256": "4eafd37a4620576f30559167a490b7a72964e63a43a77d3ecc6d13cd6a324590"
+    },
+    "Expanded": {
+      "checks": 286,
+      "captures": 29,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 60.01,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate3/Native/Expanded/receipt.json",
+      "executableSha256": "4eafd37a4620576f30559167a490b7a72964e63a43a77d3ecc6d13cd6a324590"
+    },
+    "Interface": {
+      "checks": 156,
+      "captures": 26,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 63.11,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate4/Native/Interface/receipt.json",
+      "executableSha256": "08c689e2d0b5963b0295002fb2e389e976df16a3683f68986853f0cb3d925afd"
+    },
+    "Quarry": {
+      "checks": 25,
+      "captures": 15,
+      "runtimeErrors": 0,
+      "peakTemperatureC": 62.34,
+      "clock": "paced fixed20Hz functional verification",
+      "receipt": "Saved/TerrainChallengeFidelity/Candidate4/Native/Quarry/receipt.json",
+      "executableSha256": "08c689e2d0b5963b0295002fb2e389e976df16a3683f68986853f0cb3d925afd"
+    }
+  },
+  "terrainChallenges": [
+    {
+      "name": "Pine Ridge cross-axle crawl",
+      "surface": "dirt",
+      "gateCount": 6,
+      "heightCellsChanged": 685,
+      "checks": [
+        {
+          "case": "Pine Ridge cross-axle crawl starts from the challenge menu with six gates",
+          "value": 6.0,
+          "pass": true
+        },
+        {
+          "case": "Pine Ridge cross-axle crawl drives through all gates in order",
+          "value": 6.0,
+          "pass": true
+        },
+        {
+          "case": "Pine Ridge cross-axle crawl shows the correct completion notice",
+          "value": 0.0,
+          "pass": true
+        },
+        {
+          "case": "Pine Ridge cross-axle crawl keeps an upright vehicle within the marked lane",
+          "value": 71.5969,
+          "pass": true
+        },
+        {
+          "case": "Pine Ridge cross-axle crawl maintains real tire support through the obstacles",
+          "value": 1.0,
+          "pass": true
+        },
+        {
+          "case": "Pine Ridge cross-axle crawl loads the intended terrain under the tires",
+          "value": 1.0,
+          "pass": true
+        },
+        {
+          "case": "Pine Ridge cross-axle crawl articulates the front axle over the terrain",
+          "value": 0.3091,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "Copper Dunes crest run",
+      "surface": "sand",
+      "gateCount": 6,
+      "heightCellsChanged": 1794,
+      "checks": [
+        {
+          "case": "Copper Dunes crest run starts from the challenge menu with six gates",
+          "value": 6.0,
+          "pass": true
+        },
+        {
+          "case": "Copper Dunes crest run drives through all gates in order",
+          "value": 6.0,
+          "pass": true
+        },
+        {
+          "case": "Copper Dunes crest run shows the correct completion notice",
+          "value": 0.0,
+          "pass": true
+        },
+        {
+          "case": "Copper Dunes crest run keeps an upright vehicle within the marked lane",
+          "value": 31.1384,
+          "pass": true
+        },
+        {
+          "case": "Copper Dunes crest run maintains real tire support through the obstacles",
+          "value": 1.0,
+          "pass": true
+        },
+        {
+          "case": "Copper Dunes crest run loads the intended terrain under the tires",
+          "value": 1.0,
+          "pass": true
+        },
+        {
+          "case": "Copper Dunes crest run climbs and descends the sand rollers",
+          "value": 33.1147,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "Boreal drift traverse",
+      "surface": "snow",
+      "gateCount": 6,
+      "heightCellsChanged": 1899,
+      "checks": [
+        {
+          "case": "Boreal drift traverse starts from the challenge menu with six gates",
+          "value": 6.0,
+          "pass": true
+        },
+        {
+          "case": "Boreal drift traverse drives through all gates in order",
+          "value": 6.0,
+          "pass": true
+        },
+        {
+          "case": "Boreal drift traverse shows the correct completion notice",
+          "value": 0.0,
+          "pass": true
+        },
+        {
+          "case": "Boreal drift traverse keeps an upright vehicle within the marked lane",
+          "value": 250.1469,
+          "pass": true
+        },
+        {
+          "case": "Boreal drift traverse maintains real tire support through the obstacles",
+          "value": 1.0,
+          "pass": true
+        },
+        {
+          "case": "Boreal drift traverse loads the intended terrain under the tires",
+          "value": 1.0,
+          "pass": true
+        },
+        {
+          "case": "Boreal drift traverse articulates the front axle over the terrain",
+          "value": 0.244,
+          "pass": true
+        }
+      ]
+    }
+  ],
+  "sourceChecks": {
+    "portablePhysics": 726,
+    "tireFit": 327
+  },
+  "boundary": "Capped native functional tests with isolated player settings. Challenge, interface and Slate Rim quarry tests use the installed executable. Source-equivalent tests from the original full cook use identical staged content and driving physics. The final changes affect challenge notices, control hint text, HUD backgrounds and validation."
+}

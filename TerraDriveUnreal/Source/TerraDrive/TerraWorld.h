@@ -12,6 +12,7 @@ struct FTerraSample {
   float Height = 0, Water = 0, Mu = .7f, Rolling = .025f, Softness = .05f,
         MaxSink = .025f, Packing = 0, RutDepth = 0, Displacement = 0,Churn=0;
   uint8 Surface = 0;
+  float PavementCoverage = 0, SnowCoverage = 0;
   FVector Normal = FVector::UpVector;
 };
 struct FTerraSurfaceBlend { float Weight[7]={0,0,0,0,0,0,0}; };
@@ -31,6 +32,7 @@ struct FTerraRoute {
   FVector Spawn;
   float Yaw = 0, GateWidth = 5;
   int Zone = 6;
+  bool TerrainStart = false;
   TArray<FVector> Gates;
   TArray<int> GateDirections;
   TArray<float> GateHeadings;

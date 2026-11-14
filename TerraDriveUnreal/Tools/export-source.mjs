@@ -16,6 +16,7 @@ import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
 import {quarryTrail} from './quarry-trail.mjs';
 import {addPerimeterTrail,trailLookup} from './perimeter-trail.mjs';
+import {addTerrainChallenges} from './terrain-challenges.mjs';
 import {applySlateRimExtension,applySlateRimPilot} from './slate-rim-pilot.mjs';
 import {refineRockPlacements} from './rock-fidelity.mjs';
 import {DEEP_MUD,deepMudWaterAsset,adventureRoutes} from './deep-mud.mjs';
@@ -123,7 +124,14 @@ const field=fs.readFileSync(path.join(data,'terrain.bin'));
 // A subsequent export can start from an already cooked height field. Restore
 // the previous corridor before laying out a revised trail, so old cuts vanish.
 const priorWorld=path.join(data,'world.json');
-const priorTrail=fs.existsSync(priorWorld)?JSON.parse(fs.readFileSync(priorWorld)).perimeterTrail:null;
+const priorData=fs.existsSync(priorWorld)?JSON.parse(fs.readFileSync(priorWorld)):null;
+const priorTrail=priorData?.perimeterTrail;
+for(const {minX,maxX,minY,maxY} of priorData?.terrainChallenges??[]){
+ for(let x=minX;x<=maxX;x+=step)for(let y=minY;y<=maxY;y+=step){
+  const row=Math.round((x+400)/step),col=Math.round((y+400)/step);
+  field.writeFloatLE(terrain.heightAt(-y,x),16+(row*n+col)*9);
+ }
+}
 if(priorTrail){
  const oldCorridor=trailLookup(priorTrail.samples);
  for(let row=0;row<n;row++)for(let col=0;col<n;col++){
@@ -211,6 +219,15 @@ for(let i=trees.length-1;i>=0;--i)if(trailDistance(trees[i].p)<340+trees[i].radi
 }
 for(const group of placements)if(group.crushable)group.instances=group.instances.filter(p=>trailDistance(p.p)>300);
 for(const group of environment.placements)if(!/^scan_(?:mountainside|boulder_01|grass_medium_01)_/.test(group.asset))group.instances=group.instances.filter(p=>trailDistance(p.p)>(group.solid?500:300));
+for(const [name,color] of [['amber','#ffae43'],['blue','#40b6e3']]){
+ const post=new THREE.Group();
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(.044,.065,.80,12),new THREE.MeshStandardMaterial({color:'#30383a',roughness:.71}));
+ base.position.y=.40;
+ const cap=new THREE.Mesh(new THREE.CylinderGeometry(.052,.052,.25,12),new THREE.MeshStandardMaterial({color,roughness:.46}));
+ cap.position.y=.68;
+ post.add(base,cap);
+ exportObj('trail_challenge_'+name,post);
+}
 const tinted=new Set();
 for(const g of [...placements,...environment.placements])if(g.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
@@ -224,6 +241,7 @@ manifest.quarryTrail={samples:trail.samples,lengthM:trail.lengthM,widthM:trail.w
 addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x),landmarks);
 applySlateRimPilot(manifest,field);
 applySlateRimExtension(manifest,field);
+addTerrainChallenges(manifest,field);
 fs.writeFileSync(path.join(data,'terrain.bin'),field);
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));

@@ -1,6 +1,7 @@
 // Original variant coachwork. Factory photographs/dimensions are references,
 // never redistributed meshes. Y up, +Z nose, metres above tyre contact plane.
 import {T,box,mesh,surface,mappedPolygon,line,lerp,smooth} from './body-surface.mjs';
+import {gClassSteering,instrumentDial,instrumentDisplay} from './cabin-controls.mjs';
 import {gClassView,gClassRim} from './mercedes-gclass.mjs';
 import {geometryText,refineFactoryWheel} from './vehicle-fidelity.mjs';
 import {SIX_PICKUP,sixOpeningY,buildSixPickup,buildSixRoof} from './g63-six-pickup.mjs';
@@ -96,7 +97,7 @@ export function gClassSquaredView(spec){
 
 export function gClassSixView(spec){
  const donor={...spec,bodyStyle:'g63',gClassVariant:'standard',height:1.979,wheelbase:2.89,frontWeightFraction:.5,tireRadius:.3974,cgHeight:spec.cgHeight};
- const view=gClassView(donor),g=view.body,m=view.materials;view.spec=spec;
+ const view=gClassView(donor,{classicCabin:true}),g=view.body,m=view.materials;view.spec=spec;
  const headlamps=[];g.traverse(o=>{if(o.name==='gclass-round-multibeam-headlight')headlamps.push(o);});
  for(const lamp of headlamps){
   lamp.clear();lamp.name='g63-six-classic-projector-headlamp';lamp.scale.setScalar(.230/.302);
@@ -143,15 +144,14 @@ export function gClassSixView(spec){
  // The 2014 truck predates the full-width digital dashboard. Its two
  // circular analogue instruments and separate central tablet remain visibly
  // distinct through the actual cab glazing.
- named(box(g,trim,[-.435,1.435,1.100],[.475,.224,.092],.035),'g63-six-analogue-instrument-binnacle');
- for(const x of [-.550,-.335]){
-  const dial=mesh(g,new T.CircleGeometry(.079,48),m.gBlackPanel,[x,1.439,1.047]);dial.rotation.y=Math.PI;
-  const rim=mesh(g,new T.TorusGeometry(.081,.0035,8,48),metal,[x,1.439,1.043]);
-  for(let i=0;i<12;i++){const a=i*Math.PI*2/12;rod(g,metal,[x+Math.cos(a)*.068,1.439+Math.sin(a)*.068,1.041],[x+Math.cos(a)*.075,1.439+Math.sin(a)*.075,1.041],.0012,6);}
-  rod(g,red,[x,1.439,1.038],[x-.035,1.477,1.038],.0025,6);
+ named(box(g,trim,[.402,1.435,1.100],[.443,.212,.092],.035),'g63-six-analogue-instrument-binnacle');
+ for(const [x,angle] of [[.306,-.87],[.499,-1.47]]){
+  instrumentDial(g,{face:m.gBlackPanel,bezel:metal,marks:m.headliner,needle:metal,center:[x,1.439,1.048],radius:.073,angle});
  }
- named(box(g,trim,[.12,1.545,1.080],[.315,.180,.038],.014),'g63-six-separate-command-tablet');
- const screen=box(g,m.screen,[.12,1.545,1.057],[.286,.148,.004]);
+ named(box(g,trim,[-.045,1.545,1.080],[.315,.180,.038],.014),'g63-six-separate-command-tablet');
+ box(g,m.screen,[-.045,1.545,1.057],[.286,.148,.004]);
+ instrumentDisplay(g,metal,[-.045,1.545,1.053],[.286,.148],'navigation');
+ gClassSteering(g,m,[.400,1.335,.869],[.400,1.326,1.091],true);
  const wall=.895;
  // The pickup cab has a real rear wall and independent rear glazing.
  const window=[[-.665,1.544],[.665,1.544],[.665,2.090],[-.665,2.090]];

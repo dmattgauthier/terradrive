@@ -1,5 +1,16 @@
 # Terra Drive native port
 
+Open **Esc → Challenges** on the trail to choose a route. The three newest
+terrain courses are Pine Ridge cross-axle crawl, Copper Dunes crest run and
+Boreal drift traverse. Each has six marked gates. The new obstacles are part
+of the same terrain surface used for wheel contact.
+
+This pass also refines cockpit instruments across all 12 vehicles, adds
+directional slate bedding and finer meadow variation, and smooths longitudinal
+tire response at pavement and snow boundaries. See the
+[native verification record](docs/terrain-challenge-native.json) for build
+hashes and the checks performed on the Windows package.
+
 The [expanded roster and fidelity update](docs/expanded-roster-fidelity.md) adds
 Grave Digger and the 1998 Impreza 22B STI, tire-size kits through 50 inches,
 recovery at the current position, and a bottom HUD with vehicle-safe camera
