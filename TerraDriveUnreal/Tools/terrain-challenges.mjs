@@ -129,7 +129,7 @@ export function addTerrainChallenges(world,field) {
   for(const course of terrainChallenges){
     const {x,y,length}=course;
     let changedCells=0,paintedCells=0;
-    // The export restores the previous course footprint before rebuilding it.
+    // The export gives each course a field with no earlier challenge relief.
     for(let a=x-5;a<=x+length+5;a+=step)for(let b=y-7;b<=y+7;b+=step){
       const at=offset(a,b),s=a-x,t=b-y;
       const relief=course.relief(s,t);

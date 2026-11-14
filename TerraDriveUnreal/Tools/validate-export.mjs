@@ -83,8 +83,11 @@ assert.ok(Math.abs(six.tireRadius-.4699)<1e-7);assert.equal(six.rimDiameterInche
 assert.equal(six.gears.length,7);assert.equal(six.nativeModel.construction.threeAxleBody,true);
 assert.equal(data.routes.length,18);assert.equal(data.constructed.length,2);
 assert.deepEqual(data.terrainChallenges.map(c=>[c.routeIndex,c.surface]),[[14,0],[15,5],[16,6],[17,4]]);
+assert.deepEqual(world.terrainChallenges,data.terrainChallenges,'source and native challenge metadata agree');
+let challengeTerrainSamples=0;
 for(const course of data.terrainChallenges){
  const route=data.routes[course.routeIndex];
+ assert.deepEqual(world.routes[course.routeIndex],route,route.name+' source and native route agree');
  assert.ok(course.changedCells>300);
  assert.equal(route.gates.length,6);
  assert.equal(route.gateNotes.length,6);
@@ -99,6 +102,14 @@ for(const course of data.terrainChallenges){
   const at=16+(Math.round((x/100+400)*2)*1601+Math.round((y/100+400)*2))*9;
   assert.equal(b[at+8],course.surface,route.name+' native surface');
   assert.ok(Math.abs(b.readFloatLE(at)*100-z)<.51,route.name+' marker height');
+ }
+ for(let x=course.minX;x<=course.maxX;x+=.5)for(let y=course.minY;y<=course.maxY;y+=.5){
+  const sample=terrain.sample(-y,x),at=16+(Math.round((x+400)*2)*1601+Math.round((y+400)*2))*9;
+  const cell=route.name+' at '+x+','+y;
+  assert.equal(b[at+8],terrainChallengeSurface(x,y,data.surfaces.indexOf(sample.surface)),cell+' surface');
+  assert.ok(Math.abs(b.readFloatLE(at+4)-sample.waterDepth)<1e-5,cell+' water depth');
+  assert.ok(Math.abs(b.readFloatLE(at)-expectedHeightAt(x,y,at))<1e-4,cell+' relief is applied once');
+  challengeTerrainSamples++;
  }
 }
 const fault=data.terrainChallenges.at(-1),faultRoute=data.routes[fault.routeIndex];
@@ -117,12 +128,6 @@ for(const [s,side] of [[12,-1],[15,1],[18.5,-1],[22,1]]){
  const front=faultHeight(s+1.5,1)-faultHeight(s+1.5,-1);
  const rear=faultHeight(s-1.5,1)-faultHeight(s-1.5,-1);
  assert.ok(side*(front-rear)>.90,'alternating ledges unload opposite diagonal pairs');
-}
-for(let x=fault.minX;x<=fault.maxX;x+=.5)for(let y=fault.minY;y<=fault.maxY;y+=.5){
- const s=terrain.sample(-y,x),at=faultSample(x-faultX,y-faultY);
- assert.equal(b[at+8],terrainChallengeSurface(x,y,data.surfaces.indexOf(s.surface)));
- assert.ok(Math.abs(b.readFloatLE(at+4)-s.waterDepth)<1e-5,'fault line preserves water');
- assert.ok(Math.abs(b.readFloatLE(at)-expectedHeightAt(x,y,at))<1e-4,'fault line matches the geometry export');
 }
 const expedition=data.perimeterTrail,expeditionRoute=data.routes[expedition.routeIndex];
 assert.equal(expedition.routeIndex,13);
@@ -294,6 +299,7 @@ for(const m of data.materials)assert.equal(m.instanceTint,tinted.has(m.id));
 assert.ok(details>500&&solid>20);
 for(const group of data.nativeDetails)for(const i of group.instances){assert.ok([...i.p,...i.q,...i.s].every(Number.isFinite));assert.ok(i.s.every(s=>s>0));assert.ok(Math.abs(Math.hypot(...i.q)-1)<1e-5);}
 const report={terrainSamples:1000,maximumHeightExportErrorM:maxError,vehicles:data.vehicles.length,zones:data.zones.length,zoneSamples,meshSources:data.assets.length,constructedGroups:data.constructed.length,challengeRoutes:data.routes.length,quarryDeckHeightM:data.quarryBaseM,trees:data.trees.length,placements:data.placements.reduce((n,g)=>n+g.instances.length,0),detailInstances:details,solidDetailInstances:solid,tintedMaterials:tinted.size,preservedInstanceColors:true,pass:true};
+report.challengeTerrainSamples=challengeTerrainSamples;
 report.vehicleTopology=data.vehicles.map(v=>({id:v.id,wheels:v.wheelCount??4,axles:v.axleCount??2,referenceCraftRevision:v.nativeModel.referenceCraftRevision}));
 report.gradedTrailSamples=gradedSamples;report.terrainGrade=data.terrainGrade;
 report.shiftedQuarryMarkers=shiftedQuarryMarkers;

@@ -141,7 +141,13 @@ TSharedRef<SWidget> STerraPauseMenu::ChallengesPage(){
           })
           [SNew(SVerticalBox)
             +SVerticalBox::Slot().AutoHeight()[Label(Route.Name,15,White,true)]
-            +SVerticalBox::Slot().AutoHeight().Padding(0,4,0,0)[Label(Vehicle->RouteHint(Route.Hint),12,Muted)]]];
+            +SVerticalBox::Slot().AutoHeight().Padding(0,4,0,0)
+            [SNew(STextBlock)
+              .Text_Lambda([Driver=Vehicle,Hint=Route.Hint]{
+                const auto* V=Driver.Get();
+                return V?FText::FromString(V->RouteHint(Hint)):FText::GetEmpty();
+              })
+              .Font(Font(12)).ColorAndOpacity(Muted).AutoWrapText(true)]]];
     }
   }
   return SNew(SVerticalBox)

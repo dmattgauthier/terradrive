@@ -2,13 +2,13 @@
   "revision": 31,
   "sourceOnly": true,
   "pass": true,
-  "checks": 101,
+  "checks": 104,
   "vehicles": [
     {
       "vehicle": "Mercedes-AMG G 63 4x4 squared",
       "id": "mercedes-amg-g63",
       "style": "g63",
-      "checks": 28,
+      "checks": 31,
       "pass": true,
       "sourceOnly": true,
       "geometry": {
@@ -37,8 +37,8 @@
         {
           "case": "unit shading normals",
           "pass": true,
-          "nonunit": 77,
-          "normalizedFraction": 0.9996817642658467
+          "nonunit": 4,
+          "normalizedFraction": 0.9999834682735504
         },
         {
           "case": "bounded triangle budget without cab duplication",
@@ -143,6 +143,26 @@
             0.9162999987602234,
             0.24000000208616257
           ]
+        },
+        {
+          "case": "exposed spare rear sidewall faces the outside ray",
+          "pass": true,
+          "hitCoordinate": 0.11817161979256774,
+          "outward": 0.9988387924647306,
+          "shadingOutward": 0.986605776690809
+        },
+        {
+          "case": "exposed spare outer tread faces the outside ray",
+          "pass": true,
+          "hitCoordinate": 0.457014810305579,
+          "outward": 0.9990482139480515,
+          "shadingOutward": 0.9886477288729812
+        },
+        {
+          "case": "spare bead seam has matching unit normals",
+          "pass": true,
+          "worstLengthError": 2.4070741622139735e-8,
+          "worstSeamDelta": 0
         },
         {
           "case": "4x4 marking fits the lower-half carrier, leaving the wheel visible above",

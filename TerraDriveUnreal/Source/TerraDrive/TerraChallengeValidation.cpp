@@ -1,6 +1,7 @@
 #include "TerraChallengeValidation.h"
 #include "TerraVehicle.h"
 #include "TerraPauseMenu.h"
+#include "Components/StaticMeshComponent.h"
 #include "Widgets/Input/SButton.h"
 
 namespace TerraChallengeValidation {
@@ -81,6 +82,28 @@ bool Tick(ATerraVehicle* Vehicle,float Delta,
     Test(TEXT("starts from the challenge menu with six gates"),Travelled&&Route.Gates.Num()==6&&
       Route.GateNotes.Num()==6,Route.Gates.Num());
     if(!Travelled){Vehicle->SetPauseMenu(false);return true;}
+    if(Route.Zone==7){
+      const double Floor=World->Height(Route.Spawn.X,Route.Spawn.Y);
+      const double SnowRise=Floor-Route.Spawn.Z;
+      const double TravelError=Vehicle->GetActorLocation().Z-(Floor+Vehicle->ExpectedRideHeight()*100+16);
+      Test(TEXT("route travel starts above the live snow surface"),SnowRise>5&&FMath::Abs(TravelError)<.1,SnowRise);
+      Vehicle->SetGarage(true);
+      const double GarageError=Vehicle->GetActorLocation().Z-(Floor+Vehicle->ExpectedRideHeight()*100);
+      Test(TEXT("garage entry uses the live snow height"),Vehicle->Garage&&FMath::Abs(GarageError)<.1,GarageError);
+      const double TreadHeight=Vehicle->Wheels[0]->GetComponentLocation().Z-Vehicle->TireDiameter()*2.54/2;
+      Test(TEXT("garage preview tread rests at the snow datum"),FMath::Abs(TreadHeight-Floor)<.1,TreadHeight-Floor);
+      Vehicle->SetUpgrade(TerraSim::Suspension,1,false);
+      const double UpgradeError=Vehicle->GetActorLocation().Z-(Floor+Vehicle->ExpectedRideHeight()*100);
+      Test(TEXT("garage suspension upgrade retains the same ground height"),
+        Vehicle->UpgradeStage(TerraSim::Suspension)==1&&FMath::Abs(UpgradeError)<.1,UpgradeError);
+      Vehicle->ResetUpgrades(false);
+      const double PreviewZ=Vehicle->GetActorLocation().Z;
+      Vehicle->SetGarage(false);
+      const double ResumeError=Vehicle->GetActorLocation().Z-PreviewZ;
+      Test(TEXT("garage exit resumes from the grounded preview pose"),
+        !Vehicle->Garage&&Vehicle->RouteIndex==Index&&FMath::Abs(ResumeError)<.1,ResumeError);
+      Vehicle->TeleportRoute(Index);
+    }
     Brake(Vehicle);
     Run.Started=true;
     Run.Captured=false;

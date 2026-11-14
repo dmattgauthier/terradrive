@@ -279,6 +279,7 @@ private:
   TArray<FTerraParcel> Parcels;
   FVector Anchor;
   FVector PreviousRoutePosition;
+  FVector RouteSpawnPosition(const FTerraRoute& Route) const;
   bool NearCamera = false;
   bool ReverseReleaseRequired=false;
   float GarageYaw=145,GaragePitch=-12,GarageDistance=1050;

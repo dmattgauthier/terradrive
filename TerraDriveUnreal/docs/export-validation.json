@@ -79,6 +79,7 @@
   "tintedMaterials": 37,
   "preservedInstanceColors": true,
   "pass": true,
+  "challengeTerrainSamples": 14036,
   "vehicleTopology": [
     {
       "id": "wrangler-rubicon",

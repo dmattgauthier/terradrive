@@ -15,7 +15,7 @@ import {bodyRefinement} from './body-refinement.mjs';
 import {fabScenery} from './fab-scenery.mjs';
 import {scannedEnvironment} from './scanned-environment.mjs';
 import {quarryTrail} from './quarry-trail.mjs';
-import {addPerimeterTrail,trailLookup} from './perimeter-trail.mjs';
+import {addPerimeterTrail} from './perimeter-trail.mjs';
 import {addTerrainChallenges} from './terrain-challenges.mjs';
 import {applySlateRimExtension,applySlateRimPilot} from './slate-rim-pilot.mjs';
 import {refineRockPlacements} from './rock-fidelity.mjs';
@@ -116,41 +116,24 @@ function exportSizedTires(prefix,spec){
  }
 }
 const terrain=new Terrain(),surfaces=['dirt','asphalt','mud','wetland','rock','sand','snow'];
-const n=1601,step=.5,bytes=Buffer.alloc(16+n*n*9);bytes.writeUInt32LE(0x54445256,0);bytes.writeUInt32LE(n,4);bytes.writeFloatLE(step,8);bytes.writeFloatLE(-400,12);
-if(!fs.existsSync(path.join(data,'terrain.bin'))){let offset=16;for(let row=0;row<n;row++){for(let col=0;col<n;col++){const z=-400+row*step,x=400-col*step,s=terrain.sample(x,z);bytes.writeFloatLE(s.height,offset);bytes.writeFloatLE(s.waterDepth,offset+4);bytes[offset+8]=surfaces.indexOf(s.surface);offset+=9;}if(row%400===0)console.log('Terrain row',row,'/',n);}fs.writeFileSync(path.join(data,'terrain.bin'),bytes);}
-// Rewrite only the native trail's height band, including its feathered edges.
-// Existing surfaces/water and all samples outside this band remain unchanged.
-const field=fs.readFileSync(path.join(data,'terrain.bin'));
-// A subsequent export can start from an already cooked height field. Restore
-// the previous corridor before laying out a revised trail, so old cuts vanish.
-const priorWorld=path.join(data,'world.json');
-const priorData=fs.existsSync(priorWorld)?JSON.parse(fs.readFileSync(priorWorld)):null;
-const priorTrail=priorData?.perimeterTrail;
-for(const {minX,maxX,minY,maxY,paintRock} of priorData?.terrainChallenges??[]){
- for(let x=minX;x<=maxX;x+=step)for(let y=minY;y<=maxY;y+=step){
-  const row=Math.round((x+400)/step),col=Math.round((y+400)/step),at=16+(row*n+col)*9;
-  field.writeFloatLE(terrain.heightAt(-y,x),at);
-  if(paintRock)field[at+8]=surfaces.indexOf(terrain.sample(-y,x).surface);
+// Start each export from the source samples, including on a retry after an
+// interrupted publication. Course grades and painted surfaces are applied once.
+const n=1601,step=.5,origin=-400,field=Buffer.alloc(16+n*n*9);
+field.writeUInt32LE(0x54445256,0);
+field.writeUInt32LE(n,4);
+field.writeFloatLE(step,8);
+field.writeFloatLE(origin,12);
+let offset=16;
+for(let row=0;row<n;row++){
+ const x=origin+row*step;
+ for(let col=0;col<n;col++,offset+=9){
+  const y=origin+col*step,sample=terrain.sample(-y,x);
+  field.writeFloatLE(sample.height,offset);
+  field.writeFloatLE(sample.waterDepth,offset+4);
+  field[offset+8]=surfaces.indexOf(sample.surface);
  }
+ if(row%400===0)console.log('Terrain row',row,'/',n);
 }
-if(priorTrail){
- const oldCorridor=trailLookup(priorTrail.samples);
- for(let row=0;row<n;row++)for(let col=0;col<n;col++){
-  const x=-400+row*step,y=-400+col*step;
-  if(oldCorridor(x,y))field.writeFloatLE(terrain.heightAt(-y,x),16+(row*n+col)*9);
- }
-}
-for(let row=940;row<=1400;row++)for(let col=50;col<=520;col++){
- const ux=-400+row*.5,uy=-400+col*.5;
- field.writeFloatLE(terrain.heightAt(-uy,ux),16+(row*n+col)*9);
-}
-fs.writeFileSync(path.join(data,'terrain.bin'),field);
-// Update the new mud basin only; preserve all other reference samples.
-for(let row=502;row<=670;row++)for(let col=646;col<=750;col++){
- const ux=-400+row*.5,uy=-400+col*.5,s=terrain.sample(-uy,ux),offset=16+(row*n+col)*9;
- field.writeFloatLE(s.height,offset);field.writeFloatLE(s.waterDepth,offset+4);field[offset+8]=surfaces.indexOf(s.surface);
-}
-fs.writeFileSync(path.join(data,'terrain.bin'),field);
 const vehicles=[];for(const spec of VEHICLES){const {view,parts}=prepareNativeVehicle(spec);
  if(spec.bodyStyle==='earthcruiser')view.root.userData.nativeFidelity.roofDamageTopology=refineExpRoof(view.body);
  const prefix=spec.id.replaceAll('-','_');exportObj(prefix+'_body',view.root,true);exportObj(prefix+'_wheel',view.wheels[0].root,true);exportObj(prefix+'_tire',parts.tire,true);exportTireStages(prefix,spec);exportSizedTires(prefix,spec);exportObj(prefix+'_rim',parts.rim,true);const track=createTrackModule({...spec,tracks:{length:1.35,width:.48}},view.materials);track.track.update({rotation:0});exportObj(prefix+'_track',track.root);
@@ -243,12 +226,20 @@ addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x),landmarks);
 applySlateRimPilot(manifest,field);
 applySlateRimExtension(manifest,field);
 addTerrainChallenges(manifest,field);
-fs.writeFileSync(path.join(data,'terrain.bin'),field);
 fs.writeFileSync(path.join(out,'import.json'),JSON.stringify(manifest));
 fs.writeFileSync(path.join(data,'world.json'),JSON.stringify({...manifest,assets:undefined,materials:undefined}));
 // Tire fit is derived from these exact exported coachwork triangles, then
 // written to both vehicle manifests before the editor imports any assets.
 await (await import('./tire-fit.mjs')).bakeTireFits(root);
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));
+// Only publish the completed field. Keep the temporary file outside NativeData
+// so the cooker cannot stage it after an interrupted export.
+const pendingField=path.join(root,'Content',`terrain-${process.pid}.tmp`);
+try{
+ fs.writeFileSync(pendingField,field);
+ fs.renameSync(pendingField,path.join(data,'terrain.bin'));
+}finally{
+ fs.rmSync(pendingField,{force:true});
+}
 console.log('Export complete:',assets.length,'meshes,',placements.length,'instance groups,',trees.length,'trees');
 

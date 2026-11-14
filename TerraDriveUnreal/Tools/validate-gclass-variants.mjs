@@ -129,6 +129,28 @@ export function inspectGVariant(view,spec,parts){
   check('roof lamps are two separate recessed factory modules',names.filter(n=>n.startsWith('g63-squared-roof-carbon-light-housing-')).length===2,{});
   const spare=view.body.getObjectByName('g63-squared-exposed-spare'),box=spare&&new T.Box3().setFromObject(spare).getSize(new T.Vector3());
   check('exposed spare is round and matches the larger tires',!!box&&Math.abs(box.x-box.y)<.002&&Math.abs(box.x/2-spec.tireRadius)<.003,{diametersM:box?.toArray()});
+  const carcass=spare.getObjectByName('g63-squared-spare-carcass');
+  for(const [side,origin,out,bound] of [
+   ['rear sidewall',[.026,-.25,-spec.tireRadius*.82],[0,-1,0],.105],
+   ['outer tread',[.026,.015,-spec.tireRadius-.15],[0,0,-1],spec.tireRadius-.004]
+  ]){
+   const outside=new T.Vector3(...out);
+   const direction=outside.clone().negate().transformDirection(carcass.matrixWorld);
+   const hit=new T.Raycaster(carcass.localToWorld(new T.Vector3(...origin)),direction).intersectObject(carcass)[0];
+   const hitCoordinate=hit&&carcass.worldToLocal(hit.point.clone()).dot(outside);
+   const outward=hit?.face.normal.dot(outside);
+   const shadingOutward=hit?.normal.dot(outside);
+   check('exposed spare '+side+' faces the outside ray',hitCoordinate>bound&&outward>.85&&shadingOutward>.85,{hitCoordinate,outward,shadingOutward});
+  }
+  const normals=carcass.geometry.attributes.normal;
+  const ring=carcass.geometry.parameters.points.length;
+  let worstLengthError=0,worstSeamDelta=0;
+  for(let i=0;i<normals.count;i+=ring){
+   const start=new T.Vector3().fromBufferAttribute(normals,i),end=new T.Vector3().fromBufferAttribute(normals,i+ring-1);
+   worstLengthError=Math.max(worstLengthError,Math.abs(start.length()-1),Math.abs(end.length()-1));
+   worstSeamDelta=Math.max(worstSeamDelta,start.distanceTo(end));
+  }
+  check('spare bead seam has matching unit normals',worstLengthError<1e-6&&worstSeamDelta<1e-6,{worstLengthError,worstSeamDelta});
   const badge=view.body.getObjectByName('g63-squared-visible-variant-badge'),badgeBox=new T.Box3().setFromObject(badge);
   const carrier=view.body.getObjectByName('g63-squared-lower-carbon-spare-cover'),carrierBox=new T.Box3().setFromObject(carrier);
   const wheelCenter=new T.Box3().setFromObject(spare).getCenter(new T.Vector3());

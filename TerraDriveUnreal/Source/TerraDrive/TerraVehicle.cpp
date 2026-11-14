@@ -421,15 +421,19 @@ bool ATerraVehicle::RecoverInPlace() {
   return true;
 }
 
+FVector ATerraVehicle::RouteSpawnPosition(const FTerraRoute& Route) const {
+  FVector Start=Route.Spawn;
+  if(Route.TerrainStart)Start.Z=Terrain->Height(Start.X,Start.Y);
+  return Start;
+}
+
 void ATerraVehicle::TeleportRoute(int Index) {
   if (!Terrain || Terrain->Routes.IsEmpty()) return;
   const int R = (Index + Terrain->Routes.Num()) % Terrain->Routes.Num();
   const auto &Route = Terrain->Routes[R];
   TeleportZone(Route.Zone);
   RouteIndex = R; GateIndex = 0; RouteTime = 0;
-  FVector Start=Route.Spawn;
-  if(Route.TerrainStart)Start.Z=Terrain->Height(Start.X,Start.Y);
-  SetActorLocationAndRotation(Start + FVector(0,0,ExpectedRideHeight()*100+16),
+  SetActorLocationAndRotation(RouteSpawnPosition(Route) + FVector(0,0,ExpectedRideHeight()*100+16),
       FRotator(0,Route.Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
   PreviousRoutePosition = GetActorLocation();
   Notice = RouteHint(Route.Hint);

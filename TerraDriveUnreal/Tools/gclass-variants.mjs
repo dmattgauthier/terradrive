@@ -93,9 +93,24 @@ function squaredSpare(g,m,carbon){
  const spare=named(new T.Group(),'g63-squared-exposed-spare');
  holder.add(spare);
  const r=G_VARIANTS.squared.tireRadius;
- const sidewall=[[.285,.097],[.311,.117],[r*.86,.121],[r*.95,.105],[r,.072],
-   [r,-.066],[r*.95,-.098],[r*.86,-.119],[.311,-.115],[.285,-.092],[.285,.097]];
- const carcass=mesh(spare,new T.LatheGeometry(sidewall.map(p=>new T.Vector2(...p)),72),m.rubber);
+ // The outer tread runs from low to high along the lathe axis for outward winding.
+ const sidewall=[[.285,.097],[.285,-.092],[.311,-.115],[r*.86,-.119],[r*.95,-.098],
+   [r,-.066],[r,.072],[r*.95,.105],[r*.86,.121],[.311,.117],[.285,.097]];
+ const profile=sidewall.map(p=>new T.Vector2(...p));
+ const segments=72,geometry=new T.LatheGeometry(profile,segments);
+ const normals=geometry.getAttribute('normal');
+ // Both UV seam vertices at the bead need the same unit normal. Use the
+ // adjacent profile edges just as LatheGeometry does for the interior rings.
+ const before=profile.at(-1).clone().sub(profile.at(-2));
+ const after=profile[1].clone().sub(profile[0]);
+ const tangent=before.add(after).normalize();
+ for(let i=0;i<=segments;i++){
+   const phi=i/segments*2*Math.PI,first=i*profile.length;
+   const x=tangent.y*Math.sin(phi),y=-tangent.x,z=tangent.y*Math.cos(phi);
+   normals.setXYZ(first,x,y,z);
+   normals.setXYZ(first+profile.length-1,x,y,z);
+ }
+ const carcass=named(mesh(spare,geometry,m.rubber),'g63-squared-spare-carcass');
  carcass.rotation.x=Math.PI/2;
  for(let i=0;i<32;i++){
    const a=i*2*Math.PI/32;
