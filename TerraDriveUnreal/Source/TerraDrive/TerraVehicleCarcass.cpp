@@ -28,18 +28,30 @@ void ATerraVehicle::PresentWheels(){
   if(!Terrain||Garage)return;
 
   // Chaos advances the chassis after the force solve. Bind the tire and its
-  // fixed rim to the current rock face using the new chassis transform.
+  // fixed rim to the current surface using the new chassis transform.
   const FVector Up=GetActorUpVector();
   if(TireCarcassEnabled&&!Tracks&&!Overturned&&Up.Z>.55f&&Radius>=.50f){
+    const FTransform Pose=GetActorTransform();
+    const float RadiusCM=Radius*100,MaxTravelCM=(Rest+Droop)*100;
     for(int I=0;I<WheelCount();++I){
       const auto& W=WheelState[I];
       if(W.Constructed)continue;
-      const FVector Mount=GetActorTransform().TransformPosition(W.MountLocal);
+      const FVector Mount=Pose.TransformPosition(W.MountLocal);
       const FVector Forward=FQuat(Up,W.Angle).RotateVector(GetActorForwardVector());
-      bool ProfileRock=false;
-      const auto Surface=Terrain->CastBedrockTread(Mount,Up,Forward,Radius*100,TireSectionWidth(I)*100,
-          -30.f,(Rest+Droop)*100,W.Contact,W.Ground.Normal,&ProfileRock);
-      if(!ProfileRock)continue;
+      const float WidthCM=TireSectionWidth(I)*100;
+      bool NearBedrock=false;
+      auto Surface=Terrain->CastBedrockTread(Mount,Up,Forward,RadiusCM,WidthCM,
+          -30.f,MaxTravelCM,W.Contact,W.Ground.Normal,&NearBedrock);
+      if(!NearBedrock){
+        if(W.Ground.Surface==1||W.Ground.Surface==4)continue;
+        // During a landing the old physics pass can leave a wheel at full
+        // droop even though the current pose has already reached the soil.
+        const FVector Hub=Wheels[I]->GetComponentLocation();
+        const float VerticalExtent=RadiusCM+.53f*WidthCM*FMath::Abs(FVector::CrossProduct(Up,Forward).Z);
+        if(!W.ContactValid&&Hub.Z-VerticalExtent>Terrain->Height(Hub.X,Hub.Y)+12.f)continue;
+        Surface=Terrain->CastNaturalTread(Mount,Up,Forward,RadiusCM,WidthCM,-30.f,MaxTravelCM);
+        if(!Surface.Hit)continue;
+      }
       const FVector Normal=Surface.Hit?Surface.Normal:W.Ground.Normal;
       const FVector Contact=Surface.Hit?Surface.Point:W.Contact;
       const float Alignment=Normal|Up;
@@ -60,7 +72,7 @@ float ATerraVehicle::TireSectionWidth(int Wheel) const {
   return Wheel<2?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth;
 }
 
-void ATerraVehicle::SetTireCarcassVisual(int Wheel,const FVector& Normal,float PlaneDistanceCM,float DeflectionM,bool ProfileRock) {
+void ATerraVehicle::SetTireCarcassVisual(int Wheel,const FVector& Normal,float PlaneDistanceCM,float DeflectionM,bool ConformToTerrain) {
   auto* Tire=Wheels[Wheel].Get();
   using TerraSim::TreadHeightPatch;
   float Data[36]={};
@@ -83,11 +95,11 @@ void ATerraVehicle::SetTireCarcassVisual(int Wheel,const FVector& Normal,float P
       Data[11]=DeflectionM*100;
     }
   }
-  if(ProfileRock){
+  if(ConformToTerrain){
     Data[8]=TireBeadM*100;
     Data[9]=Radius*100;
     Data[14]=(Radius-TireBeadM)*52.f;
-    Terrain->BuildBedrockTreadPatch(Tire->GetComponentLocation(),Data);
+    Terrain->BuildTreadHeightPatch(Tire->GetComponentLocation(),Data);
   }
   Tire->SetCustomPrimitiveDataFloatArray(0,TArrayView<const float>(Data,UE_ARRAY_COUNT(Data)));
 }

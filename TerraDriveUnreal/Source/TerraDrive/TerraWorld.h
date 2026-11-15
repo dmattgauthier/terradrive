@@ -102,7 +102,9 @@ public:
       float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const;
   FTerraSupport CastBedrockTread(const FVector& Mount,const FVector& Up,const FVector& Forward,
       float RadiusCM,float WidthCM,float MinCM,float MaxCM,const FVector& Near,const FVector& Normal,bool* NearBedrock=nullptr) const;
-  void BuildBedrockTreadPatch(const FVector& Hub,float* PatchData) const;
+  FTerraSupport CastNaturalTread(const FVector& Mount,const FVector& Up,const FVector& Forward,
+      float RadiusCM,float WidthCM,float MinCM,float MaxCM) const;
+  void BuildTreadHeightPatch(const FVector& Hub,float* PatchData) const;
   bool TraceRaisedGround(FVector Point,FHitResult& Hit,int32& TraceCount) const;
   float Height(float X, float Y) const;
   float SnowDrift(float X,float Y) const;
@@ -175,6 +177,7 @@ private:
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Scenery;
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConstructedMeshes;
   float BaseHeight(float X, float Y) const;
+  FVector GroundNormal(const FVector& P) const;
   uint8 SurfaceAt(float X, float Y) const;
   float LooseDirt(float X,float Y) const;
   float SoilSinkLimit(float X,float Y,const FTerraSurfaceBlend &Blend,uint8 Surface) const;

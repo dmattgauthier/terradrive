@@ -273,7 +273,7 @@ private:
   bool PrepareDamageMesh();
   bool TireCarcassEnabled=true;
   float TireSectionWidth(int Wheel) const;
-  void SetTireCarcassVisual(int Wheel,const FVector& Normal,float PlaneDistanceCM,float DeflectionM,bool ProfileRock=false);
+  void SetTireCarcassVisual(int Wheel,const FVector& Normal,float PlaneDistanceCM,float DeflectionM,bool ConformToTerrain=false);
   void RefreshGarageTirePose();
   struct FPanelImpact {
     FVector Point,Normal;

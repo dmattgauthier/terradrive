@@ -186,15 +186,16 @@ float ATerraWorld::SoilSinkLimit(float X,float Y,const FTerraSurfaceBlend &Blend
   Limit=FMath::Lerp(Limit,DeepMudMaximumSink,DeepMudWeight(X,Y));
   return FMath::Max(0.f,Limit);
 }
+FVector ATerraWorld::GroundNormal(const FVector& P) const {
+  return FVector(Height(P.X-8,P.Y)-Height(P.X+8,P.Y),Height(P.X,P.Y-8)-Height(P.X,P.Y+8),16).GetSafeNormal();
+}
 FTerraSample ATerraWorld::Sample(FVector P) const {
   FTerraSample S;
   S.Height = Height(P.X, P.Y);
   S.Displacement=(S.Height-BaseHeight(P.X,P.Y))/100;
   S.RutDepth = FMath::Max(0.f,BaseHeight(P.X,P.Y)-S.Height)/100;
   S.Surface = SurfaceAt(P.X, P.Y);
-  S.Normal = FVector(Height(P.X - 8, P.Y) - Height(P.X + 8, P.Y),
-                     Height(P.X, P.Y - 8) - Height(P.X, P.Y + 8), 16)
-                 .GetSafeNormal();
+  S.Normal = GroundNormal(P);
   static const float Mu[] = {.72, .98, .48, .36, .84, .58, .30},
                      RR[] = {.03, .013, .11, .13, .022, .08, .085},
                      Soft[] = {.06, 0, .83, .92, 0, .75, .88};
@@ -282,16 +283,16 @@ FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM
     FVector Normal = FVector::UpVector, P;
     for (int I = 0; I < 5; ++I) {
       const FVector Center = Mount - Up * D;
-      const auto S = Sample(Center);
-      Normal = S.Normal;
+      Normal = GroundNormal(Center);
       const float Alignment = FVector::DotProduct(Up, Normal);
       if (Alignment <= .15f) break;
-      D += (FVector::DotProduct(Center - FVector(Center.X, Center.Y, S.Height), Normal) - RadiusCM) / Alignment;
+      const FVector TerrainPoint(Center.X,Center.Y,Height(Center.X,Center.Y));
+      D += (FVector::DotProduct(Center-TerrainPoint,Normal)-RadiusCM)/Alignment;
     }
     P = Mount - Up * D - Normal * RadiusCM;
     if (TerraSim::ValidSupport(D, MinCM, MaxCM, FVector::DotProduct(Up, Normal)) &&
         FMath::Abs(P.Z - Height(P.X, P.Y)) < 12) {
-      Result = {P, Normal, D, true, false, Sample(P).Surface};
+      Result = {P, Normal, D, true, false, SurfaceAt(P.X,P.Y)};
     }
   }
   return Result;
@@ -388,8 +389,8 @@ FTerraSupport ATerraWorld::CastBedrockTread(const FVector& Mount,const FVector& 
   return {P,ContactNormal,Distance,true,false,SurfaceAt(P.X,P.Y)};
 }
 
-void ATerraWorld::BuildBedrockTreadPatch(const FVector& Hub,float* PatchData) const {
-  TRACE_CPUPROFILER_EVENT_SCOPE(TerraBedrockTreadPatch);
+void ATerraWorld::BuildTreadHeightPatch(const FVector& Hub,float* PatchData) const {
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraTreadHeightPatch);
   using TerraSim::TreadHeightPatch;
   constexpr int Size=TreadHeightPatch::Size;
   const auto Layout=TerraSim::GroundLayout(FMath::FloorToInt(Hub.X/GroundChunkCM),FMath::FloorToInt(Hub.Y/GroundChunkCM));
@@ -438,12 +439,38 @@ void ATerraWorld::BuildBedrockTreadPatch(const FVector& Hub,float* PatchData) co
   }
 }
 
+FTerraSupport ATerraWorld::CastNaturalTread(const FVector& Mount,const FVector& Up,const FVector& Forward,
+    float RadiusCM,float WidthCM,float MinCM,float MaxCM) const {
+  FTerraSupport Best;
+  const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
+  // A circular rolling envelope at three points across the real tread width.
+  // The shoulder/front samples can bridge a narrow rut or meet a bump before
+  // the axle is directly above it. No probe can reach behind its suspension.
+  TArray<FTerraSupport,TInlineAllocator<9>> Contacts;
+  auto SampleTread=[&](float Longitudinal,float Lateral){
+    const FVector Offset=Forward*(RadiusCM*Longitudinal)+Side*(WidthCM*Lateral);
+    const float Arc=RadiusCM*FMath::Sqrt(1-Longitudinal*Longitudinal);
+    const auto S=GroundSupport(Mount+Offset,Up,Arc,MinCM,MaxCM);
+    if(S.Hit){Contacts.Add(S);if(!Best.Hit||S.Distance<Best.Distance)Best=S;}
+  };
+  for(float L:{-.60f,0.f,.60f})for(float W:{-.42f,0.f,.42f})SampleTread(L,W);
+
+  if(Best.Hit){
+    FVector Normal=FVector::ZeroVector,Point=FVector::ZeroVector;float Weight=0;
+    for(const auto &S:Contacts){
+      const float W=FMath::Max(0.f,1.f-(S.Distance-Best.Distance)/2.f);
+      Normal+=S.Normal*W;Point+=S.Point*W;Weight+=W;
+    }
+    Best.Normal=Normal.GetSafeNormal();if(Weight>0)Best.Point=Point/Weight;
+  }
+  return Best;
+}
+
 FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forward,
     float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const {
   Up=Up.GetSafeNormal();
   bool RigidEncountered=false;
   auto Central=CastSupport(Mount,Up,RadiusCM,MinCM,MaxCM,Ignore,&RigidEncountered);
-  FTerraSupport Best;
   const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
   // A sphere is useful for rolling contact, but it is wider than a real tire.
   // Reject its side hits beyond the physical tread instead of gaining grip
@@ -489,26 +516,7 @@ FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forw
         Central={H.ImpactPoint,H.ImpactNormal,D,true,true,uint8(H.Component->ComponentHasTag(TEXT("TerraRock"))?4:1)};
     }
   }
-  // A circular rolling envelope at three points across the real tread width.
-  // The shoulder/front samples can bridge a narrow rut or meet a bump before
-  // the axle is directly above it. No probe can reach behind its suspension.
-  TArray<FTerraSupport,TInlineAllocator<9>> Contacts;
-  auto SampleTread=[&](float Longitudinal,float Lateral){
-    const FVector Offset=Forward*(RadiusCM*Longitudinal)+Side*(WidthCM*Lateral);
-    const float Arc=RadiusCM*FMath::Sqrt(1-Longitudinal*Longitudinal);
-    const auto S=GroundSupport(Mount+Offset,Up,Arc,MinCM,MaxCM);
-    if(S.Hit){Contacts.Add(S);if(!Best.Hit||S.Distance<Best.Distance)Best=S;}
-  };
-  for(float L:{-.60f,0.f,.60f})for(float W:{-.42f,0.f,.42f})SampleTread(L,W);
-
-  if(Best.Hit){
-    FVector Normal=FVector::ZeroVector,Point=FVector::ZeroVector;float Weight=0;
-    for(const auto &S:Contacts){
-      const float W=FMath::Max(0.f,1.f-(S.Distance-Best.Distance)/2.f);
-      Normal+=S.Normal*W;Point+=S.Point*W;Weight+=W;
-    }
-    Best.Normal=Normal.GetSafeNormal();if(Weight>0)Best.Point=Point/Weight;
-  }
+  auto Best=CastNaturalTread(Mount,Up,Forward,RadiusCM,WidthCM,MinCM,MaxCM);
   // Check the finite tread against the terrain mesh, including the edge
   // between two faces and hard shelves next to a clay pocket.
   const auto& Approximate=Best.Hit?Best:Central;
