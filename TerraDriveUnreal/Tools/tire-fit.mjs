@@ -10,6 +10,12 @@ import {beginSourceExport,publishSourceExport,verifySourceExport} from './source
 import {readCachedJson} from './read-cached-json.mjs';
 
 const rootDefault=path.resolve(import.meta.dirname,'..');
+// Capture the generator version when its modules load, before a long export starts.
+const generator=crypto.createHash('sha256');
+for(const file of [import.meta.filename,path.join(import.meta.dirname,'tire-wheelhouse.mjs'),path.join(import.meta.dirname,'tire-size-geometry.mjs')]){
+ generator.update(fs.readFileSync(file));
+}
+const version=generator.digest('hex');
 const deg=Math.PI/180,margin=.024;
 const sizes=[27,29,31,33,35,37,39,40,42,44,46,48,50];
 // Road unibodies retain the bumper/strut mounting area. The 6x6 has a
@@ -128,7 +134,6 @@ export async function bakeTireFits(root,manifest){
  fs.mkdirSync(evidence,{recursive:true});
  const reportPath=path.join(evidence,'fit-report.json'),results=[];
  const previous=readCachedJson(reportPath),assetMap=new Map(manifest.assets.map(asset=>[asset.name,asset]));
- const version=crypto.createHash('sha256').update(fs.readFileSync(import.meta.filename)).update(fs.readFileSync(path.join(import.meta.dirname,'tire-wheelhouse.mjs'))).digest('hex');
  const oldSizes=/_(?:tire_size[0-9]+_0|tire_[1-3]|(?:trail_)?clearance_body)$/;
  const retained=manifest.assets.filter(asset=>!oldSizes.test(asset.name));
  manifest.assets.splice(0,manifest.assets.length,...retained);
@@ -145,7 +150,13 @@ export async function bakeTireFits(root,manifest){
   spec.tireFits=fits;
   if(!fits.length)continue;
   const body=assetMap.get(spec.asset+'_body');
-  const prior=previous?.version===version?previous.vehicles.find(v=>v.id===spec.id&&v.bodySha256===body.sha256&&v.stockTireSha256===base.sha256&&v.liner===liner.id&&JSON.stringify(v.tireFits)===JSON.stringify(fits)):null;
+  const bead=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100;
+  const geometryInputs=[spec.cgHeight,spec.wheelbase,spec.track,spec.bodyStyle,spec.tireRadius,spec.tireWidth,
+   spec.rearTireWidth??spec.tireWidth,spec.suspension.travelFront??spec.suspension.travel,
+   spec.suspension.travelRear??spec.suspension.travel,bead];
+  const prior=previous?.version===version?previous.vehicles.find(v=>v.id===spec.id&&v.bodySha256===body.sha256&&
+   v.stockTireSha256===base.sha256&&v.liner===liner.id&&JSON.stringify(v.tireFits)===JSON.stringify(fits)&&
+   JSON.stringify(v.geometryInputs)===JSON.stringify(geometryInputs)):null;
   const cacheValid=asset=>{
    if(!asset)return false;
    const file=path.join(out,asset.name+'.obj');
@@ -166,7 +177,6 @@ export async function bakeTireFits(root,manifest){
    variants.push({name,slots:result.slots,sha256:result.sha256});
   }
   let tire=null;
-  const bead=Number(spec.tireSize.match(/R(\d+)/)[1])*.0254*.5*.97*100;
   for(const fit of fits){
    const name=spec.asset+'_tire_size'+fit.stage+'_0';
    const cached=prior?.variants.find(v=>v.name===name);
@@ -178,7 +188,7 @@ export async function bakeTireFits(root,manifest){
    }
   }
   manifest.assets.push(...variants);
-  results.push({id:spec.id,bodySha256:body.sha256,stockTireSha256:base.sha256,liner:liner.id,geometry,tireFits:fits,variants});
+  results.push({id:spec.id,bodySha256:body.sha256,stockTireSha256:base.sha256,liner:liner.id,geometryInputs,geometry,tireFits:fits,variants});
   console.log(JSON.stringify({tireFit:spec.id,sizes:fits.map(f=>[f.diameterInches,f.minimumSuspensionStage]),cutFaces:geometry.map(body=>body.cutFaces)}));
  }
  const report={version,method:'Full bump, steering and tread-width envelopes cut into opaque coachwork; stock and trimmed meshes remain distinct',vehicles:results};

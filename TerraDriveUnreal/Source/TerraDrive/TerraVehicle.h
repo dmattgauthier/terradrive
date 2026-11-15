@@ -275,7 +275,7 @@ private:
     TerraSim::DamageResponse Shape;
   };
   TArray<FPanelImpact> PanelImpacts;
-  int ApplyPanelImpact(const FPanelImpact& Impact);
+  int ApplyPanelImpact(const FPanelImpact& Impact,bool UploadBody=true);
   void RebuildDamageVisuals();
   void ConfigureCoachworkCollision();
   float NextBodyDiagnosticTime=0;

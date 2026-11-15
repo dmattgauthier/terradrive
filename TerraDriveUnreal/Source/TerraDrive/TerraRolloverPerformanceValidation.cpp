@@ -26,7 +26,7 @@ struct FState {
   FTerraRolloverBodyProbes BodyProbes;
   TArray<FCase> Cases;TArray<TSharedPtr<FJsonValue>> Reports;
   TArray<float> Frames;int Trial=0,Phase=0;double PhaseStarted=0,Previous=0;
-  bool UsingSavedBuild=false;
+  bool UsingSavedBuild=false,AllVehicles=false;
   int SavedTireSizes[ATerraVehicle::VehicleCount]={};
   bool Finite=true,PoseSeen=false;float MinimumTireClearance=10000;int MaximumCandidates=0,MaximumTraces=0,TireSize=0,ExpectedTireSize=0;FString Region,Directory;
 } State;
@@ -43,8 +43,8 @@ bool Load(ATerraVehicle* V){
     State.UsingSavedBuild=true;
   }
   int Vehicle=6;FParse::Value(FCommandLine::Get(),TEXT("TerraPerfVehicle="),Vehicle);
-  const bool All=FParse::Param(FCommandLine::Get(),TEXT("TerraPerfAllVehicles"));
-  for(int I=0;I<ATerraVehicle::VehicleCount;++I)if(All||I==Vehicle)
+  State.AllVehicles=FParse::Param(FCommandLine::Get(),TEXT("TerraPerfAllVehicles"));
+  for(int I=0;I<ATerraVehicle::VehicleCount;++I)if(State.AllVehicles||I==Vehicle)
     for(int Zone:{0,2,6})for(int Roll:{0,90,180})State.Cases.Add({I,Zone,Roll});
   FString Report;FParse::Value(FCommandLine::Get(),TEXT("TerraReport="),Report);State.Directory=FPaths::GetPath(Report);
   return !State.Cases.IsEmpty();
@@ -123,7 +123,14 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     // Start each copied-build pose from the same loaded profile.
     V->SelectVehicle(C.Vehicle,!State.UsingSavedBuild);
     if(State.TireSize>0){
-      const int Size=FMath::Min(State.TireSize,V->UpgradeMaxStage(TerraSim::TireSize));
+      const int MaximumSize=V->UpgradeMaxStage(TerraSim::TireSize);
+      if(!State.AllVehicles&&State.TireSize>MaximumSize){
+        UE_LOG(LogTemp,Display,TEXT("TERRA_PERF_TIRE_STAGE_UNSUPPORTED vehicle=%d requestedStage=%d maximumStage=%d"),
+          C.Vehicle,State.TireSize,MaximumSize);
+        Check(Label+TEXT(" supports the requested tire stage"),false,MaximumSize);
+        return true;
+      }
+      const int Size=FMath::Min(State.TireSize,MaximumSize);
       State.ExpectedTireSize=Size;
       const int Required=V->RequiredTireSuspensionStage(Size);
       if(V->UpgradeStage(TerraSim::Suspension)<Required)V->SetUpgrade(TerraSim::Suspension,Required,false);

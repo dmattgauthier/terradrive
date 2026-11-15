@@ -151,5 +151,37 @@
       "baselineStockBodyMeasurements": 9,
       "baselinePassedChecks": 68
     }
+  },
+  "tireCacheAndDamageFollowUp": {
+    "previousHead": "44fc192d69004926d9feabaa0720724e0910ae26",
+    "windowsExecutableSha256": "3456b7d0d5d9949e9b33f06f5189943362025753c3b7e2fec3462f4d7ddac25b",
+    "nativeSourceTreeSha256": "8e9f9e67b1e45628054b0fdc6efa1d52fd1afeedb45b4dd83a4993714329bafa",
+    "package": "The Win64 Development executable was staged into an isolated copy of the verified cook. All staged content hashes match the original records above.",
+    "rollover": {
+      "rejectedBeforePlacementOrMeasurement": [
+        {"mode": "RolloverPerformance", "vehicle": "Grave Digger", "requestedStage": 1, "maximumStage": 0},
+        {"mode": "RolloverPerformance", "vehicle": "Wrangler", "requestedStage": 9, "maximumStage": 8},
+        {"mode": "Rollover quick", "vehicle": "Grave Digger", "requestedStage": 1, "maximumStage": 0}
+      ],
+      "stageSelection": "Single-vehicle runs require an explicitly requested stage to be available. Roster sweeps use the requested stage as a ceiling per vehicle.",
+      "supportedWrangler35InchPoses": 10,
+      "supportedWranglerPassedChecks": 91,
+      "supportedWranglerPeakTemperatureC": 59.04,
+      "supportedWranglerReportSha256": "4cc14d1812d8c57c7a4734c8f36314fe6dc11fe34f1e75a2ce59700890a6488c"
+    },
+    "tireFitCache": {
+      "scriptSha256": "09dbad79a49572071799e155bbd0d54f7709585a12c2df495e8dcc9612a378fb",
+      "fixture": "The isolated export fixture first reuses the existing tire OBJ. Editing only the copied resize helper changes the cache version and the tire vertices with the same fit catalog. The previous generator retained the same cache version. A suspension-travel edit with the same fit rows also regenerates the wheelhouse geometry."
+    },
+    "dentFitSwap": {
+      "fixture": "The packaged Wrangler receives one controlled front impact and 33 rear impacts through the production damage handler. The check compares the front of the deformed procedural body with the active static mesh before and after each swap.",
+      "acceptedImpacts": 34,
+      "frontDentDepthCm": {"factory": 5.6672, "fitted35Inch": 5.6672, "returnedToFactory": 5.6672},
+      "passedChecks": 5,
+      "structuralDamagePreserved": true,
+      "repairClearedHistory": true,
+      "peakTemperatureC": 60.76,
+      "reportSha256": "a0895ae189ae911db2fac411fe726190f92a1071595c8f9e1ab479330b54ac57"
+    }
   }
 }

@@ -108,6 +108,65 @@ function recordFixtureImport(root, probeVersion = 3) {
   return digest(bytes);
 }
 
+test('tire fit reuse tracks resize code and suspension geometry', () => withProject(root => {
+  copyTools(root, ['tire-fit.mjs', 'tire-wheelhouse.mjs', 'tire-size-geometry.mjs', 'read-cached-json.mjs']);
+  const asset = (name, contents) => {
+    fs.writeFileSync(path.join(root, 'SourceAssets', name + '.obj'), contents);
+    return {name, slots: ['M_000'], sha256: digest(contents)};
+  };
+  // One triangle in the front wheel opening and one clear of the cutter.
+  const body = ['v 150 90 -30', 'v 152 90 -30', 'v 150 92 -28',
+    'v -100 -75 85', 'v 100 -75 85', 'v 0 75 90',
+    ...Array(6).fill('vn 0 0 1'), ...Array(6).fill('vt 0 0'),
+    'usemtl M_000', 'f 1/1/1 2/2/2 3/3/3', 'f 4/4/4 5/5/5 6/6/6'].join('\n') + '\n';
+  const tire = 'v 60.96 0 0\nv 0 0 60.96\nv 0 12 -60.96\nusemtl M_000\nf 1 2 3\n';
+  const vehicle = {id: 'truck', asset: 'truck', tireSize: '305/80R22', tireRadius: 0.6096,
+    track: 1.8, wheelbase: 3, frontWeightFraction: 0.5, cgHeight: 0.9,
+    tireWidth: 0.305, suspension: {travel: 0.2}};
+  beginSourceExport(root);
+  publishSourceExport(root, {
+    assets: [asset('truck_body', body), asset('truck_tire', tire)],
+    materials: [{id: 'M_000'}], vehicles: [vehicle],
+  }, oldTerrain);
+
+  const reportFile = path.join(root, 'Saved/TireClearance/fit-report.json');
+  const bakedTire = path.join(root, 'SourceAssets/truck_tire_size1_0.obj');
+  const bake = () => {
+    runNode(root, 'tire-fit.mjs');
+    return JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+  };
+  const before = bake();
+  const originalTire = fs.readFileSync(bakedTire, 'utf8');
+  const oldTime = new Date('2000-01-01T00:00:00Z');
+  fs.utimesSync(bakedTire, oldTime, oldTime);
+  assert.deepEqual(bake(), before);
+  assert.equal(fs.statSync(bakedTire).mtimeMs, oldTime.getTime(), 'unchanged inputs reuse the existing OBJ');
+
+  const helper = path.join(root, 'Tools/tire-size-geometry.mjs');
+  const code = fs.readFileSync(helper, 'utf8');
+  const revised = code.replace('x*s} ', 'x*s*1.001} ');
+  assert.notEqual(revised, code);
+  fs.writeFileSync(helper, revised);
+
+  const after = bake();
+  assert.notEqual(after.version, before.version);
+  assert.deepEqual(after.vehicles[0].tireFits, before.vehicles[0].tireFits);
+  const updatedTire = fs.readFileSync(bakedTire, 'utf8');
+  assert.notEqual(updatedTire, originalTire);
+  const treadX = Number(updatedTire.split(/\s+/)[1]);
+  assert.ok(Math.abs(treadX - 63.5 * 1.001) < 0.000001);
+  assert.equal(after.vehicles[0].variants.find(item => item.name === 'truck_tire_size1_0').sha256, digest(updatedTire));
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'SourceAssets/import.json'), 'utf8'));
+  manifest.vehicles[0].suspension.travel = 0.1;
+  beginSourceExport(root);
+  publishSourceExport(root, manifest, oldTerrain);
+  const afterTravel = bake();
+  assert.equal(afterTravel.version, after.version);
+  assert.deepEqual(afterTravel.vehicles[0].tireFits, after.vehicles[0].tireFits);
+  assert.notEqual(afterTravel.vehicles[0].geometry[0].sha256, after.vehicles[0].geometry[0].sha256);
+}));
+
 test('fresh and retried exports allow reuse only after completion', () => withProject(root => {
   checkReuse(root, /export-state\.json/);
   beginSourceExport(root);
