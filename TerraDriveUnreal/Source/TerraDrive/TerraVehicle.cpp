@@ -1,6 +1,7 @@
 #include "TerraVehicle.h"
 #include "ProceduralMeshComponent.h"
 #include "TerraSimCore.h"
+#include "TerraTireCarcass.h"
 #include "TerraContact.h"
 #include "TerraCenter.h"
 #include "TerraTandem.h"
@@ -35,6 +36,9 @@ float ATerraVehicle::Number(const TCHAR *Name, float Default) const {
 ATerraVehicle::ATerraVehicle() {
   PrimaryActorTick.bCanEverTick = true;
   PrimaryActorTick.TickGroup = TG_PrePhysics;
+  WheelPresentationTick.bCanEverTick=true;
+  WheelPresentationTick.TickGroup=TG_PostPhysics;
+  WheelPresentationTick.Vehicle=this;
   Chassis = CreateDefaultSubobject<UBoxComponent>(TEXT("ChaosChassis"));
   RootComponent = Chassis;
   Chassis->InitBoxExtent(FVector(190, 83, 24));
@@ -124,6 +128,7 @@ void ATerraVehicle::BeginPlay() {
   RearCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
   CoachworkCollision->OnComponentHit.AddDynamic(this,&ATerraVehicle::BodyHit);
   AutoTest = FParse::Param(FCommandLine::Get(), TEXT("TerraValidate"));
+  TireCarcassEnabled=!(AutoTest&&FParse::Param(FCommandLine::Get(),TEXT("TerraRigidTireControl")));
   LoadControls(ControlsPath());
   // Tires supply terrain grip. A grounded metal/plastic undertray should
   // slide over a crest rather than behaving like a second high-friction tire.
@@ -690,6 +695,7 @@ void ATerraVehicle::Simulate(float Dt) {
   const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
   const FQuat BodyRotation=Chassis->BodyInstance.GetMassSpaceToWorldSpace().GetRotation();
   float Capacities[MaxWheels] = {}, Drives[MaxWheels] = {};
+  float MinimumWheelTravel[MaxWheels];
   FVector NormalArms[MaxWheels],PendingTireForces[MaxWheels];
   // Resolve every contact before sharing torque between an axle's two wheels.
   for (int I = 0; I < Count; ++I) {
@@ -699,21 +705,21 @@ void ATerraVehicle::Simulate(float Dt) {
     const float Preload = StaticLoad / Spring;
     // Mount geometry belongs to the stock body. Extra spring length and tire
     // radius must raise the body, matching the garage, rather than lower it.
-    const FVector Local(AxleOffsetM(I/2)*100,
+    W.MountLocal=FVector(AxleOffsetM(I/2)*100,
         (I%2 ? 1:-1)*Track*50, (Number(TEXT("tireRadius"),.42f)+Rest-CG-Preload-Tuning.Lift)*100);
-    const FVector Mount = GetActorTransform().TransformPosition(Local);
+    const FVector Mount = GetActorTransform().TransformPosition(W.MountLocal);
     const float SteeringSpan=Axles==3?AxleOffsetM(0)-(AxleOffsetM(1)+AxleOffsetM(2))*.5f:Wheelbase;
     W.Angle=Tracks?(Front?SteerAngle:RearSteerAngle):TerraSim::AckermannAngle(Front?SteerAngle:RearSteerAngle,
         Front?RearSteerAngle:SteerAngle,(I%2?1.f:-1.f)*Track*.5f,Front?SteeringSpan:-SteeringSpan);
     const FVector WF = FQuat(Up,W.Angle).RotateVector(Forward);
-    const float AxleWidth=Front?Width:Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))*Tuning.TireWidth;
+    const float AxleWidth=TireSectionWidth(I);
     const auto Support = Terrain->CastTireSupport(Mount,Up,WF,Radius*100,AxleWidth*100,-30,(Rest+Droop)*100,this);
     W.ContactValid = Support.Hit;
     W.Constructed = Support.Constructed;
     W.Distance = Support.Hit ? Support.Distance/100 : Rest+Droop;
     const float Bump= BumpTravel(Front);
-    W.Center = Mount-Up*FMath::Clamp(W.Distance,Rest-Preload-Bump,Rest+Droop)*100;
-    W.Contact = Support.Hit ? Support.Point : W.Center-Up*Radius*100;
+    MinimumWheelTravel[I]=Rest-Preload-Bump;
+    W.Contact = Support.Hit ? Support.Point : Mount-Up*(Rest+Droop+Radius)*100;
     W.Ground = Terrain->Sample(W.Contact);
     if (Support.Hit) {
       W.Ground.Normal = Support.Normal;
@@ -732,9 +738,22 @@ void ATerraVehicle::Simulate(float Dt) {
     NormalArms[I]=NormalArm;
     const float NormalMass=FMath::Min(StaticLoad/9.81f,TerraSim::EffectiveContactMass(ResponseBodyMass,
         BodyInertia.X,BodyInertia.Y,BodyInertia.Z,NormalArm.X,NormalArm.Y,NormalArm.Z));
-    W.Load = Support.Hit ? FMath::Clamp(TerraSim::ProgressiveSuspensionForce(Rest-W.Distance,
-        FVector::DotProduct(W.PointVelocity,Normal),Spring,Damping,StaticLoad/9.81f,Normal.Z,Dt,Bump,NormalMass),0.f,StaticLoad*6) : 0;
-
+    W.Load=0;W.TireDeflection=0;
+    if(Support.Hit){
+      const float NormalVelocity=FVector::DotProduct(W.PointVelocity,Normal);
+      auto ForceAt=[&](float TravelLoss){
+        return TerraSim::ProgressiveSuspensionForce(Rest-W.Distance-TravelLoss,NormalVelocity,
+          Spring,Damping,StaticLoad/9.81f,Normal.Z,Dt,Bump,NormalMass);
+      };
+      const float Alignment=FVector::DotProduct(Up,Normal);
+      if(TireCarcassEnabled&&!Tracks&&Alignment>.35f){
+        const auto Tire=TerraSim::MakeTireCarcass(WheelPressure(I),Radius,TireBeadM,AxleWidth);
+        W.Load=TerraSim::CompliantTireLoad(Tire,Alignment,StaticLoad*6,ForceAt);
+        W.TireDeflection=Tire.Deflection(W.Load);
+        W.Distance+=W.TireDeflection/Alignment;
+      }else W.Load=FMath::Clamp(ForceAt(0),0.f,StaticLoad*6);
+    }
+    W.Center=Mount-Up*FMath::Clamp(W.Distance,MinimumWheelTravel[I],Rest+Droop)*100;
     TotalLoad += W.Load;
     if (W.Load>50) ++ContactCount;
     W.ForceForward = (WF-Normal*FVector::DotProduct(WF,Normal)).GetSafeNormal();
@@ -986,8 +1005,25 @@ void ATerraVehicle::Simulate(float Dt) {
     TerraSim::SolveSuspensionBumpContacts(Stops,Response,Count);
     float TotalStopImpulse=0,MaximumStopError=0;
     for(int I=0;I<Count;++I)if(Stops[I].Impulse>0){
-      const float Extra=Stops[I].Impulse/Dt;WheelState[I].Load+=Extra;
-      PendingTireForces[I]+=WheelState[I].Ground.Normal*Extra;TotalStopImpulse+=Stops[I].Impulse;
+      auto& W=WheelState[I];
+      const float Extra=Stops[I].Impulse/Dt;
+      W.Load+=Extra;
+      PendingTireForces[I]+=W.Ground.Normal*Extra;
+      TotalStopImpulse+=Stops[I].Impulse;
+
+      // The coupled stop adds real contact load after the initial carcass
+      // solve. Reconcile the tire shape and hub position with that load
+      // without changing the contact forces or exceeding suspension travel.
+      const float Alignment=FVector::DotProduct(Up,W.Ground.Normal);
+      if(TireCarcassEnabled&&!Tracks&&W.ContactValid&&Alignment>.35f){
+        const auto Carcass=TerraSim::MakeTireCarcass(WheelPressure(I),Radius,TireBeadM,TireSectionWidth(I));
+        const float Deflection=Carcass.Deflection(W.Load);
+        const float OldTravel=FMath::Clamp(W.Distance,MinimumWheelTravel[I],Rest+Droop);
+        W.Distance+=(Deflection-W.TireDeflection)/Alignment;
+        const float NewTravel=FMath::Clamp(W.Distance,MinimumWheelTravel[I],Rest+Droop);
+        W.TireDeflection=Deflection;
+        W.Center-=Up*(NewTravel-OldTravel)*100;
+      }
       float Predicted=Stops[I].PredictedVelocity;for(int J=0;J<Count;++J)Predicted+=Response[I][J]*Stops[J].Impulse;
       MaximumStopError=FMath::Max(MaximumStopError,Stops[I].TargetVelocity-Predicted);
     }
@@ -1050,7 +1086,7 @@ void ATerraVehicle::Simulate(float Dt) {
   UpdateEnergy(Dt);
   UpdateRolledTireContacts(Dt);
   UpdateWheelVisuals();
-  UpdateVisualDetails();
+  WheelPresentationPending=true;
   if (SoilTimer >= .025f)
     SoilTimer = 0;
   Chassis->AddForce(-Velocity * Velocity.Size() * .5f * 1.2f * .5f * Tuning.Drag *

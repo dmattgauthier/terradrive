@@ -332,7 +332,10 @@ void ATerraVehicle::ApplyUpgrades(){
   if(!Capabilities.FrontLocker||!DrivenWheel(0))FrontLocked=false;
   if(!Capabilities.RearLocker||!DrivenWheel(2))RearLocked=false;
   if(!Capabilities.CenterLocker||!DrivenWheel(0)||!DrivenWheel(2))CenterLocked=false;
-  Radius=Number(TEXT("tireRadius"),.42f)*Tuning.TireRadius;
+  Radius=StockRadius*Tuning.TireRadius;
+  const FString TireLabel=Spec->GetStringField(TEXT("tireSize"));
+  const int RimAt=TireLabel.Find(TEXT("R"));
+  TireBeadM=Number(TEXT("rimDiameterInches"),RimAt>=0?FCString::Atof(*TireLabel.Mid(RimAt+1)):18.f)*.0127f*.97f;
   Width=Number(TEXT("tireWidth"),.285f)*Tuning.TireWidth;
   Track=Number(TEXT("track"),1.63f)+Tuning.Track;
   CG=Number(TEXT("cgHeight"),.76f);
@@ -348,17 +351,9 @@ void ATerraVehicle::ApplyUpgrades(){
   for(int I=0;I<Wheels.Num();++I){
     const float AxleWidth=I>=2?Number(TEXT("rearTireWidth"),Number(TEXT("tireWidth"),.285f))/Number(TEXT("tireWidth"),.285f):1.f;
     Wheels[I]->SetRelativeScale3D(Tracks?FVector::OneVector:FVector(TireVisualScale,WidthVisualScale*AxleWidth,TireVisualScale));
+    Wheels[I]->SetBoundsScale(Tracks?1.f:1.08f);
   }
-  if(Garage){
-    const FVector P=GetActorLocation();
-    const float Raised=Tuning.Lift+(Radius-Number(TEXT("tireRadius"),.42f));
-    const double Floor=RouteIndex>=0?RouteSpawnPosition(Terrain->Routes[RouteIndex]).Z:Terrain->Spawns[Zone].Z;
-    SetActorLocation(FVector(P.X,P.Y,Floor+(CG+Raised)*100),false,nullptr,ETeleportType::TeleportPhysics);
-    for(int I=0;I<WheelCount();++I){
-      const FVector Local(AxleOffsetM(I/2)*100,(I%2?1:-1)*Track*50,(Radius-CG-Raised)*100);
-      Wheels[I]->SetWorldLocationAndRotation(GetActorTransform().TransformPosition(Local),GetActorQuat());
-    }
-  }
+  RefreshGarageTirePose();
   UpdateVisualDetails();
 }
 int ATerraVehicle::UpgradeMaxStage(int Part) const{

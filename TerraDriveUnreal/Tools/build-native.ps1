@@ -13,6 +13,7 @@ $cookMarker=Join-Path $projectRoot 'Saved\native-cook-complete.json'
 $cookPath=Join-Path $projectRoot 'Saved\Cooked\Windows'
 $maskPath=Join-Path $projectRoot 'Content\NativeData\terrain-blend.bin'
 $mapPath=Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'
+$carcassRecipe=Join-Path $PSScriptRoot 'tire-carcass-materials.py'
 
 function Get-SourceExportHash {
     $output=@(& node (Join-Path $PSScriptRoot 'verify-source-export.mjs'))
@@ -144,9 +145,15 @@ if ($ImportAssets) {
 }
 if ($Package) {
     $importHash=Get-CompletedImportHash
+    $carcassHash=Get-BuildFileHash $carcassRecipe
+    $cookReceipt=$null
+    try { $cookReceipt=Read-BuildReceipt $cookMarker }
+    catch { if ($SkipCook) { throw } }
     $cookArgument='-cook'
     if ($SkipCook) {
-        $cookReceipt=Read-BuildReceipt $cookMarker
+        if ($cookReceipt.tireCarcassRecipeSHA256 -ne $carcassHash) {
+            throw 'The tire material recipe differs from the completed cook. Rerun -Package without -SkipCook.'
+        }
         if ($cookReceipt.assetImportSHA256 -ne $importHash -or !$cookReceipt.cookedTreeSHA256) {
             throw '-SkipCook requires a successful prior cook for this asset import. Rerun -Package without -SkipCook.'
         }
@@ -154,8 +161,24 @@ if ($Package) {
             throw 'The cooked Windows tree differs from the completed cook. Rerun -Package without -SkipCook.'
         }
         $cookArgument='-skipcook'
-    } elseif (Test-Path -LiteralPath $cookMarker) {
-        Remove-Item -LiteralPath $cookMarker
+    } else {
+        if (Test-Path -LiteralPath $cookMarker) { Remove-Item -LiteralPath $cookMarker }
+        if (!$ImportAssets -and ($cookReceipt.tireCarcassRecipeSHA256 -ne $carcassHash -or $cookReceipt.assetImportSHA256 -ne $importHash)) {
+            # Refresh the material and its bindings on previously imported tires.
+            $recipePath=$carcassRecipe.Replace('\','/')
+            $materialLog=Join-Path $projectRoot ('Saved/Logs/tire-carcass-materials-'+(Get-Date -Format 'yyyyMMddTHHmmssfff')+'-'+$PID+'.log')
+            $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$recipePath+'"'),
+                '-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$materialLog+'"'))
+            $materialStarted=Get-Date
+            $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList $editorArgs -WindowStyle Hidden -PassThru
+            $editorProcess.WaitForExit()
+            $editorProcess.Refresh()
+            $generatedLog=Get-Item -LiteralPath $materialLog -ErrorAction SilentlyContinue
+            if ($editorProcess.ExitCode -or !$generatedLog -or $generatedLog.LastWriteTime -lt $materialStarted -or
+                !(Select-String -LiteralPath $materialLog -Pattern 'TERRA_TIRE_CARCASS_BINDINGS meshes=[1-9]\d* updated=\d+\s*$' -Quiet)) {
+                throw "Tire material refresh failed. Inspect $materialLog."
+            }
+        }
     }
     & node (Join-Path $PSScriptRoot 'garden-geology.mjs')
     if($LASTEXITCODE){throw 'Garden geology cache generation failed'}
@@ -173,6 +196,7 @@ if ($Package) {
     }
     if (!$SkipCook) {
         if ((Get-CompletedImportHash) -ne $importHash) { throw 'Asset import changed during packaging. Rerun -Package.' }
-        Write-BuildReceipt $cookMarker @{assetImportSHA256=$importHash; cookedTreeSHA256=(Get-CookedTreeHash)}
+        if ((Get-BuildFileHash $carcassRecipe) -ne $carcassHash) { throw 'Tire material recipe changed during packaging. Rerun -Package.' }
+        Write-BuildReceipt $cookMarker @{assetImportSHA256=$importHash; tireCarcassRecipeSHA256=$carcassHash; cookedTreeSHA256=(Get-CookedTreeHash)}
     }
 }

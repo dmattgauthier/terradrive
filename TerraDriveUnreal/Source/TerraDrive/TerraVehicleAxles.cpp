@@ -44,7 +44,7 @@ void ATerraVehicle::ResizeWheelComponents(){
   for(int I=0;I<Count*4+Axles*2;++I){
     auto* C=NewObject<UStaticMeshComponent>(this);C->SetupAttachment(Chassis);C->SetCollisionEnabled(ECollisionEnabled::NoCollision);C->SetMobility(EComponentMobility::Movable);
     C->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,I<Count*4&&I%4==2?TEXT("/Game/Meshes/detail_coil"):I>=Count*4&&I%2==1?TEXT("/Engine/BasicShapes/Sphere.Sphere"):TEXT("/Engine/BasicShapes/Cylinder.Cylinder")));
-    if(I>=Count*4||I%4!=2)C->SetMaterial(0,LoadObject<UMaterialInterface>(nullptr,I%4==1?TEXT("/Game/Materials/Native_Chrome"):TEXT("/Game/Materials/Native_SuspensionSteel")));
+    if(I>=Count*4||I%4!=2)C->SetMaterial(0,LoadObject<UMaterialInterface>(nullptr,I<Count*4&&I%4==1?TEXT("/Game/Materials/Native_Chrome"):TEXT("/Game/Materials/Native_SuspensionSteel")));
     C->RegisterComponent();SuspensionParts.Add(C);
   }
   for(int I=0;I<Count*4;++I){

@@ -67,7 +67,11 @@ void ATerraVehicle::RequestTirePressure(float Target,bool Persist){
   if(!Spec.IsValid()||!FMath::IsFinite(Target))return;
   TireAirRequested=true;
   PressureTarget=TerraSim::ClampTirePressure(Target,TireAirBounds());PressureProfiles[VehicleIndex]=PressureTarget;
-  if(Garage)Pressure=PressureTarget; // A stationary garage service, not CTIS.
+  if(Garage){
+    Pressure=PressureTarget;
+    RefreshGarageTirePose();
+    UpdateVisualDetails();
+  }
   if(!Garage&&TireAirHardwareStage()==0&&PressureTarget>Pressure)Notice=TEXT("Fit tire air control or return to the garage to inflate");
   if(Persist&&!AutoTest)SaveSetup();
 }

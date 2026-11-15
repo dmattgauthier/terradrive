@@ -32,8 +32,8 @@ struct FTerraBodyGroundContact {
 };
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
-        Pressure = 35;
-  FVector Contact, Center;
+        Pressure = 35, TireDeflection = 0;
+  FVector Contact, Center, MountLocal;
   FTerraSample Ground;
   FVector ForceForward, ForceSide, PointVelocity;
   float LongSpeed = 0, LateralSpeed = 0, Angle = 0, Grip = 0,
@@ -108,6 +108,7 @@ public:
   UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> SuspensionParts;
   // Bounded instancing groups for articulated links, CV joints and portal hardware.
   UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> RunningGearMeshes;
+  UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> UnderbodyMeshes;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> Protection;
   UPROPERTY() TObjectPtr<UStaticMeshComponent> TrailEquipment;
   static constexpr int MaxWheels=6;
@@ -270,6 +271,10 @@ private:
   bool RequireControlRelease=false,RecoveryBrakeHold=false;
   TSharedPtr<FTerraDamageVisualCache> DamageVisualCache;
   bool PrepareDamageMesh();
+  bool TireCarcassEnabled=true;
+  float TireSectionWidth(int Wheel) const;
+  void SetTireCarcassVisual(int Wheel,const FVector& Normal,float PlaneDistanceCM,float DeflectionM,bool ConformToTerrain=false);
+  void RefreshGarageTirePose();
   struct FPanelImpact {
     FVector Point,Normal;
     TerraSim::DamageResponse Shape;
@@ -299,7 +304,7 @@ private:
   bool GarageTireFitUnavailable=false;
   TSharedPtr<STerraGarage> GarageWidget;
   int LastVehicle = 0;
-  float TireVisualScale = 1, WidthVisualScale = 1, Droop = .16f;
+  float TireVisualScale = 1, WidthVisualScale = 1, Droop = .16f, TireBeadM = .216f;
   float WinchLength = 0, ReverseHold = 0, SpawnCooldown = 1, CameraYaw = 0,
         CameraPitch = -16, SoilTimer = 0, SprayBudget[MaxWheels] = {};
   float Radius = .42f, Width = .285f, Wheelbase = 3, Track = 1.63f, CG = .76f,
@@ -311,7 +316,18 @@ private:
   void UpdateSpray(float Dt);
   void CreateVisualDetails();
   void ResizeWheelComponents();
+  void RegisterActorTickFunctions(bool bRegister) override;
+  void PresentWheels();
+  struct FWheelPresentationTick final : FTickFunction {
+    ATerraVehicle* Vehicle=nullptr;
+    void ExecuteTick(float DeltaTime,ELevelTick TickType,ENamedThreads::Type CurrentThread,
+        const FGraphEventRef& Completion) override;
+    FString DiagnosticMessage() override;
+  } WheelPresentationTick;
+  bool WheelPresentationPending=false;
   void UpdateVisualDetails();
+  void UpdateUnderbodyDetails(const FString& BodyStyle,TerraSim::MotorLayout Layout,bool TransferCase);
+  uint32 UnderbodyVisualConfig=MAX_uint32;
   void SaveSetup();
   void UpdateTireAir(float Dt);
   void UpdateEnergy(float Dt);

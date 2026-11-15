@@ -1,4 +1,5 @@
 #include "TerraWorld.h"
+#include "TerraTreadContact.h"
 #include "TerraBodyGround.h"
 #include "TerraSimCore.h"
 #include "TerraSoilVariation.h"
@@ -32,7 +33,7 @@
 namespace {
 constexpr int Div = 64;
 // A 2.46-inch grid resolves tire shoulders instead of a two-vertex trough.
-constexpr float TileCM = 400, CellCM = 6.25f;
+constexpr float GroundChunkCM=3200.f, TileCM=400.f, CellCM=6.25f;
 constexpr float CellArea = .0625f*.0625f;
 uint16 StoreSoilHeading(FVector2D Direction){
   if(Direction.IsNearlyZero())return 65535; // Body compaction has no tire tread direction.
@@ -97,7 +98,7 @@ float ATerraWorld::DeepMudWeight(float X,float Y) const {
 float ATerraWorld::BaseHeight(float X, float Y) const {
   if (N < 2)
     return 0;
-  const auto Layout=TerraSim::GroundLayout(FMath::FloorToInt(X/3200.f),FMath::FloorToInt(Y/3200.f));
+  const auto Layout=TerraSim::GroundLayout(FMath::FloorToInt(X/GroundChunkCM),FMath::FloorToInt(Y/GroundChunkCM));
   if(Layout.Divisions>=64){
     // Recover bounded, weathered half-metre detail from the original scan
     // field. Keep metre anchors, broad obstacles and outside terrain intact.
@@ -185,15 +186,16 @@ float ATerraWorld::SoilSinkLimit(float X,float Y,const FTerraSurfaceBlend &Blend
   Limit=FMath::Lerp(Limit,DeepMudMaximumSink,DeepMudWeight(X,Y));
   return FMath::Max(0.f,Limit);
 }
+FVector ATerraWorld::GroundNormal(const FVector& P) const {
+  return FVector(Height(P.X-8,P.Y)-Height(P.X+8,P.Y),Height(P.X,P.Y-8)-Height(P.X,P.Y+8),16).GetSafeNormal();
+}
 FTerraSample ATerraWorld::Sample(FVector P) const {
   FTerraSample S;
   S.Height = Height(P.X, P.Y);
   S.Displacement=(S.Height-BaseHeight(P.X,P.Y))/100;
   S.RutDepth = FMath::Max(0.f,BaseHeight(P.X,P.Y)-S.Height)/100;
   S.Surface = SurfaceAt(P.X, P.Y);
-  S.Normal = FVector(Height(P.X - 8, P.Y) - Height(P.X + 8, P.Y),
-                     Height(P.X, P.Y - 8) - Height(P.X, P.Y + 8), 16)
-                 .GetSafeNormal();
+  S.Normal = GroundNormal(P);
   static const float Mu[] = {.72, .98, .48, .36, .84, .58, .30},
                      RR[] = {.03, .013, .11, .13, .022, .08, .085},
                      Soft[] = {.06, 0, .83, .92, 0, .75, .88};
@@ -281,16 +283,16 @@ FTerraSupport ATerraWorld::GroundSupport(FVector Mount,FVector Up,float RadiusCM
     FVector Normal = FVector::UpVector, P;
     for (int I = 0; I < 5; ++I) {
       const FVector Center = Mount - Up * D;
-      const auto S = Sample(Center);
-      Normal = S.Normal;
+      Normal = GroundNormal(Center);
       const float Alignment = FVector::DotProduct(Up, Normal);
       if (Alignment <= .15f) break;
-      D += (FVector::DotProduct(Center - FVector(Center.X, Center.Y, S.Height), Normal) - RadiusCM) / Alignment;
+      const FVector TerrainPoint(Center.X,Center.Y,Height(Center.X,Center.Y));
+      D += (FVector::DotProduct(Center-TerrainPoint,Normal)-RadiusCM)/Alignment;
     }
     P = Mount - Up * D - Normal * RadiusCM;
     if (TerraSim::ValidSupport(D, MinCM, MaxCM, FVector::DotProduct(Up, Normal)) &&
         FMath::Abs(P.Z - Height(P.X, P.Y)) < 12) {
-      Result = {P, Normal, D, true, false, Sample(P).Surface};
+      Result = {P, Normal, D, true, false, SurfaceAt(P.X,P.Y)};
     }
   }
   return Result;
@@ -323,12 +325,161 @@ FTerraSupport ATerraWorld::CastSupport(FVector Mount, FVector Up, float RadiusCM
   }
   return Result;
 }
+FTerraSupport ATerraWorld::CastBedrockTread(const FVector& Mount,const FVector& Up,const FVector& Forward,
+    float RadiusCM,float WidthCM,float MinCM,float MaxCM,const FVector& Near,const FVector& Normal,bool* NearBedrock) const {
+  if(RadiusCM<50.f||Up.Z<.55f||(Up.Z>.985f&&Normal.Z>.985f))return {};
+  const bool NearRock=SurfaceAt(Near.X,Near.Y)==4||SurfaceAt(Near.X-RadiusCM,Near.Y)==4||
+    SurfaceAt(Near.X+RadiusCM,Near.Y)==4||SurfaceAt(Near.X,Near.Y-RadiusCM)==4||SurfaceAt(Near.X,Near.Y+RadiusCM)==4;
+  if(!NearRock)return {};
+  if(NearBedrock)*NearBedrock=true;
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraBedrockTread);
+  const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
+  const float TreadRadius=RadiusCM+.30f,ShoulderRadius=RadiusCM*.95f+.30f;
+  const float HalfWidth=WidthCM*.53f;
+  const FVector Extent(
+    TreadRadius*FMath::Sqrt(Forward.X*Forward.X+Up.X*Up.X)+HalfWidth*FMath::Abs(Side.X),
+    TreadRadius*FMath::Sqrt(Forward.Y*Forward.Y+Up.Y*Up.Y)+HalfWidth*FMath::Abs(Side.Y),0);
+  const FVector Start=Mount-Up*MinCM,End=Mount-Up*MaxCM;
+  const FVector Low=Start.ComponentMin(End)-Extent,High=Start.ComponentMax(End)+Extent;
+  TerraSim::TreadContact Best;
+  for(int TY=FMath::FloorToInt(Low.Y/GroundChunkCM);TY<=FMath::FloorToInt(High.Y/GroundChunkCM);++TY){
+    for(int TX=FMath::FloorToInt(Low.X/GroundChunkCM);TX<=FMath::FloorToInt(High.X/GroundChunkCM);++TX){
+      const auto Layout=TerraSim::GroundLayout(TX,TY);
+      const float StepCM=Layout.CellCM;
+      const int Last=Layout.Divisions-1;
+      const int X0=FMath::Clamp(FMath::FloorToInt((Low.X-Layout.OriginX)/StepCM),0,Last);
+      const int Y0=FMath::Clamp(FMath::FloorToInt((Low.Y-Layout.OriginY)/StepCM),0,Last);
+      const int X1=FMath::Clamp(FMath::FloorToInt((High.X-Layout.OriginX)/StepCM),0,Last);
+      const int Y1=FMath::Clamp(FMath::FloorToInt((High.Y-Layout.OriginY)/StepCM),0,Last);
+      const int Stride=X1-X0+2;
+      TArray<TerraSim::TreadPoint,TInlineAllocator<144>> Grid;
+      Grid.SetNumUninitialized(Stride*(Y1-Y0+2));
+      for(int Y=Y0;Y<=Y1+1;++Y)for(int X=X0;X<=X1+1;++X){
+        const float WX=Layout.OriginX+X*StepCM,WY=Layout.OriginY+Y*StepCM;
+        const FVector P=FVector(WX,WY,BaseHeight(WX,WY))-Mount;
+        Grid[(Y-Y0)*Stride+X-X0]={float(P|Forward),float(P|Side),float(P|Up)};
+      }
+      auto TestTriangle=[&](const TerraSim::TreadPoint (&Triangle)[3]){
+        TerraSim::ContactAgainstTreadTriangle(Triangle,TreadRadius,WidthCM*.45f,Best);
+        TerraSim::ContactAgainstTreadTriangle(Triangle,ShoulderRadius,HalfWidth,Best);
+      };
+      for(int Y=Y0;Y<=Y1;++Y)for(int X=X0;X<=X1;++X){
+        const int A=(Y-Y0)*Stride+X-X0;
+        const TerraSim::TreadPoint Lower[]={Grid[A],Grid[A+1],Grid[A+Stride]};
+        const TerraSim::TreadPoint Upper[]={Grid[A+1],Grid[A+Stride],Grid[A+Stride+1]};
+        TestTriangle(Lower);
+        TestTriangle(Upper);
+      }
+    }
+  }
+  if(!TerraSim::ValidSupport(Best.Travel,MinCM,MaxCM,Best.RadialZ))return {};
+  const auto Resolve=[&](float Y,bool Centered)->FTerraSupport{
+    FVector P=Mount+Forward*Best.Point.X+Side*Y+Up*Best.Point.Z;
+    // Re-evaluate at the live height and retain the original witness if a
+    // rut or gap interrupts the support at the midpoint.
+    const float LiveZ=Height(P.X,P.Y);
+    if(Centered&&FMath::Abs(P.Z-LiveZ)>.01)return {};
+    P.Z=LiveZ;
+    const FVector Delta=P-Mount;
+    const float X=Delta|Forward;
+    if(FMath::Abs(X)>=Best.Radius*.988f||FMath::Abs(Delta|Side)>HalfWidth+1.f)return {};
+    const float Arc=FMath::Sqrt(Best.Radius*Best.Radius-X*X);
+    const float Distance=-(Delta|Up)-Arc;
+    if(!TerraSim::ValidSupport(Distance,MinCM,MaxCM,Arc/Best.Radius))return {};
+    const FVector Radial=(Up*Arc-Forward*X)/Best.Radius;
+    const float Axial=FMath::Clamp(float(Sample(P).Normal|Side),-.75f,.75f);
+    const FVector ContactNormal=Radial*FMath::Sqrt(1.f-Axial*Axial)+Side*Axial;
+    return {P,ContactNormal,Distance,true,false,SurfaceAt(P.X,P.Y)};
+  };
+  if(const float Y=Best.CenterY();Y!=Best.Point.Y){
+    const auto Center=Resolve(Y,true);
+    if(Center.Hit)return Center;
+  }
+  return Resolve(Best.Point.Y,false);
+}
+
+void ATerraWorld::BuildTreadHeightPatch(const FVector& Hub,float* PatchData) const {
+  TRACE_CPUPROFILER_EVENT_SCOPE(TerraTreadHeightPatch);
+  using TerraSim::TreadHeightPatch;
+  constexpr int Size=TreadHeightPatch::Size;
+  const auto Layout=TerraSim::GroundLayout(FMath::FloorToInt(Hub.X/GroundChunkCM),FMath::FloorToInt(Hub.Y/GroundChunkCM));
+  const float SpacingCM=FMath::Min(Layout.CellCM,50.f);
+  const float X0=(FMath::FloorToInt(Hub.X/SpacingCM)-2)*SpacingCM,Y0=(FMath::FloorToInt(Hub.Y/SpacingCM)-2)*SpacingCM;
+  float HeightCM[Size][Size],Lift[Size][Size]={};
+  for(int Y=0;Y<Size;++Y)for(int X=0;X<Size;++X)
+    HeightCM[Y][X]=Height(X0+X*SpacingCM,Y0+Y*SpacingCM);
+
+  // A coarse triangle can cut through the freshly raised edge of a rut.
+  // On displaced cells, bound the difference at the actual soil vertices.
+  // Both grids share their diagonal, so the same bound covers the faces.
+  const int Subdivisions=FMath::RoundToInt(SpacingCM/CellCM);
+  for(int Y=0;Y<Size-1;++Y)for(int X=0;X<Size-1;++X){
+    const float WX=X0+X*SpacingCM,WY=Y0+Y*SpacingCM;
+    const FIntPoint Key(FMath::FloorToInt(WX/TileCM),FMath::FloorToInt(WY/TileCM));
+    const auto* Tile=Detail.Find(Key);
+    const auto* Stored=Tile?nullptr:SoilCache.Find(Key);
+    if(!Tile&&!Stored)continue;
+    const int I0=FMath::RoundToInt((WX-Key.X*TileCM)/CellCM);
+    const int J0=FMath::RoundToInt((WY-Key.Y*TileCM)/CellCM);
+    const float A=HeightCM[Y][X],B=HeightCM[Y][X+1],C=HeightCM[Y+1][X],D=HeightCM[Y+1][X+1];
+    float Lower=0,Upper=0;
+    for(int J=0;J<=Subdivisions;++J)for(int I=0;I<=Subdivisions;++I){
+      const int Index=(J0+J)*(Div+1)+I0+I;
+      const float Actual=Tile?Tile->Vertices[Index].Z+Tile->Delta[Index]:
+        BaseHeight(WX+I*CellCM,WY+J*CellCM)+Stored->Delta[Index];
+      const float U=float(I)/Subdivisions,V=float(J)/Subdivisions;
+      const bool BelowDiagonal=I+J<=Subdivisions;
+      const float Interpolated=BelowDiagonal?A+(B-A)*U+(C-A)*V:D+(C-D)*(1-U)+(B-D)*(1-V);
+      float& Correction=BelowDiagonal?Lower:Upper;
+      Correction=FMath::Max(Correction,Actual-Interpolated);
+    }
+    const float Shared=FMath::Max(Lower,Upper);
+    Lift[Y][X]=FMath::Max(Lift[Y][X],Lower);
+    Lift[Y][X+1]=FMath::Max(Lift[Y][X+1],Shared);
+    Lift[Y+1][X]=FMath::Max(Lift[Y+1][X],Shared);
+    Lift[Y+1][X+1]=FMath::Max(Lift[Y+1][X+1],Upper);
+  }
+  PatchData[12]=X0-Hub.X;
+  PatchData[13]=Y0-Hub.Y;
+  PatchData[15]=1.f/SpacingCM;
+  for(int Y=0;Y<Size;++Y)for(int X=0;X<Size;X+=2){
+    const float A=HeightCM[Y][X]+Lift[Y][X]-Hub.Z,B=HeightCM[Y][X+1]+Lift[Y][X+1]-Hub.Z;
+    PatchData[TreadHeightPatch::Heights+(Y*Size+X)/2]=TreadHeightPatch::Pack(A,B);
+  }
+}
+
+FTerraSupport ATerraWorld::CastNaturalTread(const FVector& Mount,const FVector& Up,const FVector& Forward,
+    float RadiusCM,float WidthCM,float MinCM,float MaxCM) const {
+  FTerraSupport Best;
+  const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
+  // A circular rolling envelope at three points across the real tread width.
+  // The shoulder/front samples can bridge a narrow rut or meet a bump before
+  // the axle is directly above it. No probe can reach behind its suspension.
+  TArray<FTerraSupport,TInlineAllocator<9>> Contacts;
+  auto SampleTread=[&](float Longitudinal,float Lateral){
+    const FVector Offset=Forward*(RadiusCM*Longitudinal)+Side*(WidthCM*Lateral);
+    const float Arc=RadiusCM*FMath::Sqrt(1-Longitudinal*Longitudinal);
+    const auto S=GroundSupport(Mount+Offset,Up,Arc,MinCM,MaxCM);
+    if(S.Hit){Contacts.Add(S);if(!Best.Hit||S.Distance<Best.Distance)Best=S;}
+  };
+  for(float L:{-.60f,0.f,.60f})for(float W:{-.42f,0.f,.42f})SampleTread(L,W);
+
+  if(Best.Hit){
+    FVector Normal=FVector::ZeroVector,Point=FVector::ZeroVector;float Weight=0;
+    for(const auto &S:Contacts){
+      const float W=FMath::Max(0.f,1.f-(S.Distance-Best.Distance)/2.f);
+      Normal+=S.Normal*W;Point+=S.Point*W;Weight+=W;
+    }
+    Best.Normal=Normal.GetSafeNormal();if(Weight>0)Best.Point=Point/Weight;
+  }
+  return Best;
+}
+
 FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forward,
     float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const {
   Up=Up.GetSafeNormal();
   bool RigidEncountered=false;
   auto Central=CastSupport(Mount,Up,RadiusCM,MinCM,MaxCM,Ignore,&RigidEncountered);
-  FTerraSupport Best;
   const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
   // A sphere is useful for rolling contact, but it is wider than a real tire.
   // Reject its side hits beyond the physical tread instead of gaining grip
@@ -374,23 +525,13 @@ FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forw
         Central={H.ImpactPoint,H.ImpactNormal,D,true,true,uint8(H.Component->ComponentHasTag(TEXT("TerraRock"))?4:1)};
     }
   }
-  // A circular rolling envelope at three points across the real tread width.
-  // The shoulder/front samples can bridge a narrow rut or meet a bump before
-  // the axle is directly above it. No probe can reach behind its suspension.
-  TArray<FTerraSupport,TInlineAllocator<9>> Contacts;
-  for(float L:{-.60f,0.f,.60f})for(float W:{-.42f,0.f,.42f}){
-    auto S=GroundSupport(Mount+Forward*(RadiusCM*L)+Side*(WidthCM*W),Up,
-                         RadiusCM*FMath::Sqrt(1-L*L),MinCM,MaxCM);
-    if(S.Hit){Contacts.Add(S);if(!Best.Hit||S.Distance<Best.Distance)Best=S;}
-  }
-  if(Best.Hit){
-    FVector Normal=FVector::ZeroVector,Point=FVector::ZeroVector;float Weight=0;
-    for(const auto &S:Contacts){
-      const float W=FMath::Max(0.f,1.f-(S.Distance-Best.Distance)/2.f);
-      Normal+=S.Normal*W;Point+=S.Point*W;Weight+=W;
-    }
-    Best.Normal=Normal.GetSafeNormal();if(Weight>0)Best.Point=Point/Weight;
-  }
+  auto Best=CastNaturalTread(Mount,Up,Forward,RadiusCM,WidthCM,MinCM,MaxCM);
+  // Check the finite tread against the terrain mesh, including the edge
+  // between two faces and hard shelves next to a clay pocket.
+  const auto& Approximate=Best.Hit?Best:Central;
+  const FVector Near=Approximate.Hit?Approximate.Point:Mount-Up*(MaxCM+RadiusCM);
+  const auto Tread=CastBedrockTread(Mount,Up,Forward,RadiusCM,WidthCM,MinCM,MaxCM,Near,Approximate.Normal);
+  if(Tread.Hit)Best=Tread;
   if(Central.Hit&&Central.Constructed&&(!Best.Hit||Central.Distance<Best.Distance))return Central;
   return Best.Hit?Best:Central;
 }

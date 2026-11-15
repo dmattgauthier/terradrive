@@ -1,0 +1,147 @@
+{
+  "engine": "5.8.3",
+  "scope": "Pine Ridge 55-degree tread measurements sample exported tire vertices from 0.10 seconds after the drop through acceleration, at a fixed 20 Hz clock. Recovery presses the normal bound key while resting on both sides and the roof. Granite uses loaded steering at both limits with D3D12 rendering.",
+  "sourceExportSha256": "565dc53b58d93e6cfbb0deb9fabd69b7369d02f1e7d504b5eec81d2dbaaa3bf6",
+  "cookedTreeSha256": "946fb61858100ce170599c6e868d491c7df5b382282453ea25599661ad6b76ec",
+  "windowsExecutableSha256": "31de40d093469bfd9740919a8a2cbba52aa8cb47803948b6b44e95e3be4ff468",
+  "stagedContent": [
+    {
+      "path": "TerraDrive/Content/Paks/global.ucas",
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/global.utoc",
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "sha256": "865796020954fe79b043ff99f29b0d47b64fee035b5de570ab208b31218b3a35"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "sha256": "6776b1e0f0f9b42e9d6c5859f18a0a6c7511b22e5d17638885acc18e5dbfbc2b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "sha256": "8a347509d68a1e71352c8e520e4013b4422011cfacaafd49eb1d53e46a588665"
+    }
+  ],
+  "baseline": {
+    "sourceCommit": "35104d378d71dd3f451404356f83582bfd4289b1",
+    "windowsExecutableSha256": "cc0502ba0400166fb1ee73aad5ec628067d669224f865d39f19d20fa9d3ce079",
+    "diagnosticExecutableSha256": "241b0d52af4692adf7989241e1de46664285f9e9b5e516ccb155d7468ea4db92",
+    "method": "Unchanged prior gameplay and cooked content with per-frame clearance logging added to the native fixture under NullRHI."
+  },
+  "pineRidge50InchHummer": [
+    {
+      "startingRollDegrees": -55.0,
+      "measuredPSI": 45.0,
+      "baselineMinimumTreadGapInches": -6.887,
+      "baselineSettledMinimumTreadGapInches": -1.534,
+      "baselineWorstSampleTimeSeconds": 0.8,
+      "correctedMinimumTreadGapInches": 0.208,
+      "correctedWorstSampleTimeSeconds": 0.8
+    },
+    {
+      "startingRollDegrees": 55.0,
+      "measuredPSI": 45.0,
+      "baselineMinimumTreadGapInches": -8.076,
+      "baselineSettledMinimumTreadGapInches": -1.963,
+      "baselineWorstSampleTimeSeconds": 0.65,
+      "correctedMinimumTreadGapInches": 0.258,
+      "correctedWorstSampleTimeSeconds": 1.35
+    }
+  ],
+  "actualInPlaceRecovery": [
+    {
+      "startingRollDegrees": -90.0,
+      "overturnedAtRecoveryKey": true,
+      "horizontalMovementInches": 0.5739,
+      "headingChangeDegrees": 0.061,
+      "driveAwayFeet": 30.27,
+      "driveAwayMph": 20.03
+    },
+    {
+      "startingRollDegrees": 90.0,
+      "overturnedAtRecoveryKey": true,
+      "horizontalMovementInches": 0.5703,
+      "headingChangeDegrees": 0.024,
+      "driveAwayFeet": 29.65,
+      "driveAwayMph": 19.67
+    },
+    {
+      "startingRollDegrees": 180.0,
+      "overturnedAtRecoveryKey": true,
+      "horizontalMovementInches": 0.5944,
+      "headingChangeDegrees": 0.028,
+      "driveAwayFeet": 29.92,
+      "driveAwayMph": 19.86
+    }
+  ],
+  "granite50InchHummer16PSI": {
+    "movingFullSteeringLock": [
+      {
+        "direction": "left",
+        "diameterInches": 50.0,
+        "measuredPSI": 16.0,
+        "loadedFullLockFrames": 11,
+        "minimumTreadGapInches": 0.087,
+        "peakTireDeflectionInches": 2.992,
+        "suspensionSpreadInches": 13.925
+      },
+      {
+        "direction": "right",
+        "diameterInches": 50.0,
+        "measuredPSI": 16.0,
+        "loadedFullLockFrames": 10,
+        "minimumTreadGapInches": 0.094,
+        "peakTireDeflectionInches": 3.484,
+        "suspensionSpreadInches": 12.909
+      }
+    ],
+    "twoLedgeClimb": {
+      "vehicle": 4,
+      "stage": 6,
+      "diameterInches": 50.0,
+      "measuredPSI": 16.0,
+      "gates": 2,
+      "minimumTreadGapInches": 0.083,
+      "minimumBodyGapInches": 0.728,
+      "deepOverlapSeconds": 0.0,
+      "maximumSuspensionOverrunInches": 0.13
+    }
+  },
+  "validationRuns": [
+    {
+      "run": "50-inch Hummer rollover and actual recovery input",
+      "checks": 100,
+      "captures": 13,
+      "peakTemperatureC": 53.53
+    },
+    {
+      "run": "Rendered Granite full steering at 16 PSI",
+      "checks": 4,
+      "captures": 2,
+      "peakTemperatureC": 55.39
+    },
+    {
+      "run": "50-inch Hummer Granite approach and two-ledge climb at 16 PSI",
+      "checks": 6,
+      "captures": 0,
+      "peakTemperatureC": 54.94
+    },
+    {
+      "run": "Pressure-dependent tire deformation",
+      "checks": 19,
+      "captures": 8,
+      "peakTemperatureC": 58.29
+    },
+    {
+      "run": "Native rut behavior",
+      "checks": 117,
+      "captures": 16,
+      "peakTemperatureC": 58.26
+    }
+  ],
+  "portableCoreChecks": 739
+}

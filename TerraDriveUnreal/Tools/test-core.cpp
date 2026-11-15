@@ -1,4 +1,6 @@
 #include "../Source/TerraDrive/TerraSimCore.h"
+#include "../Source/TerraDrive/TerraTireCarcass.h"
+#include "../Source/TerraDrive/TerraTreadContact.h"
 #include "../Source/TerraDrive/TerraUpgrades.h"
 #include "../Source/TerraDrive/TerraContact.h"
 #include "../Source/TerraDrive/TerraUnits.h"
@@ -13,6 +15,76 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    {
+        const TerraSim::TreadPoint Ledge[]={{-30,-10,-115},{17,0,-72},{35,10,-115}};
+        TerraSim::TreadContact Contact;
+        TerraSim::ContactAgainstTreadTriangle(Ledge,63.5f,20.f,Contact);
+        const float Expected=72.f-std::sqrt(63.5f*63.5f-17.f*17.f);
+        check(std::abs(Contact.Travel-Expected)<.001f&&std::abs(Contact.Point.X-17.f)<.001f,
+            "sharp triangle crest between tread samples sets suspension contact");
+        const TerraSim::TreadPoint Beside[]={{-12,30,-50},{0,25,-40},{14,32,-44}};
+        TerraSim::ContactAgainstTreadTriangle(Beside,63.5f,20.f,Contact);
+        check(std::abs(Contact.Travel-Expected)<.001f,"rock beyond the tire shoulder supplies no tread support");
+        using TerraSim::TreadHeightPatch;
+        float Patch[36]={};
+        Patch[15]=.02f;
+        for(int I=16;I<TreadHeightPatch::DataEnd;++I)Patch[I]=TreadHeightPatch::Pack(0,0);
+        Patch[19]=TreadHeightPatch::Pack(0,20);
+        check(std::abs(TreadHeightPatch::Height(Patch,12.5f,12.5f))<.001f&&
+            std::abs(TreadHeightPatch::Height(Patch,37.5f,37.5f)-10)<.001f,
+            "packed tire terrain preserves the two sides of the rendered ground diagonal");
+    }
+    {
+        using TerraSim::TreadPoint;
+        constexpr float Radius=63.5f,HalfWidth=20.f;
+        const auto ContactOnIncline=[&](float CrossSlope,bool Reverse){
+            const auto P=[&](float X,float Y){return TreadPoint{X,Y,-100.f+.5f*X+CrossSlope*Y};};
+            TerraSim::TreadContact Contact;
+            const TreadPoint Lower[]={P(-75,-45),P(75,-45),P(-75,35)};
+            const TreadPoint Upper[]={P(75,-45),P(-75,35),P(75,35)};
+            const TreadPoint UpperReversed[]={Upper[2],Upper[1],Upper[0]};
+            const TreadPoint LowerReversed[]={Lower[2],Lower[1],Lower[0]};
+            TerraSim::ContactAgainstTreadTriangle(Reverse?UpperReversed:Lower,Radius,HalfWidth,Contact);
+            TerraSim::ContactAgainstTreadTriangle(Reverse?LowerReversed:Upper,Radius,HalfWidth,Contact);
+            return Contact;
+        };
+        const float ExpectedTravel=100.f-Radius*std::sqrt(1.25f);
+        const float ExpectedX=Radius/std::sqrt(5.f);
+        for(bool Reverse:{false,true}){
+            const auto Symmetric=ContactOnIncline(0.f,Reverse);
+            check(std::abs(Symmetric.Travel-ExpectedTravel)<.001f&&std::abs(Symmetric.Point.X-ExpectedX)<.001f,
+                "symmetric incline preserves the exact suspension travel and longitudinal tangent");
+            check(std::abs(Symmetric.CenterY())<.001f,
+                "symmetric incline centers the support force in either triangle traversal order");
+            const auto Banked=ContactOnIncline(.125f,Reverse);
+            check(std::abs(Banked.CenterY()-HalfWidth)<.001f&&
+                std::abs(Banked.Travel-(ExpectedTravel-.125f*HalfWidth))<.001f,
+                "banked incline preserves real shoulder contact");
+        }
+    }
+    {
+        // Representative loaded passenger tire and a tall off-road fit.
+        const auto passenger=TerraSim::MakeTireCarcass(33,.371f,.234f,.235f);
+        check(passenger.StiffnessNPerM>160000&&passenger.StiffnessNPerM<220000,
+            "representative radial stiffness agrees in scale with measured passenger tire");
+        const auto low=TerraSim::MakeTireCarcass(14,.635f,.210f,.345f);
+        const auto road=TerraSim::MakeTireCarcass(35,.635f,.210f,.345f);
+        const auto high=TerraSim::MakeTireCarcass(55,.635f,.210f,.345f);
+        check(low.Deflection(5000)>road.Deflection(5000)+.012f&&road.Deflection(5000)>high.Deflection(5000),
+            "airing down increases loaded radial deflection at a matched corner load");
+        check(low.Deflection(7000)>low.Deflection(3500)&&low.Deflection(1e7f)<low.DeflectionLimitM&&
+            low.Deflection(0)==0,"carcass deflects with load, stiffens at its travel limit and unloads");
+        check(TerraSim::TireCarcassBulge(.04f)>TerraSim::TireCarcassBulge(.012f)&&
+            TerraSim::TireCarcassBulge(.12f)<.01f,"sidewall growth is pressure-responsive and stays inside the clearance allowance");
+        const float k=42000.f, compression=.14f, alignment=.86f;
+        auto suspension=[&](float travelLoss){return k*(compression-travelLoss);};
+        const float expected=k*compression/(1+k/(road.StiffnessNPerM*alignment));
+        const float actual=TerraSim::CompliantTireLoad(road,alignment,20000.f,suspension);
+        check(std::abs(actual-expected)<2.f,"loaded tire and suspension share the same normal compression");
+        check(TerraSim::CompliantTireLoad(low,alignment,20000.f,suspension)<actual&&
+            TerraSim::CompliantTireLoad(low,alignment,20000.f,[](float){return -100.f;})==0,
+            "soft tire reduces normal force at equal geometric travel and cannot pull on ground");
+    }
     for(float dt:{1.f/20,1.f/30,1.f/60,.1f})for(float direction:{-1.f,1.f})for(float lateral:{0.f,.8f,1.f}){
         const float speed=direction*4,r=.4f,c=9000,limit=4000,drag=160,inertia=3;
         float wheel=speed/r,axle=wheel;

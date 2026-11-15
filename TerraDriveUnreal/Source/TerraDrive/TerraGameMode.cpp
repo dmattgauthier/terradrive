@@ -48,6 +48,8 @@
 #include "TerraPerimeterValidation.h"
 #include "TerraChallengeValidation.h"
 #include "TerraRockCrawlValidation.h"
+#include "TerraGraniteFitValidation.h"
+#include "TerraCarcassValidation.h"
 #include "TerraExpandedValidation.h"
 #include "TerraRecoveryValidation.h"
 #include "Misc/App.h"
@@ -141,6 +143,14 @@ void ATerraGameMode::Tick(float Dt) {
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))){
     if(TerraInterfaceValidation::Tick(V,FMath::Clamp(float(FApp::GetDeltaTime()),.001f,.1f),Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraCarcassOnly"))){
+    if(TerraCarcassValidation::Tick(V,Dt,Check,Capture))FinishValidation();
+    return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraGraniteFitOnly"))){
+    if(TerraGraniteFitValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraRockCrawlOnly"))){

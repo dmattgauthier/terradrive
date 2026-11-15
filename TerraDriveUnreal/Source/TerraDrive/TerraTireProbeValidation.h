@@ -9,5 +9,11 @@ namespace TerraTireProbeValidation {
   bool Matches(const ATerraVehicle* Vehicle);
   FMeshEnvelope MeshEnvelope(const ATerraVehicle* Vehicle);
   TArray<FVector> ActorLocalPoints(const ATerraVehicle* Vehicle);
+  struct FGroundWitness {
+    float GapCM=0;
+    int32 Wheel=INDEX_NONE;
+    FVector MeshLocal=FVector::ZeroVector, World=FVector::ZeroVector;
+  };
+  FGroundWitness ClosestGroundWitness(const ATerraVehicle* Vehicle);
   float MinimumClearance(const ATerraVehicle* Vehicle);
 }

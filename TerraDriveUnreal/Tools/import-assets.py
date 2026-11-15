@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import runpy
 import unreal
 
 root = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
@@ -263,6 +264,9 @@ material('Native_Chrome',[.45,.53,.57],.25,.88)
 exec(compile(open(os.path.join(root,'Tools','automotive-materials.py'),encoding='utf8').read(),'automotive-materials.py','exec'),globals())
 
 exec(compile(open(os.path.join(root,'Tools','close-rocks.py'),encoding='utf8').read(),'close-rocks.py','exec'))
+carcass_recipe = runpy.run_path(os.path.join(root, 'Tools', 'tire-carcass-materials.py'))
+carcass_slots = carcass_recipe['build_tire_carcass_materials'](data)
+bind_mesh_materials = carcass_recipe['bind_mesh_materials']
 for i, asset in enumerate(data['assets']):
     # A fresh commandlet per small group bounds Interchange/MeshDescription
     # working memory on 16 GB machines. Finalization runs only in the last group.
@@ -301,11 +305,8 @@ for i, asset in enumerate(data['assets']):
         if not task.imported_object_paths:
             raise RuntimeError('Import failed: ' + asset['name'])
         mesh = lib.load_asset(task.imported_object_paths[0])
-    for index, slot in enumerate(mesh.get_editor_property('static_materials')):
-        slot_name = str(slot.get_editor_property('imported_material_slot_name'))
-        mid = next((m for m in asset['slots'] if m in slot_name), asset['slots'][min(index,len(asset['slots'])-1)])
-        if mesh.get_material(index) != materials[mid]:
-            mesh.set_material(index, materials[mid])
+    is_tire = carcass_recipe['TIRE_ASSET'].search(asset['name']) is not None
+    changed_materials = bind_mesh_materials(mesh, asset, carcass_slots if is_tire else materials)
     # Impact dents copy the selected vehicle's render mesh once, on the first
     # damaging contact. Keep CPU vertex data for bodies only, not scenery.
     if asset['name'].endswith('_body'):
@@ -329,7 +330,10 @@ for i, asset in enumerate(data['assets']):
         body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
     lib.set_metadata_tag(mesh, 'TerraMeshSchema', str(data['meshSchema']))
     lib.set_metadata_tag(mesh, 'TerraMeshHash', asset.get('sha256',''))
-    lib.save_loaded_asset(mesh)
+    save_tire_bindings = is_tire and changed_materials
+    saved = lib.save_loaded_asset(mesh, only_if_is_dirty=not save_tire_bindings)
+    if save_tire_bindings and not saved:
+        raise RuntimeError('Cannot save tire material bindings: ' + asset['name'])
     if asset['name'].startswith('scan_native_'):
         close_rock_mesh(mesh,asset['sha256'])
         configure_boulder_collision(mesh,asset['sha256'])
