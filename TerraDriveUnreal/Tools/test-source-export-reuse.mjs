@@ -16,6 +16,7 @@ const newManifest = {...oldManifest, routes: [...oldManifest.routes, {name: 'Gra
 const collisionFiles = ['vehicle-ground-probes.json', 'vehicle-collision.json'];
 const collisionBakers = ['bake-vehicle-ground-probes.mjs', 'bake-coachwork-collision.mjs'];
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+const fixtureTire = {name: 'truck_tire', sha256: digest('fixture tire geometry')};
 
 function copyTools(root, files) {
   for (const file of files) fs.copyFileSync(path.join(tools, file), path.join(root, 'Tools', file));
@@ -81,22 +82,26 @@ function publishVehicle(root, shift) {
   fs.writeFileSync(path.join(root, 'SourceAssets/truck_body.obj'), body);
   publishSourceExport(root, {
     meshSchema: 2,
-    assets: [{name: 'truck_body', sha256}],
+    assets: [{name: 'truck_body', sha256}, fixtureTire],
     materials: [{id: 'M_000', opacity: 1, automotive: 'paint'}],
-    vehicles: [{id: 'truck', asset: 'truck', width: 2, height: 2.2, cgHeight: 0.8, clearance: 0.2}],
+    vehicles: [{id: 'truck', asset: 'truck', width: 2, height: 2.2, cgHeight: 0.8, clearance: 0.2, tireRadius: 0.42, tireFits: []}],
   }, oldTerrain);
   return sha256;
 }
 
-function recordFixtureImport(root) {
+function recordFixtureImport(root, probeVersion = 3) {
   fs.writeFileSync(path.join(root, 'Content/Maps/ProvingGround.umap'), 'imported map');
   fs.writeFileSync(path.join(root, 'Content/NativeData/terrain-blend.bin'), 'imported mask');
-  fs.writeFileSync(path.join(root, 'Content/NativeData/vehicle-tire-probes.json'), '{}');
+  const stock = {stage: 0, asset: fixtureTire.name, sha256: fixtureTire.sha256, radiusM: 0.42,
+    pointsCm: Array.from({length: 24}, (_, i) => [i, 1, 2])};
+  fs.writeFileSync(path.join(root, 'Content/NativeData/vehicle-tire-probes.json'),
+    JSON.stringify({version: probeVersion, vehicles: [{id: 'truck', stages: [stock]}]}));
   const receipt = {
     complete: true,
     sourceExportSHA256: checkReuse(root),
     terrainBlendSHA256: digest('imported mask'),
-    vehicleCollisionSHA256: runNode(root, 'verify-baked-vehicle-collision.mjs'),
+    vehicleCollisionSHA256: digest(collisionFiles.map(file =>
+      digest(fs.readFileSync(path.join(root, 'Content/NativeData', file)))).join('\n')),
   };
   const bytes = JSON.stringify(receipt);
   fs.writeFileSync(path.join(root, 'Saved/import-complete.json'), bytes);
@@ -316,6 +321,31 @@ test('skip cook reuses only the Windows tree recorded by the successful cook', (
   checkBuildRejected(root, reuse, /The cooked Windows tree differs from the completed cook/);
   assert.equal(fs.readFileSync(verificationLog, 'utf8'), calls);
   assert.match(parsed.cookedTreeSHA256, /^[a-f0-9]{64}$/);
+}));
+
+test('matching import and cook receipts cannot package old tire catalogs or probe versions', () => withProject(root => {
+  copyTools(root, collisionBakers);
+  publishVehicle(root, 0);
+  for (const script of collisionBakers) runNode(root, script);
+  const relative = 'TerraDrive/Content/ProvingGround.umap';
+  const cooked = path.join(root, 'Saved/Cooked/Windows', relative);
+  fs.mkdirSync(path.dirname(cooked), {recursive: true});
+  fs.writeFileSync(cooked, 'cooked map');
+  const cookedTreeSHA256 = digest(relative + ':' + digest('cooked map'));
+  const flags = ['-EngineRoot', path.join(root, 'unused engine'), '-SkipBuild', '-Package'];
+  function rejectPackage(reason) {
+    const assetImportSHA256 = recordFixtureImport(root, 2);
+    fs.writeFileSync(path.join(root, 'Saved/native-cook-complete.json'), JSON.stringify({assetImportSHA256, cookedTreeSHA256}));
+    checkBuildRejected(root, flags, reason);
+    checkBuildRejected(root, [...flags, '-SkipCook'], reason);
+  }
+  rejectPackage(/vehicle-tire-probes\.json must use version 3/);
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'SourceAssets/import.json')));
+  manifest.vehicles[0].tireFits = [{stage: 1, diameterInches: 39, liftM: .03}];
+  beginSourceExport(root);
+  publishSourceExport(root, manifest, oldTerrain);
+  rejectPackage(/Incompatible tire fit catalog for truck at stage 1/);
 }));
 
 test('the full exporter recovers from a truncated legacy import manifest', {timeout: 620000}, () => withProject(root => {

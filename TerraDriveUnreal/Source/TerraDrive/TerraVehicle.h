@@ -296,6 +296,7 @@ private:
   bool NearCamera = false;
   bool ReverseReleaseRequired=false;
   float GarageYaw=145,GaragePitch=-12,GarageDistance=1050;
+  bool GarageTireFitUnavailable=false;
   TSharedPtr<STerraGarage> GarageWidget;
   int LastVehicle = 0;
   float TireVisualScale = 1, WidthVisualScale = 1, Droop = .16f;

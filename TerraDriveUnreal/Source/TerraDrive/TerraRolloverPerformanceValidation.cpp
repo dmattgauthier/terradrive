@@ -1,4 +1,5 @@
 #include "TerraRolloverPerformanceValidation.h"
+#include "TerraRolloverBodyProbes.h"
 #include "TerraVehicle.h"
 #include "TerraTireProbeValidation.h"
 #include "TerraWorld.h"
@@ -15,7 +16,6 @@
 #include "ProfilingDebugging/MiscTrace.h"
 #include "HAL/IConsoleManager.h"
 #include "PhysicsEngine/PhysicsSettings.h"
-#include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
 namespace TerraRolloverPerformanceValidation {
@@ -23,22 +23,15 @@ namespace {
 struct FCase {int Vehicle,Zone,Roll;};
 struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
-  TArray<FVector> Probes[ATerraVehicle::VehicleCount];
+  FTerraRolloverBodyProbes BodyProbes;
   TArray<FCase> Cases;TArray<TSharedPtr<FJsonValue>> Reports;
   TArray<float> Frames;int Trial=0,Phase=0;double PhaseStarted=0,Previous=0;
   bool UsingSavedBuild=false;
-  bool Finite=true,PoseSeen=false;float MinimumTireClearance=10000;int MaximumCandidates=0,MaximumTraces=0,TireSize=0;FString Region,Directory;
+  bool Finite=true,PoseSeen=false;float MinimumTireClearance=10000;int MaximumCandidates=0,MaximumTraces=0,TireSize=0,ExpectedTireSize=0;FString Region,Directory;
 } State;
 FString Name(const FCase& C){return FString::Printf(TEXT("roll-perf-v%d-z%d-r%d"),C.Vehicle,C.Zone,C.Roll);}
 bool Load(ATerraVehicle* V){
-  FString Json;TSharedPtr<FJsonObject> Root;
-  if(!FFileHelper::LoadFileToString(Json,*(FPaths::ProjectContentDir()/TEXT("NativeData/vehicle-collision.json")))||
-     !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root))return false;
-  const auto& Vehicles=Root->GetArrayField(TEXT("vehicles"));if(Vehicles.Num()!=ATerraVehicle::VehicleCount)return false;
-  for(int I=0;I<Vehicles.Num();++I)for(const auto& Value:Vehicles[I]->AsObject()->GetArrayField(TEXT("rolloverProbes"))){
-    const auto& A=Value->AsArray();if(A.Num()!=3)return false;State.Probes[I].Add(FVector(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber()));
-  }
-  if(!TerraTireProbeValidation::Load())return false;
+  if(!State.BodyProbes.Load(FPaths::ProjectContentDir()/TEXT("NativeData/vehicle-collision.json"))||!TerraTireProbeValidation::Load())return false;
   FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverTireSize="),State.TireSize);
   if(State.TireSize<0||State.TireSize>TerraSim::MaxTireSizeStage)return false;
   FString Build;FParse::Value(FCommandLine::Get(),TEXT("TerraPerfBuild="),Build);
@@ -53,15 +46,13 @@ bool Load(ATerraVehicle* V){
   FString Report;FParse::Value(FCommandLine::Get(),TEXT("TerraReport="),Report);State.Directory=FPaths::GetPath(Report);
   return !State.Cases.IsEmpty();
 }
-void Place(ATerraVehicle* V,const FCase& C){
+void Place(ATerraVehicle* V,const FCase& C,const TArray<FVector>& BodyPoints){
   FVector P=V->Terrain->Spawns[C.Zone];
   // Use a clear area and the actual mesh probes/deformed ground. There is no
   // pose constraint, substitute ground, disabled collision or fixed clock.
   if(C.Zone==0)P+=FVector(-1500,1200,0);
-  const FQuat Q=FRotator(0,0,C.Roll).Quaternion();float Z=-100000;
-  for(const auto& Local:State.Probes[C.Vehicle]){const auto Offset=Q.RotateVector(Local);Z=FMath::Max(Z,V->Terrain->Height(P.X+Offset.X,P.Y+Offset.Y)-float(Offset.Z));}
-  for(const auto& Local:TerraTireProbeValidation::ActorLocalPoints(V)){const auto Offset=Q.RotateVector(Local);Z=FMath::Max(Z,V->Terrain->Height(P.X+Offset.X,P.Y+Offset.Y)-float(Offset.Z));}
-  P.Z=C.Roll==0?V->Terrain->Height(P.X,P.Y)+V->ExpectedRideHeight()*100+25:Z+20;
+  const FQuat Q=FRotator(0,0,C.Roll).Quaternion();
+  P.Z=C.Roll==0?V->Terrain->Height(P.X,P.Y)+V->ExpectedRideHeight()*100+25:FTerraRolloverBodyProbes::DropHeight(V,BodyPoints,P,Q)+20;
   V->SetActorLocationAndRotation(P,Q,false,nullptr,ETeleportType::TeleportPhysics);
   V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
   V->ResetContactTelemetry();State.Finite=true;State.PoseSeen=false;State.MinimumTireClearance=10000;State.MaximumCandidates=State.MaximumTraces=0;
@@ -126,9 +117,11 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     const float SavedPressure=V->PressureProfiles[C.Vehicle],SavedCharge=V->BatteryProfiles[C.Vehicle],SavedFuel=V->FuelProfiles[C.Vehicle];
     V->SetGarage(true);
     // Start each copied-build pose from the same loaded profile.
+    State.ExpectedTireSize=V->Builds[C.Vehicle].Stage[TerraSim::TireSize];
     V->SelectVehicle(C.Vehicle,!State.UsingSavedBuild);
     if(State.TireSize>0){
       const int Size=FMath::Min(State.TireSize,V->UpgradeMaxStage(TerraSim::TireSize));
+      State.ExpectedTireSize=Size;
       const int Required=V->RequiredTireSuspensionStage(Size);
       if(V->UpgradeStage(TerraSim::Suspension)<Required)V->SetUpgrade(TerraSim::Suspension,Required,false);
       V->SetUpgrade(TerraSim::TireSize,Size,false);
@@ -146,12 +139,15 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     State.Phase=1;State.PhaseStarted=Now;return false;
   }
   if(State.Phase==1&&Now-State.PhaseStarted>1){
-    if(!TerraTireProbeValidation::Matches(V)){
-      Check(Label+TEXT(" requires exact witness profiles for the fitted tire meshes"),false,V->UpgradeStage(TerraSim::Tires));
+    const auto* BodyPoints=State.BodyProbes.Find(V);
+    if(!BodyPoints||V->UpgradeStage(TerraSim::TireSize)!=State.ExpectedTireSize||!TerraTireProbeValidation::Matches(V)){
+      Check(Label+TEXT(" requires the requested tire fit and mesh-matched body and tire probes"),false,V->UpgradeStage(TerraSim::TireSize));
       return true;
     }
+    UE_LOG(LogTemp,Display,TEXT("TERRA_PERF_BODY_MESH case=%s sizeStage=%d asset=%s probes=%d"),
+      *Label,State.ExpectedTireSize,*V->Body->GetStaticMesh()->GetName(),BodyPoints->Num());
     UE_LOG(LogTemp,Display,TEXT("TERRA_PERF_TIRE_MESH case=%s asset=%s"),*Label,*V->Wheels[0]->GetStaticMesh()->GetName());
-    Place(V,C);State.Phase=2;State.PhaseStarted=Now;return false;
+    Place(V,C,*BodyPoints);State.Phase=2;State.PhaseStarted=Now;return false;
   }
   State.Finite&=!V->GetActorLocation().ContainsNaN()&&!V->Chassis->GetPhysicsLinearVelocity().ContainsNaN();
   State.PoseSeen|=C.Roll==0?V->GetActorUpVector().Z>.9f:C.Roll==90?FMath::Abs(V->GetActorUpVector().Z)<.35f:V->GetActorUpVector().Z<-.7f;
@@ -172,9 +168,12 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     TRACE_END_REGION(*State.Region);
     auto Sorted=State.Frames;Sorted.Sort();double Sum=0;for(float X:Sorted)Sum+=X;
     const float Mean=Sum/Sorted.Num(),P95=Sorted[FMath::Min(Sorted.Num()-1,FMath::FloorToInt(Sorted.Num()*.95f))];
-    float Clearance=10000;for(const auto& Local:State.Probes[C.Vehicle]){const auto P=V->GetActorTransform().TransformPosition(Local);Clearance=FMath::Min(Clearance,float(P.Z-V->Terrain->Height(P.X,P.Y)));}
+    const auto* BodyPoints=State.BodyProbes.Find(V);
+    if(!BodyPoints){Check(Label+TEXT(" retains its fitted body probes"),false,0);return true;}
+    const float Clearance=FTerraRolloverBodyProbes::MinimumClearance(V,*BodyPoints);
     auto R=MakeShared<FJsonObject>();R->SetStringField(TEXT("case"),Label);R->SetNumberField(TEXT("vehicle"),C.Vehicle);R->SetNumberField(TEXT("zone"),C.Zone);R->SetNumberField(TEXT("requestedRoll"),C.Roll);R->SetNumberField(TEXT("actualRoll"),V->GetActorRotation().Roll);
     R->SetNumberField(TEXT("frames"),Sorted.Num());R->SetNumberField(TEXT("meanFrameMs"),Mean);R->SetNumberField(TEXT("p95FrameMs"),P95);R->SetNumberField(TEXT("averageFPS"),1000/Mean);R->SetNumberField(TEXT("minimumBodyClearanceIn"),Clearance/2.54f);
+    R->SetStringField(TEXT("bodyAsset"),V->Body->GetStaticMesh()->GetName());R->SetNumberField(TEXT("bodyProbeCount"),BodyPoints->Num());
     R->SetNumberField(TEXT("minimumTireClearanceIn"),State.MinimumTireClearance/2.54f);
     R->SetNumberField(TEXT("maximumTireContactCandidates"),State.MaximumCandidates);R->SetNumberField(TEXT("maximumTireContactTraces"),State.MaximumTraces);
     R->SetNumberField(TEXT("terrainHits"),V->TerrainBodyHits);R->SetNumberField(TEXT("bodyImpressions"),V->Terrain->BodyImpressionCount);R->SetNumberField(TEXT("activeSoilTiles"),V->Terrain->DetailCount());

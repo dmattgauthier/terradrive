@@ -32,26 +32,48 @@ struct FTireFit {
 const FJsonObject* VehicleSpec(const ATerraWorld* Terrain,int Index){
   const TArray<TSharedPtr<FJsonValue>>* Specs=nullptr;
   if(!Terrain||!Terrain->Data.IsValid()||!Terrain->Data->TryGetArrayField(TEXT("vehicles"),Specs)||!Specs->IsValidIndex(Index))return nullptr;
-  const auto* Object=(*Specs)[Index]->AsObject().Get();
-  return Object;
+  const TSharedPtr<FJsonObject>* Spec=nullptr;
+  return (*Specs)[Index]->TryGetObject(Spec)?Spec->Get():nullptr;
 }
 
 bool FindTireFit(const FJsonObject* Spec,int Stage,FTireFit& Result){
   const TArray<TSharedPtr<FJsonValue>>* Fits=nullptr;
   if(!Spec||Stage<1||Stage>TerraSim::MaxTireSizeStage||!Spec->TryGetArrayField(TEXT("tireFits"),Fits)||!Fits->IsValidIndex(Stage-1))return false;
-  const auto Fit=(*Fits)[Stage-1]->AsObject();
-  if(!Fit.IsValid())return false;
-  double Diameter=0,Minimum=0,Track=0,Front=0,Rear=0,Steering=0,Lift=0;
-  if(Fit->GetIntegerField(TEXT("stage"))!=Stage||
+  const TSharedPtr<FJsonObject>* Row=nullptr;
+  if(!(*Fits)[Stage-1]->TryGetObject(Row)||!Row->IsValid())return false;
+  const auto& Fit=*Row;
+  double FitStage=0,Diameter=0,Minimum=0,Track=0,Front=0,Rear=0,Steering=0,Lift=0;
+  FString BodyAsset;
+  if(!Fit->TryGetNumberField(TEXT("stage"),FitStage)||FitStage!=Stage||
      !Fit->TryGetNumberField(TEXT("diameterInches"),Diameter)||!FMath::IsFinite(Diameter)||Diameter<25||Diameter>50||FMath::FloorToDouble(Diameter)!=Diameter||
      !Fit->TryGetNumberField(TEXT("minimumSuspensionStage"),Minimum)||!(Minimum>=1&&Minimum<=3)||FMath::FloorToDouble(Minimum)!=Minimum||
      !Fit->TryGetNumberField(TEXT("trackExtraM"),Track)||!(Track>=0&&Track<=.65)||
      !Fit->TryGetNumberField(TEXT("maximumBumpFrontM"),Front)||!(Front>=.055&&Front<=1)||
      !Fit->TryGetNumberField(TEXT("maximumBumpRearM"),Rear)||!(Rear>=.055&&Rear<=1)||
      !Fit->TryGetNumberField(TEXT("maximumSteeringDegrees"),Steering)||!(Steering>=18&&Steering<=ATerraVehicle::SteeringLockDegrees)||
-     !Fit->TryGetNumberField(TEXT("liftM"),Lift)||Lift!=0)return false;
-  Result={int(Diameter),int(Minimum),float(Track),float(Front),float(Rear),float(Steering),FString()};
-  Fit->TryGetStringField(TEXT("bodyAsset"),Result.BodyAsset);
+     !Fit->TryGetNumberField(TEXT("liftM"),Lift)||Lift!=0||
+     !Fit->HasTypedField<EJson::String>(TEXT("bodyAsset"))||!Fit->TryGetStringField(TEXT("bodyAsset"),BodyAsset))return false;
+  Result={int(Diameter),int(Minimum),float(Track),float(Front),float(Rear),float(Steering),MoveTemp(BodyAsset)};
+  return true;
+}
+
+bool HasCompatibleTireCatalog(const ATerraWorld* Terrain){
+  const TArray<TSharedPtr<FJsonValue>>* Specs=nullptr;
+  if(!Terrain||!Terrain->Data.IsValid()||!Terrain->Data->TryGetArrayField(TEXT("vehicles"),Specs)||
+     Specs->Num()!=ATerraVehicle::VehicleCount)return false;
+  for(int Index=0;Index<Specs->Num();++Index){
+    const FJsonObject* Spec=VehicleSpec(Terrain,Index);
+    const TArray<TSharedPtr<FJsonValue>>* Fits=nullptr;
+    double StockRadius=0;
+    if(!Spec||!Spec->TryGetNumberField(TEXT("tireRadius"),StockRadius)||!FMath::IsFinite(StockRadius)||StockRadius<=0||
+       !Spec->TryGetArrayField(TEXT("tireFits"),Fits)||Fits->Num()>TerraSim::MaxTireSizeStage)return false;
+    FTireFit Fit;
+    double PreviousDiameter=StockRadius/.0127;
+    for(int Stage=1;Stage<=Fits->Num();++Stage){
+      if(!FindTireFit(Spec,Stage,Fit)||Fit.Diameter<=PreviousDiameter)return false;
+      PreviousDiameter=Fit.Diameter;
+    }
+  }
   return true;
 }
 
@@ -83,6 +105,8 @@ void ATerraVehicle::SetGarageView(int View){
   if(View==0)GarageDistance=FMath::Clamp(Number(TEXT("length"),4.8f)*215,950.f,1450.f);
 }
 bool ATerraVehicle::SaveGarage(const FString &Path) const {
+  // Automatic saves also pass here after a garage load could not migrate its tires.
+  if(GarageTireFitUnavailable||!HasCompatibleTireCatalog(Terrain))return false;
   auto Root=MakeShared<FJsonObject>(); Root->SetNumberField(TEXT("version"),TerraSim::GarageSaveVersion);
   Root->SetBoolField(TEXT("damageEnabled"),DamageEnabled);
   Root->SetBoolField(TEXT("energyUsageEnabled"),EnergyUsageEnabled);
@@ -91,7 +115,8 @@ bool ATerraVehicle::SaveGarage(const FString &Path) const {
   for(int I=0;I<VehicleCount;++I){
     const auto& Build=Builds[I];
     FTireFit Fit;
-    FindTireFit(VehicleSpec(Terrain,I),Build.Stage[TerraSim::TireSize],Fit);
+    const int Size=Build.Stage[TerraSim::TireSize];
+    if(Size!=0&&!FindTireFit(VehicleSpec(Terrain,I),Size,Fit))return false;
     TArray<TSharedPtr<FJsonValue>> Stages;
     for(int Part=0;Part<TerraSim::PartCount;++Part)
       Stages.Add(MakeShared<FJsonValueNumber>(Part==TerraSim::TireSize?Fit.Diameter:Build.Stage[Part]));
@@ -109,6 +134,10 @@ bool ATerraVehicle::SaveGarage(const FString &Path) const {
   return FFileHelper::SaveStringToFile(Text,*Temp)&&IFileManager::Get().Move(*Path,*Temp,true,true);
 }
 bool ATerraVehicle::LoadGarage(const FString &Path) {
+  if(!HasCompatibleTireCatalog(Terrain)){
+    UE_LOG(LogTemp,Warning,TEXT("Garage persistence requires the current tire fit catalog"));
+    return false;
+  }
   FString Text;TSharedPtr<FJsonObject> Root;
   if(!FFileHelper::LoadFileToString(Text,*Path)||
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())return false;
@@ -127,13 +156,22 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
     int& Size=Loaded[I].Stage[TerraSim::TireSize];
     const bool Legacy=Version<TerraSim::GarageSaveVersion;
     float Diameter=Size;
-    if(Legacy&&CarSpec){
+    if(Legacy){
       const float Stock=CarSpec->GetNumberField(TEXT("tireRadius"))*200/2.54f;
       if(Size>0)Diameter=TerraSim::LegacyTireKitDiameterInches(Stock,Size);
       else if(Stock<50&&Loaded[I].Stage[TerraSim::Tires]>0)
         Diameter=FMath::RoundToFloat(Stock*(1+.04f*Loaded[I].Stage[TerraSim::Tires]));
     }
-    Size=ResolveSavedTireStage(CarSpec,Diameter,Loaded[I].Stage[TerraSim::Suspension],Legacy&&Size>0);
+    const int Resolved=ResolveSavedTireStage(CarSpec,Diameter,Loaded[I].Stage[TerraSim::Suspension],Legacy&&Size>0);
+    if(!Legacy&&Size>0){
+      FTireFit Fit;
+      if(!FindTireFit(CarSpec,Resolved,Fit)||Fit.Diameter!=Size){
+        GarageTireFitUnavailable=true;
+        UE_LOG(LogTemp,Warning,TEXT("Garage persistence requires the saved %d-inch fit for vehicle %d"),Size,I);
+        return false;
+      }
+    }
+    Size=Resolved;
   }
   if(Root->HasField(TEXT("vehicle"))&&(!Root->TryGetNumberField(TEXT("vehicle"),Selected)||!FMath::IsFinite(Selected)||Selected<0||Selected>=Cars->Num()||std::floor(Selected)!=Selected))return false;
   float Air[VehicleCount]={},Charge[VehicleCount],Fuel[VehicleCount];for(int I=0;I<VehicleCount;++I)Charge[I]=Fuel[I]=.75f;
@@ -153,6 +191,7 @@ bool ATerraVehicle::LoadGarage(const FString &Path) {
   }
   for(int I=0;I<VehicleCount;++I){Builds[I]=Loaded[I];PressureProfiles[I]=Air[I];BatteryProfiles[I]=Charge[I];FuelProfiles[I]=Fuel[I];}
   LastVehicle=int(Selected);DamageEnabled=LoadedDamageEnabled;EnergyUsageEnabled=LoadedEnergyUsage;
+  GarageTireFitUnavailable=false;
   return true;
 }
 TerraSim::DriveCapabilities ATerraVehicle::DriveCapabilities() const {
@@ -254,6 +293,9 @@ void ATerraVehicle::ApplyUpgrades(){
     if(FindTireFit(Spec.Get(),SizeStage,Fit)&&UpgradeStage(TerraSim::Suspension)>=Fit.MinimumSuspension){
       TireMesh=LoadMesh(BaseAsset+FString::Printf(TEXT("_tire_size%d_0"),SizeStage));
       if(TireMesh&&!Fit.BodyAsset.IsEmpty()&&!LoadMesh(Fit.BodyAsset))TireMesh=nullptr;
+      // The factory fallback can keep the game playable, but only the fitted
+      // selection is safe to persist when its assets are available.
+      if(!TireMesh)GarageTireFitUnavailable=true;
     }
     if(!TireMesh){SizeStage=0;Fit=FTireFit();TireMesh=LoadMesh(BaseAsset+TEXT("_tire"));}
     const FString BodyAsset=Fit.BodyAsset.IsEmpty()?BaseAsset+TEXT("_body"):Fit.BodyAsset;
@@ -332,7 +374,10 @@ int ATerraVehicle::RequiredTireSuspensionStage(int Stage) const{
   return FindTireFit(Spec.Get(),Stage,Fit)?Fit.MinimumSuspension:-1;
 }
 FString ATerraVehicle::UpgradeUnavailableReason(int Part,int Stage) const{
-  if(Stage<0||(Part!=TerraSim::TireSize&&Stage>3))return TEXT("Unavailable for this vehicle");
+  if(Part<0||Part>=TerraSim::PartCount||Stage<0||(Part!=TerraSim::TireSize&&Stage>3))return TEXT("Unavailable for this vehicle");
+  if(Part==TerraSim::Electrical&&!HasElectrical())return TEXT("Electrical upgrades require an electrical system");
+  if(Part==TerraSim::CenterDifferential&&Stage>0&&!CenterLockUpgradeAvailable())
+    return TEXT("A center differential retrofit is unavailable for this drivetrain");
   if(Part==TerraSim::TireSize&&Stage>0){
     if(Tracks)return TEXT("Remove the tracks before changing tire diameter");
     const int Required=RequiredTireSuspensionStage(Stage);
@@ -345,11 +390,9 @@ FString ATerraVehicle::UpgradeUnavailableReason(int Part,int Stage) const{
   return FString();
 }
 void ATerraVehicle::SetUpgrade(int Part,int Stage,bool Persist){
-  if(Part<0||Part>=TerraSim::PartCount||(!Garage&&!AutoTest))return;
-  if(Part==TerraSim::Electrical&&!HasElectrical())return;
+  if(!Garage&&!AutoTest)return;
   const FString Unavailable=UpgradeUnavailableReason(Part,Stage);
   if(!Unavailable.IsEmpty()){Notice=Unavailable;return;}
-  if(Part==TerraSim::CenterDifferential&&Stage>0&&!CenterLockUpgradeAvailable())return;
   Builds[VehicleIndex].Stage[Part]=Stage;
   if(Part==TerraSim::Drivetrain&&Stage>0)FourDrive=HasFourDrive();
   if(Part==TerraSim::EVSwap){

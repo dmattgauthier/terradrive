@@ -144,9 +144,6 @@ if ($ImportAssets) {
 }
 if ($Package) {
     $importHash=Get-CompletedImportHash
-    if (!(Test-Path -LiteralPath (Join-Path $projectRoot 'Content\NativeData\vehicle-tire-probes.json') -PathType Leaf)) {
-        throw 'Missing vehicle tire probes. Run with -ImportAssets before packaging.'
-    }
     $cookArgument='-cook'
     if ($SkipCook) {
         $cookReceipt=Read-BuildReceipt $cookMarker

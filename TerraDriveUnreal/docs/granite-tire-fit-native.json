@@ -85,5 +85,43 @@
     "simulationCore": 730,
     "centerDifferential": 315,
     "energy": 31
+  },
+  "reviewFollowUp": {
+    "previousHead": "d892e68748475fe8ef2adfd70c40930e9fe7057a",
+    "windowsExecutableSha256": "b7852ed719e0ce2c52d97dc5329b09ca0144d596f5299c898bc318d30612da7f",
+    "nativeSourceTreeSha256": "e68df45192ab7aaf2226c51c2f62f69f0ff08aa14e315135cefa07d23026e6f1",
+    "nativeSourceTreeHashMethod": "SHA-256 of sorted relative-path:file-SHA-256 lines under Source, joined with LF.",
+    "packaging": "Win64 Development restaged with -Package -SkipCook from the verified import and cook above. The staged content hashes match the original package. Regression fixtures with matching import and cook receipts reject both the legacy tire fit catalog and v2 tire probes in -Package and -Package -SkipCook.",
+    "expanded": {
+      "passedChecks": 292,
+      "peakTemperatureC": 59.41,
+      "saveChecks": "Stale fit metadata left the isolated v9 and v10 files byte-identical. Removing a saved diameter from a current catalog also preserved the v10 file byte-for-byte. The compatible catalog restored the v9 Wrangler's 50-inch fit and required suspension.",
+      "garageChecks": "The stock Civic disables electrical upgrades and center retrofits. Dual-motor conversion enables the electrical row and keeps center retrofits disabled."
+    },
+    "rollover": {
+      "clock": "Fixed 20 Hz simulation, 20 FPS cap",
+      "bodyAsset": "wrangler_rubicon_trail_clearance_body",
+      "tireDiameterInches": 35,
+      "probesUsedForPlacementAndClearance": 336,
+      "poses": 10,
+      "passedChecks": 91,
+      "peakTemperatureC": 56.6
+    },
+    "realTimeRollover": {
+      "clock": "Real elapsed time, 20 FPS cap",
+      "bodyAsset": "wrangler_rubicon_clearance_body",
+      "tireDiameterInches": 50,
+      "v9FixtureSha256": "b3c890c4190bbe028517df43ff0983c4af177493093b0541dbe8edf114da6c34",
+      "probesUsedForPlacementAndClearance": 331,
+      "poses": 9,
+      "passedChecks": 67,
+      "totalChecks": 68,
+      "peakTemperatureC": 55.65,
+      "failedCase": "roll-perf-v0-z2-r0 independent visible tires remain above ground with bounded contact work",
+      "minimumTireClearanceInches": -1.7688,
+      "baselineMinimumTireClearanceInches": -1.7822,
+      "baseline": "The original executable above reproduced the same sole failure with the same saved profile, cook, render cap and quality setting. All fitted-body clearance checks passed in the follow-up run."
+    },
+    "earlierAttempts": "The sandbox blocked Unreal staging and the first game startup. The first unsandboxed functional rollover run wrote 91 passing assertions and ten captures before its shutdown timeout. The repeat passed the runner with exit zero. Earlier logs and reports are retained locally."
   }
 }

@@ -270,6 +270,78 @@ bool BeginTireGarage(ATerraVehicle* V,const TSharedPtr<STerraGarage>& Garage){
   V->SetUpgrade(TerraSim::Suspension,0,false);
   return V->UpgradeStage(TerraSim::TireSize)==0&&V->UpgradeStage(TerraSim::Suspension)==0;
 }
+
+void CollectButtonStates(SWidget& Widget,TArray<bool>& Enabled){
+  if(Widget.GetType()==FName(TEXT("SButton"))){
+    Enabled.Add(Widget.IsEnabled());
+    return;
+  }
+  FChildren* Children=Widget.GetChildren();
+  for(int I=0;I<Children->Num();++I)CollectButtonStates(*Children->GetChildAt(I),Enabled);
+}
+
+bool UpgradeButtonStates(const TSharedPtr<STerraGarage>& Garage,int Part,bool Stock,bool Upgrades){
+  const auto Row=Garage.IsValid()?Garage->UpgradePartWidget(Part):nullptr;
+  if(!Row.IsValid())return false;
+  TArray<bool> Enabled;
+  CollectButtonStates(*Row,Enabled);
+  return Enabled.Num()==4&&Enabled[0]==Stock&&Enabled[1]==Upgrades&&Enabled[2]==Upgrades&&Enabled[3]==Upgrades;
+}
+
+void CheckStaleTireCatalog(ATerraVehicle* V,const FString& Path,const FJsonObject& Save,
+    TFunctionRef<void(const FString&,bool,float)> Check){
+  const auto Data=V->Terrain->Data;
+  const auto& Vehicles=Data->GetArrayField(TEXT("vehicles"));
+  const auto Wrangler=Vehicles[0]->AsObject();
+  const auto& Fits=Wrangler->GetArrayField(TEXT("tireFits"));
+  const auto WithFits=[&](const TArray<TSharedPtr<FJsonValue>>& Replacement){
+    auto World=MakeShared<FJsonObject>(*Data);
+    auto Specs=Vehicles;
+    auto Spec=MakeShared<FJsonObject>(*Wrangler);
+    Spec->SetArrayField(TEXT("tireFits"),Replacement);
+    Specs[0]=MakeShared<FJsonValueObject>(Spec);
+    World->SetArrayField(TEXT("vehicles"),Specs);
+    return World;
+  };
+  auto OldFits=Fits;
+  auto OldFit=MakeShared<FJsonObject>(*Fits[0]->AsObject());
+  OldFit->RemoveField(TEXT("minimumSuspensionStage"));OldFit->RemoveField(TEXT("bodyAsset"));
+  OldFits[0]=MakeShared<FJsonValueObject>(OldFit);
+
+  const FString LegacyPath=FPaths::GetPath(Path)/TEXT("expanded-v9-tire-fixture.json");
+  auto Legacy=MakeShared<FJsonObject>(Save);
+  auto Builds=Save.GetArrayField(TEXT("builds"));
+  for(int I=0;I<Builds.Num();++I){
+    auto Slots=Builds[I]->AsArray();
+    Slots[TerraSim::TireSize]=MakeShared<FJsonValueNumber>(I==0?3:0);
+    if(I==0)Slots[TerraSim::Suspension]=MakeShared<FJsonValueNumber>(0);
+    Builds[I]=MakeShared<FJsonValueArray>(Slots);
+  }
+  Legacy->SetNumberField(TEXT("version"),9);
+  Legacy->SetArrayField(TEXT("builds"),Builds);
+  FString LegacyJson;
+  const bool LegacyWritten=FJsonSerializer::Serialize(Legacy,TJsonWriterFactory<>::Create(&LegacyJson))&&
+    FFileHelper::SaveStringToFile(LegacyJson,*LegacyPath);
+  const auto BlocksWrites=[&](const FString& File){
+    TArray<uint8> Before,After;
+    return FFileHelper::LoadFileToArray(Before,*File)&&!V->LoadGarage(File)&&!V->SaveGarage(File)&&
+      FFileHelper::LoadFileToArray(After,*File)&&Before==After;
+  };
+  {
+    TGuardValue<TSharedPtr<FJsonObject>> World(V->Terrain->Data,WithFits(OldFits));
+    Check(TEXT("stale fit data leaves the version ten tire selections byte-identical"),BlocksWrites(Path),0);
+    Check(TEXT("stale fit data leaves the version nine build byte-identical"),LegacyWritten&&BlocksWrites(LegacyPath),0);
+  }
+  auto IncompleteFits=Fits;
+  IncompleteFits.Pop();
+  {
+    TGuardValue<TSharedPtr<FJsonObject>> World(V->Terrain->Data,WithFits(IncompleteFits));
+    Check(TEXT("a catalog missing a saved version ten diameter leaves the build byte-identical"),BlocksWrites(Path),0);
+  }
+  Check(TEXT("the compatible catalog restores the legacy 50-inch selection and its required suspension"),
+    LegacyWritten&&V->LoadGarage(LegacyPath)&&V->Builds[0].Stage[TerraSim::TireSize]==Fits.Num()&&
+    V->Builds[0].Stage[TerraSim::Suspension]==Fits.Last()->AsObject()->GetIntegerField(TEXT("minimumSuspensionStage")),50);
+}
 }
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
   static int Model=0,Phase=0;static float Time=0,Travel=0;static FVector Previous,BeforeRecovery;static int Gate=0,Route=0;static float Energy=0,Damage=0;
@@ -445,9 +517,22 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   }else if(Phase==7&&Time>.8f){
     const auto Garage=V->GetGarageWidget();
     GarageValid=TireUpgradeRowVisible(Garage)&&BeginTireGarage(V,Garage);
+    if(Model==2){
+      V->SetUpgrade(TerraSim::Electrical,1,false);V->SetUpgrade(TerraSim::CenterDifferential,1,false);
+      Test(TEXT("stock Civic disables unavailable electrical and center retrofit buttons and rejects both upgrades"),
+        UpgradeButtonStates(Garage,TerraSim::Electrical,false,false)&&UpgradeButtonStates(Garage,TerraSim::CenterDifferential,true,false)&&
+        V->UpgradeStage(TerraSim::Electrical)==0&&V->UpgradeStage(TerraSim::CenterDifferential)==0);
+      V->SetUpgrade(TerraSim::EVSwap,2,false);
+    }
     Next(14);
   }else if(Phase==14&&Time>.15f){
     // Slate updates bound enabled states during its attribute pass.
+    if(Model==2){
+      const auto Garage=V->GetGarageWidget();
+      Test(TEXT("dual-motor Civic enables electrical buttons and still disables a center retrofit"),
+        UpgradeButtonStates(Garage,TerraSim::Electrical,true,true)&&UpgradeButtonStates(Garage,TerraSim::CenterDifferential,true,false));
+      V->SetUpgrade(TerraSim::EVSwap,0,false);
+    }
     const int Largest=V->UpgradeMaxStage(TerraSim::TireSize);
     if(GarageValid&&Largest>0){
       const auto Diameter=V->GetGarageWidget()->TireDiameterButton(Largest);
@@ -485,6 +570,7 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
           V->Builds[I].Stage[TerraSim::TireSize]==DiameterStages[I];
       }
       Check(TEXT("version ten stores each fitted diameter in inches and restores its selection"),RoundTrip,ATerraVehicle::VehicleCount);
+      if(RoundTrip)CheckStaleTireCatalog(V,Path,*Save,Check);
       return true;
     }
     V->SetGarage(true);Next(1);
