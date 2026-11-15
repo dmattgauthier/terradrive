@@ -36,6 +36,9 @@ float ATerraVehicle::Number(const TCHAR *Name, float Default) const {
 ATerraVehicle::ATerraVehicle() {
   PrimaryActorTick.bCanEverTick = true;
   PrimaryActorTick.TickGroup = TG_PrePhysics;
+  WheelPresentationTick.bCanEverTick=true;
+  WheelPresentationTick.TickGroup=TG_PostPhysics;
+  WheelPresentationTick.Vehicle=this;
   Chassis = CreateDefaultSubobject<UBoxComponent>(TEXT("ChaosChassis"));
   RootComponent = Chassis;
   Chassis->InitBoxExtent(FVector(190, 83, 24));
@@ -702,9 +705,9 @@ void ATerraVehicle::Simulate(float Dt) {
     const float Preload = StaticLoad / Spring;
     // Mount geometry belongs to the stock body. Extra spring length and tire
     // radius must raise the body, matching the garage, rather than lower it.
-    const FVector Local(AxleOffsetM(I/2)*100,
+    W.MountLocal=FVector(AxleOffsetM(I/2)*100,
         (I%2 ? 1:-1)*Track*50, (Number(TEXT("tireRadius"),.42f)+Rest-CG-Preload-Tuning.Lift)*100);
-    const FVector Mount = GetActorTransform().TransformPosition(Local);
+    const FVector Mount = GetActorTransform().TransformPosition(W.MountLocal);
     const float SteeringSpan=Axles==3?AxleOffsetM(0)-(AxleOffsetM(1)+AxleOffsetM(2))*.5f:Wheelbase;
     W.Angle=Tracks?(Front?SteerAngle:RearSteerAngle):TerraSim::AckermannAngle(Front?SteerAngle:RearSteerAngle,
         Front?RearSteerAngle:SteerAngle,(I%2?1.f:-1.f)*Track*.5f,Front?SteeringSpan:-SteeringSpan);
@@ -1083,7 +1086,7 @@ void ATerraVehicle::Simulate(float Dt) {
   UpdateEnergy(Dt);
   UpdateRolledTireContacts(Dt);
   UpdateWheelVisuals();
-  UpdateVisualDetails();
+  WheelPresentationPending=true;
   if (SoilTimer >= .025f)
     SoilTimer = 0;
   Chassis->AddForce(-Velocity * Velocity.Size() * .5f * 1.2f * .5f * Tuning.Drag *

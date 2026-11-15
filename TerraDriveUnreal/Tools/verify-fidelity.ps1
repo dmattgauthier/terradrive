@@ -8,7 +8,7 @@ if($SavedBuild -and $Mode -ne 'RolloverPerformance'){throw '-SavedBuild requires
 if(($TireSizeStage -gt 0 -or $LegacyRolledTires) -and $Mode -notin @('Rollover','RolloverPerformance')){throw 'Tire rollover options require a rollover mode.'}
 if(($GraniteVehicle -ge 0 -or $GraniteStage -ge 0 -or $GraniteRender -or $GraniteRigidTires -or $GraniteBodyWitnesses -or $GraniteLedgeLocks -or $GranitePSI) -and $Mode -ne 'GraniteFit'){throw 'Granite fixture options require GraniteFit mode.'}
 if($GraniteStage -ge 0 -and $GraniteVehicle -lt 0){throw 'Select a vehicle when selecting a specific tire stage.'}
-if($GraniteLedgeLocks -and ($GraniteVehicle -ge 0 -or $GraniteStage -ge 0 -or $GraniteRigidTires)){throw 'The ledge locks fixture automatically fits its reference vehicle.'}
+if($GraniteLedgeLocks -and ($GraniteVehicle -notin @(-1,0,4) -or $GraniteStage -ge 0 -or $GraniteRigidTires)){throw 'The ledge locks fixture uses the largest fit for the Wrangler or Hummer.'}
 $taskHeadless=$Mode -eq 'GraniteFit' -and !$GraniteRender -and !$GraniteLedgeLocks
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue){throw 'Close game/editor before native validation.'}
@@ -132,7 +132,10 @@ try{
  if($Mode -eq 'SixWheel'){$taskExpectedCaptures=@('sixwheel-locked-motion.png','g63-squared-garage.png','sixwheel-mud-ruts.png','sixwheel-ev-drive-1.png','sixwheel-ev-drive-2.png','sixwheel-ev-drive-3.png')}
  if($Mode -eq 'Garden'){$taskExpectedCaptures=@('garden-main-outcrop.png','garden-detached-blocks.png','garden-ledge-silhouette.png','garden-stone-close.png','garden-articulation-line.png')}
  if($Mode -eq 'Challenges'){$taskExpectedCaptures+=@('terrain-challenges-menu.png');foreach($course in 0..2){foreach($view in @('obstacle','finish')){$taskExpectedCaptures+=('terrain-challenge-'+$course+'-'+$view+'.png')}}}
- if($GraniteLedgeLocks){$taskExpectedCaptures=@('granite-fit-wrangler-50-ledge-left.png','granite-fit-wrangler-50-ledge-right.png')}
+ if($GraniteLedgeLocks){
+  $taskLedgeVehicle=if($GraniteVehicle -eq 4){'hummer'}else{'wrangler'}
+  $taskExpectedCaptures=@("granite-fit-$taskLedgeVehicle-50-ledge-left.png","granite-fit-$taskLedgeVehicle-50-ledge-right.png")
+ }
  if($Mode -eq 'Carcass'){$taskExpectedCaptures=@('native-carcass-low.png','native-carcass-road.png','native-carcass-high.png','native-underbody-g580.png','native-underbody-g63-sixwheel.png','native-underbody-wrangler-stock.png','native-underbody-wrangler-quad-portal.png','native-underbody-wrangler-single.png')}
  if($Mode -eq 'RockCrawl'){$taskExpectedCaptures=@('rock-crawl-menu.png','rock-crawl-high-open.png','rock-crawl-low-open.png','rock-crawl-low-locked.png','rock-crawl-low-open-bench.png','rock-crawl-finish.png')}
  if($Mode -eq 'Perimeter'){

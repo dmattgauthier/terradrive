@@ -15,16 +15,76 @@ LIB = unreal.EditorAssetLibrary
 # in scaled mesh coordinates and a world-normal displacement in local units.
 # Leave the wheel bead fixed and widen only the lower sidewall.
 OFFSET = r"""
-if (Shape.w <= 0.01) return 0;
-float distance = dot(Local, Plane.xyz) + Plane.w;
+struct TreadTerrain {
+    float4 Patch;
+    float4 Packed[5];
+
+    float Read(int pointIndex) {
+        int pairIndex = pointIndex / 2;
+        uint pair = uint(Packed[pairIndex / 4][pairIndex % 4]);
+        return (float((pair >> (12 * (pointIndex & 1))) & 4095u) - 2048.0) * 0.125;
+    }
+
+    float Height(float2 position) {
+        float2 grid = (position - Patch.xy) * Patch.w;
+        if (any(grid < 0.0) || any(grid > 5.0)) return -10000.0;
+        int2 index = min(int2(grid), int2(4, 4));
+        float2 uv = grid - float2(index);
+        int baseIndex = index.y * 6 + index.x;
+        float a = Read(baseIndex);
+        float b = Read(baseIndex + 1);
+        float c = Read(baseIndex + 6);
+        float d = Read(baseIndex + 7);
+        return uv.x + uv.y <= 1.0
+            ? a + (b - a) * uv.x + (c - a) * uv.y
+            : d + (c - d) * (1.0 - uv.x) + (b - d) * (1.0 - uv.y);
+    }
+};
+
+if (Shape.w <= 0.01 && Rock.w <= 0.0) return 0;
 float radial = length(Local.xz);
-float wall = saturate((radial - Shape.x) / max(1.0, Shape.y - Shape.x));
-float inner = smoothstep(0.0, 0.24, wall);
-float flatten = min(Shape.z, max(0.0, -distance)) * inner;
-float shoulder = 1.0 - smoothstep(0.80, 1.0, wall);
-float sector = 1.0 - smoothstep(0.0, 4.0 + Shape.w * 2.0, max(0.0, distance));
-float bulge = sign(Local.y) * Push.w * sector * inner * shoulder;
-return TransformLocalVectorToWorld(Parameters, Push.xyz * flatten + float3(0, bulge, 0));
+float3 offset = 0;
+if (Shape.w > 0.01) {
+    float distance = dot(Local, Plane.xyz) + Plane.w;
+    float wall = saturate((radial - Shape.x) / max(1.0, Shape.y - Shape.x));
+    float inner = smoothstep(0.0, 0.24, wall);
+    float flatten = min(Shape.z, max(0.0, -distance)) * inner;
+    float shoulder = 1.0 - smoothstep(0.80, 1.0, wall);
+    float sector = 1.0 - smoothstep(0.0, 4.0 + Shape.w * 2.0, max(0.0, distance));
+    float bulge = sign(Local.y) * Push.w * sector * inner * shoulder;
+    offset = Push.xyz * flatten + float3(0, bulge, 0);
+}
+float3 deformation = TransformLocalVectorToWorld(Parameters, offset);
+if (Rock.w <= 0.0) return deformation;
+
+float3 deformed = Local + offset;
+float radiusAfterFlex = length(deformed.xz);
+float remaining = min(Rock.z - max(0.0, radial - radiusAfterFlex), radiusAfterFlex - Shape.x - 1.0);
+if (remaining <= 0.0) return deformation;
+
+// Local bedrock features pinch the loaded tread independently of the main
+// contact plane. Move radially inward so the sidewall stays seated on the rim.
+float3 samplePoint = TransformLocalVectorToWorld(Parameters, deformed);
+float3 pinch = normalize(TransformLocalVectorToWorld(Parameters, float3(-deformed.x, 0, -deformed.z)));
+if (pinch.z <= 0.25) return deformation;
+TreadTerrain terrain;
+terrain.Patch = Rock;
+terrain.Packed[0] = H0;
+terrain.Packed[1] = H1;
+terrain.Packed[2] = H2;
+terrain.Packed[3] = H3;
+terrain.Packed[4] = H4;
+if (samplePoint.z >= terrain.Height(samplePoint.xy) + 0.20) return deformation;
+
+float lo = 0.0;
+float hi = remaining;
+[unroll] for (int i = 0; i < 7; ++i) {
+    float t = (lo + hi) * 0.5;
+    float3 p = samplePoint + pinch * t;
+    if (p.z < terrain.Height(p.xy) + 0.20) lo = t;
+    else hi = t;
+}
+return deformation + pinch * hi;
 """
 
 def connect(node, output, material, property_name):
@@ -68,14 +128,14 @@ def build_tire_carcass_materials(manifest):
         deformation.set_editor_property('code', OFFSET)
         deformation.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
         inputs = []
-        for pin in ('Local', 'Plane', 'Push', 'Shape'):
+        for pin in ('Local', 'Plane', 'Push', 'Shape', 'Rock', 'H0', 'H1', 'H2', 'H3', 'H4'):
             item = unreal.CustomInput()
             item.set_editor_property('input_name', pin)
             inputs.append(item)
         deformation.set_editor_property('inputs', inputs)
         if not EDIT.connect_material_expressions(local, '', deformation, 'Local'):
             raise RuntimeError('Cannot bind tire mesh relative position')
-        for index, pin in enumerate(('Plane', 'Push', 'Shape')):
+        for index, pin in enumerate(('Plane', 'Push', 'Shape', 'Rock', 'H0', 'H1', 'H2', 'H3', 'H4')):
             vector = EDIT.create_material_expression(material, unreal.MaterialExpressionVectorParameter, -710, -330 + 110*index)
             vector.set_editor_property('parameter_name', 'Carcass' + pin)
             vector.set_editor_property('default_value', unreal.LinearColor(0, 0, 0, 0))
@@ -86,7 +146,8 @@ def build_tire_carcass_materials(manifest):
         connect(deformation, '', material, unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
         LIB.set_metadata_tag(material, 'TerraCarcassSignature', signature)
         EDIT.recompile_material(material)
-        LIB.save_loaded_asset(material)
+        if not LIB.save_loaded_asset(material):
+            raise RuntimeError('Cannot save tire carcass material')
 
     slots = {slot for asset in manifest['assets'] if TIRE_ASSET.search(asset['name']) for slot in asset['slots']}
     results = {}
@@ -106,7 +167,8 @@ def build_tire_carcass_materials(manifest):
             EDIT.set_material_instance_scalar_parameter_value(instance, 'RubberRoughness', record['roughness'])
             EDIT.update_material_instance(instance)
             LIB.set_metadata_tag(instance, 'TerraCarcassSignature', instance_sig)
-            LIB.save_loaded_asset(instance)
+            if not LIB.save_loaded_asset(instance):
+                raise RuntimeError('Cannot save tire carcass material instance ' + name)
         results[slot] = instance
     if results.keys() != slots:
         raise RuntimeError('Missing tire deformation material slots')

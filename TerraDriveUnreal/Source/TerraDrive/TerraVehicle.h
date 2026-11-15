@@ -33,7 +33,7 @@ struct FTerraBodyGroundContact {
 struct FTerraWheel {
   float Omega = 0, Rotation = 0, Load = 0, Slip = 0, Distance = .4f,
         Pressure = 35, TireDeflection = 0;
-  FVector Contact, Center;
+  FVector Contact, Center, MountLocal;
   FTerraSample Ground;
   FVector ForceForward, ForceSide, PointVelocity;
   float LongSpeed = 0, LateralSpeed = 0, Angle = 0, Grip = 0,
@@ -273,7 +273,7 @@ private:
   bool PrepareDamageMesh();
   bool TireCarcassEnabled=true;
   float TireSectionWidth(int Wheel) const;
-  void SetTireCarcassVisual(int Wheel,const FVector& Normal,float PlaneDistanceCM,float DeflectionM);
+  void SetTireCarcassVisual(int Wheel,const FVector& Normal,float PlaneDistanceCM,float DeflectionM,bool ProfileRock=false);
   void RefreshGarageTirePose();
   struct FPanelImpact {
     FVector Point,Normal;
@@ -316,6 +316,15 @@ private:
   void UpdateSpray(float Dt);
   void CreateVisualDetails();
   void ResizeWheelComponents();
+  void RegisterActorTickFunctions(bool bRegister) override;
+  void PresentWheels();
+  struct FWheelPresentationTick final : FTickFunction {
+    ATerraVehicle* Vehicle=nullptr;
+    void ExecuteTick(float DeltaTime,ELevelTick TickType,ENamedThreads::Type CurrentThread,
+        const FGraphEventRef& Completion) override;
+    FString DiagnosticMessage() override;
+  } WheelPresentationTick;
+  bool WheelPresentationPending=false;
   void UpdateVisualDetails();
   void UpdateUnderbodyDetails(const FString& BodyStyle,TerraSim::MotorLayout Layout,bool TransferCase);
   uint32 UnderbodyVisualConfig=MAX_uint32;

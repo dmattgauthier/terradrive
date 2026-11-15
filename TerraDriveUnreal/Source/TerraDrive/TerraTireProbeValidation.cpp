@@ -1,5 +1,6 @@
 #include "TerraTireProbeValidation.h"
 #include "TerraVehicle.h"
+#include "TerraTreadContact.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Misc/FileHelper.h"
@@ -30,19 +31,40 @@ bool ReadProfile(const TSharedPtr<FJsonValue>& Value,int Stage,FProfile& P){
   return true;
 }
 FVector RenderedTirePoint(const UStaticMeshComponent& Wheel,const FVector& Local){
-  // Use the real baked vertex and cooked component data as independent
-  // witnesses. The renderer applies the same contact-plane transform.
+  // Measure actual exported tire vertices using the parameters supplied to
+  // the cooked material. Terrain clearance below uses the live world mesh.
   const auto& Data=Wheel.GetCustomPrimitiveData().Data;
   const auto& Transform=Wheel.GetComponentTransform();
-  if(Data.Num()<12||Data[11]<=.01f)return Transform.TransformPosition(Local);
-  const double Distance=FVector::DotProduct(Local,FVector(Data[0],Data[1],Data[2]))+Data[3];
+  if(Data.Num()<12)return Transform.TransformPosition(Local);
+  using TerraSim::TreadHeightPatch;
+  FVector Deformed=Local;
   const double Radial=FMath::Sqrt(Local.X*Local.X+Local.Z*Local.Z);
-  const double Wall=FMath::Clamp((Radial-Data[8])/FMath::Max(1.f,Data[9]-Data[8]),0.,1.);
-  const double Inner=FMath::SmoothStep(0.,.24,Wall);
-  const double Lift=FMath::Min(double(Data[10]),FMath::Max(0.,-Distance))*Inner;
-  const double Sector=1-FMath::SmoothStep(0.,4.+Data[11]*2.,FMath::Max(0.,Distance));
-  const double Bulge=(Local.Y>0?1:Local.Y<0?-1:0)*Data[7]*Sector*Inner*(1-FMath::SmoothStep(.80,1.,Wall));
-  return Transform.TransformPosition(Local+FVector(Data[4]*Lift,Bulge,Data[6]*Lift));
+  if(Data[11]>.01f){
+    const double Distance=FVector::DotProduct(Local,FVector(Data[0],Data[1],Data[2]))+Data[3];
+    const double Wall=FMath::Clamp((Radial-Data[8])/FMath::Max(1.f,Data[9]-Data[8]),0.,1.);
+    const double Inner=FMath::SmoothStep(0.,.24,Wall);
+    const double Lift=FMath::Min(double(Data[10]),FMath::Max(0.,-Distance))*Inner;
+    const double Sector=1-FMath::SmoothStep(0.,4.+Data[11]*2.,FMath::Max(0.,Distance));
+    const double Bulge=FMath::Sign(Local.Y)*Data[7]*Sector*Inner*(1-FMath::SmoothStep(.80,1.,Wall));
+    Deformed+=FVector(Data[4]*Lift,Bulge,Data[6]*Lift);
+  }
+  FVector Position=Transform.TransformVector(Deformed);
+  if(Data.Num()>=TreadHeightPatch::DataEnd&&Data[15]>0){
+    const double RadiusAfterFlex=FMath::Sqrt(Deformed.X*Deformed.X+Deformed.Z*Deformed.Z);
+    const double Remaining=FMath::Min(Data[14]-FMath::Max(0.,Radial-RadiusAfterFlex),RadiusAfterFlex-Data[8]-1.);
+    const FVector Pinch=Transform.TransformVector(FVector(-Deformed.X,0,-Deformed.Z)).GetSafeNormal();
+    const auto Overlap=[&](const FVector& P){return P.Z<TreadHeightPatch::Height(Data.GetData(),P.X,P.Y)+.20f;};
+    if(Remaining>0&&Pinch.Z>.25&&Overlap(Position)){
+      double Lo=0,Hi=Remaining;
+      for(int I=0;I<7;++I){
+        const double Mid=(Lo+Hi)*.5;
+        if(Overlap(Position+Pinch*Mid))Lo=Mid;
+        else Hi=Mid;
+      }
+      Position+=Pinch*Hi;
+    }
+  }
+  return Transform.GetLocation()+Position;
 }
 
 const FProfile* MatchedProfile(const ATerraVehicle* V){
@@ -86,13 +108,20 @@ TArray<FVector> ActorLocalPoints(const ATerraVehicle* V){
   for(const auto& Wheel:V->Wheels)for(const auto& Point:P->Points)Result.Add(Inverse.TransformPosition(RenderedTirePoint(*Wheel,Point)));
   return Result;
 }
-float MinimumClearance(const ATerraVehicle* V){
-  const auto* P=MatchedProfile(V);if(!P||!V->Terrain)return -UE_BIG_NUMBER;
-  float Clearance=UE_BIG_NUMBER;
-  for(const auto& Wheel:V->Wheels)for(const auto& Local:P->Points){const auto Point=RenderedTirePoint(*Wheel,Local);
-    if(Point.ContainsNaN())return -UE_BIG_NUMBER;
-    Clearance=FMath::Min(Clearance,float(Point.Z-V->Terrain->Height(Point.X,Point.Y)));
+FGroundWitness ClosestGroundWitness(const ATerraVehicle* V){
+  const auto* P=MatchedProfile(V);
+  if(!P||!V->Terrain)return {-UE_BIG_NUMBER};
+  FGroundWitness Closest{UE_BIG_NUMBER};
+  for(int32 I=0;I<V->Wheels.Num();++I)for(const auto& Local:P->Points){
+    const FVector Point=RenderedTirePoint(*V->Wheels[I],Local);
+    if(Point.ContainsNaN())return {-UE_BIG_NUMBER};
+    const float Gap=Point.Z-V->Terrain->Height(Point.X,Point.Y);
+    if(Gap<Closest.GapCM)Closest={Gap,I,Local,Point};
   }
-  return Clearance;
+  return Closest;
+}
+
+float MinimumClearance(const ATerraVehicle* V){
+  return ClosestGroundWitness(V).GapCM;
 }
 }

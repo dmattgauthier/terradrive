@@ -1,5 +1,6 @@
 #include "../Source/TerraDrive/TerraSimCore.h"
 #include "../Source/TerraDrive/TerraTireCarcass.h"
+#include "../Source/TerraDrive/TerraTreadContact.h"
 #include "../Source/TerraDrive/TerraUpgrades.h"
 #include "../Source/TerraDrive/TerraContact.h"
 #include "../Source/TerraDrive/TerraUnits.h"
@@ -14,6 +15,25 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    {
+        const TerraSim::TreadPoint Ledge[]={{-30,-10,-115},{17,0,-72},{35,10,-115}};
+        TerraSim::TreadContact Contact;
+        TerraSim::ContactAgainstTreadTriangle(Ledge,63.5f,20.f,Contact);
+        const float Expected=72.f-std::sqrt(63.5f*63.5f-17.f*17.f);
+        check(std::abs(Contact.Travel-Expected)<.001f&&std::abs(Contact.Point.X-17.f)<.001f,
+            "sharp triangle crest between tread samples sets suspension contact");
+        const TerraSim::TreadPoint Beside[]={{-12,30,-50},{0,25,-40},{14,32,-44}};
+        TerraSim::ContactAgainstTreadTriangle(Beside,63.5f,20.f,Contact);
+        check(std::abs(Contact.Travel-Expected)<.001f,"rock beyond the tire shoulder supplies no tread support");
+        using TerraSim::TreadHeightPatch;
+        float Patch[36]={};
+        Patch[15]=.02f;
+        for(int I=16;I<TreadHeightPatch::DataEnd;++I)Patch[I]=TreadHeightPatch::Pack(0,0);
+        Patch[19]=TreadHeightPatch::Pack(0,20);
+        check(std::abs(TreadHeightPatch::Height(Patch,12.5f,12.5f))<.001f&&
+            std::abs(TreadHeightPatch::Height(Patch,37.5f,37.5f)-10)<.001f,
+            "packed tire terrain preserves the two sides of the rendered ground diagonal");
+    }
     {
         // Representative loaded passenger tire and a tall off-road fit.
         const auto passenger=TerraSim::MakeTireCarcass(33,.371f,.234f,.235f);

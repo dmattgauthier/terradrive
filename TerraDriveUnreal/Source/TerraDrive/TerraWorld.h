@@ -100,6 +100,9 @@ public:
                             bool *RigidEncountered=nullptr) const;
   FTerraSupport CastTireSupport(FVector Mount,FVector Up,FVector Forward,
       float RadiusCM,float WidthCM,float MinCM,float MaxCM,const AActor *Ignore) const;
+  FTerraSupport CastBedrockTread(const FVector& Mount,const FVector& Up,const FVector& Forward,
+      float RadiusCM,float WidthCM,float MinCM,float MaxCM,const FVector& Near,const FVector& Normal,bool* NearBedrock=nullptr) const;
+  void BuildBedrockTreadPatch(const FVector& Hub,float* PatchData) const;
   bool TraceRaisedGround(FVector Point,FHitResult& Hit,int32& TraceCount) const;
   float Height(float X, float Y) const;
   float SnowDrift(float X,float Y) const;

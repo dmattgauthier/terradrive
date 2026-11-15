@@ -1,0 +1,182 @@
+{
+  "engine": "5.8.3",
+  "method": "The rendered steering runs use D3D12 at 1600x900 with a fixed 20 Hz clock. The targeted climb checks exported tire vertices each frame. The 40-fitment matrices sample every 0.15 seconds. Clearance measures signed height using the live terrain and the tire material parameters. Both steering captures were visually inspected.",
+  "sourceExportSha256": "565dc53b58d93e6cfbb0deb9fabd69b7369d02f1e7d504b5eec81d2dbaaa3bf6",
+  "cookedTreeSha256": "946fb61858100ce170599c6e868d491c7df5b382282453ea25599661ad6b76ec",
+  "tireMaterialRecipeSha256": "170bc3cb336cca834e59478c55ab94970aec8f7453156efcc11624d1d0983b47",
+  "windowsExecutableSha256": "cc0502ba0400166fb1ee73aad5ec628067d669224f865d39f19d20fa9d3ce079",
+  "stagedContent": [
+    {
+      "path": "TerraDrive/Content/Paks/global.ucas",
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/global.utoc",
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "sha256": "865796020954fe79b043ff99f29b0d47b64fee035b5de570ab208b31218b3a35"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "sha256": "6776b1e0f0f9b42e9d6c5859f18a0a6c7511b22e5d17638885acc18e5dbfbc2b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "sha256": "8a347509d68a1e71352c8e520e4013b4422011cfacaafd49eb1d53e46a588665"
+    }
+  ],
+  "hummer50Inch16PSI": {
+    "baseline": {
+      "description": "Original ledge contact and tire material, measured with the same targeted fixtures.",
+      "windowsExecutableSha256": "4a1fe58e43763f40f4a76d38d0fa033a2f649116c6e9c98731f24596bb88335e",
+      "twoLedgeClimb": {
+        "vehicle": 4,
+        "stage": 6,
+        "diameterInches": 50.0,
+        "measuredPSI": 16.0,
+        "gates": 2,
+        "minimumTreadGapInches": -6.594,
+        "minimumBodyGapInches": 0.72,
+        "deepOverlapSeconds": 0.15,
+        "maximumSuspensionOverrunInches": 0.366
+      },
+      "movingFullSteeringLock": [
+        {
+          "direction": "left",
+          "diameterInches": 50.0,
+          "measuredPSI": 16.0,
+          "loadedFullLockFrames": 11,
+          "minimumTreadGapInches": -1.512,
+          "suspensionSpreadInches": 13.295
+        },
+        {
+          "direction": "right",
+          "diameterInches": 50.0,
+          "measuredPSI": 16.0,
+          "loadedFullLockFrames": 10,
+          "minimumTreadGapInches": -3.028,
+          "suspensionSpreadInches": 11.004
+        }
+      ]
+    },
+    "corrected": {
+      "twoLedgeClimb": {
+        "vehicle": 4,
+        "stage": 6,
+        "diameterInches": 50.0,
+        "measuredPSI": 16.0,
+        "gates": 2,
+        "minimumTreadGapInches": 0.083,
+        "minimumBodyGapInches": 0.728,
+        "deepOverlapSeconds": 0.0,
+        "maximumSuspensionOverrunInches": 0.13
+      },
+      "movingFullSteeringLock": [
+        {
+          "direction": "left",
+          "diameterInches": 50.0,
+          "measuredPSI": 16.0,
+          "loadedFullLockFrames": 11,
+          "minimumTreadGapInches": 0.087,
+          "peakTireDeflectionInches": 2.992,
+          "suspensionSpreadInches": 13.925
+        },
+        {
+          "direction": "right",
+          "diameterInches": 50.0,
+          "measuredPSI": 16.0,
+          "loadedFullLockFrames": 10,
+          "minimumTreadGapInches": 0.094,
+          "peakTireDeflectionInches": 3.484,
+          "suspensionSpreadInches": 12.909
+        }
+      ]
+    }
+  },
+  "fitmentMatrices": [
+    {
+      "pressure": "Requested 16 PSI, subject to each vehicle minimum",
+      "measuredPressureRangePSI": [
+        16.0,
+        19.35
+      ],
+      "fitments": 40,
+      "minimumTreadGapInches": 0.079,
+      "overlapFitments": 0
+    },
+    {
+      "pressure": "Road or factory pressure",
+      "measuredPressureRangePSI": [
+        23.0,
+        55.0
+      ],
+      "fitments": 40,
+      "minimumTreadGapInches": 0.083,
+      "overlapFitments": 0
+    }
+  ],
+  "wrangler42InchPavementDeflection": [
+    {
+      "measuredPSI": 15.694,
+      "deflectionInches": 1.748
+    },
+    {
+      "measuredPSI": 37.367,
+      "deflectionInches": 0.835
+    },
+    {
+      "measuredPSI": 62.0,
+      "deflectionInches": 0.524
+    }
+  ],
+  "otherTerrainRollover": {
+    "vehicle": "50-inch Hummer",
+    "checksPassedBefore": 90,
+    "checksPassedAfter": 90,
+    "checks": 91,
+    "baselinePeakTireOverlapInches": 1.9634,
+    "correctedBuildPeakTireOverlapInches": 1.9634,
+    "case": "rollover vehicle 4 Pine Ridge 55 degrees independent visible tire probes stay within 1.6 inches of ground with bounded contact work"
+  },
+  "validationRuns": [
+    {
+      "run": "Hummer 50-inch 16 PSI rendered steering locks",
+      "checks": 4,
+      "captures": 2,
+      "peakTemperatureC": 51.58
+    },
+    {
+      "run": "Hummer 50-inch 16 PSI two-ledge climb",
+      "checks": 6,
+      "captures": 0,
+      "peakTemperatureC": 48.45
+    },
+    {
+      "run": "Aired-down Granite fitment matrix",
+      "checks": 201,
+      "captures": 0,
+      "peakTemperatureC": 48.34
+    },
+    {
+      "run": "Road or factory pressure Granite fitment matrix",
+      "checks": 201,
+      "captures": 0,
+      "peakTemperatureC": 47.16
+    },
+    {
+      "run": "Loaded tire flex and garage underbody",
+      "checks": 19,
+      "captures": 8,
+      "peakTemperatureC": 50.61
+    },
+    {
+      "run": "Native rut behavior",
+      "checks": 117,
+      "captures": 16,
+      "peakTemperatureC": 53.02
+    }
+  ],
+  "portableCoreChecks": 739
+}

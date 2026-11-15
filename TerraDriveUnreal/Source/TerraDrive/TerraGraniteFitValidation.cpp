@@ -22,7 +22,7 @@ namespace {
 
 constexpr int32 RouteIndex=17;
 constexpr float BenchCM=215.f,LedgeStartCM=645.f,LedgeEndCM=1330.f;
-constexpr float BodyToleranceCM=1.f,DeepTireSinkCM=9.f;
+constexpr float BodyToleranceCM=1.f,DeepTireSinkCM=9.f,TreadToleranceCM=1.25f;
 
 enum class EPhase { Fit, TurnSettle, RollIn, Left, Right, LedgeSettle, Ledge, CombinedSettle, CombinedRoll, CombinedTurn };
 
@@ -52,8 +52,8 @@ struct FRun {
   EPhase Phase=EPhase::Fit;
   FObservation Data;
   int32 CombinedSign=0,CombinedFullFrames=0;
-  float CombinedPeakTwist=0;
-  bool Captured=false,UsesCookedMesh=false,Combined=false,CombinedImage=false;
+  float CombinedPeakTwist=0,CombinedPeakFlex=0,CombinedTireGap=UE_BIG_NUMBER;
+  bool Captured=false,UsesCookedMesh=false,Combined=false,CombinedImage=false,Detailed=false;
 
   void Advance(EPhase Next){Phase=Next;Time=0;SampleTime=0;}
 } Run;
@@ -237,15 +237,34 @@ void Observe(ATerraVehicle* V,float Dt,bool Ledge) {
   Data.GroundedTime=BodyStall?Data.GroundedTime+Dt:0;
   Data.MaxGroundedTime=FMath::Max(Data.MaxGroundedTime,Data.GroundedTime);
   Run.SampleTime+=Dt;
-  if(Run.SampleTime<.12f||!Data.Installed)return;
-  const float Gap=MinimumBodyGap(V),Tire=TerraTireProbeValidation::MinimumClearance(V);
-  Data.Finite&=FMath::IsFinite(Gap)&&FMath::IsFinite(Tire);
-  Data.MinimumBodyGap=FMath::Min(Data.MinimumBodyGap,Gap);
+  const bool BodyDue=Run.SampleTime>=.12f;
+  if(!Data.Installed||(!BodyDue&&!Run.Detailed))return;
+  const auto Witness=TerraTireProbeValidation::ClosestGroundWitness(V);
+  const float Tire=Witness.GapCM;
+  Data.Finite&=FMath::IsFinite(Tire);
+  if(Run.Detailed&&Tire<Data.MinimumTireGap&&V->Wheels.IsValidIndex(Witness.Wheel)){
+    const auto& W=V->WheelState[Witness.Wheel];
+    const auto Transform=V->Wheels[Witness.Wheel]->GetComponentTransform();
+    const auto P=V->GetActorLocation();
+    const auto Unflexed=Transform.TransformPosition(Witness.MeshLocal);
+    const FVector Up=V->GetActorUpVector();
+    UE_LOG(LogTemp,Display,TEXT("TERRA_GRANITE_TREAD vehicle=%d phase=%d turn=%d t=%.3f root=%s speed=%.3f tire=%d gapCM=%.3f rigidGapCM=%.3f loadN=%.0f deflectionCM=%.3f ground=%d valid=%d constructed=%d vertex=%s local=%s hub=%s hubDelta=%s support=%s supportErrorCM=%.3f normal=%s up=%s steering=%.2f"),
+      V->VehicleIndex,int(Run.Phase),Run.CombinedSign,Run.Time,*P.ToString(),V->Speed,Witness.Wheel,Tire,
+      Unflexed.Z-V->Terrain->Height(Unflexed.X,Unflexed.Y),W.Load,W.TireDeflection*100,W.Ground.Surface,W.ContactValid,W.Constructed,
+      *Witness.World.ToString(),*Witness.MeshLocal.ToString(),*Transform.GetLocation().ToString(),*(Transform.GetLocation()-W.Center).ToString(),
+      *W.Contact.ToString(),W.Contact.Z-V->Terrain->Height(W.Contact.X,W.Contact.Y),*W.Ground.Normal.ToString(),*Up.ToString(),
+      FMath::RadiansToDegrees(W.Angle));
+  }
   Data.MinimumTireGap=FMath::Min(Data.MinimumTireGap,Tire);
-  Data.BodyOverlapTime=Gap<-BodyToleranceCM?Data.BodyOverlapTime+Run.SampleTime:0;
-  Data.TireSinkTime=Tire<-DeepTireSinkCM?Data.TireSinkTime+Run.SampleTime:0;
-  Data.MaxBodyOverlapTime=FMath::Max(Data.MaxBodyOverlapTime,Data.BodyOverlapTime);
+  if(Run.Combined)Run.CombinedTireGap=FMath::Min(Run.CombinedTireGap,Tire);
+  Data.TireSinkTime=Tire<-DeepTireSinkCM?Data.TireSinkTime+(Run.Detailed?Dt:Run.SampleTime):0;
   Data.MaxTireSinkTime=FMath::Max(Data.MaxTireSinkTime,Data.TireSinkTime);
+  if(!BodyDue)return;
+  const float Gap=MinimumBodyGap(V);
+  Data.Finite&=FMath::IsFinite(Gap);
+  Data.MinimumBodyGap=FMath::Min(Data.MinimumBodyGap,Gap);
+  Data.BodyOverlapTime=Gap<-BodyToleranceCM?Data.BodyOverlapTime+Run.SampleTime:0;
+  Data.MaxBodyOverlapTime=FMath::Max(Data.MaxBodyOverlapTime,Data.BodyOverlapTime);
   ++Data.Samples;
   Run.SampleTime=0;
 }
@@ -261,10 +280,12 @@ bool BuildSchedule(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)
   FParse::Value(FCommandLine::Get(),TEXT("TerraGraniteFitVehicle="),OnlyVehicle);
   FParse::Value(FCommandLine::Get(),TEXT("TerraGraniteFitStage="),OnlyStage);
   if(Run.Combined){
-    OnlyVehicle=0;
-    const auto& Fits=Roster[0]->AsObject()->GetArrayField(TEXT("tireFits"));
+    OnlyVehicle=OnlyVehicle==INDEX_NONE?0:OnlyVehicle;
+    if(!Roster.IsValidIndex(OnlyVehicle))return false;
+    const auto& Fits=Roster[OnlyVehicle]->AsObject()->GetArrayField(TEXT("tireFits"));
     if(!Fits.IsEmpty())OnlyStage=Fits.Last()->AsObject()->GetIntegerField(TEXT("stage"));
   }
+  Run.Detailed=Run.Combined||OnlyStage!=INDEX_NONE;
   const bool All=FParse::Param(FCommandLine::Get(),TEXT("TerraGraniteFitAll"))||OnlyStage!=INDEX_NONE;
   for(int32 Index=0;Index<Roster.Num();++Index){
     if(OnlyVehicle!=INDEX_NONE&&Index!=OnlyVehicle)continue;
@@ -297,6 +318,8 @@ void StartCombinedTurn(ATerraVehicle* V,const FTerraRoute& R){
   Run.CombinedImage=false;
   Run.CombinedFullFrames=0;
   Run.CombinedPeakTwist=0;
+  Run.CombinedPeakFlex=0;
+  Run.CombinedTireGap=UE_BIG_NUMBER;
   Run.Advance(EPhase::CombinedSettle);
 }
 
@@ -365,7 +388,7 @@ void FinishFit(ATerraVehicle* V,const FFit& Fit,TFunctionRef<void(const FString&
   Check(Label+TEXT(" drives the Granite ledges under its own power"),
     Data.Progress>=LedgeEndCM&&Data.DrivenRockFrames>=12&&Data.MaxHeight-Data.MinHeight>75&&Data.Gates>=2,Data.Progress);
   Check(Label+TEXT(" avoids sustained rubbing and tire burial"),Data.Samples>=15&&Data.MaxBodyOverlapTime<.35f&&
-    Data.MaxTireSinkTime<.35f,FMath::Min(Data.MinimumBodyGap,Data.MinimumTireGap));
+    Data.MaxTireSinkTime<.35f&&(V->TireDiameter()<40||!Run.Detailed||Data.MinimumTireGap>=-TreadToleranceCM),FMath::Min(Data.MinimumBodyGap,Data.MinimumTireGap));
   Check(Label+TEXT(" stays upright without getting hung up"),
     Data.Upright&&Data.TurnSettled&&Data.LedgeSettled&&Data.MaxGroundedTime<1.3f&&V->ObjectBodyHits==0,Data.MinUp);
   UE_LOG(LogTemp,Display,TEXT("TERRA_GRANITE_FIT vehicle=%d stage=%d inches=%.2f psi=%.2f suspension=%d drivetrain=%d locks=%d/%d/%d installed=%d settled=%d/%d gates=%d progressCM=%.2f rockFrames=%d fullLeft=%d fullRight=%d angles=%.2f/%.2f minUp=%.4f pitch=%.2f roll=%.2f riseCM=%.2f samples=%d bodyGapCM=%.2f tireGapCM=%.2f bodyOverlapS=%.3f tireSinkS=%.3f bumpFrames=%d maxBumpOverrunCM=%.2f lowSpeedAfterContactS=%.3f groundHits=%d objectHits=%d"),
@@ -439,49 +462,53 @@ bool Tick(ATerraVehicle* V,float Delta,
       if(Run.Time>.85f)Run.Advance(EPhase::CombinedRoll);
       return false;
     case EPhase::CombinedRoll:
-      SpeedDemand(V,.55f,.52f);
+      SpeedDemand(V,Fit.Vehicle==4?.65f:.55f,Fit.Vehicle==4?.68f:.52f);
       if(Run.Time>.40f)Run.Advance(EPhase::CombinedTurn);
       return false;
     case EPhase::CombinedTurn: {
       const bool Left=Run.CombinedSign==0;
       V->TestSteer=Left?-1.f:1.f;
-      SpeedDemand(V,.55f,.52f);
+      SpeedDemand(V,Fit.Vehicle==4?.65f:.55f,Fit.Vehicle==4?.68f:.52f);
       const float Progress=Along(V,R),Lane=Lateral(V,R);
       Observe(V,Delta,false);
       int32 Rock=0;
-      float Highest=-UE_BIG_NUMBER,Lowest=UE_BIG_NUMBER,MaxSteer=0;
+      float Highest=-UE_BIG_NUMBER,Lowest=UE_BIG_NUMBER,MaxSteer=0,Flex=0;
       for(int I=0;I<V->WheelCount();++I){
         const auto& W=V->WheelState[I];
         if(I<2)MaxSteer=FMath::Max(MaxSteer,float(FMath::Abs(FMath::RadiansToDegrees(W.Angle))));
         if(!W.ContactValid||W.Load<50||W.Ground.Surface!=4)continue;
         ++Rock;
+        const auto& TireData=V->Wheels[I]->GetCustomPrimitiveData().Data;
+        if(TireData.Num()>15&&TireData[15]>0)Flex=FMath::Max(Flex,TireData[11]);
         Highest=FMath::Max(Highest,W.Distance);
         Lowest=FMath::Min(Lowest,W.Distance);
       }
-      if(Rock>=2&&Progress>1045&&Progress<1230&&Lane>130&&Lane<320&&V->Speed>.20f&&V->Speed<.92f&&
+      if(Rock>=2&&Progress>1045&&Progress<1230&&Lane>130&&Lane<320&&V->Speed>.20f&&V->Speed<1.05f&&
           (Left?-V->Steer:V->Steer)>=.97f&&MaxSteer>=V->TireKitSteeringDegrees*.87f){
         ++Run.CombinedFullFrames;
         Run.CombinedPeakTwist=FMath::Max(Run.CombinedPeakTwist,(Highest-Lowest)*100);
+        Run.CombinedPeakFlex=FMath::Max(Run.CombinedPeakFlex,Flex);
         if(!Run.CombinedImage&&Run.CombinedFullFrames>=3){
           FrameLedgeTires(V,Left);
-          Capture(Left?TEXT("granite-fit-wrangler-50-ledge-left.png"):TEXT("granite-fit-wrangler-50-ledge-right.png"));
+          const TCHAR* Vehicle=Fit.Vehicle==4?TEXT("hummer"):TEXT("wrangler");
+          Capture(*FString::Printf(TEXT("granite-fit-%s-50-ledge-%s.png"),Vehicle,Left?TEXT("left"):TEXT("right")));
           Run.CombinedImage=true;
         }
       }
-      if(Run.Time<1.65f&&Data.Upright&&Progress<1230&&Lane>105&&Lane<340)return false;
+      if(Run.Time<(Fit.Vehicle==4?2.1f:1.65f)&&Data.Upright&&Progress<1230&&Lane>105&&Lane<340)return false;
       const FString Side=Left?TEXT("left"):TEXT("right");
-      Check(TEXT("50-inch Wrangler crawls at full ")+Side+TEXT(" steering on the Granite ledge"),
-        Data.Installed&&Run.CombinedFullFrames>=3&&Run.CombinedPeakTwist>5,Run.CombinedFullFrames);
-      UE_LOG(LogTemp,Display,TEXT("TERRA_GRANITE_LEDGE_LOCK direction=%s inches=%.2f psi=%.2f samples=%d fullFrames=%d suspensionSpreadCM=%.2f progressCM=%.2f laneCM=%.2f up=%.4f bodyGapCM=%.2f tireGapCM=%.2f"),
-        *Side,V->TireDiameter(),V->WheelPressure(0),Data.Samples,Run.CombinedFullFrames,Run.CombinedPeakTwist,Progress,Lane,Data.MinUp,Data.MinimumBodyGap,Data.MinimumTireGap);
+      Check(V->VehicleName+TEXT(" crawls at full ")+Side+TEXT(" steering on the Granite ledge"),
+        Data.Installed&&Run.CombinedFullFrames>=3&&Run.CombinedPeakTwist>5&&Run.CombinedPeakFlex>.5f,Run.CombinedFullFrames);
+      UE_LOG(LogTemp,Display,TEXT("TERRA_GRANITE_LEDGE_LOCK vehicle=%d direction=%s inches=%.2f psi=%.2f samples=%d fullFrames=%d suspensionSpreadCM=%.2f deflectionCM=%.2f progressCM=%.2f laneCM=%.2f up=%.4f bodyGapCM=%.2f tireGapCM=%.2f"),
+        Fit.Vehicle,*Side,V->TireDiameter(),V->WheelPressure(0),Data.Samples,Run.CombinedFullFrames,Run.CombinedPeakTwist,Run.CombinedPeakFlex,Progress,Lane,Data.MinUp,Data.MinimumBodyGap,Run.CombinedTireGap);
       if(Left){
         ++Run.CombinedSign;
         StartCombinedTurn(V,R);
         return false;
       }
-      Check(TEXT("50-inch Wrangler stays supported and clears its body at both ledge steering locks"),
+      Check(V->VehicleName+TEXT(" keeps the tires clear of the ledge at both steering locks"),
         Data.Installed&&Data.Samples>=12&&Data.Upright&&Data.Finite&&Data.MaxBodyOverlapTime<.35f&&Data.MaxTireSinkTime<.35f&&
-        V->ObjectBodyHits==0,FMath::Min(Data.MinimumBodyGap,Data.MinimumTireGap));
+        V->ObjectBodyHits==0&&Data.MinimumTireGap>=-TreadToleranceCM,FMath::Min(Data.MinimumBodyGap,Data.MinimumTireGap));
       Brake(V);
       return true;
     }
