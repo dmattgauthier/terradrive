@@ -27,6 +27,7 @@ struct FState {
   TArray<FCase> Cases;TArray<TSharedPtr<FJsonValue>> Reports;
   TArray<float> Frames;int Trial=0,Phase=0;double PhaseStarted=0,Previous=0;
   bool UsingSavedBuild=false;
+  int SavedTireSizes[ATerraVehicle::VehicleCount]={};
   bool Finite=true,PoseSeen=false;float MinimumTireClearance=10000;int MaximumCandidates=0,MaximumTraces=0,TireSize=0,ExpectedTireSize=0;FString Region,Directory;
 } State;
 FString Name(const FCase& C){return FString::Printf(TEXT("roll-perf-v%d-z%d-r%d"),C.Vehicle,C.Zone,C.Roll);}
@@ -37,6 +38,8 @@ bool Load(ATerraVehicle* V){
   FString Build;FParse::Value(FCommandLine::Get(),TEXT("TerraPerfBuild="),Build);
   if(!Build.IsEmpty()){
     if(!V->LoadGarage(Build))return false;
+    // Applying a build may fall back to factory tires if a fitted mesh is unavailable.
+    for(int I=0;I<ATerraVehicle::VehicleCount;++I)State.SavedTireSizes[I]=V->Builds[I].Stage[TerraSim::TireSize];
     State.UsingSavedBuild=true;
   }
   int Vehicle=6;FParse::Value(FCommandLine::Get(),TEXT("TerraPerfVehicle="),Vehicle);
@@ -115,9 +118,9 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   const auto C=State.Cases[State.Trial];const auto Label=Name(C);
   if(State.Phase==0){
     const float SavedPressure=V->PressureProfiles[C.Vehicle],SavedCharge=V->BatteryProfiles[C.Vehicle],SavedFuel=V->FuelProfiles[C.Vehicle];
+    State.ExpectedTireSize=State.UsingSavedBuild?State.SavedTireSizes[C.Vehicle]:V->Builds[C.Vehicle].Stage[TerraSim::TireSize];
     V->SetGarage(true);
     // Start each copied-build pose from the same loaded profile.
-    State.ExpectedTireSize=V->Builds[C.Vehicle].Stage[TerraSim::TireSize];
     V->SelectVehicle(C.Vehicle,!State.UsingSavedBuild);
     if(State.TireSize>0){
       const int Size=FMath::Min(State.TireSize,V->UpgradeMaxStage(TerraSim::TireSize));
@@ -139,9 +142,16 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     State.Phase=1;State.PhaseStarted=Now;return false;
   }
   if(State.Phase==1&&Now-State.PhaseStarted>1){
+    const int ActualTireSize=V->UpgradeStage(TerraSim::TireSize);
+    if(ActualTireSize!=State.ExpectedTireSize){
+      UE_LOG(LogTemp,Display,TEXT("TERRA_PERF_TIRE_FIT_REJECTED case=%s expectedStage=%d actualStage=%d"),
+        *Label,State.ExpectedTireSize,ActualTireSize);
+      Check(Label+TEXT(" retains the requested tire fit"),false,ActualTireSize);
+      return true;
+    }
     const auto* BodyPoints=State.BodyProbes.Find(V);
-    if(!BodyPoints||V->UpgradeStage(TerraSim::TireSize)!=State.ExpectedTireSize||!TerraTireProbeValidation::Matches(V)){
-      Check(Label+TEXT(" requires the requested tire fit and mesh-matched body and tire probes"),false,V->UpgradeStage(TerraSim::TireSize));
+    if(!BodyPoints||!TerraTireProbeValidation::Matches(V)){
+      Check(Label+TEXT(" requires mesh-matched body and tire probes"),false,ActualTireSize);
       return true;
     }
     UE_LOG(LogTemp,Display,TEXT("TERRA_PERF_BODY_MESH case=%s sizeStage=%d asset=%s probes=%d"),

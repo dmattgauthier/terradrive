@@ -21,6 +21,7 @@
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "TerraVehicle.h"
+#include "TerraTireProbeValidation.h"
 #include "TerraRolloverValidation.h"
 #include "TerraRolloverPerformanceValidation.h"
 #include "TerraFieldValidation.h"
@@ -310,6 +311,7 @@ void ATerraGameMode::Tick(float Dt) {
   if (Stage == 0) {
     Results.Add(FString::Printf(TEXT("{\"case\":\"native world data\",\"zones\":%d,\"pass\":%s}"),
         V->Terrain->Spawns.Num(), V->Terrain->Spawns.Num() == 9 ? TEXT("true") : TEXT("false")));
+    const bool TireProbesLoaded=TerraTireProbeValidation::Load();
     for (int I = 0; I < ATerraVehicle::VehicleCount; ++I) {
       V->SelectVehicle(I);
       bool Loaded = V->Body->GetStaticMesh() != nullptr;
@@ -323,8 +325,14 @@ void ATerraGameMode::Tick(float Dt) {
       for(auto Rim:V->Rims)SplitLoaded&=Rim->GetStaticMesh()!=nullptr;
       for(int Wheel=0;Wheel<V->WheelCount();++Wheel)SplitLoaded&=V->HubDetails.IsValidIndex(Wheel*4+2)&&V->HubDetails[Wheel*4+2]->GetStaticMesh()!=nullptr;
       const auto VehicleSpec=V->Terrain->Data->GetArrayField(TEXT("vehicles"))[I]->AsObject();
-      for(int TireStage=1;TireStage<=3;++TireStage)SplitLoaded&=LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/Meshes/%s_tire_%d"),*VehicleSpec->GetStringField(TEXT("asset")),TireStage))!=nullptr;
-      Check(FString::Printf(TEXT("vehicle %d factory rims, upgraded tires and stationary brakes"),I),SplitLoaded);
+      const FString Asset=VehicleSpec->GetStringField(TEXT("asset"));
+      const int LastSize=V->UpgradeMaxStage(TerraSim::TireSize);
+      SplitLoaded&=TireProbesLoaded&&TerraTireProbeValidation::Matches(V);
+      for(int Size=1;Size<=LastSize;++Size){
+        const FString Path=FString::Printf(TEXT("/Game/Meshes/%s_tire_size%d_0"),*Asset,Size);
+        SplitLoaded&=LoadObject<UStaticMesh>(nullptr,*Path)!=nullptr;
+      }
+      Check(FString::Printf(TEXT("vehicle %d factory rims, selectable tire sizes and stationary brakes"),I),SplitLoaded);
     }
     Check(TEXT("imperial garage measurements"),V->UpgradeEffect(TerraSim::Body).Contains(TEXT(" lb"))&&
       V->UpgradeEffect(TerraSim::Suspension).Contains(TEXT(" in"))&&V->UpgradeEffect(TerraSim::Tires).Contains(TEXT(" in width")));
@@ -473,21 +481,20 @@ void ATerraGameMode::Tick(float Dt) {
     const int Region = Stage - 5;
     if (StageTime > 2 && !Captured) {
       const FVector P = V->GetActorLocation();
-      // Browser Terrain.sample at each original spawn; marsh starts on its
-      // grassy bank. These references catch native/export coordinate swaps.
+      // Reference the graded native terrain.bin at the fixed spawn coordinates.
+      // The marsh starts on its grassy bank. Keep the native snow relief separate.
       static const uint8 ExpectedSurfaces[] = {0, 1, 4, 2, 0, 5, 0, 6};
-      static const float ExpectedHeights[] = {3.189869f, 3.585f, 7.332479f, 3.332015f,
-          4.690650f, 11.039977f, 4.6f, 7.038291f};
+      static const float ExpectedHeights[] = {3.275476f, 3.585f, 7.283156f, 3.251711f,
+          4.689425f, 11.039977f, 4.6f, 7.862633f};
       const FVector Spawn = V->Terrain->Spawns[Region];
-      // Snow alone has a deliberate native relief layer above the preserved
-      // browser/source elevation. These spawn references are metre-grid nodes.
       const float ExpectedHeight=ExpectedHeights[Region]+V->Terrain->SnowDrift(Spawn.X,Spawn.Y)/100;
       const uint8 Surface = V->Terrain->Sample(Spawn).Surface;
+      const float GroundClearance=P.Z-V->Terrain->Height(P.X,P.Y);
       const bool Stable = !P.ContainsNaN() && FMath::IsFinite(V->Speed) &&
-          FMath::Abs(P.Z - V->Terrain->Height(P.X, P.Y)) < 400 &&
+          FMath::Abs(GroundClearance) < 400 &&
           Surface == ExpectedSurfaces[Region] && FMath::Abs(Spawn.Z / 100 - ExpectedHeight) < .01f;
-      Results.Add(FString::Printf(TEXT("{\"case\":\"region %d spawn\",\"surface\":%d,\"expectedSurface\":%d,\"pass\":%s}"),
-          Region, Surface, ExpectedSurfaces[Region], Stable ? TEXT("true") : TEXT("false")));
+      Results.Add(FString::Printf(TEXT("{\"case\":\"region %d spawn\",\"surface\":%d,\"expectedSurface\":%d,\"spawnHeightM\":%.6f,\"expectedHeightM\":%.6f,\"vehicleClearanceCM\":%.3f,\"pass\":%s}"),
+          Region, Surface, ExpectedSurfaces[Region], Spawn.Z/100, ExpectedHeight, GroundClearance, Stable ? TEXT("true") : TEXT("false")));
       const FVector CameraPosition = V->Camera->GetComponentLocation();
       const float Clearance = CameraPosition.Z - V->Terrain->Height(CameraPosition.X, CameraPosition.Y);
       const float CameraRoll = V->Camera->GetComponentRotation().Roll;
@@ -759,13 +766,27 @@ void ATerraGameMode::Tick(float Dt) {
     V->SetUpgrade(TerraSim::Frame,3,false);
     Check(TEXT("upgrade armor becomes visible on the vehicle"),V->Protection->IsVisible());
     Check(TEXT("frame upgrade changes Chaos damping and impact survival"),V->Chassis->GetAngularDamping()>1&&V->ImpactDamage(10000000)<StockImpact*.6f,V->ImpactDamage(10000000));
-    V->SetUpgrade(TerraSim::Tires,3,false);
-    Check(TEXT("tire upgrade changes rendered size and friction budget"),V->Wheels[0]->GetRelativeScale3D().X>1.1f&&V->GripMultiplier()>1.4f&&V->Wheels[0]->GetStaticMesh()&&V->Wheels[0]->GetStaticMesh()->GetName().EndsWith(TEXT("_tire_3")),V->GripMultiplier());
-    Check(TEXT("larger tires retain factory rim and brake rotor diameter"),FMath::Abs(V->Rims[0]->GetComponentScale().X-1)<.001f,V->Rims[0]->GetComponentScale().X);
     V->SetUpgrade(TerraSim::Wheels,3,false);
-    Check(TEXT("wheel upgrade reduces rotating inertia"),V->WheelInertia()<1.6f,V->WheelInertia());
+    Check(TEXT("wheel upgrade reduces rotating inertia at the factory diameter"),V->WheelInertia()<1.6f,V->WheelInertia());
+    const float FactoryDiameter=V->TireDiameter();
+    const UStaticMesh* FactoryTire=V->Wheels[0]->GetStaticMesh();
     V->SetUpgrade(TerraSim::Suspension,3,false);
     Check(TEXT("suspension upgrade extends contact travel"),V->SuspensionTravel()>.65f&&V->Tuning.Damping>1.6f,V->SuspensionTravel());
+    V->SetUpgrade(TerraSim::TireSize,1,false);
+    const UStaticMesh* FittedTire=V->Wheels[0]->GetStaticMesh();
+    const float FittedDiameter=V->TireDiameter(),GripBeforeCompound=V->GripMultiplier();
+    const FVector FittedScale=V->Wheels[0]->GetRelativeScale3D();
+    Check(TEXT("larger diameter selects a matching fitted mesh and preserves the factory compound"),
+      V->UpgradeStage(TerraSim::TireSize)==1&&FittedDiameter>FactoryDiameter&&FittedTire&&FittedTire!=FactoryTire&&
+      TerraTireProbeValidation::Matches(V)&&V->UpgradeStage(TerraSim::Tires)==0,FittedDiameter);
+    V->SetUpgrade(TerraSim::Tires,3,false);
+    const FVector CompoundScale=V->Wheels[0]->GetRelativeScale3D();
+    Check(TEXT("compound upgrade widens tread and adds grip at the same fitted diameter"),
+      V->UpgradeStage(TerraSim::Tires)==3&&V->GripMultiplier()>GripBeforeCompound&&
+      FMath::IsNearlyEqual(V->TireDiameter(),FittedDiameter,.01f)&&V->Wheels[0]->GetStaticMesh()==FittedTire&&
+      FMath::IsNearlyEqual(CompoundScale.X,FittedScale.X,.001)&&FMath::IsNearlyEqual(CompoundScale.Z,FittedScale.Z,.001)&&
+      CompoundScale.Y>FittedScale.Y&&TerraTireProbeValidation::Matches(V),V->GripMultiplier());
+    Check(TEXT("larger tires retain factory rim and brake rotor diameter"),FMath::Abs(V->Rims[0]->GetComponentScale().X-1)<.001f,V->Rims[0]->GetComponentScale().X);
     V->SetUpgrade(TerraSim::Engine,3,false);
     Check(TEXT("engine stage three increases usable power"),V->PowerHP()>StockPower*1.6f,V->PowerHP());
     V->SetUpgrade(TerraSim::Electrical,3,false);
@@ -777,7 +798,7 @@ void ATerraGameMode::Tick(float Dt) {
     Check(TEXT("vehicle builds remain independent"),V->UpgradeStage(TerraSim::Engine)==0);
     V->SelectVehicle(0);V->ResetUpgrades(false);
     const bool Loaded=V->LoadGarage(SetupPath);V->ApplyUpgrades();
-    Check(TEXT("all ten upgrade categories survive save reload"),Loaded&&V->UpgradeStage(TerraSim::Engine)==3&&V->UpgradeStage(TerraSim::Electrical)==3&&V->UpgradeStage(TerraSim::Body)==3&&V->UpgradeStage(TerraSim::Drivetrain)==3&&V->UpgradeStage(TerraSim::Differentials)==3&&V->UpgradeStage(TerraSim::Portals)==3);
+    Check(TEXT("upgrade stages and independent tire selections survive save reload"),Loaded&&V->UpgradeStage(TerraSim::Engine)==3&&V->UpgradeStage(TerraSim::Electrical)==3&&V->UpgradeStage(TerraSim::Body)==3&&V->UpgradeStage(TerraSim::Drivetrain)==3&&V->UpgradeStage(TerraSim::Differentials)==3&&V->UpgradeStage(TerraSim::Portals)==3&&V->UpgradeStage(TerraSim::Tires)==3&&V->UpgradeStage(TerraSim::TireSize)==1&&TerraTireProbeValidation::Matches(V));
     const FString BadPath=FPaths::ProjectSavedDir()/TEXT("Validation/garage-invalid.json");
     FFileHelper::SaveStringToFile(TEXT("{\"version\":1,\"builds\":[]}"),*BadPath);
     Check(TEXT("invalid save cannot erase an existing build"),!V->LoadGarage(BadPath)&&V->UpgradeStage(TerraSim::Engine)==3);
@@ -946,12 +967,13 @@ void ATerraGameMode::Tick(float Dt) {
       Check(TEXT("Hummer lifted driving height matches garage target"),FMath::Abs(Height-Expected)<.065f,Height-Expected);
       UE_LOG(LogTemp,Display,TEXT("TERRA_RIDE stock=%.4f lifted=%.4f target=%.4f"),StockRideHeight,Height,Expected);
       for(int Part=0;Part<TerraSim::EVSwap;++Part)V->SetUpgrade(Part,3,false);
+      V->SetUpgrade(TerraSim::TireSize,1,false);
       V->TeleportZone(1);Next(43);
     }
   } else if(Stage==43){
     if(StageTime>3&&!Captured){
       const auto P=V->GetActorLocation();const float Height=(P.Z-V->Terrain->Height(P.X,P.Y))/100;
-      Check(TEXT("Hummer tire and lift combination retains intended driving height"),FMath::Abs(Height-V->ExpectedRideHeight())<.065f,Height-V->ExpectedRideHeight());
+      Check(TEXT("Hummer tire and lift combination retains intended driving height"),V->UpgradeStage(TerraSim::TireSize)==1&&FMath::Abs(Height-V->ExpectedRideHeight())<.065f,Height-V->ExpectedRideHeight());
       V->SetGarage(true);V->SetGarageView(2);ModelView=0;Captured=true;
     }
     if(StageTime>3.45f&&Captured&&ModelView==0){Capture(TEXT("native-hummer-lifted.png"));ModelView=1;}

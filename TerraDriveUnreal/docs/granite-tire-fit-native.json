@@ -123,5 +123,33 @@
       "baseline": "The original executable above reproduced the same sole failure with the same saved profile, cook, render cap and quality setting. All fitted-body clearance checks passed in the follow-up run."
     },
     "earlierAttempts": "The sandbox blocked Unreal staging and the first game startup. The first unsandboxed functional rollover run wrote 91 passing assertions and ten captures before its shutdown timeout. The repeat passed the runner with exit zero. Earlier logs and reports are retained locally."
+  },
+  "validationFollowUp": {
+    "previousHead": "e777ea598b082e7f72f56f7f4de3f2390270dfe2",
+    "windowsExecutableSha256": "8246227224c7c8f1af67200b72fbf28a4c003d36a7089248ac56adf83a6e9efe",
+    "nativeSourceTreeSha256": "1988fe544044dd5f6c57b3191333f5166a53a8020eddbc03ddf13b3960798248",
+    "package": "The Win64 Development executable was staged into a separate copy of the verified package. The staged content matches the hashes above.",
+    "defaultNativeSuite": {
+      "passedChecks": 402,
+      "captures": 142,
+      "peakTemperatureC": 58.41,
+      "elapsedSeconds": 843.953,
+      "clock": "Paced fixed 20 Hz with isolated settings",
+      "reportSha256": "16ce1612e0d71aa13e15f7aad97e25706518fd99b16db9fa3e2bec772e59feaf",
+      "terrainBinSha256": "49a42d5396c4aebf150869f271d8e714fbbd17d94189f79141cce0b8dcc94055",
+      "earlierAttempts": "The previous PR executable passed 396 of 401 checks. Its compound check expected a retired tire mesh and four spawn checks used outdated elevations. The first revised executable (SHA-256 3a80bcae40a4c71e9e2736bb29442ce1873e8a1b600bf98433bfe9872c556c84) passed 400 of 402 checks. The final suite checks tread width separately from radial scale and measures wheel inertia at factory diameter. Earlier reports are retained locally."
+    },
+    "copiedBuildMissingFittedBody": {
+      "clock": "Real elapsed time with a 20 FPS cap",
+      "copiedV10SaveSha256": "bf2d54f91d862c64708c6c0242aecbd98e1412f1773160bc14bc8742784f60c8",
+      "testWorldSha256": "eff6795aa99c8d673e8f1c2a929455050c1bae45ab582d82ff8be89608519449",
+      "fixture": "A separate test pak overlaid only the staged world manifest and pointed the Wrangler's 35-inch fit at an absent body mesh. Both executables used the same copied v10 save and test pak. The copied save hash matched before and after both runs.",
+      "expectedTireStage": 1,
+      "actualTireStage": 0,
+      "fixedMeasurementsStarted": 0,
+      "fixedPeakTemperatureC": 58.35,
+      "baselineStockBodyMeasurements": 9,
+      "baselinePassedChecks": 68
+    }
   }
 }
