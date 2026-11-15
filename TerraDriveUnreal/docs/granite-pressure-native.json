@@ -1,0 +1,256 @@
+{
+  "engine": "5.8.3",
+  "windowsExecutableSha256": "a7a3ad21ca69a675a2dbf76c27bf800b224f44354647ec694038e60459b825b0",
+  "sourceExportSha256": "565dc53b58d93e6cfbb0deb9fabd69b7369d02f1e7d504b5eec81d2dbaaa3bf6",
+  "vehicleCollisionSha256": "4857d54d66b962ee2b040ca67bfa1415a59f619f7bed9077fadc19fc47d82898",
+  "cookedTreeSha256": "1d0d3a8c96f3ebec4f0f4df1e2203d7c181cfbfe7b0c3f2e53466ac5945a5a0f",
+  "stagedContent": [
+    {
+      "path": "TerraDrive/Content/Paks/global.ucas",
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/global.utoc",
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "sha256": "39ff6b2e427596bd631ca0dacb39144af1b8ad7937532747a5cf31ca8829c296"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "sha256": "6980d186f04e9d2deedd7ae1e978a4572f7bf31c19d56cbb528b64141f061e9f"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "sha256": "1b1256b04f567c0045801e993a39130297375a4faeb34947a1ef9d55955daff2"
+    }
+  ],
+  "graniteFitment": {
+    "garageFitments": 39,
+    "factoryGraveDiggerFitments": 1,
+    "roadPlacardPasses": 40,
+    "lowPressurePasses": 40,
+    "requestedLowPressurePSI": 16,
+    "measuredLowPressurePSI": {
+      "minimum": 16.0,
+      "maximum": 19.35
+    },
+    "minimumMeasuredBodyClearanceInches": 0.693,
+    "longestDeepTreadPenetrationSeconds": 0.3,
+    "deepestSampledTreadPenetrationInches": -6.161,
+    "description": "A rolling approach sweep to both steering stops followed by two ledges. Separate rendered runs steer both ways while crawling on the ledge."
+  },
+  "renderedLedgeSteering": [
+    {
+      "steering": "left",
+      "tireInches": 50.0,
+      "psi": 16.0,
+      "loadedFullLockFrames": 6,
+      "suspensionSpreadInches": 11.0,
+      "minBodyClearanceInches": 0.87
+    },
+    {
+      "steering": "right",
+      "tireInches": 50.0,
+      "psi": 16.0,
+      "loadedFullLockFrames": 6,
+      "suspensionSpreadInches": 10.516,
+      "minBodyClearanceInches": 0.87
+    },
+    {
+      "steering": "left",
+      "tireInches": 50.0,
+      "psi": 37.0,
+      "loadedFullLockFrames": 21,
+      "suspensionSpreadInches": 11.429,
+      "minBodyClearanceInches": 0.835
+    },
+    {
+      "steering": "right",
+      "tireInches": 50.0,
+      "psi": 37.0,
+      "loadedFullLockFrames": 21,
+      "suspensionSpreadInches": 11.681,
+      "minBodyClearanceInches": 0.835
+    }
+  ],
+  "rigidControl": {
+    "matchedBumpOverrun": {
+      "averageOverrunInches": {
+        "rigid": 1.168,
+        "compliant": 0.136
+      },
+      "worstOverrunInches": {
+        "rigid": 5.587,
+        "compliant": 0.78
+      },
+      "averageReductionPercent": 88.39
+    },
+    "failedCases": []
+  },
+  "graveDigger": {
+    "factoryTireInches": 66,
+    "beforeMinWheelhouseClearanceInches": -6.61,
+    "afterMinWheelhouseClearanceInches": 1.303,
+    "afterLeftRightDegrees": [
+      47.41,
+      47.43
+    ]
+  },
+  "airedDownHummer": {
+    "tireInches": 50,
+    "psi": 16.0,
+    "beforeWorstBumpOverrunInches": 3.402,
+    "afterWorstBumpOverrunInches": 1.331,
+    "beforeDeepTreadContactSeconds": 0.45,
+    "afterDeepTreadContactSeconds": 0.3
+  },
+  "loadedTirePressure": [
+    {
+      "case": "low",
+      "tireInches": 42,
+      "psi": 15.694,
+      "cornerLoadLb": 1238.2,
+      "deflectionInches": 1.748
+    },
+    {
+      "case": "road",
+      "tireInches": 42,
+      "psi": 37.367,
+      "cornerLoadLb": 1235.7,
+      "deflectionInches": 0.835
+    },
+    {
+      "case": "high",
+      "tireInches": 42,
+      "psi": 62.0,
+      "cornerLoadLb": 1235.1,
+      "deflectionInches": 0.524
+    }
+  ],
+  "rockCrawl": [
+    {
+      "mode": "4H open",
+      "gates": 0,
+      "diagonalUnloadFrames": 0,
+      "seconds": 58.049,
+      "notchSeconds": 0.0
+    },
+    {
+      "mode": "4L open",
+      "gates": 1,
+      "diagonalUnloadFrames": 14,
+      "seconds": 58.049,
+      "notchSeconds": 50.349
+    },
+    {
+      "mode": "4L locked center",
+      "gates": 6,
+      "diagonalUnloadFrames": 8,
+      "seconds": 32.35,
+      "notchSeconds": 2.9
+    },
+    {
+      "mode": "4L open right bench",
+      "gates": 6,
+      "diagonalUnloadFrames": 0,
+      "seconds": 31.0,
+      "notchSeconds": 2.05
+    }
+  ],
+  "validationRuns": [
+    {
+      "run": "Road or factory pressure matrix",
+      "mode": "GraniteFit",
+      "pass": true,
+      "checks": 201,
+      "captures": 0,
+      "executableSha256": "a7a3ad21ca69a675a2dbf76c27bf800b224f44354647ec694038e60459b825b0",
+      "peakTemperatureC": 45.67
+    },
+    {
+      "run": "Aired-down matrix",
+      "mode": "GraniteFit",
+      "pass": true,
+      "checks": 201,
+      "captures": 0,
+      "executableSha256": "a7a3ad21ca69a675a2dbf76c27bf800b224f44354647ec694038e60459b825b0",
+      "peakTemperatureC": 47.62
+    },
+    {
+      "run": "Rendered 50-inch Wrangler at 16 PSI",
+      "mode": "GraniteFit",
+      "pass": true,
+      "checks": 4,
+      "captures": 2,
+      "executableSha256": "fa8dd1f74148770dba3da374a5538af69bb51d704637071c2851148be55333ca",
+      "peakTemperatureC": 49.23
+    },
+    {
+      "run": "Rendered 50-inch Wrangler at road pressure",
+      "mode": "GraniteFit",
+      "pass": true,
+      "checks": 4,
+      "captures": 2,
+      "executableSha256": "fa8dd1f74148770dba3da374a5538af69bb51d704637071c2851148be55333ca",
+      "peakTemperatureC": 49.31
+    },
+    {
+      "run": "Rendered pressure deformation and garage underbody",
+      "mode": "Carcass",
+      "pass": true,
+      "checks": 19,
+      "captures": 8,
+      "executableSha256": "a7a3ad21ca69a675a2dbf76c27bf800b224f44354647ec694038e60459b825b0",
+      "peakTemperatureC": 49.34
+    },
+    {
+      "run": "Native rut behavior",
+      "mode": "Ruts",
+      "pass": true,
+      "checks": 117,
+      "captures": 16,
+      "executableSha256": "a7a3ad21ca69a675a2dbf76c27bf800b224f44354647ec694038e60459b825b0",
+      "peakTemperatureC": 51.15
+    },
+    {
+      "run": "Native Grave Digger recovery",
+      "mode": "GraveRecovery",
+      "pass": true,
+      "checks": 34,
+      "captures": 6,
+      "executableSha256": "a7a3ad21ca69a675a2dbf76c27bf800b224f44354647ec694038e60459b825b0",
+      "peakTemperatureC": 50.89
+    },
+    {
+      "run": "Native 50-inch Wrangler rollover",
+      "mode": "Rollover",
+      "pass": true,
+      "checks": 91,
+      "captures": 10,
+      "executableSha256": "a7a3ad21ca69a675a2dbf76c27bf800b224f44354647ec694038e60459b825b0",
+      "peakTemperatureC": 51.78
+    },
+    {
+      "run": "Rock-crawl modes and matched notch demand",
+      "mode": "RockCrawl",
+      "pass": true,
+      "checks": 22,
+      "captures": 6,
+      "executableSha256": "fa8dd1f74148770dba3da374a5538af69bb51d704637071c2851148be55333ca",
+      "peakTemperatureC": 52.38
+    },
+    {
+      "run": "Earlier native movement regression",
+      "mode": "Movement",
+      "pass": true,
+      "checks": 145,
+      "captures": 19,
+      "executableSha256": "df0c2d3522f5fdb70efdb76f5943b454b35b8df0315fdf7d13468c3091047e68",
+      "peakTemperatureC": 53.93
+    }
+  ],
+  "validationNote": "The rock-crawl and rendered full-lock runs used the earlier executable with the same gameplay code. The final executable sets and verifies lockers and settling in the separate fitment fixture. Movement ran before the final steep-rock probe and full-load visual corrections. The runtime tests use fixed-clock functional verification.",
+  "physicalModel": "Representative radial stiffness and sidewall travel are calibrated to published measurements. Sharp rock edges can still briefly intersect a sampled tread."
+}

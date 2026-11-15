@@ -1,4 +1,5 @@
 #include "../Source/TerraDrive/TerraSimCore.h"
+#include "../Source/TerraDrive/TerraTireCarcass.h"
 #include "../Source/TerraDrive/TerraUpgrades.h"
 #include "../Source/TerraDrive/TerraContact.h"
 #include "../Source/TerraDrive/TerraUnits.h"
@@ -13,6 +14,29 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    {
+        // Representative loaded passenger tire and a tall off-road fit.
+        const auto passenger=TerraSim::MakeTireCarcass(33,.371f,.234f,.235f);
+        check(passenger.StiffnessNPerM>160000&&passenger.StiffnessNPerM<220000,
+            "representative radial stiffness agrees in scale with measured passenger tire");
+        const auto low=TerraSim::MakeTireCarcass(14,.635f,.210f,.345f);
+        const auto road=TerraSim::MakeTireCarcass(35,.635f,.210f,.345f);
+        const auto high=TerraSim::MakeTireCarcass(55,.635f,.210f,.345f);
+        check(low.Deflection(5000)>road.Deflection(5000)+.012f&&road.Deflection(5000)>high.Deflection(5000),
+            "airing down increases loaded radial deflection at a matched corner load");
+        check(low.Deflection(7000)>low.Deflection(3500)&&low.Deflection(1e7f)<low.DeflectionLimitM&&
+            low.Deflection(0)==0,"carcass deflects with load, stiffens at its travel limit and unloads");
+        check(TerraSim::TireCarcassBulge(.04f)>TerraSim::TireCarcassBulge(.012f)&&
+            TerraSim::TireCarcassBulge(.12f)<.01f,"sidewall growth is pressure-responsive and stays inside the clearance allowance");
+        const float k=42000.f, compression=.14f, alignment=.86f;
+        auto suspension=[&](float travelLoss){return k*(compression-travelLoss);};
+        const float expected=k*compression/(1+k/(road.StiffnessNPerM*alignment));
+        const float actual=TerraSim::CompliantTireLoad(road,alignment,20000.f,suspension);
+        check(std::abs(actual-expected)<2.f,"loaded tire and suspension share the same normal compression");
+        check(TerraSim::CompliantTireLoad(low,alignment,20000.f,suspension)<actual&&
+            TerraSim::CompliantTireLoad(low,alignment,20000.f,[](float){return -100.f;})==0,
+            "soft tire reduces normal force at equal geometric travel and cannot pull on ground");
+    }
     for(float dt:{1.f/20,1.f/30,1.f/60,.1f})for(float direction:{-1.f,1.f})for(float lateral:{0.f,.8f,1.f}){
         const float speed=direction*4,r=.4f,c=9000,limit=4000,drag=160,inertia=3;
         float wheel=speed/r,axle=wheel;

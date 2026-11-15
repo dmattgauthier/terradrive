@@ -35,6 +35,58 @@ function overlapsConvex(a,b){
  return true;
 }
 
+// Sweep the measured 66-inch tire envelope through the real vehicle hard
+// points. At each steering angle, the nearest center along its entire stroke
+// is the most conservative roll-envelope test for a sampled body point.
+function monsterSteeringClearance(meshes,spec,radius,halfWidth){
+ const ride=spec.tireRadius-spec.cgHeight;
+ const top=ride+spec.suspension.travel*.58;
+ const bottom=ride-spec.droopTravel;
+ const spacing=.04,points=new Map(),point=new T.Vector3();
+ for(const mesh of meshes){
+  if(!mesh.visible)continue;
+  const box=new T.Box3().setFromObject(mesh);
+  if(box.min.y>top+radius+.03)continue;
+  const {position}=mesh.geometry.attributes,index=mesh.geometry.index;
+  const vertices=Array.from({length:position.count},(_,i)=>
+   new T.Vector3().fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld));
+  for(let i=0;i<(index?.count??vertices.length);i+=3){
+   const a=vertices[index?index.getX(i):i],b=vertices[index?index.getX(i+1):i+1],c=vertices[index?index.getX(i+2):i+2];
+   if(Math.min(a.y,b.y,c.y)>top+radius+.03)continue;
+   const divisions=Math.max(1,Math.ceil(Math.sqrt(Math.max(
+    a.distanceToSquared(b),a.distanceToSquared(c),b.distanceToSquared(c)))/spacing));
+   const ab=b.clone().sub(a),ac=c.clone().sub(a);
+   for(let u=0;u<=divisions;u++)for(let v=0;v<=divisions-u;v++){
+    point.copy(a).addScaledVector(ab,u/divisions).addScaledVector(ac,v/divisions);
+    if(point.y>top+radius+.03||Math.abs(point.x)<.20||Math.abs(point.z)<.65)continue;
+    const key=point.toArray().map(value=>Math.round(value/.033)).join('/');
+    if(!points.has(key))points.set(key,point.clone());
+   }
+  }
+ }
+ const halfBase=spec.wheelbase/2,halfTrack=spec.track/2;
+ let minimum=Infinity,poses=0;
+ for(const front of [true,false])for(const side of [-1,1]){
+  const axle=front?halfBase:-halfBase,lateral=side*halfTrack;
+  const nearby=[...points.values()].filter(p=>Math.abs(p.z-axle)<radius+halfWidth&&Math.abs(p.x-lateral)<radius+halfWidth);
+  for(let request=-34;request<=34;request+=.25){
+   const angle=request*Math.PI/180,rear=-angle*.65;
+   const main=Math.tan(front?angle:rear),opposite=Math.tan(front?rear:angle);
+   const curvature=(main-opposite)/(front?spec.wheelbase:-spec.wheelbase);
+   const yaw=Math.atan(main/Math.max(.35,1-lateral*curvature)),sin=Math.sin(yaw),cos=Math.cos(yaw);
+   poses++;
+   for(const p of nearby){
+    const along=p.z-axle,sideways=p.x-lateral;
+    const axial=Math.abs(sideways*cos-along*sin);
+    const height=p.y-Math.max(bottom,Math.min(top,p.y));
+    const radial=Math.sqrt((along*cos+sideways*sin)**2+height*height);
+    minimum=Math.min(minimum,Math.max(radial-radius,axial-halfWidth));
+   }
+  }
+ }
+ return {minimumClearanceM:minimum,poses,surfaceSamples:points.size};
+}
+
 export function inspectAddedReference(view,spec,parts){
  const checks=[];const test=(name,pass,data={})=>{checks.push({name,pass,...data});assert.ok(pass,spec.id+': '+name+' '+JSON.stringify(data));};
  const meshes=[];view.body.traverse(o=>{if(o.isMesh)meshes.push(o);});view.root.updateMatrixWorld(true);
@@ -183,6 +235,9 @@ export function inspectAddedReference(view,spec,parts){
   const headlights=meshes.filter(o=>o.name==='monster-constant-red-headlight');test('constant red headlights stay separate from brake circuit',headlights.length===2&&headlights.every(o=>!o.material.userData.nativeRole&&o.material.emissiveIntensity>.8));
   test('official monster class scale',Math.abs(spec.tireRadius*2/.0254-66)<1e-6&&Math.abs(spec.tireWidth/.0254-43)<1e-6&&Math.abs(spec.suspension.travel/.0254-30)<1e-6);
   test('stock monster tires are not shrunk to upgrade limit',tireDiameterInches(spec.tireRadius,3)>65.99);
+  const sweep=monsterSteeringClearance(meshes,spec,Math.max(spec.tireRadius,tireSize.y*.5,tireSize.z*.5),tireSize.x*.5);
+  test('factory 66-inch tires clear coachwork over both full steering and suspension sweeps',
+   sweep.minimumClearanceM>.004&&sweep.poses===1092&&sweep.surfaceSamples>5000,sweep);
   for(const name of ['grave-digger-domed-wagon-roof','grave-digger-domed-narrow-bonnet','monster-deep-25in-beadlock-wheel'])test(name+' present',!!view.body.getObjectByName(name)||!!parts.rim.getObjectByName(name));
   let lugs=0;parts.tire.traverse(o=>{if(o.name==='monster-directional-chevron-lug')lugs++;});test('48 full-width directional chevron half-lugs',lugs===48,{lugs});
   const carcass=parts.tire.getObjectByName('monster-bulged-66in-carcass'),moldings=[];

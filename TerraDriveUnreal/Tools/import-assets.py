@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import runpy
 import unreal
 
 root = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
@@ -263,6 +264,8 @@ material('Native_Chrome',[.45,.53,.57],.25,.88)
 exec(compile(open(os.path.join(root,'Tools','automotive-materials.py'),encoding='utf8').read(),'automotive-materials.py','exec'),globals())
 
 exec(compile(open(os.path.join(root,'Tools','close-rocks.py'),encoding='utf8').read(),'close-rocks.py','exec'))
+carcass_recipe = runpy.run_path(os.path.join(root, 'Tools', 'tire-carcass-materials.py'))
+carcass_slots = carcass_recipe['build_tire_carcass_materials'](data)
 for i, asset in enumerate(data['assets']):
     # A fresh commandlet per small group bounds Interchange/MeshDescription
     # working memory on 16 GB machines. Finalization runs only in the last group.
@@ -301,11 +304,12 @@ for i, asset in enumerate(data['assets']):
         if not task.imported_object_paths:
             raise RuntimeError('Import failed: ' + asset['name'])
         mesh = lib.load_asset(task.imported_object_paths[0])
+    finishes = carcass_slots if carcass_recipe['TIRE_ASSET'].search(asset['name']) else materials
     for index, slot in enumerate(mesh.get_editor_property('static_materials')):
         slot_name = str(slot.get_editor_property('imported_material_slot_name'))
         mid = next((m for m in asset['slots'] if m in slot_name), asset['slots'][min(index,len(asset['slots'])-1)])
-        if mesh.get_material(index) != materials[mid]:
-            mesh.set_material(index, materials[mid])
+        if mesh.get_material(index) != finishes[mid]:
+            mesh.set_material(index, finishes[mid])
     # Impact dents copy the selected vehicle's render mesh once, on the first
     # damaging contact. Keep CPU vertex data for bodies only, not scenery.
     if asset['name'].endswith('_body'):

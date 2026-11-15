@@ -115,7 +115,8 @@ function graniteFaultRelief(s,t) {
   const rearPocket=shelfBand(s,8.16,9.14,11.29,13.20)*
     smooth((-t-.16)/.45)*(1-smooth((-t-1.88)/.74));
   const notchFloor=.22*shelfBand(s,8.40,10.28,13.20,15.20)*bump((t+.10)/1.37);
-  relief-=.36*(frontPocket+rearPocket)+notchFloor;
+  // The rear recess accounts for sidewall deflection under load.
+  relief-=.36*frontPocket+.46*rearPocket+notchFloor;
   const bedding=.04*Math.sin(s*1.1+t*.95)*bump((s-19)/12);
   return shoulder*(relief*(1-smooth((s-27)/15))+bedding);
 }

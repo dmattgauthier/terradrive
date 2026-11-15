@@ -377,12 +377,19 @@ FTerraSupport ATerraWorld::CastTireSupport(FVector Mount,FVector Up,FVector Forw
   // A circular rolling envelope at three points across the real tread width.
   // The shoulder/front samples can bridge a narrow rut or meet a bump before
   // the axle is directly above it. No probe can reach behind its suspension.
-  TArray<FTerraSupport,TInlineAllocator<9>> Contacts;
-  for(float L:{-.60f,0.f,.60f})for(float W:{-.42f,0.f,.42f}){
-    auto S=GroundSupport(Mount+Forward*(RadiusCM*L)+Side*(WidthCM*W),Up,
-                         RadiusCM*FMath::Sqrt(1-L*L),MinCM,MaxCM);
+  TArray<FTerraSupport,TInlineAllocator<15>> Contacts;
+  auto SampleTread=[&](float Longitudinal,float Lateral){
+    const FVector Offset=Forward*(RadiusCM*Longitudinal)+Side*(WidthCM*Lateral);
+    const float Arc=RadiusCM*FMath::Sqrt(1-Longitudinal*Longitudinal);
+    const auto S=GroundSupport(Mount+Offset,Up,Arc,MinCM,MaxCM);
     if(S.Hit){Contacts.Add(S);if(!Best.Hit||S.Distance<Best.Distance)Best=S;}
-  }
+  };
+  for(float L:{-.60f,0.f,.60f})for(float W:{-.42f,0.f,.42f})SampleTread(L,W);
+  // The distance between longitudinal probes grows with diameter. Fill in
+  // the gaps on steep bedrock, where an edge can otherwise enter the tire
+  // between the center and shoulder rows before providing support.
+  if(RadiusCM>=50.f&&Best.Hit&&Best.Surface==4&&Best.Normal.Z<.97f)
+    for(float L:{-.30f,.30f})for(float W:{-.42f,0.f,.42f})SampleTread(L,W);
   if(Best.Hit){
     FVector Normal=FVector::ZeroVector,Point=FVector::ZeroVector;float Weight=0;
     for(const auto &S:Contacts){

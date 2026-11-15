@@ -1,4 +1,4 @@
-param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter','Challenges','RockCrawl','Expanded','Recovery','GraveRecovery','RolloverPerformance')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,11)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey,[ValidateRange(0,11)][int]$PerformanceVehicle=10,[ValidateRange(0,26)][int]$TireSizeStage=0,[switch]$LegacyRolledTires,[switch]$ContactDiagnostics,[ValidateRange(-1,11)][int]$ArtVehicle=-1,[string]$SavedBuild='')
+param([ValidateSet('SixWheel','Art','UrusArt','Quarry','Interface','Mechanical','ElectricPressure','Rollover','Ruts','Garden','Transitions','Detail','Movement','RutTransitions','Perimeter','Challenges','RockCrawl','GraniteFit','Carcass','Expanded','Recovery','GraveRecovery','RolloverPerformance')][string]$Mode='SixWheel',[string]$OutputDirectory='',[int]$TimeoutSeconds=1800,[ValidateRange(-1,11)][int]$RolloverQuickVehicle=-1,[string]$PackageDirectory='',[switch]$QuarrySurvey,[ValidateRange(0,11)][int]$PerformanceVehicle=10,[ValidateRange(0,26)][int]$TireSizeStage=0,[switch]$LegacyRolledTires,[switch]$ContactDiagnostics,[ValidateRange(-1,11)][int]$ArtVehicle=-1,[string]$SavedBuild='',[ValidateRange(-1,11)][int]$GraniteVehicle=-1,[ValidateRange(-1,26)][int]$GraniteStage=-1,[switch]$GraniteRender,[switch]$GraniteRigidTires,[string]$GraniteBodyWitnesses='',[switch]$GraniteLedgeLocks,[ValidateRange(0,65)][int]$GranitePSI=0)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'staged-package-content.ps1')
 if($RolloverQuickVehicle -ge 0 -and $Mode -ne 'Rollover'){throw '-RolloverQuickVehicle requires Rollover mode.'}
@@ -6,6 +6,10 @@ if($ArtVehicle -ge 0 -and $Mode -ne 'Art'){throw '-ArtVehicle requires Art mode.
 if($QuarrySurvey -and $Mode -ne 'Quarry'){throw '-QuarrySurvey requires Quarry mode.'}
 if($SavedBuild -and $Mode -ne 'RolloverPerformance'){throw '-SavedBuild requires RolloverPerformance mode.'}
 if(($TireSizeStage -gt 0 -or $LegacyRolledTires) -and $Mode -notin @('Rollover','RolloverPerformance')){throw 'Tire rollover options require a rollover mode.'}
+if(($GraniteVehicle -ge 0 -or $GraniteStage -ge 0 -or $GraniteRender -or $GraniteRigidTires -or $GraniteBodyWitnesses -or $GraniteLedgeLocks -or $GranitePSI) -and $Mode -ne 'GraniteFit'){throw 'Granite fixture options require GraniteFit mode.'}
+if($GraniteStage -ge 0 -and $GraniteVehicle -lt 0){throw 'Select a vehicle when selecting a specific tire stage.'}
+if($GraniteLedgeLocks -and ($GraniteVehicle -ge 0 -or $GraniteStage -ge 0 -or $GraniteRigidTires)){throw 'The ledge locks fixture automatically fits its reference vehicle.'}
+$taskHeadless=$Mode -eq 'GraniteFit' -and !$GraniteRender -and !$GraniteLedgeLocks
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker -ErrorAction SilentlyContinue){throw 'Close game/editor before native validation.'}
 if(!$OutputDirectory){$OutputDirectory=Join-Path $taskRoot ('Saved/FidelityValidation-'+$Mode+'-'+(Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH-mm-ssZ'))}
@@ -22,15 +26,33 @@ $taskFlags.RutTransitions='-TerraRutTransitionOnly'
 $taskFlags.Perimeter='-TerraPerimeterOnly'
 $taskFlags.Challenges='-TerraChallengesOnly'
 $taskFlags.RockCrawl='-TerraRockCrawlOnly'
+$taskFlags.Carcass='-TerraCarcassOnly'
+$taskFlags.GraniteFit='-TerraGraniteFitOnly'
 $taskFlags.Expanded='-TerraExpandedOnly'
 $taskFlags.Recovery='-TerraRecoveryOnly'
 $taskFlags.GraveRecovery='-TerraGraveRecoveryOnly'
 $taskFlags.RolloverPerformance='-TerraRolloverPerformanceOnly'
-$taskQuality=if($Mode -in @('Art','UrusArt','Quarry','Garden','Ruts','Transitions','Detail','RutTransitions','Expanded')){2}else{0}
+$taskQuality=if($Mode -in @('Art','UrusArt','Quarry','Garden','Ruts','Transitions','Detail','RutTransitions','Carcass','Expanded')){2}else{0}
 $taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-NoTrace','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraGraphicsMode='+$taskQuality),$taskFlags[$Mode],
  ('-TerraReport="'+$taskReport+'"'),('-TerraCaptureDir="'+$taskCaptures+'"'),('-TerraGarage="'+(Join-Path $taskOutput 'garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOutput 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $taskOutput 'controls.json')+'"'),('-UserDir="'+(Join-Path $taskOutput 'User')+'"'),('-abslog="'+(Join-Path $taskOutput 'game.log')+'"'),
  '-ini:Engine:[/Script/Engine.Engine]:bUseFixedFrameRate=True','-ini:Engine:[/Script/Engine.Engine]:FixedFrameRate=20.0')
 if($Mode -eq 'RolloverPerformance'){$taskArguments=@($taskArguments|Where-Object {$_ -notlike '-ini:Engine:*'});$taskArguments+=('-TerraPerfVehicle='+$PerformanceVehicle)}
+if($taskHeadless){$taskArguments=@($taskArguments|Where-Object {$_ -ne '-TerraCapture'});$taskArguments+=@('-nullrhi','-deterministic','-fps=20')}
+if($Mode -eq 'GraniteFit'){
+  if(!$GraniteBodyWitnesses){$GraniteBodyWitnesses=Join-Path $taskRoot 'Saved/granite-body-witnesses.json'}
+  if($taskHeadless -and !(Test-Path -LiteralPath $GraniteBodyWitnesses -PathType Leaf)){
+    & node (Join-Path $PSScriptRoot 'bake-granite-body-witnesses.mjs') $GraniteBodyWitnesses
+    if($LASTEXITCODE){throw 'Granite body witness bake failed'}
+  }
+  if(Test-Path -LiteralPath $GraniteBodyWitnesses -PathType Leaf){
+    $taskArguments+=('-TerraGraniteBodyWitnesses="'+(Resolve-Path -LiteralPath $GraniteBodyWitnesses).ProviderPath+'"')
+  }
+}
+if($GranitePSI){$taskArguments+=('-TerraGranitePressure='+$GranitePSI)}
+if($GraniteLedgeLocks){$taskArguments+='-TerraGraniteLedgeLocks'}
+if($GraniteRigidTires){$taskArguments+='-TerraRigidTireControl'}
+if($GraniteVehicle -ge 0){$taskArguments+=('-TerraGraniteFitVehicle='+$GraniteVehicle)}
+if($GraniteStage -ge 0){$taskArguments+=('-TerraGraniteFitStage='+$GraniteStage)}
 if($SavedBuild){$taskArguments+=('-TerraPerfBuild="'+(Resolve-Path -LiteralPath $SavedBuild).ProviderPath+'"')}
 if($QuarrySurvey){$taskArguments+='-TerraQuarrySurvey'}
 if($ArtVehicle -ge 0){$taskArguments+=('-TerraModelHeroVehicle='+$ArtVehicle)}
@@ -44,7 +66,7 @@ $taskContent=@(Get-StagedPackageContent -PackageDirectory $taskPackage)
 $taskStart=Get-Date
 $taskReceipt=[ordered]@{mode=$Mode;started=$taskStart.ToUniversalTime().ToString('o');
  packageDirectory=$taskPackage;executableSha256=$taskExecutableHash;stagedContent=$taskContent;
- arguments=$taskArguments;simulationClock=$(if($Mode -eq 'RolloverPerformance'){'real elapsed time; 20 FPS render cap; normal physics'}else{'paced fixed20Hz functional verification'});pass=$false}
+ arguments=$taskArguments;simulationClock=$(if($Mode -eq 'RolloverPerformance'){'real elapsed time; 20 FPS render cap; normal physics'}elseif($taskHeadless){'unpaced fixed20Hz NullRHI functional verification'}else{'paced fixed20Hz functional verification'});pass=$false}
 $taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=$taskExe;$taskInfo.Arguments=$taskArguments -join ' ';$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
 $taskGame=[Diagnostics.Process]::new();$taskGame.StartInfo=$taskInfo
 $taskStarted=$false
@@ -73,7 +95,14 @@ try{
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=166;Mechanical=708;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=145;RutTransitions=64;Perimeter=5;Challenges=27;RockCrawl=22;Expanded=292;Recovery=48;GraveRecovery=34;RolloverPerformance=59}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=166;Mechanical=708;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=145;RutTransitions=64;Perimeter=5;Challenges=27;RockCrawl=22;Carcass=19;Expanded=292;Recovery=48;GraveRecovery=34;RolloverPerformance=59}[$Mode]
+ if($GraniteLedgeLocks){$taskExpected=4}
+ elseif($Mode -eq 'GraniteFit'){
+  $fitCount=[int]$taskResult.tests[0].value
+  $fitLogs=@(Select-String -LiteralPath $taskLog -Pattern 'TERRA_GRANITE_FIT vehicle=')
+  if($fitCount -lt 1 -or $fitLogs.Count -ne $fitCount -or ($GraniteVehicle -lt 0 -and $fitCount -ne 40)){throw 'Granite test did not complete its tire catalog'}
+  $taskExpected=1+5*$fitCount
+ }
  if($SavedBuild){$taskExpected+=9} # One saved-profile check per real-time pose.
  if($QuarrySurvey){$taskExpected+=9}
  if($ArtVehicle -ge 0){$taskExpected=11}
@@ -103,6 +132,8 @@ try{
  if($Mode -eq 'SixWheel'){$taskExpectedCaptures=@('sixwheel-locked-motion.png','g63-squared-garage.png','sixwheel-mud-ruts.png','sixwheel-ev-drive-1.png','sixwheel-ev-drive-2.png','sixwheel-ev-drive-3.png')}
  if($Mode -eq 'Garden'){$taskExpectedCaptures=@('garden-main-outcrop.png','garden-detached-blocks.png','garden-ledge-silhouette.png','garden-stone-close.png','garden-articulation-line.png')}
  if($Mode -eq 'Challenges'){$taskExpectedCaptures+=@('terrain-challenges-menu.png');foreach($course in 0..2){foreach($view in @('obstacle','finish')){$taskExpectedCaptures+=('terrain-challenge-'+$course+'-'+$view+'.png')}}}
+ if($GraniteLedgeLocks){$taskExpectedCaptures=@('granite-fit-wrangler-50-ledge-left.png','granite-fit-wrangler-50-ledge-right.png')}
+ if($Mode -eq 'Carcass'){$taskExpectedCaptures=@('native-carcass-low.png','native-carcass-road.png','native-carcass-high.png','native-underbody-g580.png','native-underbody-g63-sixwheel.png','native-underbody-wrangler-stock.png','native-underbody-wrangler-quad-portal.png','native-underbody-wrangler-single.png')}
  if($Mode -eq 'RockCrawl'){$taskExpectedCaptures=@('rock-crawl-menu.png','rock-crawl-high-open.png','rock-crawl-low-open.png','rock-crawl-low-locked.png','rock-crawl-low-open-bench.png','rock-crawl-finish.png')}
  if($Mode -eq 'Perimeter'){
   $taskExpectedCaptures=@('perimeter-finish.png')
@@ -142,7 +173,7 @@ try{
   if($taskBytes.Length -lt 24 -or [BitConverter]::ToString($taskBytes[0..7]) -ne '89-50-4E-47-0D-0A-1A-0A'){throw ('Invalid PNG capture '+$taskName)}
  }
  $taskReceipt.captures=@(Get-ChildItem -LiteralPath $taskCaptures -Filter '*.png').Count
- if($taskReceipt.captures -lt 1){throw 'Native run produced no screenshot evidence'}
+ if(!$taskHeadless -and $taskReceipt.captures -lt 1){throw 'Native run produced no screenshot evidence'}
  $taskReceipt.pass=$true
 }catch{$taskProblem=$_;$taskReceipt.problem=$_.Exception.Message;if($taskStarted -and !$taskGame.HasExited){$taskGame.Kill();$taskGame.WaitForExit()}}
 finally{

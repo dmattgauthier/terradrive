@@ -505,10 +505,13 @@ function wheel(spec,m) {
 }
 
 function addChassis(g,m,green) {
+  // Draw the lower rails inboard as they approach each axle. At full
+  // hydraulic steer the inner shoulder of a 66-inch tire sweeps back into
+  // the formerly straight frame rails. Upper roll-cage pickups are retained.
   const bays=[
-    [-2.16,.523,.985,.638,1.525],[-1.56,.628,.896,.736,1.857],
-    [-.89,.675,.775,.719,1.718],[-.12,.689,.775,.707,1.751],
-    [.67,.674,.835,.702,1.842],[1.44,.575,.959,.663,1.949],[2.073,.503,1.143,.555,1.899]
+    [-2.16,.323,.985,.456,1.525],[-1.56,.309,.896,.413,1.857],
+    [-.89,.350,.775,.507,1.718],[-.12,.689,.775,.707,1.751],
+    [.67,.436,.835,.612,1.842],[1.44,.276,.959,.407,1.949],[2.073,.282,1.143,.390,1.899]
   ];
   const rearMetal=m.satinMetal.clone(),rearCollar=m.dark.clone(),rearHose=m.black.clone();
   rearMetal.userData.nativeRole=rearCollar.userData.nativeRole=rearHose.userData.nativeRole='rearReservoir';
@@ -523,14 +526,15 @@ function addChassis(g,m,green) {
       rod(g,green,point(prior,side,i%2===0),point(bay,side,i%2!==0),.031);
       if(i!==3)rod(g,green,point(prior,side,i%2!==0),point(bay,side,i%2===0),.028);
     }
-    const rearFoot=[side*.667,1.733,-1.65],rearHoop=[side*.778,2.996,-.69];
-    const frontHoop=[side*.730,2.979,.139],frontFoot=[side*.642,1.825,.786];
+    const rearFoot=[side*.422,1.733,-1.65],rearHoop=[side*.778,2.996,-.69];
+    const frontHoop=[side*.730,2.979,.139],frontFoot=[side*.581,1.825,.786];
     for(const [a,b,r] of [
       [rearFoot,rearHoop,.037],[rearHoop,frontHoop,.036],[frontHoop,frontFoot,.036],
       [[side*.676,1.702,-.31],rearHoop,.035],[[side*.678,2.449,-.487],frontHoop,.029],
       [[side*.692,2.451,.479],rearHoop,.028],[[side*.741,2.458,-.561],[side*.708,2.456,.477],.029],
-      [[side*.668,1.772,1.39],[side*.725,2.409,.532],.032],
-      [[side*.641,1.509,-2.13],[side*.755,2.413,-1.155],.031]
+      [[side*.406,1.772,1.39],[side*.725,2.409,.532],.032],
+      [[side*.423,1.509,-2.13],[side*.458,1.990,-1.690],.031],
+      [[side*.458,1.990,-1.690],[side*.755,2.413,-1.155],.031]
     ])rod(g,green,a,b,r);
     // Mount the rear reservoirs and their lines inboard of the steered tires.
     const x=side*.300,y=1.728,z=-1.475;
@@ -541,11 +545,12 @@ function addChassis(g,m,green) {
     curve(g,rearHose,[[x,y+.126,z],[x,1.924,-1.493],
       [side*.207,1.918,-1.542],[side*.180,1.857,-1.560]],.011).name='monster-rear-reservoir-hose';
 
-    const frontZ=1.381;
-    cylinder(g,m.satinMetal,[side*.650,1.564,frontZ],.047,.256,'y',18);
-    for(const y of [1.482,1.643])cylinder(g,m.dark,[side*.650,y,frontZ],.049,.033,'y',18);
-    curve(g,m.black,[[side*.650,1.693,frontZ],[side*.625,1.758,frontZ+.10],
-      [side*.682,1.629,frontZ+.21],[side*.712,1.508,frontZ+.19]],.011);
+    const frontZ=1.381,frontX=side*.335;
+    cylinder(g,m.satinMetal,[frontX,1.564,frontZ],.047,.256,'y',18);
+    for(const y of [1.482,1.643])cylinder(g,m.dark,[frontX,y,frontZ],.049,.033,'y',18);
+    rod(g,m.dark,[frontX,1.643,frontZ],[side*.365,1.67,1.421],.017,12).name='monster-front-reservoir-mount';
+    curve(g,m.black,[[frontX,1.693,frontZ],[side*.344,1.758,frontZ+.10],
+      [side*.352,1.629,frontZ+.21],[side*.356,1.508,frontZ+.19]],.011);
   }
   for(const bay of bays) {
     for(const upper of [false,true])rod(g,green,point(bay,-1,upper),point(bay,1,upper),.034);
@@ -553,8 +558,8 @@ function addChassis(g,m,green) {
   for(const [z,y,w] of [[-.69,2.996,.778],[.139,2.979,.730],[-.51,2.44,.729],[.47,2.438,.70]]) {
     rod(g,green,[-w,y,z],[w,y,z],.033);
   }
-  rod(g,green,[-.513,1.162,2.069],[.545,1.900,2.069],.030);
-  rod(g,green,[.513,.997,-2.16],[-.624,1.523,-2.16],.031);
+  rod(g,green,point(bays.at(-1),-1,false),point(bays.at(-1),1,true),.030);
+  rod(g,green,point(bays[0],1,false),point(bays[0],-1,true),.031);
   box(g,m.dark,[0,1.104,-2.131],[.98,.079,.146],.027).name='grave-rear-tube-bumper-plate';
   box(g,m.dark,[0,1.287,2.081],[.73,.055,.093],.016);
 }
@@ -602,8 +607,8 @@ function addPowertrain(g,m) {
     rod(g,m.dark,[x,1.181,-1.875],[x,1.498,-1.842],.008,8);
   }
   for(const side of [-1,1]) {
-    curve(g,m.dark,[[side*.284,1.456,-1.826],[side*.406,1.442,-1.600],
-      [side*.369,1.362,-1.298],[side*.261,1.405,-1.028]],.027);
+    curve(g,m.dark,[[side*.284,1.456,-1.826],[side*.370,1.442,-1.600],
+      [side*.337,1.362,-1.298],[side*.261,1.405,-1.028]],.027);
     cylinder(g,m.satinMetal,[side*.513,1.581,-2.154],.054,.048,'z',24);
     cylinder(g,m.red,[side*.513,1.581,-2.184],.043,.014,'z',28);
     cylinder(g,m.reverse,[side*.358,1.587,-2.173],.027,.016,'z',22);

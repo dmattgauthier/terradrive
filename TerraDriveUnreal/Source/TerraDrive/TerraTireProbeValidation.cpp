@@ -29,6 +29,22 @@ bool ReadProfile(const TSharedPtr<FJsonValue>& Value,int Stage,FProfile& P){
   }
   return true;
 }
+FVector RenderedTirePoint(const UStaticMeshComponent& Wheel,const FVector& Local){
+  // Use the real baked vertex and cooked component data as independent
+  // witnesses. The renderer applies the same contact-plane transform.
+  const auto& Data=Wheel.GetCustomPrimitiveData().Data;
+  const auto& Transform=Wheel.GetComponentTransform();
+  if(Data.Num()<12||Data[11]<=.01f)return Transform.TransformPosition(Local);
+  const double Distance=FVector::DotProduct(Local,FVector(Data[0],Data[1],Data[2]))+Data[3];
+  const double Radial=FMath::Sqrt(Local.X*Local.X+Local.Z*Local.Z);
+  const double Wall=FMath::Clamp((Radial-Data[8])/FMath::Max(1.f,Data[9]-Data[8]),0.,1.);
+  const double Inner=FMath::SmoothStep(0.,.24,Wall);
+  const double Lift=FMath::Min(double(Data[10]),FMath::Max(0.,-Distance))*Inner;
+  const double Sector=1-FMath::SmoothStep(0.,4.+Data[11]*2.,FMath::Max(0.,Distance));
+  const double Bulge=(Local.Y>0?1:Local.Y<0?-1:0)*Data[7]*Sector*Inner*(1-FMath::SmoothStep(.80,1.,Wall));
+  return Transform.TransformPosition(Local+FVector(Data[4]*Lift,Bulge,Data[6]*Lift));
+}
+
 const FProfile* MatchedProfile(const ATerraVehicle* V){
   if(!Ready||V->VehicleIndex<0||V->VehicleIndex>=ATerraVehicle::VehicleCount||V->Tracks||V->Wheels.Num()!=V->WheelCount())return nullptr;
   const auto& Sizes=Profiles[V->VehicleIndex];
@@ -67,13 +83,13 @@ FMeshEnvelope MeshEnvelope(const ATerraVehicle* V){
 TArray<FVector> ActorLocalPoints(const ATerraVehicle* V){
   TArray<FVector> Result;const auto* P=MatchedProfile(V);if(!P)return Result;
   const auto Inverse=V->GetActorTransform().Inverse();
-  for(const auto& Wheel:V->Wheels)for(const auto& Point:P->Points)Result.Add(Inverse.TransformPosition(Wheel->GetComponentTransform().TransformPosition(Point)));
+  for(const auto& Wheel:V->Wheels)for(const auto& Point:P->Points)Result.Add(Inverse.TransformPosition(RenderedTirePoint(*Wheel,Point)));
   return Result;
 }
 float MinimumClearance(const ATerraVehicle* V){
   const auto* P=MatchedProfile(V);if(!P||!V->Terrain)return -UE_BIG_NUMBER;
   float Clearance=UE_BIG_NUMBER;
-  for(const auto& Wheel:V->Wheels)for(const auto& Local:P->Points){const auto Point=Wheel->GetComponentTransform().TransformPosition(Local);
+  for(const auto& Wheel:V->Wheels)for(const auto& Local:P->Points){const auto Point=RenderedTirePoint(*Wheel,Local);
     if(Point.ContainsNaN())return -UE_BIG_NUMBER;
     Clearance=FMath::Min(Clearance,float(Point.Z-V->Terrain->Height(Point.X,Point.Y)));
   }
