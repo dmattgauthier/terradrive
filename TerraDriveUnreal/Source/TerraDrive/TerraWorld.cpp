@@ -373,20 +373,29 @@ FTerraSupport ATerraWorld::CastBedrockTread(const FVector& Mount,const FVector& 
     }
   }
   if(!TerraSim::ValidSupport(Best.Travel,MinCM,MaxCM,Best.RadialZ))return {};
-  FVector P=Mount+Forward*Best.Point.X+Side*Best.Point.Y+Up*Best.Point.Z;
-  // Bedrock and the nearby clay share the same base faces. Re-evaluate
-  // the selected face at its live height when a rut crosses the contact.
-  P.Z=Height(P.X,P.Y);
-  const FVector Delta=P-Mount;
-  const float X=Delta|Forward;
-  if(FMath::Abs(X)>=Best.Radius*.988f||FMath::Abs(Delta|Side)>HalfWidth+1.f)return {};
-  const float Arc=FMath::Sqrt(Best.Radius*Best.Radius-X*X);
-  const float Distance=-(Delta|Up)-Arc;
-  if(!TerraSim::ValidSupport(Distance,MinCM,MaxCM,Arc/Best.Radius))return {};
-  const FVector Radial=(Up*Arc-Forward*X)/Best.Radius;
-  const float Axial=FMath::Clamp(float(Sample(P).Normal|Side),-.75f,.75f);
-  const FVector ContactNormal=Radial*FMath::Sqrt(1.f-Axial*Axial)+Side*Axial;
-  return {P,ContactNormal,Distance,true,false,SurfaceAt(P.X,P.Y)};
+  const auto Resolve=[&](float Y,bool Centered)->FTerraSupport{
+    FVector P=Mount+Forward*Best.Point.X+Side*Y+Up*Best.Point.Z;
+    // Re-evaluate at the live height and retain the original witness if a
+    // rut or gap interrupts the support at the midpoint.
+    const float LiveZ=Height(P.X,P.Y);
+    if(Centered&&FMath::Abs(P.Z-LiveZ)>.01)return {};
+    P.Z=LiveZ;
+    const FVector Delta=P-Mount;
+    const float X=Delta|Forward;
+    if(FMath::Abs(X)>=Best.Radius*.988f||FMath::Abs(Delta|Side)>HalfWidth+1.f)return {};
+    const float Arc=FMath::Sqrt(Best.Radius*Best.Radius-X*X);
+    const float Distance=-(Delta|Up)-Arc;
+    if(!TerraSim::ValidSupport(Distance,MinCM,MaxCM,Arc/Best.Radius))return {};
+    const FVector Radial=(Up*Arc-Forward*X)/Best.Radius;
+    const float Axial=FMath::Clamp(float(Sample(P).Normal|Side),-.75f,.75f);
+    const FVector ContactNormal=Radial*FMath::Sqrt(1.f-Axial*Axial)+Side*Axial;
+    return {P,ContactNormal,Distance,true,false,SurfaceAt(P.X,P.Y)};
+  };
+  if(const float Y=Best.CenterY();Y!=Best.Point.Y){
+    const auto Center=Resolve(Y,true);
+    if(Center.Hit)return Center;
+  }
+  return Resolve(Best.Point.Y,false);
 }
 
 void ATerraWorld::BuildTreadHeightPatch(const FVector& Hub,float* PatchData) const {

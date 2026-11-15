@@ -15,6 +15,9 @@ struct TreadContact {
   TreadPoint Point{};
   float Travel=std::numeric_limits<float>::max();
   float RadialX=0,RadialZ=0,Radius=0;
+  float MinY=0,MaxY=0;
+
+  float CenterY() const {return (MinY+MaxY)*.5f;}
 };
 
 inline TreadPoint InterpolateTreadPoint(const TreadPoint& A,const TreadPoint& B,float T){
@@ -40,7 +43,19 @@ inline void ContactAlongTreadEdge(const TreadPoint& A,const TreadPoint& B,float 
   const auto P=InterpolateTreadPoint(A,B,T);
   const float Arc=std::sqrt(std::max(0.f,Radius*Radius-P.X*P.X));
   const float Travel=-P.Z-Arc;
-  if(Travel<Contact.Travel)Contact={P,Travel,-P.X/Radius,Arc/Radius,Radius};
+  // Equally supporting points on the same axial line share the load.
+  // The span gives a center independent of triangle order and density.
+  constexpr float ToleranceCM=.001f;
+  const bool SameLine=Contact.Radius==Radius&&std::abs(Travel-Contact.Travel)<=ToleranceCM&&
+    std::abs(P.X-Contact.Point.X)<=ToleranceCM&&std::abs(P.Z-Contact.Point.Z)<=ToleranceCM;
+  if(Travel<Contact.Travel){
+    const float MinY=SameLine?std::min(Contact.MinY,P.Y):P.Y;
+    const float MaxY=SameLine?std::max(Contact.MaxY,P.Y):P.Y;
+    Contact={P,Travel,-P.X/Radius,Arc/Radius,Radius,MinY,MaxY};
+  }else if(SameLine){
+    Contact.MinY=std::min(Contact.MinY,P.Y);
+    Contact.MaxY=std::max(Contact.MaxY,P.Y);
+  }
 }
 
 inline int ClipTreadWidth(const TreadPoint* Input,int Count,float Side,float HalfWidth,TreadPoint* Output){

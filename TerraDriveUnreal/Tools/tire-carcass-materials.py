@@ -1,4 +1,4 @@
-"""Build the native tire carcass material used by the import commandlet."""
+"""Build and bind native tire carcass materials for imports and full cooks."""
 import hashlib
 import json
 import os
@@ -175,7 +175,40 @@ def build_tire_carcass_materials(manifest):
     unreal.log('TERRA_TIRE_CARCASS_MATERIALS count=' + str(len(results)))
     return results
 
+
+def bind_mesh_materials(mesh, asset, finishes):
+    slot_ids = asset['slots']
+    changed = False
+    for index, slot in enumerate(mesh.get_editor_property('static_materials')):
+        slot_name = str(slot.get_editor_property('imported_material_slot_name'))
+        material_id = next((mid for mid in slot_ids if mid in slot_name), slot_ids[min(index, len(slot_ids)-1)])
+        material = finishes[material_id]
+        if mesh.get_material(index) != material:
+            mesh.set_material(index, material)
+            if mesh.get_material(index) != material:
+                raise RuntimeError('Cannot bind material %s to %s slot %d' % (material_id, asset['name'], index))
+            changed = True
+    return changed
+
+
+def refresh_imported_tires(manifest):
+    tires = [asset for asset in manifest['assets'] if TIRE_ASSET.search(asset['name'])]
+    if not tires:
+        raise RuntimeError('No imported tire meshes in the source manifest')
+    finishes = build_tire_carcass_materials(manifest)
+    updated = 0
+    for asset in tires:
+        mesh = LIB.load_asset('/Game/Meshes/' + asset['name'])
+        if not isinstance(mesh, unreal.StaticMesh) or not mesh.get_editor_property('static_materials'):
+            raise RuntimeError('Missing imported tire mesh or material slots: ' + asset['name'])
+        if bind_mesh_materials(mesh, asset, finishes):
+            if not LIB.save_loaded_asset(mesh, only_if_is_dirty=False):
+                raise RuntimeError('Cannot save tire material bindings: ' + asset['name'])
+            updated += 1
+    unreal.log('TERRA_TIRE_CARCASS_BINDINGS meshes=%d updated=%d' % (len(tires), updated))
+
+
 if __name__ == '__main__':
     root = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
     with open(os.path.join(root, 'SourceAssets', 'import.json'), encoding='utf8') as stream:
-        build_tire_carcass_materials(json.load(stream))
+        refresh_imported_tires(json.load(stream))

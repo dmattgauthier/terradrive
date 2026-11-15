@@ -163,10 +163,10 @@ if ($Package) {
         $cookArgument='-skipcook'
     } else {
         if (Test-Path -LiteralPath $cookMarker) { Remove-Item -LiteralPath $cookMarker }
-        if (!$ImportAssets -and $cookReceipt.tireCarcassRecipeSHA256 -ne $carcassHash) {
-            # Rebuild the tire material without reimporting unchanged meshes.
+        if (!$ImportAssets -and ($cookReceipt.tireCarcassRecipeSHA256 -ne $carcassHash -or $cookReceipt.assetImportSHA256 -ne $importHash)) {
+            # Refresh the material and its bindings on previously imported tires.
             $recipePath=$carcassRecipe.Replace('\','/')
-            $materialLog=Join-Path $projectRoot 'Saved/Logs/tire-carcass-materials.log'
+            $materialLog=Join-Path $projectRoot ('Saved/Logs/tire-carcass-materials-'+(Get-Date -Format 'yyyyMMddTHHmmssfff')+'-'+$PID+'.log')
             $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$recipePath+'"'),
                 '-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$materialLog+'"'))
             $materialStarted=Get-Date
@@ -175,8 +175,8 @@ if ($Package) {
             $editorProcess.Refresh()
             $generatedLog=Get-Item -LiteralPath $materialLog -ErrorAction SilentlyContinue
             if ($editorProcess.ExitCode -or !$generatedLog -or $generatedLog.LastWriteTime -lt $materialStarted -or
-                !(Select-String -LiteralPath $materialLog -Pattern 'TERRA_TIRE_CARCASS_MATERIALS count=[1-9]' -Quiet)) {
-                throw "Tire material generation failed. Inspect $materialLog."
+                !(Select-String -LiteralPath $materialLog -Pattern 'TERRA_TIRE_CARCASS_BINDINGS meshes=[1-9]\d* updated=\d+\s*$' -Quiet)) {
+                throw "Tire material refresh failed. Inspect $materialLog."
             }
         }
     }

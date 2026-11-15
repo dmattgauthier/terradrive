@@ -8,6 +8,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/PlayerController.h"
+#include "Materials/Material.h"
 #include "Math/RotationMatrix.h"
 #include "Misc/App.h"
 #include "Misc/CommandLine.h"
@@ -53,7 +54,7 @@ struct FRun {
   FObservation Data;
   int32 CombinedSign=0,CombinedFullFrames=0;
   float CombinedPeakTwist=0,CombinedPeakFlex=0,CombinedTireGap=UE_BIG_NUMBER;
-  bool Captured=false,UsesCookedMesh=false,Combined=false,CombinedImage=false,Detailed=false;
+  bool Captured=false,UsesCookedMesh=false,Combined=false,CombinedImage=false,Detailed=false,Targeted=false;
 
   void Advance(EPhase Next){Phase=Next;Time=0;SampleTime=0;}
 } Run;
@@ -279,6 +280,7 @@ bool BuildSchedule(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)
   Run.Combined=FParse::Param(FCommandLine::Get(),TEXT("TerraGraniteLedgeLocks"));
   FParse::Value(FCommandLine::Get(),TEXT("TerraGraniteFitVehicle="),OnlyVehicle);
   FParse::Value(FCommandLine::Get(),TEXT("TerraGraniteFitStage="),OnlyStage);
+  Run.Targeted=OnlyVehicle!=INDEX_NONE||OnlyStage!=INDEX_NONE;
   if(Run.Combined){
     OnlyVehicle=OnlyVehicle==INDEX_NONE?0:OnlyVehicle;
     if(!Roster.IsValidIndex(OnlyVehicle))return false;
@@ -337,9 +339,23 @@ void FrameLedgeTires(ATerraVehicle* V,bool Left){
   Player->SetViewTarget(Run.LedgeCamera.Get());
 }
 
+bool HasCarcassMaterials(const ATerraVehicle* V){
+  static const FName CarcassName(TEXT("M_NativeTireCarcass"));
+  for(const auto& Wheel:V->Wheels){
+    if(!Wheel||Wheel->GetNumMaterials()==0)return false;
+    for(int32 Index=0;Index<Wheel->GetNumMaterials();++Index){
+      const auto* Material=Wheel->GetMaterial(Index);
+      const auto* Base=Material?Material->GetMaterial():nullptr;
+      if(!Base||Base->GetFName()!=CarcassName)return false;
+    }
+  }
+  return true;
+}
+
 void Install(ATerraVehicle* V,const FFit& Fit,const FTerraRoute& R) {
   auto& Data=Run.Data;
   Data=FObservation{};
+  Run.Captured=false;
   V->SetGarage(true);
   if(Run.LastVehicle!=Fit.Vehicle){
     V->SelectVehicle(Fit.Vehicle,false);
@@ -367,10 +383,13 @@ void Install(ATerraVehicle* V,const FFit& Fit,const FTerraRoute& R) {
   const bool Selected=V->VehicleIndex==Fit.Vehicle&&V->UpgradeStage(TerraSim::TireSize)==Fit.Stage&&
     V->UpgradeStage(TerraSim::Suspension)==Data.Suspension;
   const bool Tires=TerraTireProbeValidation::Matches(V);
+  // The clearance witness evaluates the carcass deformation from custom data.
+  // Verify that the cooked wheel slots actually use the shader it models.
+  const bool Carcass=Tires&&HasCarcassMaterials(V);
   const bool Body=V->CoachworkCollisionReady&&BuildBodySamples(V);
-  Data.Installed=Selected&&Tires&&Body;
-  if(!Data.Installed)UE_LOG(LogTemp,Warning,TEXT("TERRA_GRANITE_MISSING vehicle=%d size=%d selection=%d tireWitness=%d shell=%d welded=%d"),
-    Fit.Vehicle,Fit.Stage,Selected,Tires,Body,V->CoachworkCollisionReady);
+  Data.Installed=Selected&&Carcass&&Body;
+  if(!Data.Installed)UE_LOG(LogTemp,Warning,TEXT("TERRA_GRANITE_MISSING vehicle=%d size=%d selection=%d tireWitness=%d carcass=%d shell=%d welded=%d"),
+    Fit.Vehicle,Fit.Stage,Selected,Tires,Carcass,Body,V->CoachworkCollisionReady);
   if(Run.Combined)StartCombinedTurn(V,R);
   else{
     StartAt(V,R,100,180);
@@ -381,7 +400,7 @@ void Install(ATerraVehicle* V,const FFit& Fit,const FTerraRoute& R) {
 void FinishFit(ATerraVehicle* V,const FFit& Fit,TFunctionRef<void(const FString&,bool,float)> Check) {
   auto& Data=Run.Data;
   const FString Label=FString::Printf(TEXT("%s stage %d (%.1f in)"),*V->VehicleName,Fit.Stage,V->TireDiameter());
-  Check(Label+TEXT(" installs cooked tire and matching coachwork"),Data.Installed&&Data.Finite,Data.Samples);
+  Check(Label+TEXT(" installs cooked tire, carcass material and matching coachwork"),Data.Installed&&Data.Finite,Data.Samples);
   Check(Label+TEXT(" reaches both steering locks while rolling"),Data.LeftFrames>=2&&Data.RightFrames>=2&&
     Data.PeakLeftAngle>=V->TireKitSteeringDegrees*.87f&&Data.PeakRightAngle>=V->TireKitSteeringDegrees*.87f,
     FMath::Min(Data.PeakLeftAngle,Data.PeakRightAngle));
@@ -521,8 +540,11 @@ bool Tick(ATerraVehicle* V,float Delta,
       V->TestSteer=FMath::Clamp(Error/24.f,-.72f,.72f);
       SpeedDemand(V,1.55f,.62f);
       Observe(V,Delta,true);
-      if(!Run.Captured&&Fit.Vehicle==0&&Fit.Stage==V->UpgradeMaxStage(TerraSim::TireSize)&&Progress>=1100){
-        Capture(TEXT("granite-fit-largest-wrangler-on-ledge.png"));
+      if(!Run.Captured&&Progress>=1100&&(Run.Targeted||(Fit.Vehicle==0&&Fit.Stage==V->UpgradeMaxStage(TerraSim::TireSize)))){
+        const FString Name=Run.Targeted?
+          FString::Printf(TEXT("granite-fit-v%d-stage%d-on-ledge.png"),Fit.Vehicle,Fit.Stage):
+          TEXT("granite-fit-largest-wrangler-on-ledge.png");
+        Capture(*Name);
         Run.Captured=true;
       }
       if(Progress<LedgeEndCM&&Run.Time<12.f&&Data.Upright&&FMath::Abs(Lane)<420&&Progress>LedgeStartCM-240)return false;

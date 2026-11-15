@@ -35,6 +35,34 @@ int main(){
             "packed tire terrain preserves the two sides of the rendered ground diagonal");
     }
     {
+        using TerraSim::TreadPoint;
+        constexpr float Radius=63.5f,HalfWidth=20.f;
+        const auto ContactOnIncline=[&](float CrossSlope,bool Reverse){
+            const auto P=[&](float X,float Y){return TreadPoint{X,Y,-100.f+.5f*X+CrossSlope*Y};};
+            TerraSim::TreadContact Contact;
+            const TreadPoint Lower[]={P(-75,-45),P(75,-45),P(-75,35)};
+            const TreadPoint Upper[]={P(75,-45),P(-75,35),P(75,35)};
+            const TreadPoint UpperReversed[]={Upper[2],Upper[1],Upper[0]};
+            const TreadPoint LowerReversed[]={Lower[2],Lower[1],Lower[0]};
+            TerraSim::ContactAgainstTreadTriangle(Reverse?UpperReversed:Lower,Radius,HalfWidth,Contact);
+            TerraSim::ContactAgainstTreadTriangle(Reverse?LowerReversed:Upper,Radius,HalfWidth,Contact);
+            return Contact;
+        };
+        const float ExpectedTravel=100.f-Radius*std::sqrt(1.25f);
+        const float ExpectedX=Radius/std::sqrt(5.f);
+        for(bool Reverse:{false,true}){
+            const auto Symmetric=ContactOnIncline(0.f,Reverse);
+            check(std::abs(Symmetric.Travel-ExpectedTravel)<.001f&&std::abs(Symmetric.Point.X-ExpectedX)<.001f,
+                "symmetric incline preserves the exact suspension travel and longitudinal tangent");
+            check(std::abs(Symmetric.CenterY())<.001f,
+                "symmetric incline centers the support force in either triangle traversal order");
+            const auto Banked=ContactOnIncline(.125f,Reverse);
+            check(std::abs(Banked.CenterY()-HalfWidth)<.001f&&
+                std::abs(Banked.Travel-(ExpectedTravel-.125f*HalfWidth))<.001f,
+                "banked incline preserves real shoulder contact");
+        }
+    }
+    {
         // Representative loaded passenger tire and a tall off-road fit.
         const auto passenger=TerraSim::MakeTireCarcass(33,.371f,.234f,.235f);
         check(passenger.StiffnessNPerM>160000&&passenger.StiffnessNPerM<220000,

@@ -146,6 +146,18 @@ try{
   $taskLedgeVehicle=if($GraniteVehicle -eq 4){'hummer'}else{'wrangler'}
   $taskExpectedCaptures=@("granite-fit-$taskLedgeVehicle-50-ledge-left.png","granite-fit-$taskLedgeVehicle-50-ledge-right.png")
  }
+ elseif($GraniteRender){
+  if($GraniteVehicle -lt 0){$taskExpectedCaptures=@('granite-fit-largest-wrangler-on-ledge.png')}
+  else{
+   foreach($fitLog in $fitLogs){
+    $fit=[regex]::Match($fitLog.Line,'TERRA_GRANITE_FIT vehicle=(\d+) stage=(\d+) ')
+    if(!$fit.Success -or [int]$fit.Groups[1].Value -ne $GraniteVehicle -or ($GraniteStage -ge 0 -and [int]$fit.Groups[2].Value -ne $GraniteStage)){
+     throw 'Rendered Granite fit does not match the selected vehicle and tire stage.'
+    }
+    $taskExpectedCaptures+=("granite-fit-v$($fit.Groups[1].Value)-stage$($fit.Groups[2].Value)-on-ledge.png")
+   }
+  }
+ }
  if($Mode -eq 'Carcass'){$taskExpectedCaptures=@('native-carcass-low.png','native-carcass-road.png','native-carcass-high.png','native-underbody-g580.png','native-underbody-g63-sixwheel.png','native-underbody-wrangler-stock.png','native-underbody-wrangler-quad-portal.png','native-underbody-wrangler-single.png')}
  if($Mode -eq 'RockCrawl'){$taskExpectedCaptures=@('rock-crawl-menu.png','rock-crawl-high-open.png','rock-crawl-low-open.png','rock-crawl-low-locked.png','rock-crawl-low-open-bench.png','rock-crawl-finish.png')}
  if($Mode -eq 'Perimeter'){

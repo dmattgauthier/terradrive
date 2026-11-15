@@ -335,7 +335,7 @@ test('package-only requires the current completed import and terrain mask', () =
 }));
 
 test('skip cook reuses only the Windows tree recorded by the successful cook', () => withProject(root => {
-  copyTools(root, collisionBakers);
+  copyTools(root, [...collisionBakers, 'tire-carcass-materials.py']);
   publishVehicle(root, 0);
   for (const script of collisionBakers) runNode(root, script);
   const importHash = recordFixtureImport(root);
@@ -346,6 +346,8 @@ test('skip cook reuses only the Windows tree recorded by the successful cook', (
   const map = path.join(cookedPath, 'TerraDrive/Content/ProvingGround.umap');
   const verificationLog = path.join(batch, 'calls.txt');
   const receiptFile = path.join(root, 'Saved/native-cook-complete.json');
+  const recipe = path.join(root, 'Tools/tire-carcass-materials.py');
+  const tireCarcassRecipeSHA256 = digest(fs.readFileSync(recipe));
   for (const dir of [batch, path.dirname(map), path.join(root, 'Saved/AutomationLogs'), path.join(root, 'Build/Windows')]) {
     fs.mkdirSync(dir, {recursive: true});
   }
@@ -360,13 +362,19 @@ test('skip cook reuses only the Windows tree recorded by the successful cook', (
 
   const flags = ['-EngineRoot', engine, '-SkipBuild', '-Package'];
   const reuse = [...flags, '-SkipCook'];
-  fs.writeFileSync(receiptFile, JSON.stringify({assetImportSHA256: '0'.repeat(64)}));
+  fs.writeFileSync(receiptFile, JSON.stringify({assetImportSHA256: importHash}));
+  checkBuildRejected(root, reuse, /The tire material recipe differs from the completed cook/);
+  fs.writeFileSync(receiptFile, JSON.stringify({assetImportSHA256: '0'.repeat(64), tireCarcassRecipeSHA256}));
   checkBuildRejected(root, reuse, /requires a successful prior cook for this asset import/);
+  // The asset refresh was already completed for this import. Exercise recook
+  // and staging without launching an editor in this receipt-only fixture.
+  fs.writeFileSync(receiptFile, JSON.stringify({assetImportSHA256: importHash, tireCarcassRecipeSHA256}));
   const full = runBuild(root, flags);
   assert.equal(full.status, 0, full.stderr);
   const receipt = fs.readFileSync(receiptFile, 'utf8');
   const parsed = JSON.parse(receipt.replace(/^\uFEFF/, ''));
   assert.equal(parsed.assetImportSHA256, importHash);
+  assert.equal(parsed.tireCarcassRecipeSHA256, tireCarcassRecipeSHA256);
   const matched = runBuild(root, reuse);
   assert.equal(matched.status, 0, matched.stderr);
   const calls = fs.readFileSync(verificationLog, 'utf8');
