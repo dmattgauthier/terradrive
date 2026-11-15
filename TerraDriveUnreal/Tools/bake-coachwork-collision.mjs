@@ -41,9 +41,12 @@ async function bodyPoints(file,spec,materials){
 }
 export async function bakeCoachworkCollision(output='Content/NativeData/vehicle-collision.json'){
  const manifest=read('SourceAssets/import.json'),materials=new Map(manifest.materials.map(m=>[m.id,m]));
- const data={version:1,algorithm:'opaque-coachwork-sections-1',coordinates:'Unreal mesh-local centimetres; already includes source body datum and longitudinal offset',maximumHulls:12,maximumHullVertices:64,vehicles:[]};
- for(const [index,spec]of manifest.vehicles.entries()){
-  const name=spec.asset+'_body',source=await bodyPoints(path.join(root,'SourceAssets',name+'.obj'),spec,materials);assert.equal(source.objSha256,manifest.assets.find(a=>a.name===name).sha256);
+ const data={version:1,algorithm:'opaque-coachwork-sections-1',coordinates:'Unreal mesh-local centimetres; already includes source body datum and longitudinal offset',maximumHulls:12,maximumHullVertices:64,vehicles:[],variants:[]};
+ const variants=manifest.vehicles.flatMap((spec,index)=>
+  [...new Set(spec.tireFits?.map(fit=>fit.bodyAsset).filter(Boolean))].map(name=>({index,spec,name,variant:true})));
+ const bodies=manifest.vehicles.map((spec,index)=>({index,spec,name:spec.asset+'_body',variant:false}));
+ for(const {index,spec,name,variant} of [...bodies,...variants]){
+  const source=await bodyPoints(path.join(root,'SourceAssets',name+'.obj'),spec,materials);assert.equal(source.objSha256,manifest.assets.find(a=>a.name===name).sha256);
   const bounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};for(const p of source.points)for(let k=0;k<3;k++){bounds.min[k]=Math.min(bounds.min[k],p[k]);bounds.max[k]=Math.max(bounds.max[k],p[k]);}
   const hulls=[],probeCells=new Map(),length=bounds.max[0]-bounds.min[0],height=bounds.max[2]-bounds.min[2];
   for(let section=0;section<12;section++){
@@ -54,8 +57,8 @@ export async function bakeCoachworkCollision(output='Content/NativeData/vehicle-
    if(!probeCells.has(key))probeCells.set(key,[p,p,p,p]);const a=probeCells.get(key);if(p[1]<a[0][1])a[0]=p;if(p[1]>a[1][1])a[1]=p;if(p[2]<a[2][2])a[2]=p;if(p[2]>a[3][2])a[3]=p;
   }
   const probes=unique([...probeCells.values()].flat());assert.ok(probes.length>=64&&probes.length<=384);
-  const record={index,id:spec.id,asset:name,objSha256:source.objSha256,sourceVertexCount:source.sourceVertexCount,structuralVertices:source.points.length,boundsCM:bounds,hulls,rolloverProbes:probes};data.vehicles.push(record);
-  console.log(JSON.stringify({vehicle:spec.name,hulls:hulls.length,hullVertices:hulls.reduce((n,h)=>n+h.points.length,0),maxSampledSupportErrorCM:Math.max(...hulls.map(h=>h.maxSampledSupportErrorCM)),rolloverProbes:probes.length}));
+  const record={index,id:spec.id,asset:name,objSha256:source.objSha256,sourceVertexCount:source.sourceVertexCount,structuralVertices:source.points.length,boundsCM:bounds,hulls,rolloverProbes:probes};(variant?data.variants:data.vehicles).push(record);
+  console.log(JSON.stringify({vehicle:spec.name,asset:name,hulls:hulls.length,hullVertices:hulls.reduce((n,h)=>n+h.points.length,0),maxSampledSupportErrorCM:Math.max(...hulls.map(h=>h.maxSampledSupportErrorCM)),rolloverProbes:probes.length}));
  }
  const target=path.join(root,output);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,JSON.stringify(data,null,2)+'\n');return data;
 }

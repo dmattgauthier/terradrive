@@ -1,4 +1,5 @@
 #include "TerraRolloverValidation.h"
+#include "TerraRolloverBodyProbes.h"
 #include "TerraVehicle.h"
 #include "TerraTireProbeValidation.h"
 #include "Components/BoxComponent.h"
@@ -7,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
+#include "Engine/StaticMesh.h"
 #include "Misc/App.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/HUD.h"
@@ -16,7 +18,6 @@
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "ProceduralMeshComponent.h"
-#include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
 namespace TerraRolloverValidation {
@@ -25,9 +26,9 @@ struct FCase { int Vehicle,Zone;float Roll; };
 struct FState {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TWeakObjectPtr<ACameraActor> Camera;
-  TArray<FVector> Probes[ATerraVehicle::VehicleCount];TArray<FCase> Cases;
-  int Trial=0,Phase=0,Samples=0,TireSize=0,MaximumCandidates=0,MaximumTraces=0;float Time=0,MinimumClearance=10000,MinimumTireClearance=10000;
-  bool Ready=false,Finite=true,RequestedPoseSeen=false,OverturnedSeen=false,PoweredWhileOverturned=false;
+  FTerraRolloverBodyProbes BodyProbes;TArray<FCase> Cases;
+  int Trial=0,Phase=0,Samples=0,TireSize=0,ExpectedTireSize=0,MaximumCandidates=0,MaximumTraces=0;float Time=0,MinimumClearance=10000,MinimumTireClearance=10000;
+  bool Ready=false,Quick=false,Finite=true,RequestedPoseSeen=false,OverturnedSeen=false,PoweredWhileOverturned=false;
   double PreviousMeasuredFrame=0;TArray<float> FrameMS;
 };
 FState State;
@@ -42,23 +43,15 @@ bool Load(){
   // A loose fixture lets the unchanged cooked meshes demonstrate the old
   // physics failure before accepting a new collision implementation.
   FParse::Value(FCommandLine::Get(),TEXT("TerraCoachworkData="),File);
-  TSharedPtr<FJsonObject> Root;const TArray<TSharedPtr<FJsonValue>>* Vehicles=nullptr;
-  if(!FFileHelper::LoadFileToString(Json,*File)||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)||!Root.IsValid()||
-      !Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=ATerraVehicle::VehicleCount)return false;
-  for(int I=0;I<ATerraVehicle::VehicleCount;I++){
-    const auto Item=(*Vehicles)[I]->AsObject();const TArray<TSharedPtr<FJsonValue>>* Probes=nullptr;
-    if(!Item.IsValid()||!Item->TryGetArrayField(TEXT("rolloverProbes"),Probes)||Probes->Num()<64||Probes->Num()>384)return false;
-    for(const auto& Value:*Probes){const auto& A=Value->AsArray();if(A.Num()!=3)return false;const FVector P(A[0]->AsNumber(),A[1]->AsNumber(),A[2]->AsNumber());if(P.ContainsNaN())return false;State.Probes[I].Add(P);}
-  }
-  if(!TerraTireProbeValidation::Load())return false;
+  if(!State.BodyProbes.Load(File)||!TerraTireProbeValidation::Load())return false;
   FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverTireSize="),State.TireSize);
-  if(State.TireSize<0||State.TireSize>3)return false;
-  const bool Quick=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverQuick"));
+  if(State.TireSize<0||State.TireSize>TerraSim::MaxTireSizeStage)return false;
+  State.Quick=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverQuick"));
   int QuickVehicle=3;FParse::Value(FCommandLine::Get(),TEXT("TerraRolloverQuickVehicle="),QuickVehicle);
   if(QuickVehicle<0||QuickVehicle>=ATerraVehicle::VehicleCount)return false;
-  for(int Zone:{1,0})for(int I=0;I<ATerraVehicle::VehicleCount;I++)if(!Quick||I==QuickVehicle)for(float Roll:{-90.f,90.f,180.f})State.Cases.Add({I,Zone,Roll});
-  for(float Roll:{-55.f,55.f,-110.f,110.f})State.Cases.Add({Quick?QuickVehicle:3,0,Roll});
-  auto Plan=MakeShared<FJsonObject>();Plan->SetNumberField(TEXT("version"),1);Plan->SetNumberField(TEXT("vehicleCount"),ATerraVehicle::VehicleCount);Plan->SetBoolField(TEXT("quick"),Quick);
+  for(int Zone:{1,0})for(int I=0;I<ATerraVehicle::VehicleCount;I++)if(!State.Quick||I==QuickVehicle)for(float Roll:{-90.f,90.f,180.f})State.Cases.Add({I,Zone,Roll});
+  for(float Roll:{-55.f,55.f,-110.f,110.f})State.Cases.Add({State.Quick?QuickVehicle:3,0,Roll});
+  auto Plan=MakeShared<FJsonObject>();Plan->SetNumberField(TEXT("version"),1);Plan->SetNumberField(TEXT("vehicleCount"),ATerraVehicle::VehicleCount);Plan->SetBoolField(TEXT("quick"),State.Quick);
   const bool Coachwork=FParse::Param(FCommandLine::Get(),TEXT("TerraExpectCoachworkCollision"));
   const bool Measure=FParse::Param(FCommandLine::Get(),TEXT("TerraRolloverMeasurePerformance"));
   const int ChecksPerPose=(Coachwork?9:7)+(Measure?1:0);
@@ -70,21 +63,32 @@ bool Load(){
   Plan->SetArrayField(TEXT("cases"),Cases);Plan->SetNumberField(TEXT("expectedChecks"),1+State.Cases.Num()*ChecksPerPose);
   return FJsonSerializer::Serialize(Plan,TJsonWriterFactory<>::Create(&Json))&&FFileHelper::SaveStringToFile(Json,*FixturePlanPath(TEXT("rollover-fixtures.json")));
 }
-void Prepare(ATerraVehicle* V,const FCase& C){
+bool Prepare(ATerraVehicle* V,const FCase& C){
   // Exercise the player's menu selection/upgrade/return path before each drop.
   // Auto-weld readiness must be established after the kinematic garage closes.
-  V->SetGarage(true);V->SelectVehicle(C.Vehicle);V->ResetUpgrades(false);if(State.TireSize>0)V->SetUpgrade(TerraSim::TireSize,State.TireSize,false);V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;V->Terrain->ResetSoil();
+  V->SetGarage(true);V->SelectVehicle(C.Vehicle);V->ResetUpgrades(false);
+  const int MaximumSize=V->UpgradeMaxStage(TerraSim::TireSize);
+  if(State.Quick&&State.TireSize>MaximumSize){
+    UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLOVER_TIRE_STAGE_UNSUPPORTED vehicle=%d requestedStage=%d maximumStage=%d"),
+      C.Vehicle,State.TireSize,MaximumSize);
+    return false;
+  }
+  const int Size=State.ExpectedTireSize=FMath::Min(State.TireSize,MaximumSize);
+  if(Size>0){
+    V->SetUpgrade(TerraSim::Suspension,V->RequiredTireSuspensionStage(Size),false);
+    V->SetUpgrade(TerraSim::TireSize,Size,false);
+  }
+  V->SetGarage(false);V->TeleportZone(C.Zone);V->RouteIndex=-1;V->Terrain->ResetSoil();
   V->TestDriverInput=false;V->TestThrottle=V->TestSteer=0;V->TestBrake=1;
   // Let activation/re-welding complete before applying the independent drop
   // pose. A same-frame teleport can be replaced by pending physics state.
   State.Time=0;State.Phase=5;
+  return true;
 }
-void Place(ATerraVehicle* V,const FCase& C){
+void Place(ATerraVehicle* V,const FCase& C,const TArray<FVector>& BodyPoints){
   FVector Center=V->Terrain->Spawns[C.Zone]+(C.Zone==0?FVector(-1500,1200,0):FVector(3000,0,0));
-  const FRotator Rotation(0,0,C.Roll);const FQuat Q=Rotation.Quaternion();
-  float Height=-100000;for(const FVector& P:State.Probes[C.Vehicle]){const FVector Offset=Q.RotateVector(P);Height=FMath::Max(Height,V->Terrain->Height(Center.X+Offset.X,Center.Y+Offset.Y)-float(Offset.Z));}
-  for(const FVector& P:TerraTireProbeValidation::ActorLocalPoints(V)){const FVector Offset=Q.RotateVector(P);Height=FMath::Max(Height,V->Terrain->Height(Center.X+Offset.X,Center.Y+Offset.Y)-float(Offset.Z));}
-  Center.Z=Height+30;
+  const FRotator Rotation(0,0,C.Roll);
+  Center.Z=FTerraRolloverBodyProbes::DropHeight(V,BodyPoints,Center,Rotation.Quaternion())+30;
   V->SetActorLocationAndRotation(Center,Rotation,false,nullptr,ETeleportType::TeleportPhysics);
   V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);V->ResetContactTelemetry();
   State.Time=0;State.Samples=0;State.MinimumClearance=State.MinimumTireClearance=10000;State.MaximumCandidates=State.MaximumTraces=0;State.Finite=true;State.RequestedPoseSeen=State.OverturnedSeen=State.PoweredWhileOverturned=false;State.Phase=1;
@@ -95,10 +99,27 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   if(State.Vehicle.Get()!=V){State=FState();State.Vehicle=V;State.Ready=Load();Check(FString::Printf(TEXT("rollover probe data covers all %d actual body meshes"),ATerraVehicle::VehicleCount),State.Ready,State.Ready?ATerraVehicle::VehicleCount:0);if(!State.Ready)return true;}
   if(State.Trial>=State.Cases.Num())return true;
   const auto C=State.Cases[State.Trial];const FString Name=Label(C);
-  if(State.Phase==0){Prepare(V,C);return false;}
+  if(State.Phase==0){
+    if(Prepare(V,C))return false;
+    Check(Name+TEXT(" supports the requested tire stage"),false,V->UpgradeMaxStage(TerraSim::TireSize));
+    return true;
+  }
   State.Time+=Dt;
-  if(State.Phase==5){if(State.Time>1.f)Place(V,C);return false;}
+  if(State.Phase==5){
+    if(State.Time<=1.f)return false;
+    const auto* BodyPoints=State.BodyProbes.Find(V);
+    if(!BodyPoints||V->UpgradeStage(TerraSim::TireSize)!=State.ExpectedTireSize||!TerraTireProbeValidation::Matches(V)){
+      Check(Name+TEXT(" requires the requested tire fit and mesh-matched body and tire probes"),false,V->UpgradeStage(TerraSim::TireSize));
+      return true;
+    }
+    UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLOVER_BODY vehicle=%d zone=%d roll=%.0f sizeStage=%d asset=%s probes=%d"),
+      C.Vehicle,C.Zone,C.Roll,State.ExpectedTireSize,*V->Body->GetStaticMesh()->GetName(),BodyPoints->Num());
+    Place(V,C,*BodyPoints);
+    return false;
+  }
   if(State.Phase==1){
+    const auto* BodyPoints=State.BodyProbes.Find(V);
+    if(!BodyPoints){Check(Name+TEXT(" retains its fitted body probes"),false,0);return true;}
     State.Finite&=!V->GetActorLocation().ContainsNaN()&&!V->Chassis->GetPhysicsLinearVelocity().ContainsNaN();
     if(State.Time>=.1f&&State.Time<=1.f){
       const float Up=V->GetActorUpVector().Z;
@@ -109,7 +130,7 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
       const double Now=FPlatformTime::Seconds();
       if(State.PreviousMeasuredFrame>0)State.FrameMS.Add(float((Now-State.PreviousMeasuredFrame)*1000));
       State.PreviousMeasuredFrame=Now;
-      for(const FVector& Local:State.Probes[C.Vehicle]){const FVector P=V->Body->GetComponentTransform().TransformPosition(Local);State.MinimumClearance=FMath::Min(State.MinimumClearance,float(P.Z-V->Terrain->Height(P.X,P.Y)));}
+      State.MinimumClearance=FMath::Min(State.MinimumClearance,FTerraRolloverBodyProbes::MinimumClearance(V,*BodyPoints));
       State.MinimumTireClearance=FMath::Min(State.MinimumTireClearance,TerraTireProbeValidation::MinimumClearance(V));
       State.MaximumCandidates=FMath::Max(State.MaximumCandidates,V->RolledTireCandidates);State.MaximumTraces=FMath::Max(State.MaximumTraces,V->RolledTireTraces);
       State.Samples++;
@@ -136,8 +157,8 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
         State.Samples>=8&&TerraTireProbeValidation::Matches(V)&&State.MinimumTireClearance>=-4.f&&
         State.MaximumCandidates<=V->WheelCount()*2&&State.MaximumTraces<=V->WheelCount()*2,State.MinimumTireClearance/2.54f);
       UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLOVER_TIRES vehicle=%d sizeStage=%d clearanceIn=%.3f candidates=%d traces=%d"),
-        C.Vehicle,State.TireSize,State.MinimumTireClearance/2.54f,State.MaximumCandidates,State.MaximumTraces);
-      Check(Name+TEXT(" retains its source surface probes"),State.Probes[C.Vehicle].Num()>=64,State.Probes[C.Vehicle].Num());
+        C.Vehicle,V->UpgradeStage(TerraSim::TireSize),State.MinimumTireClearance/2.54f,State.MaximumCandidates,State.MaximumTraces);
+      Check(Name+TEXT(" retains its fitted body probes"),BodyPoints->Num()>=64,BodyPoints->Num());
       Check(Name+TEXT(" cannot apply tire drive while overturned"),!State.PoweredWhileOverturned,State.OverturnedSeen?1:0);
       if(!State.Camera.IsValid())State.Camera=V->GetWorld()->SpawnActor<ACameraActor>();
       const FVector Target=V->GetActorLocation()+V->GetActorQuat().RotateVector(FVector(0,0,35));

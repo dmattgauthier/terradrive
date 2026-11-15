@@ -30,7 +30,7 @@ $taskPlan=Get-Content -LiteralPath $taskPlanPath -Raw | ConvertFrom-Json
 # Pin the supported roster independently of the package's reported plan.
 $taskVehicleCount=12
 $taskPlanValid=$taskPlan.version -eq 1 -and $taskPlan.vehicleCount -eq $taskVehicleCount -and
- $taskPlan.partCount -eq 14 -and $taskPlan.portalStages -eq 4 -and $taskPlan.migrationChecks -eq 8 -and $taskPlan.persistenceChecks -eq 3 -and
+ $taskPlan.partCount -eq 14 -and $taskPlan.portalStages -eq 4 -and $taskPlan.migrationChecks -eq 9 -and $taskPlan.persistenceChecks -eq 3 -and
  $taskPlan.capabilityChecksPerVehicle -eq 8 -and $taskPlan.growthChecksPerVehicle -eq 3 -and $taskPlan.spinChecksPerVehicle -eq 4 -and
  $taskPlan.stationaryChecksPerTrial -eq 10 -and @($taskPlan.trials).Count -eq $taskVehicleCount*$taskPlan.portalStages -and
  $taskPlan.trackTireChecksPerVehicle -eq 4 -and $taskPlan.trackCapableVehicles -eq ($taskVehicleCount-3)

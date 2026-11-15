@@ -1,9 +1,20 @@
 # Terra Drive native port
 
-**Granite fault-line crawl** adds a six-gate rock ascent to **Esc → Challenges**.
-Use low range on the approach and engage the axle lockers before the staggered
-shelves. The [exterior and rock-crawl notes](docs/exterior-rock-crawl.md) cover
-the photo references, model changes and native drive comparison.
+**Granite fault-line crawl** is a six-gate rock ascent under **Esc → Challenges**.
+The diagonal notch has two clay-lined low corners and can unload one wheel on each axle. Engage both axle
+lockers before taking the center line, or follow the blue stakes along the
+right-hand bench in low range.
+
+The garage has one **Tires** card with the supported diameters for each vehicle.
+Each larger size shows the minimum suspension stage needed to fit it. Install
+that suspension first, then choose the diameter. Compound changes width and
+grip at the selected diameter. Large kits use reshaped wheel wells and limits
+on upward travel or steering to retain clearance. Older saved kits move to the
+nearest supported size at or below the saved diameter, with the required
+suspension fitted when an explicit kit was already saved.
+
+The [native validation record](docs/granite-tire-fit-native.json) identifies the
+tested Windows build and records the drive times, garage checks and rut checks.
 
 Open **Esc → Challenges** on the trail to choose a route. The three newest
 terrain courses are Pine Ridge cross-axle crawl, Copper Dunes crest run and
@@ -190,7 +201,7 @@ Wait for that commandlet to finish, then run `Tools/build-native.ps1 -Package` f
 
 The unused Android File Server plugin is explicitly disabled. `Tools/prepare-github.mjs` rejects credential-like configuration values before preparing an upload; do not publish server tokens that Unreal may generate in local settings.
 
-After packaging, launch `Build/Windows/TerraDrive.exe`. Keep the entire `Windows` directory together; the executable requires the adjacent cooked content. To run the native automated driving checks and capture the regions and challenge routes:
+After packaging, launch `Build/Windows/TerraDrive.exe`. Use `-ArchiveDirectory` to stage a separate candidate for validation. Keep the entire `Windows` directory together; the executable requires the adjacent cooked content. To run the native automated driving checks and capture the regions and challenge routes:
 
 ```powershell
 .\Tools\verify-native.ps1
@@ -239,7 +250,7 @@ For a narrow C++ iteration against an already accepted asset cook, `Tools/stage-
 
 | J | Cycle challenge routes, including [Perimeter Expedition](docs/perimeter-expedition.md) |
 | V | Open vehicle selection while stopped |
-| T | Equip/remove supported flotation tracks while stopped; return tire diameter to DEFAULT first |
+| T | Equip/remove supported flotation tracks while stopped; select the factory diameter in Tires first |
 | F / L | Available four-wheel high drive / low range; change near a stop |
 | Z / U / I | Rear / front / center differential lock when equipped; stop and select the required driveline first |
 | Shift + W | Crawl throttle |
@@ -263,7 +274,7 @@ This is a migration preview. Browser regression results are reference evidence, 
 
 See [offroad-challenges.md](docs/offroad-challenges.md) for route descriptions, driving techniques and the native axle/contact model.
 
-The game opens in the scrollable twelve-vehicle garage. Stock plus three upgrade stages across fourteen categories are available immediately and saved independently for each vehicle. Drivetrain, differential, portal, EV conversion and tire-air stages retain factory capabilities and describe the current configuration separately from factory-character notes. The Upgrades menu shows actual front/rear PSI, the front target, air-system status and **−2 / +2** and **ROAD PRESSURE** controls. Rear pressure follows the vehicle's axle-pressure ratio. Garage adjustment and vehicle selection service the saved target immediately; installed trail systems change actual pressure over time and pause beyond their operating speed. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [pass 14](docs/expedition-electric-14.md) for current stages and pressure behavior, and the earlier [garage-and-terrain.md](docs/garage-and-terrain.md) for the original integration.
+The game opens in the scrollable twelve-vehicle garage. Upgrades save independently for each vehicle. Most parts have three stages, while the Tires card lists every diameter the vehicle supports. Drivetrain, differential, portal, EV conversion and tire-air stages retain factory capabilities and describe the current configuration separately from factory-character notes. The Upgrades menu shows actual front/rear PSI, the front target, air-system status and **−2 / +2** and **ROAD PRESSURE** controls. Rear pressure follows the vehicle's axle-pressure ratio. Garage adjustment and vehicle selection service the saved target immediately; installed trail systems change actual pressure over time and pause beyond their operating speed. Seven terrain surfaces use layered photographic textures, normal maps and world-space variation. See [pass 14](docs/expedition-electric-14.md) for current stages and pressure behavior, and the earlier [garage-and-terrain.md](docs/garage-and-terrain.md) for the original integration.
 
 Player-facing measurements use mph, feet/inches, pounds, PSI, horsepower and pounds-force. The new tire-contact and model pass is described in [terrain-interaction-and-models.md](docs/terrain-interaction-and-models.md). Run `Tools/test-core.cmd` for the standalone simulation checks.
 

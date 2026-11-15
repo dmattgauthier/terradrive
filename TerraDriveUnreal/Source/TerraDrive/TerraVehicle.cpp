@@ -254,7 +254,7 @@ void ATerraVehicle::SelectVehicle(int Index, bool StoreCurrentProfile) {
 }
 void ATerraVehicle::SetTracks(bool Enabled) {
   if(Enabled&&UpgradeStage(TerraSim::TireSize)>0){
-    Notice=TEXT("Return TIRE DIAMETER to DEFAULT in the garage before fitting tracks. Your tire kit is unchanged.");return;
+    Notice=TEXT("Select the factory diameter in Tires before fitting tracks.");return;
   }
   if (VehicleIndex == 2||WheelCount()==6||Number(TEXT("monsterTruck"),0)>0) {
     Notice = Number(TEXT("monsterTruck"),0)>0?TEXT("The monster chassis retains its 66-inch wheels; standard track pods do not fit"):WheelCount()==6?TEXT("Individual track pods are unavailable for the tandem chassis"):TEXT("Tracks unavailable for the Civic");
@@ -680,7 +680,7 @@ void ATerraVehicle::Simulate(float Dt) {
     TotalTorque = 0;
   if (LowRange) TotalTorque *= FMath::Clamp(8.f-FMath::Abs(Speed),0.f,1.f);
   const float SteerAngle =
-      Steer * FMath::DegreesToRadians(SteeringLockDegrees) / (1 + FMath::Abs(Speed) * .025f) + DamageSteeringOffset();
+      Steer * FMath::DegreesToRadians(TireKitSteeringDegrees) / (1 + FMath::Abs(Speed) * .025f) + DamageSteeringOffset();
   const float RearSteerAngle=Number(TEXT("monsterTruck"),0)>0?SteerAngle*MonsterRearSteerRatio/(1+FMath::Abs(Speed)*.18f):VehicleIndex==4 ? -SteerAngle*.25f/(1+FMath::Abs(Speed)*.15f) : VehicleIndex==5?SteerAngle*FMath::Lerp(-.12f,.06f,FMath::Clamp((FMath::Abs(Speed)-8)/18,0.f,1.f)):0;
   float TotalLoad = 0;
   ContactCount = 0;
@@ -1223,7 +1223,7 @@ float ATerraVehicle::BumpTravel(bool Front) const {
   const auto S=Spec->GetObjectField(TEXT("suspension"));
   double Travel=S->GetNumberField(TEXT("travel"));
   S->TryGetNumberField(Front?TEXT("travelFront"):TEXT("travelRear"),Travel);
-  return TerraSim::SuspensionBumpTravel(float(Travel),Tuning.Travel);
+  return FMath::Min(TerraSim::SuspensionBumpTravel(float(Travel),Tuning.Travel),Front?TireKitBumpFront:TireKitBumpRear);
 }
 float ATerraVehicle::ReboundTravel(int Axle) const {
   // Ride height already compresses the spring by its static preload.

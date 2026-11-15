@@ -16,6 +16,7 @@ const newManifest = {...oldManifest, routes: [...oldManifest.routes, {name: 'Gra
 const collisionFiles = ['vehicle-ground-probes.json', 'vehicle-collision.json'];
 const collisionBakers = ['bake-vehicle-ground-probes.mjs', 'bake-coachwork-collision.mjs'];
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+const fixtureTire = {name: 'truck_tire', sha256: digest('fixture tire geometry')};
 
 function copyTools(root, files) {
   for (const file of files) fs.copyFileSync(path.join(tools, file), path.join(root, 'Tools', file));
@@ -81,27 +82,90 @@ function publishVehicle(root, shift) {
   fs.writeFileSync(path.join(root, 'SourceAssets/truck_body.obj'), body);
   publishSourceExport(root, {
     meshSchema: 2,
-    assets: [{name: 'truck_body', sha256}],
+    assets: [{name: 'truck_body', sha256}, fixtureTire],
     materials: [{id: 'M_000', opacity: 1, automotive: 'paint'}],
-    vehicles: [{id: 'truck', asset: 'truck', width: 2, height: 2.2, cgHeight: 0.8, clearance: 0.2}],
+    vehicles: [{id: 'truck', asset: 'truck', width: 2, height: 2.2, cgHeight: 0.8, clearance: 0.2, tireRadius: 0.42, tireFits: []}],
   }, oldTerrain);
   return sha256;
 }
 
-function recordFixtureImport(root) {
+function recordFixtureImport(root, probeVersion = 3) {
   fs.writeFileSync(path.join(root, 'Content/Maps/ProvingGround.umap'), 'imported map');
   fs.writeFileSync(path.join(root, 'Content/NativeData/terrain-blend.bin'), 'imported mask');
-  fs.writeFileSync(path.join(root, 'Content/NativeData/vehicle-tire-probes.json'), '{}');
+  const stock = {stage: 0, asset: fixtureTire.name, sha256: fixtureTire.sha256, radiusM: 0.42,
+    pointsCm: Array.from({length: 24}, (_, i) => [i, 1, 2])};
+  fs.writeFileSync(path.join(root, 'Content/NativeData/vehicle-tire-probes.json'),
+    JSON.stringify({version: probeVersion, vehicles: [{id: 'truck', stages: [stock]}]}));
   const receipt = {
     complete: true,
     sourceExportSHA256: checkReuse(root),
     terrainBlendSHA256: digest('imported mask'),
-    vehicleCollisionSHA256: runNode(root, 'verify-baked-vehicle-collision.mjs'),
+    vehicleCollisionSHA256: digest(collisionFiles.map(file =>
+      digest(fs.readFileSync(path.join(root, 'Content/NativeData', file)))).join('\n')),
   };
   const bytes = JSON.stringify(receipt);
   fs.writeFileSync(path.join(root, 'Saved/import-complete.json'), bytes);
   return digest(bytes);
 }
+
+test('tire fit reuse tracks resize code and suspension geometry', () => withProject(root => {
+  copyTools(root, ['tire-fit.mjs', 'tire-wheelhouse.mjs', 'tire-size-geometry.mjs', 'read-cached-json.mjs']);
+  const asset = (name, contents) => {
+    fs.writeFileSync(path.join(root, 'SourceAssets', name + '.obj'), contents);
+    return {name, slots: ['M_000'], sha256: digest(contents)};
+  };
+  // One triangle in the front wheel opening and one clear of the cutter.
+  const body = ['v 150 90 -30', 'v 152 90 -30', 'v 150 92 -28',
+    'v -100 -75 85', 'v 100 -75 85', 'v 0 75 90',
+    ...Array(6).fill('vn 0 0 1'), ...Array(6).fill('vt 0 0'),
+    'usemtl M_000', 'f 1/1/1 2/2/2 3/3/3', 'f 4/4/4 5/5/5 6/6/6'].join('\n') + '\n';
+  const tire = 'v 60.96 0 0\nv 0 0 60.96\nv 0 12 -60.96\nusemtl M_000\nf 1 2 3\n';
+  const vehicle = {id: 'truck', asset: 'truck', tireSize: '305/80R22', tireRadius: 0.6096,
+    track: 1.8, wheelbase: 3, frontWeightFraction: 0.5, cgHeight: 0.9,
+    tireWidth: 0.305, suspension: {travel: 0.2}};
+  beginSourceExport(root);
+  publishSourceExport(root, {
+    assets: [asset('truck_body', body), asset('truck_tire', tire)],
+    materials: [{id: 'M_000'}], vehicles: [vehicle],
+  }, oldTerrain);
+
+  const reportFile = path.join(root, 'Saved/TireClearance/fit-report.json');
+  const bakedTire = path.join(root, 'SourceAssets/truck_tire_size1_0.obj');
+  const bake = () => {
+    runNode(root, 'tire-fit.mjs');
+    return JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+  };
+  const before = bake();
+  const originalTire = fs.readFileSync(bakedTire, 'utf8');
+  const oldTime = new Date('2000-01-01T00:00:00Z');
+  fs.utimesSync(bakedTire, oldTime, oldTime);
+  assert.deepEqual(bake(), before);
+  assert.equal(fs.statSync(bakedTire).mtimeMs, oldTime.getTime(), 'unchanged inputs reuse the existing OBJ');
+
+  const helper = path.join(root, 'Tools/tire-size-geometry.mjs');
+  const code = fs.readFileSync(helper, 'utf8');
+  const revised = code.replace('x*s} ', 'x*s*1.001} ');
+  assert.notEqual(revised, code);
+  fs.writeFileSync(helper, revised);
+
+  const after = bake();
+  assert.notEqual(after.version, before.version);
+  assert.deepEqual(after.vehicles[0].tireFits, before.vehicles[0].tireFits);
+  const updatedTire = fs.readFileSync(bakedTire, 'utf8');
+  assert.notEqual(updatedTire, originalTire);
+  const treadX = Number(updatedTire.split(/\s+/)[1]);
+  assert.ok(Math.abs(treadX - 63.5 * 1.001) < 0.000001);
+  assert.equal(after.vehicles[0].variants.find(item => item.name === 'truck_tire_size1_0').sha256, digest(updatedTire));
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'SourceAssets/import.json'), 'utf8'));
+  manifest.vehicles[0].suspension.travel = 0.1;
+  beginSourceExport(root);
+  publishSourceExport(root, manifest, oldTerrain);
+  const afterTravel = bake();
+  assert.equal(afterTravel.version, after.version);
+  assert.deepEqual(afterTravel.vehicles[0].tireFits, after.vehicles[0].tireFits);
+  assert.notEqual(afterTravel.vehicles[0].geometry[0].sha256, after.vehicles[0].geometry[0].sha256);
+}));
 
 test('fresh and retried exports allow reuse only after completion', () => withProject(root => {
   checkReuse(root, /export-state\.json/);
@@ -316,6 +380,31 @@ test('skip cook reuses only the Windows tree recorded by the successful cook', (
   checkBuildRejected(root, reuse, /The cooked Windows tree differs from the completed cook/);
   assert.equal(fs.readFileSync(verificationLog, 'utf8'), calls);
   assert.match(parsed.cookedTreeSHA256, /^[a-f0-9]{64}$/);
+}));
+
+test('matching import and cook receipts cannot package old tire catalogs or probe versions', () => withProject(root => {
+  copyTools(root, collisionBakers);
+  publishVehicle(root, 0);
+  for (const script of collisionBakers) runNode(root, script);
+  const relative = 'TerraDrive/Content/ProvingGround.umap';
+  const cooked = path.join(root, 'Saved/Cooked/Windows', relative);
+  fs.mkdirSync(path.dirname(cooked), {recursive: true});
+  fs.writeFileSync(cooked, 'cooked map');
+  const cookedTreeSHA256 = digest(relative + ':' + digest('cooked map'));
+  const flags = ['-EngineRoot', path.join(root, 'unused engine'), '-SkipBuild', '-Package'];
+  function rejectPackage(reason) {
+    const assetImportSHA256 = recordFixtureImport(root, 2);
+    fs.writeFileSync(path.join(root, 'Saved/native-cook-complete.json'), JSON.stringify({assetImportSHA256, cookedTreeSHA256}));
+    checkBuildRejected(root, flags, reason);
+    checkBuildRejected(root, [...flags, '-SkipCook'], reason);
+  }
+  rejectPackage(/vehicle-tire-probes\.json must use version 3/);
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'SourceAssets/import.json')));
+  manifest.vehicles[0].tireFits = [{stage: 1, diameterInches: 39, liftM: .03}];
+  beginSourceExport(root);
+  publishSourceExport(root, manifest, oldTerrain);
+  rejectPackage(/Incompatible tire fit catalog for truck at stage 1/);
 }));
 
 test('the full exporter recovers from a truncated legacy import manifest', {timeout: 620000}, () => withProject(root => {

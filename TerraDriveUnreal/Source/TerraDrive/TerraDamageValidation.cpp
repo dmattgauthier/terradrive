@@ -30,6 +30,7 @@ struct FState {
   TArray<TWeakObjectPtr<UPrimitiveComponent>> PatchHiddenTiles;
   bool PatchTireMarksVisible=false;
   float Time=0,Span=0;bool RollSeen=false;FVector Start,DriveStart,Direction,LastPosition;FString BoundaryName;
+  FVector FrontImpactPoint,RearImpactPoint;double FrontDentCM=0;int LaterImpacts=0;
   void Next(int P){Phase=P;Time=0;}
 } State;
 void Pose(ATerraVehicle* V,FVector P,FRotator R){V->SetActorLocationAndRotation(P,R,false,nullptr,ETeleportType::TeleportPhysics);V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);V->ResetContactTelemetry();}
@@ -56,6 +57,93 @@ bool Renderer(ATerraVehicle* V){
   for(int I=0;I<V->DamageBody->GetNumSections();++I){auto* M=V->DamageBody->GetMaterial(I);if(!M||M!=V->Body->GetMaterial(Render->LODResources[0].Sections[I].MaterialIndex))return false;}
   return V->DamageBody->GetCollisionEnabled()==ECollisionEnabled::NoCollision&&V->CoachworkCollisionReady;
 }
+
+FVector BodyEndPoint(const UStaticMesh& Mesh,double Direction){
+  const FBoxSphereBounds Bounds=Mesh.GetBounds();
+  const FVector Target=Bounds.Origin+FVector(Direction*Bounds.BoxExtent.X,0,0);
+  const auto& Positions=Mesh.GetRenderData()->LODResources[0].VertexBuffers.PositionVertexBuffer;
+  FVector Point=Target;double Nearest=DBL_MAX;
+  for(uint32 I=0;I<Positions.GetNumVertices();++I){
+    const FVector Candidate(Positions.VertexPosition(I));
+    const double Distance=FVector::DistSquared(Target,Candidate);
+    if(Distance<Nearest){Point=Candidate;Nearest=Distance;}
+  }
+  return Point;
+}
+
+double FrontDentDepth(const ATerraVehicle* V,const FVector& Point){
+  const UStaticMesh* Mesh=V->Body->GetStaticMesh();
+  const auto* Render=Mesh?Mesh->GetRenderData():nullptr;
+  if(!V->DamageBody||!V->DamageBody->IsVisible()||!Render||!Render->LODResources.IsValidIndex(0))return 0;
+  const auto& Positions=Render->LODResources[0].VertexBuffers.PositionVertexBuffer;
+  const auto Accumulate=[&](const FVector& P,double& Furthest){
+    if(FMath::Abs(P.Y-Point.Y)<12&&FMath::Abs(P.Z-Point.Z)<12)Furthest=FMath::Max(Furthest,P.X);
+  };
+  double Original=-DBL_MAX,Deformed=-DBL_MAX;
+  for(uint32 I=0;I<Positions.GetNumVertices();++I)Accumulate(FVector(Positions.VertexPosition(I)),Original);
+  for(int I=0;I<V->DamageBody->GetNumSections();++I){
+    if(const auto* Section=V->DamageBody->GetProcMeshSection(I)){
+      for(const auto& Vertex:Section->ProcVertexBuffer)Accumulate(Vertex.Position,Deformed);
+    }
+  }
+  return Original>-DBL_MAX&&Deformed>-DBL_MAX?Original-Deformed:0;
+}
+
+void FixtureImpact(ATerraVehicle* V,const FVector& Point,const FVector& Normal){
+  const FTransform& Transform=V->Body->GetComponentTransform();
+  FHitResult Hit;Hit.ImpactPoint=Transform.TransformPosition(Point);Hit.ImpactNormal=Transform.TransformVectorNoScale(Normal);
+  V->RegisterDamageImpact(Hit.ImpactNormal*(600.f*V->Chassis->GetMass()),Hit,false);
+}
+
+bool FitSwap(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
+  if(State.Phase==0){
+    V->SetGarage(true);V->SelectVehicle(0);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportZone(1);
+    V->SetDamageEnabled(true,false);V->RepairDamage();V->TestBrake=1;V->TestThrottle=V->TestSteer=0;State.Next(1);
+    return false;
+  }
+  if(State.Phase==1&&State.Time>1){
+    const UStaticMesh* Mesh=V->Body->GetStaticMesh();
+    if(!Mesh||!Mesh->bAllowCPUAccess||!Mesh->GetRenderData()||!Mesh->GetRenderData()->LODResources.IsValidIndex(0)){
+      Check(TEXT("fit swap loads the factory body geometry"),false,0);
+      return true;
+    }
+    State.FrontImpactPoint=BodyEndPoint(*Mesh,1);State.RearImpactPoint=BodyEndPoint(*Mesh,-1);
+    FixtureImpact(V,State.FrontImpactPoint,-FVector::ForwardVector);
+    State.FrontDentCM=FrontDentDepth(V,State.FrontImpactPoint);
+    Check(TEXT("fit swap front impact dents the visible factory body"),V->DamageEventCount==1&&State.FrontDentCM>1,State.FrontDentCM);
+    State.Next(2);
+    return false;
+  }
+  if(State.Phase!=2||State.Time<=.22f)return false;
+  FixtureImpact(V,State.RearImpactPoint,FVector::ForwardVector);State.Time=0;
+  if(++State.LaterImpacts<33)return false;
+
+  const UStaticMesh* Factory=V->Body->GetStaticMesh();
+  const int Events=V->DamageEventCount,Required=V->RequiredTireSuspensionStage(1);
+  const auto Damage=V->StructuralDamage.Zones;
+  const auto Preserved=[&](double Dent){
+    return State.FrontDentCM>1&&FMath::IsNearlyEqual(Dent,State.FrontDentCM,.05)&&V->DamageEventCount==Events&&V->StructuralDamage.Zones==Damage;
+  };
+  Check(TEXT("fit swap preserves the front dent through 33 later rear impacts"),
+    Events==34&&Preserved(FrontDentDepth(V,State.FrontImpactPoint)),Events);
+  V->SetGarage(true);
+  V->SetUpgrade(TerraSim::Suspension,Required,false);V->SetUpgrade(TerraSim::TireSize,1,false);
+  const double Larger=FrontDentDepth(V,State.FrontImpactPoint);
+  Check(TEXT("fitted body retains the earliest visible dent and structural damage"),
+    V->Garage&&V->UpgradeStage(TerraSim::TireSize)==1&&V->Body->GetStaticMesh()!=Factory&&Preserved(Larger),Larger);
+  V->SetUpgrade(TerraSim::TireSize,0,false);
+  const double Returned=FrontDentDepth(V,State.FrontImpactPoint);
+  Check(TEXT("returning to the factory body retains the earliest visible dent and structural damage"),
+    V->UpgradeStage(TerraSim::TireSize)==0&&V->Body->GetStaticMesh()==Factory&&Preserved(Returned),Returned);
+  V->RepairDamage();V->SetUpgrade(TerraSim::TireSize,1,false);
+  Check(TEXT("repair clears damage history before another fitted body swap"),
+    V->UpgradeStage(TerraSim::TireSize)==1&&V->Body->GetStaticMesh()!=Factory&&V->DamageEventCount==0&&
+    V->Damage==0&&V->DeformedVertexCount==0&&V->Body->IsVisible()&&V->DamageBody&&!V->DamageBody->IsVisible(),V->Damage);
+  UE_LOG(LogTemp,Display,TEXT("TERRA_DAMAGE_FIT_SWAP impacts=%d frontDentCM=%.3f fittedDentCM=%.3f returnedDentCM=%.3f"),
+    Events,State.FrontDentCM,Larger,Returned);
+  return true;
+}
+
 void Launch(ATerraVehicle* V){V->TestBrake=0;V->TestThrottle=0;V->Chassis->SetPhysicsLinearVelocity(FVector(1250,0,0));for(auto& W:V->WheelState)W.Omega=12.5f/FMath::Max(.1f,V->TireDiameter()*.0127f);}
 bool PatchDiagnostic(){return FParse::Param(FCommandLine::Get(),TEXT("TerraDamageBoundariesOnly"));}
 bool OverlapsPatch(const FBox& B){return B.Min.X<=-11100&&B.Max.X>=-11700&&B.Min.Y<=-1200&&B.Max.Y>=-2200&&B.Min.Z<1800&&B.Max.Z>-1000;}
@@ -172,6 +260,12 @@ bool Boundaries(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> C
 }
 }
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
+  static const bool FitSwapOnly=FParse::Param(FCommandLine::Get(),TEXT("TerraDamageFitSwapOnly"));
+  if(FitSwapOnly){
+    if(State.Vehicle.Get()!=V){State=FState();State.Vehicle=V;UE_LOG(LogTemp,Display,TEXT("TERRA_DAMAGE_READY fitSwapOnly=1"));}
+    State.Time+=Dt;
+    return FitSwap(V,Check);
+  }
   if(State.Vehicle.Get()!=V){State=FState();State.Vehicle=V;if(PatchDiagnostic())State.Car=ATerraVehicle::VehicleCount;UE_LOG(LogTemp,Display,TEXT("TERRA_DAMAGE_READY vehicles=9 checks=228 captures=45 boundariesOnly=%d"),PatchDiagnostic());}
   State.Time+=Dt;
   if(State.Car>=ATerraVehicle::VehicleCount){if(!Boundaries(V,Check,Capture))return false;if(State.WallActor.IsValid())State.WallActor->Destroy();V->SetDamageEnabled(false,false);return true;}

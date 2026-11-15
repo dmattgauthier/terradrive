@@ -1,0 +1,187 @@
+{
+  "engine": "5.8.3",
+  "windowsExecutableSha256": "f5659ddced5c4960ab8a5b02641f6b520658b4725e665f2a919ae73efe643484",
+  "sourceExportSha256": "5489115316d12e957824a8ffea5a7c6185792acd558c2472f46cba7c80b401a1",
+  "vehicleCollisionSha256": "444917f1f2ec34c43f7099912297ac0475e9b19bccaafa2122faa2e62ae7b0bc",
+  "cookedTreeSha256": "96a827526e3bd83f6389be73a6095b14eb60e7e3832bb7a8d9eb37b0745f9c0a",
+  "stagedContent": [
+    {
+      "path": "TerraDrive/Content/Paks/global.ucas",
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/global.utoc",
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "sha256": "16c374804d2a522bc49c20651967edcae4750ec050c4c651e194a382143c29db"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "sha256": "f79d83bacd1e7eb804de80faaf856bfd80eaf7f90b76e3039221676cabf15bda"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "sha256": "5b25555037f4e0f9302a7bf5d2f2059b3da054ac6a512ec12aac7567b207bc54"
+    }
+  ],
+  "validationNote": "Expanded and Ruts ran on the previous executable built from identical gameplay code and byte-identical staged content. The final executable adds localized Granite timing to the validation fixture and repeats the four drive trials.",
+  "nativeRuns": [
+    {
+      "mode": "RockCrawl",
+      "checks": 22,
+      "captures": 6,
+      "executableSha256": "f5659ddced5c4960ab8a5b02641f6b520658b4725e665f2a919ae73efe643484",
+      "peakTemperatureC": 56.63
+    },
+    {
+      "mode": "Expanded",
+      "checks": 286,
+      "captures": 29,
+      "executableSha256": "5c0593e09ec2a1d73dbea6aa3e448d7e70bde932c150d9d7a9a67f2aeb9b08d3",
+      "peakTemperatureC": 60.53
+    },
+    {
+      "mode": "Ruts",
+      "checks": 117,
+      "captures": 16,
+      "executableSha256": "5c0593e09ec2a1d73dbea6aa3e448d7e70bde932c150d9d7a9a67f2aeb9b08d3",
+      "peakTemperatureC": 57.52
+    }
+  ],
+  "stockWranglerTrials": [
+    {
+      "mode": "4H open",
+      "gates": 0,
+      "progressFeet": 2.86,
+      "elapsedSeconds": 58.049,
+      "notchSeconds": 0.0
+    },
+    {
+      "mode": "4L open",
+      "gates": 3,
+      "progressFeet": 63.87,
+      "elapsedSeconds": 58.049,
+      "notchSeconds": 43.799
+    },
+    {
+      "mode": "4L locked center",
+      "gates": 6,
+      "progressFeet": 131.5,
+      "elapsedSeconds": 32.2,
+      "notchSeconds": 2.8
+    },
+    {
+      "mode": "4L open right bench",
+      "gates": 6,
+      "progressFeet": 131.57,
+      "elapsedSeconds": 32.0,
+      "notchSeconds": 2.05
+    }
+  ],
+  "sourceTireFitChecks": 582,
+  "portableChecks": {
+    "simulationCore": 730,
+    "centerDifferential": 315,
+    "energy": 31
+  },
+  "reviewFollowUp": {
+    "previousHead": "d892e68748475fe8ef2adfd70c40930e9fe7057a",
+    "windowsExecutableSha256": "b7852ed719e0ce2c52d97dc5329b09ca0144d596f5299c898bc318d30612da7f",
+    "nativeSourceTreeSha256": "e68df45192ab7aaf2226c51c2f62f69f0ff08aa14e315135cefa07d23026e6f1",
+    "nativeSourceTreeHashMethod": "SHA-256 of sorted relative-path:file-SHA-256 lines under Source, joined with LF.",
+    "packaging": "Win64 Development restaged with -Package -SkipCook from the verified import and cook above. The staged content hashes match the original package. Regression fixtures with matching import and cook receipts reject both the legacy tire fit catalog and v2 tire probes in -Package and -Package -SkipCook.",
+    "expanded": {
+      "passedChecks": 292,
+      "peakTemperatureC": 59.41,
+      "saveChecks": "Stale fit metadata left the isolated v9 and v10 files byte-identical. Removing a saved diameter from a current catalog also preserved the v10 file byte-for-byte. The compatible catalog restored the v9 Wrangler's 50-inch fit and required suspension.",
+      "garageChecks": "The stock Civic disables electrical upgrades and center retrofits. Dual-motor conversion enables the electrical row and keeps center retrofits disabled."
+    },
+    "rollover": {
+      "clock": "Fixed 20 Hz simulation, 20 FPS cap",
+      "bodyAsset": "wrangler_rubicon_trail_clearance_body",
+      "tireDiameterInches": 35,
+      "probesUsedForPlacementAndClearance": 336,
+      "poses": 10,
+      "passedChecks": 91,
+      "peakTemperatureC": 56.6
+    },
+    "realTimeRollover": {
+      "clock": "Real elapsed time, 20 FPS cap",
+      "bodyAsset": "wrangler_rubicon_clearance_body",
+      "tireDiameterInches": 50,
+      "v9FixtureSha256": "b3c890c4190bbe028517df43ff0983c4af177493093b0541dbe8edf114da6c34",
+      "probesUsedForPlacementAndClearance": 331,
+      "poses": 9,
+      "passedChecks": 67,
+      "totalChecks": 68,
+      "peakTemperatureC": 55.65,
+      "failedCase": "roll-perf-v0-z2-r0 independent visible tires remain above ground with bounded contact work",
+      "minimumTireClearanceInches": -1.7688,
+      "baselineMinimumTireClearanceInches": -1.7822,
+      "baseline": "The original executable above reproduced the same sole failure with the same saved profile, cook, render cap and quality setting. All fitted-body clearance checks passed in the follow-up run."
+    },
+    "earlierAttempts": "The sandbox blocked Unreal staging and the first game startup. The first unsandboxed functional rollover run wrote 91 passing assertions and ten captures before its shutdown timeout. The repeat passed the runner with exit zero. Earlier logs and reports are retained locally."
+  },
+  "validationFollowUp": {
+    "previousHead": "e777ea598b082e7f72f56f7f4de3f2390270dfe2",
+    "windowsExecutableSha256": "8246227224c7c8f1af67200b72fbf28a4c003d36a7089248ac56adf83a6e9efe",
+    "nativeSourceTreeSha256": "1988fe544044dd5f6c57b3191333f5166a53a8020eddbc03ddf13b3960798248",
+    "package": "The Win64 Development executable was staged into a separate copy of the verified package. The staged content matches the hashes above.",
+    "defaultNativeSuite": {
+      "passedChecks": 402,
+      "captures": 142,
+      "peakTemperatureC": 58.41,
+      "elapsedSeconds": 843.953,
+      "clock": "Paced fixed 20 Hz with isolated settings",
+      "reportSha256": "16ce1612e0d71aa13e15f7aad97e25706518fd99b16db9fa3e2bec772e59feaf",
+      "terrainBinSha256": "49a42d5396c4aebf150869f271d8e714fbbd17d94189f79141cce0b8dcc94055",
+      "earlierAttempts": "The previous PR executable passed 396 of 401 checks. Its compound check expected a retired tire mesh and four spawn checks used outdated elevations. The first revised executable (SHA-256 3a80bcae40a4c71e9e2736bb29442ce1873e8a1b600bf98433bfe9872c556c84) passed 400 of 402 checks. The final suite checks tread width separately from radial scale and measures wheel inertia at factory diameter. Earlier reports are retained locally."
+    },
+    "copiedBuildMissingFittedBody": {
+      "clock": "Real elapsed time with a 20 FPS cap",
+      "copiedV10SaveSha256": "bf2d54f91d862c64708c6c0242aecbd98e1412f1773160bc14bc8742784f60c8",
+      "testWorldSha256": "eff6795aa99c8d673e8f1c2a929455050c1bae45ab582d82ff8be89608519449",
+      "fixture": "A separate test pak overlaid only the staged world manifest and pointed the Wrangler's 35-inch fit at an absent body mesh. Both executables used the same copied v10 save and test pak. The copied save hash matched before and after both runs.",
+      "expectedTireStage": 1,
+      "actualTireStage": 0,
+      "fixedMeasurementsStarted": 0,
+      "fixedPeakTemperatureC": 58.35,
+      "baselineStockBodyMeasurements": 9,
+      "baselinePassedChecks": 68
+    }
+  },
+  "tireCacheAndDamageFollowUp": {
+    "previousHead": "44fc192d69004926d9feabaa0720724e0910ae26",
+    "windowsExecutableSha256": "3456b7d0d5d9949e9b33f06f5189943362025753c3b7e2fec3462f4d7ddac25b",
+    "nativeSourceTreeSha256": "8e9f9e67b1e45628054b0fdc6efa1d52fd1afeedb45b4dd83a4993714329bafa",
+    "package": "The Win64 Development executable was staged into an isolated copy of the verified cook. All staged content hashes match the original records above.",
+    "rollover": {
+      "rejectedBeforePlacementOrMeasurement": [
+        {"mode": "RolloverPerformance", "vehicle": "Grave Digger", "requestedStage": 1, "maximumStage": 0},
+        {"mode": "RolloverPerformance", "vehicle": "Wrangler", "requestedStage": 9, "maximumStage": 8},
+        {"mode": "Rollover quick", "vehicle": "Grave Digger", "requestedStage": 1, "maximumStage": 0}
+      ],
+      "stageSelection": "Single-vehicle runs require an explicitly requested stage to be available. Roster sweeps use the requested stage as a ceiling per vehicle.",
+      "supportedWrangler35InchPoses": 10,
+      "supportedWranglerPassedChecks": 91,
+      "supportedWranglerPeakTemperatureC": 59.04,
+      "supportedWranglerReportSha256": "4cc14d1812d8c57c7a4734c8f36314fe6dc11fe34f1e75a2ce59700890a6488c"
+    },
+    "tireFitCache": {
+      "scriptSha256": "09dbad79a49572071799e155bbd0d54f7709585a12c2df495e8dcc9612a378fb",
+      "fixture": "The isolated export fixture first reuses the existing tire OBJ. Editing only the copied resize helper changes the cache version and the tire vertices with the same fit catalog. The previous generator retained the same cache version. A suspension-travel edit with the same fit rows also regenerates the wheelhouse geometry."
+    },
+    "dentFitSwap": {
+      "fixture": "The packaged Wrangler receives one controlled front impact and 33 rear impacts through the production damage handler. The check compares the front of the deformed procedural body with the active static mesh before and after each swap.",
+      "acceptedImpacts": 34,
+      "frontDentDepthCm": {"factory": 5.6672, "fitted35Inch": 5.6672, "returnedToFactory": 5.6672},
+      "passedChecks": 5,
+      "structuralDamagePreserved": true,
+      "repairClearedHistory": true,
+      "peakTemperatureC": 60.76,
+      "reportSha256": "a0895ae189ae911db2fac411fe726190f92a1071595c8f9e1ab479330b54ac57"
+    }
+  }
+}

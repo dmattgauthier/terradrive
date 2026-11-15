@@ -1,8 +1,10 @@
 param([switch]$Package,[switch]$ImportAssets,[switch]$SkipBuild,[switch]$SkipExport,[switch]$SkipCook,[ValidateRange(1,512)][int]$ImportBatchSize=8,
-      [string]$EngineRoot='C:\Program Files\Epic Games\UE_5.8')
+      [string]$EngineRoot='C:\Program Files\Epic Games\UE_5.8',[string]$ArchiveDirectory)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $project=Join-Path $projectRoot 'TerraDrive.uproject'
+if(!$ArchiveDirectory){$ArchiveDirectory=Join-Path $projectRoot 'Build'}
+$ArchiveDirectory=[IO.Path]::GetFullPath($ArchiveDirectory)
 $env:UBA_ROOT=Join-Path $projectRoot 'Saved\UBA'
 $env:uebp_LogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
 $env:uebp_FinalLogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
@@ -142,9 +144,6 @@ if ($ImportAssets) {
 }
 if ($Package) {
     $importHash=Get-CompletedImportHash
-    if (!(Test-Path -LiteralPath (Join-Path $projectRoot 'Content\NativeData\vehicle-tire-probes.json') -PathType Leaf)) {
-        throw 'Missing vehicle tire probes. Run with -ImportAssets before packaging.'
-    }
     $cookArgument='-cook'
     if ($SkipCook) {
         $cookReceipt=Read-BuildReceipt $cookMarker
@@ -161,7 +160,7 @@ if ($Package) {
     & node (Join-Path $PSScriptRoot 'garden-geology.mjs')
     if($LASTEXITCODE){throw 'Garden geology cache generation failed'}
     $packageStarted=Get-Date
-    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$projectRoot\Build" -unattended -utf8output '-UbtArgs=-NoUBA -MaxParallelActions=2'
+    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output '-UbtArgs=-NoUBA -MaxParallelActions=2'
     if ($LASTEXITCODE) { throw 'Packaging failed' }
     if (!$SkipCook) {
         $cookLogs=@(Get-ChildItem -LiteralPath $env:uebp_LogFolder -Filter 'Cook-*.txt' | Where-Object { $_.LastWriteTime -ge $packageStarted })
@@ -169,7 +168,7 @@ if ($Package) {
         $shaderFailures=@($cookLogs | Select-String -Pattern 'Failed to compile Material|doesn.t have a valid ShaderMap')
         if ($shaderFailures.Count) { throw "Cook substituted invalid material shaders. Inspect $($cookLogs[0].FullName)." }
     }
-    if (!(Test-Path -LiteralPath (Join-Path $projectRoot 'Build\Windows\TerraDrive.exe'))) {
+    if (!(Test-Path -LiteralPath (Join-Path $ArchiveDirectory 'Windows\TerraDrive.exe'))) {
         throw 'AutomationTool returned success but the packaged launcher is missing.'
     }
     if (!$SkipCook) {

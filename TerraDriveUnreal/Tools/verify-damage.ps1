@@ -1,23 +1,29 @@
 param(
     [ValidatePattern('^[a-z0-9-]+$')][string]$Name='damage',
     [ValidateRange(60,600)][int]$TimeoutSeconds=600,
-    [ValidateRange(15,90)][int]$StartupTimeoutSeconds=90
+    [ValidateRange(15,90)][int]$StartupTimeoutSeconds=90,
+    [string]$Executable='',
+    [switch]$FitSwapOnly
 )
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path $PSScriptRoot -Parent
 if(@(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd,UnrealPak,ShaderCompileWorker,UnrealBuildTool -ErrorAction SilentlyContinue).Count){
     throw 'Close engine and game processes before the isolated damage check.'
 }
-$taskExe=Join-Path $taskRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'
+$taskExe=if($Executable){[IO.Path]::GetFullPath($Executable)}else{Join-Path $taskRoot 'Build/Windows/TerraDrive/Binaries/Win64/TerraDrive.exe'}
 if(!(Test-Path -LiteralPath $taskExe -PathType Leaf)){throw 'The packaged native executable is missing.'}
 $taskGpuCommand=Get-Command nvidia-smi -ErrorAction SilentlyContinue
 if(!$taskGpuCommand){throw 'NVIDIA temperature monitoring must be available for this guarded native check.'}
+if($FitSwapOnly -and !$PSBoundParameters.ContainsKey('Name')){$Name='damage-fit-swap'}
 $taskOutput=Join-Path $taskRoot 'Saved/Validation'
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
 $taskReport=Join-Path $taskOutput ($Name+'.json')
 $taskLog=Join-Path $taskOutput ($Name+'.log')
 $taskTelemetry=Join-Path $taskOutput ($Name+'-gpu.json')
 $taskReceipt=Join-Path $taskOutput ($Name+'-receipt.json')
+if($FitSwapOnly -and ((Test-Path -LiteralPath @($taskReport,$taskLog,$taskTelemetry,$taskReceipt)) -contains $true)){
+    throw 'Choose a fresh Name for the damage fit swap report.'
+}
 $taskUser=Join-Path $taskOutput ($Name+'-user-'+[Guid]::NewGuid().ToString('N').Substring(0,8))
 New-Item -ItemType Directory -Path $taskUser -Force | Out-Null
 $taskStartedAt=[DateTime]::UtcNow
@@ -64,6 +70,7 @@ $taskArgs=@(
     ('-TerraGarage="'+(Join-Path $taskUser 'Saved/garage-builds.json')+'"'),
     ('-TerraGraphics="'+(Join-Path $taskUser 'Saved/graphics-settings.json')+'"'),('-abslog="'+$taskLog+'"')
 )
+if($FitSwapOnly){$taskArgs+='-TerraDamageFitSwapOnly'}
 $taskInfo=[Diagnostics.ProcessStartInfo]::new()
 $taskInfo.FileName=$taskExe;$taskInfo.Arguments=$taskArgs -join ' '
 $taskInfo.WorkingDirectory=Split-Path $taskExe -Parent
@@ -113,12 +120,14 @@ $taskExeUnchanged=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.To
 # Only these explicit files are accepted and copied to the usual capture
 # folder. Keep each isolated run as diagnostic evidence, including failures.
 $taskNames=[Collections.Generic.List[string]]::new()
-foreach($taskIndex in 0..8){foreach($taskPose in @('object','free-run','roof-rolled','roof')){$taskNames.Add(('native-damage-v{0}-{1}.png' -f $taskIndex,$taskPose))}}
-foreach($taskBoundary in @('dirt-asphalt','dirt-mud','dirt-rock','dirt-sand','dirt-snow','dirt-wetland','mud-rock')){$taskNames.Add(('native-damage-transition-{0}.png' -f $taskBoundary))}
-$taskNames.Add('native-damage-garage-enabled.png');$taskNames.Add('native-damage-garage-free-run.png')
+if(!$FitSwapOnly){
+    foreach($taskIndex in 0..8){foreach($taskPose in @('object','free-run','roof-rolled','roof')){$taskNames.Add(('native-damage-v{0}-{1}.png' -f $taskIndex,$taskPose))}}
+    foreach($taskBoundary in @('dirt-asphalt','dirt-mud','dirt-rock','dirt-sand','dirt-snow','dirt-wetland','mud-rock')){$taskNames.Add(('native-damage-transition-{0}.png' -f $taskBoundary))}
+    $taskNames.Add('native-damage-garage-enabled.png');$taskNames.Add('native-damage-garage-free-run.png')
+}
 $taskCaptureSource=Join-Path $taskUser 'Saved/Screenshots'
 $taskCaptureOutput=Join-Path $taskRoot 'Build/Windows/TerraDrive/Saved/Screenshots'
-New-Item -ItemType Directory -Path $taskCaptureOutput -Force | Out-Null
+if($taskNames.Count){New-Item -ItemType Directory -Path $taskCaptureOutput -Force | Out-Null}
 $taskCaptures=@();$taskMissing=@()
 foreach($taskFilename in $taskNames){
     $taskImage=Join-Path $taskCaptureSource $taskFilename
@@ -135,13 +144,15 @@ foreach($taskFilename in $taskNames){
     if($taskHash -ne $taskCopied -or $taskWidth -ne 1600 -or $taskHeight -ne 900){throw ('Capture hash or dimensions differ from the native request: '+$taskFilename)}
     $taskCaptures+=@([pscustomobject]@{filename=$taskFilename;path=$taskDestination;isolatedPath=$taskImage;SHA256=$taskHash;width=$taskWidth;height=$taskHeight})
 }
-$taskPassed=!$taskError -and $taskExit -eq 0 -and $taskFreshReport -and $taskFreshLog -and $taskTests.Count -eq 228 -and $taskUnique -eq 228 -and
-    $taskFailures.Count -eq 0 -and $taskErrors.Count -eq 0 -and $taskMissing.Count -eq 0 -and $taskCaptures.Count -eq 45 -and $taskSettingsUnchanged -and $taskExeUnchanged
+$taskExpectedChecks=if($FitSwapOnly){5}else{228}
+$taskExpectedCaptures=$taskNames.Count
+$taskPassed=!$taskError -and $taskExit -eq 0 -and $taskFreshReport -and $taskFreshLog -and $taskTests.Count -eq $taskExpectedChecks -and $taskUnique -eq $taskExpectedChecks -and
+    $taskFailures.Count -eq 0 -and $taskErrors.Count -eq 0 -and $taskMissing.Count -eq 0 -and $taskCaptures.Count -eq $taskExpectedCaptures -and $taskSettingsUnchanged -and $taskExeUnchanged
 $taskRecord=[ordered]@{
-    version=1;suite='damage';passed=$taskPassed;startedAt=$taskStartedAt.ToString('o');completedAt=[DateTime]::UtcNow.ToString('o')
+    version=1;suite=$(if($FitSwapOnly){'damage-fit-swap'}else{'damage'});passed=$taskPassed;startedAt=$taskStartedAt.ToString('o');completedAt=[DateTime]::UtcNow.ToString('o')
     executable=$taskExe;executableSHA256=$taskExeHash;executableUnchanged=$taskExeUnchanged;processExitCode=$taskExit
-    expectedChecks=228;actualChecks=$taskTests.Count;uniqueChecks=$taskUnique;failures=$taskFailures.Count;renderErrors=$taskErrors.Count
-    expectedCaptures=45;captures=$taskCaptures;missingCaptures=$taskMissing
+    expectedChecks=$taskExpectedChecks;actualChecks=$taskTests.Count;uniqueChecks=$taskUnique;failures=$taskFailures.Count;renderErrors=$taskErrors.Count
+    expectedCaptures=$taskExpectedCaptures;captures=$taskCaptures;missingCaptures=$taskMissing
     report=$taskReport;freshReport=$taskFreshReport;log=$taskLog;freshLog=$taskFreshLog;startupReady=$taskReady
     timeoutSeconds=$TimeoutSeconds;startupTimeoutSeconds=$StartupTimeoutSeconds;frameLimit=20;temperatureCutoffC=77
     maxTemperatureC=($taskSamples | Measure-Object -Property temperatureC -Maximum).Maximum;gpuTelemetry=$taskTelemetry
@@ -151,6 +162,6 @@ $taskRecord | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $taskReceipt -E
 if(!$taskPassed){
     $taskFailures | Select-Object case,value,pass | Format-Table -AutoSize | Out-String | Write-Output
     if($taskError){Write-Output $taskError}
-    throw ('Damage validation failed: '+$taskTests.Count+'/228 checks, '+$taskCaptures.Count+'/45 fresh captures; receipt '+$taskReceipt)
+    throw ('Damage validation failed: '+$taskTests.Count+'/'+$taskExpectedChecks+' checks, '+$taskCaptures.Count+'/'+$taskExpectedCaptures+' fresh captures; receipt '+$taskReceipt)
 }
-Write-Output ('PASS 228 native damage checks; 45 fresh captures; exit 0; user settings unchanged. Receipt: '+$taskReceipt)
+Write-Output ('PASS '+$taskExpectedChecks+' native damage checks; '+$taskExpectedCaptures+' fresh captures; exit 0; user settings unchanged. Receipt: '+$taskReceipt)

@@ -6,7 +6,6 @@ import path from 'node:path';
 import readline from 'node:readline';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
-import {tireDiameterInches} from './tire-size-geometry.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'SourceAssets','import.json'),'utf8'));
 const assets=new Map(manifest.assets.map(a=>[a.name,a]));
@@ -54,25 +53,23 @@ async function readTire(asset,radiusM){
 }
 const vehicles=[];
 for(const spec of manifest.vehicles){
- const stages=[];for(let stage=0;stage<=3;stage++){
-  const largerStock=spec.tireRadius*2/.0254>=50,assetName=spec.asset+(stage===0||largerStock?'_tire':'_tire_size'+stage+'_0');
-  const asset=assets.get(assetName);assert.ok(asset,'exported tire asset exists: '+assetName);
-  const radiusM=stage===0||largerStock?spec.tireRadius:tireDiameterInches(spec.tireRadius,stage)*.0127;
-  stages.push({stage,...await readTire(asset,radiusM)});
+ const base=assets.get(spec.asset+'_tire');
+ assert.ok(base,'exported stock tire exists: '+spec.asset);
+ const stock=await readTire(base,spec.tireRadius);
+ const stages=[{stage:0,...stock}];
+ for(const fit of spec.tireFits){
+  const assetName=spec.asset+'_tire_size'+fit.stage+'_0',asset=assets.get(assetName);
+  assert.ok(asset,'exported tire asset exists: '+assetName);
+  stages.push({stage:fit.stage,...await readTire(asset,fit.diameterInches*.0127)});
  }
- const compounds=[];
- for(let stage=1;stage<=3;stage++){
-  const assetName=spec.asset+'_tire_'+stage,asset=assets.get(assetName);
-  assert.ok(asset,'exported compound tire exists: '+assetName);
-  compounds.push({stage,...await readTire(asset,spec.tireRadius)});
- }
+ const compounds=[1,2,3].map(stage=>({stage,...stock}));
  vehicles.push({id:spec.id,stages,compounds});
  console.log(JSON.stringify({tireProbes:spec.id,stages:stages.map(s=>({stage:s.stage,points:s.pointsCm.length,maxAxialHalfWidthM:s.maxAxialHalfWidthM,maxRadialM:s.maxRadialM})),
   compounds:compounds.map(s=>({stage:s.stage,asset:s.asset,points:s.pointsCm.length}))}));
 }
-const data={version:2,coordinateSystem:'Unreal imported tire-local centimeters (OBJ X,-Y,Z)',
+const data={version:3,coordinateSystem:'Unreal imported tire-local centimeters (OBJ X,-Y,Z)',
  method:'Actual exported vertex witnesses: 7 support directions x 12 radial sectors plus 12 inner sidewall/bead samples, deduplicated; excludes radius <= 40 percent of physical tire radius',
  nativeAcceptance:false,vehicles};
 fs.writeFileSync(path.join(root,'Content','NativeData','vehicle-tire-probes.json'),JSON.stringify(data));
-console.log(JSON.stringify({vehicles:vehicles.length,stages:vehicles.length*4,compounds:vehicles.length*3,
+console.log(JSON.stringify({vehicles:vehicles.length,stages:vehicles.reduce((count,v)=>count+v.stages.length,0),compounds:vehicles.length*3,
  uniqueMeshes:cached.size,maxProbes:Math.max(...vehicles.flatMap(v=>[...v.stages,...v.compounds].map(s=>s.pointsCm.length)))}));

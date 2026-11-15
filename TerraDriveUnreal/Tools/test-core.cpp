@@ -229,6 +229,12 @@ int main(){
     check(lsd.Left>lsd.Right&&lsd.Left<=3*lsd.Right+.001f&&std::abs(lsd.Left+lsd.Right-2000)<.001f,"unlocked competition differentials bias torque within their three-to-one ratio");
     check(reverseLsd.Left==-lsd.Left&&reverseLsd.Right==-lsd.Right,"limited-slip bias remains symmetric in reverse");
     check(liftedLsd.Left+liftedLsd.Right<=120.001f,"unlocked limited slip does not behave as a hard locker with an airborne tire");
+    TerraSim::UpgradeSetup compounds;
+    for(int stage=0;stage<=3;++stage){
+        compounds.Stage[TerraSim::Tires]=stage;
+        auto tire=TerraSim::Tune(compounds,false,true);
+        check(tire.TireRadius==1&&tire.TireWidth>=1&&tire.Grip>=1,"compound changes leave the factory tire diameter unchanged");
+    }
     double legacy[]={3,2,1,0,2,1,3};TerraSim::UpgradeSetup migrated;
     check(TerraSim::DecodeUpgradeStages(legacy,7,1,true,migrated)&&migrated.Stage[TerraSim::Engine]==2&&migrated.Stage[TerraSim::Portals]==0,"v1 seven-category saves migrate with new hardware stock");
     check(TerraSim::DecodeUpgradeStages(legacy,7,2,false,migrated)&&migrated.Stage[TerraSim::Electrical]==0&&migrated.Stage[TerraSim::Drivetrain]==0,"v2 saves retain supported categories and zero missing hardware");
@@ -238,7 +244,7 @@ int main(){
         modern[7]=bad;const auto before=migrated;
         check(!TerraSim::DecodeUpgradeStages(modern,10,3,true,migrated)&&migrated.Stage[TerraSim::Portals]==before.Stage[TerraSim::Portals]&&migrated.Stage[TerraSim::Drivetrain]==before.Stage[TerraSim::Drivetrain],"malformed stage data is rejected without partial save mutation");
     }
-    check(!TerraSim::DecodeUpgradeStages(legacy,7,3,true,migrated)&&!TerraSim::DecodeUpgradeStages(legacy,7,10,true,migrated),"wrong stage count and unknown save versions are rejected");
+    check(!TerraSim::DecodeUpgradeStages(legacy,7,3,true,migrated)&&!TerraSim::DecodeUpgradeStages(legacy,7,11,true,migrated),"wrong stage count and unknown save versions are rejected");
     check(TerraSim::UpgradeStageCountForVersion(1)==7&&TerraSim::UpgradeStageCountForVersion(2)==7&&TerraSim::UpgradeStageCountForVersion(3)==10&&TerraSim::UpgradeStageCountForVersion(4)==12,"save version lengths remain explicit rather than inheriting the current part count");
     double electricBuild[]={0,1,2,3,0,1,2,1,2,3,3,2};
     check(TerraSim::DecodeUpgradeStages(electricBuild,12,4,true,migrated)&&migrated.Stage[TerraSim::EVSwap]==3&&migrated.Stage[TerraSim::TireAir]==2&&migrated.Stage[TerraSim::Portals]==3&&migrated.Stage[TerraSim::Engine]==1,"v4 saves retain conversion and tire air alongside every original hardware category");

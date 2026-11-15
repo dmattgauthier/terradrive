@@ -50,13 +50,19 @@ int main(){
     Check(!DecodeUpgradeStages(data,12,6,true,kept)&&!DecodeUpgradeStages(data,13,5,true,kept),"save length cannot silently expand historical versions");
     double sized[14]={};sized[13]=3;UpgradeSetup sizedBuild;
     Check(DecodeUpgradeStages(sized,14,9,true,sizedBuild)&&sizedBuild.Stage[TireSize]==3,"v9 persists the maximum tire kit");
-    for(int version:{0,8,10,999}){
+    for(int version:{0,8,11,999}){
         UpgradeSetup result=sizedBuild;
         Check(!DecodeUpgradeStages(sized,14,version,true,result)&&result.Stage[TireSize]==3,"invalid version or historical overlong row rejects atomically");
     }
     for(double invalid:{-1.,4.,.5,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}){
         sized[13]=invalid;UpgradeSetup result=sizedBuild;
         Check(!DecodeUpgradeStages(sized,14,9,true,result)&&result.Stage[TireSize]==3,"invalid diameter stage cannot partially replace a build");
+    }
+    sized[TireSize]=50;
+    Check(DecodeUpgradeStages(sized,14,GarageSaveVersion,true,sizedBuild)&&sizedBuild.Stage[TireSize]==50,"v10 preserves 50 inches in the size slot instead of a catalog index");
+    for(double invalid:{-1.,4.,24.,39.5,51.,std::numeric_limits<double>::infinity()}){
+        sized[TireSize]=invalid;
+        Check(!DecodeUpgradeStages(sized,14,GarageSaveVersion,true,sizedBuild)&&sizedBuild.Stage[TireSize]==50,"v10 rejects invalid actual diameters atomically");
     }
     FactoryDrivetrain factory;factory.FourDrive=true;factory.LowRatio=4;
     UpgradeSetup stock;auto caps=ResolveDriveCapabilities(stock,factory);

@@ -4,6 +4,8 @@
 class ATerraVehicle;
 class SWidgetSwitcher;
 class SScrollBox;
+class SButton;
+class SUniformGridPanel;
 
 class STerraGarage : public SCompoundWidget {
 public:
@@ -18,15 +20,22 @@ public:
   static TSharedRef<SWidget> EnergyControls(ATerraVehicle* Vehicle);
   TSharedPtr<SWidget> UpgradePartWidget(int Part) const { return UpgradeRows.IsValidIndex(Part)?UpgradeRows[Part]:nullptr; }
   TSharedPtr<SScrollBox> UpgradePartScrollBox() const { return UpgradeScroll; }
+  TSharedPtr<SButton> TireDiameterButton(int Stage) const { return DiameterButtons.IsValidIndex(Stage)?DiameterButtons[Stage]:nullptr; }
+  TSharedPtr<SButton> TireCompoundButton(int Stage) const { return CompoundButtons.IsValidIndex(Stage)?CompoundButtons[Stage]:nullptr; }
 private:
   TWeakObjectPtr<ATerraVehicle> Vehicle;
   TSharedPtr<SWidgetSwitcher> Pages;
   TSharedPtr<SScrollBox> UpgradeScroll;
   TArray<TSharedPtr<SWidget>> UpgradeRows;
+  TSharedPtr<SUniformGridPanel> DiameterOptions;
+  TArray<TSharedPtr<SButton>> DiameterButtons, CompoundButtons;
+  int TireOptionsVehicle=-1;
   int Page = 0;
   int PendingUpgradePart=-1,UpgradeScrollAttempts=0;
   TSharedRef<SWidget> VehiclePage();
   TSharedRef<SWidget> UpgradePage();
   TSharedRef<SWidget> UpgradeRow(int Part);
+  TSharedRef<SWidget> TireRow();
+  void RefreshTireOptions();
   TSharedRef<SWidget> Metric(const FString &Name, TAttribute<FText> Value);
 };

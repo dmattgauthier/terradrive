@@ -5,31 +5,38 @@
 namespace TerraSim {
 // The original seven indices are persistent save data; append new hardware.
 enum UpgradePart { Suspension, Engine, Tires, Wheels, Frame, Body, Electrical, Drivetrain, Differentials, Portals, EVSwap, TireAir, CenterDifferential, TireSize, PartCount };
+inline constexpr int GarageSaveVersion = 10;
+inline constexpr int MaxTireSizeStage = 26;
 struct UpgradeSetup {
     int Stage[PartCount] = {};
     void Sanitize(bool electrical) {
-        for (int &s : Stage) s = std::clamp(s, 0, 3);
+        for (int i=0; i<PartCount; ++i) Stage[i] = std::clamp(Stage[i], 0, i==TireSize ? MaxTireSizeStage : 3);
         if (!electrical) Stage[Electrical] = 0;
     }
 };
 inline int UpgradeStageCountForVersion(int version) {
-    return version==1||version==2?7:version==3?10:version==4||version==5?12:version>=6&&version<=8?13:version==9?14:0;
+    return version==1||version==2?7:version==3?10:version==4||version==5?12:version>=6&&version<=8?13:version==9||version==GarageSaveVersion?14:0;
 }
 inline bool DecodeUpgradeStages(const double* values,int count,int version,bool electrical,UpgradeSetup& result,bool factoryElectric=false) {
     if(!values||count!=UpgradeStageCountForVersion(version)||count==0)return false;
     UpgradeSetup decoded;
     for(int i=0;i<count;++i){
         const double value=values[i];
-        if(!std::isfinite(value)||value<0||value>3||std::floor(value)!=value)return false;
+        const bool diameter=version==GarageSaveVersion&&i==TireSize;
+        if(!std::isfinite(value)||value<0||std::floor(value)!=value||
+           (diameter?(value!=0&&(value<25||value>50)):value>3))return false;
         decoded.Stage[i]=int(value);
     }
     // v4 allowed replacing a factory EV's motors. Reset that obsolete choice;
     // never reinterpret the player's old electric conversion as a gasoline kit.
     if(version<=4&&factoryElectric)decoded.Stage[EVSwap]=0;
-    decoded.Sanitize(electrical);result=decoded;return true;
+    // The v10 size slot is inches on disk. Resolve it to a catalog stage
+    // before applying any runtime stage limits.
+    if(!electrical)decoded.Stage[Electrical]=0;
+    result=decoded;return true;
 }
-// Explicit diameter kits keep the bead/rim fixed and are independent of compound.
-inline float TireKitDiameterInches(float stock, int stage) {
+// v9 used three evenly spaced options between the factory diameter and 50 inches.
+inline float LegacyTireKitDiameterInches(float stock, int stage) {
     if(!std::isfinite(stock)||stock<=0)return 0;
     if(stock>=50||stage<=0)return stock;
     return std::min(50.f,std::ceil(stock+(50.f-stock)*std::clamp(stage,0,3)/3.f));
@@ -104,7 +111,7 @@ inline UpgradeTuning Tune(UpgradeSetup setup, bool electric, bool electricalAvai
     t.Damping=damping[s[Suspension]];
     t.Travel=.07f*s[Suspension];
     t.Lift=.035f*s[Suspension];
-    t.TireRadius=1+.04f*s[Tires];
+    // The diameter selector supplies the radius independently of compound.
     t.TireWidth=1+.07f*s[Tires];
     t.Grip=grip[s[Tires]]*(1+.025f*s[Wheels]);
     t.WheelInertia=inertia[s[Wheels]];

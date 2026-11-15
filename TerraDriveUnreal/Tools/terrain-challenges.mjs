@@ -47,17 +47,19 @@ export const terrainChallenges = [
   },
   {
     name:'Granite fault-line crawl', zone:2, x:236, y:-122, length:40, surface:4, paintRock:true,
-    hint:'Use 4WD low range. Set the axle lockers before the ledges and crawl as each diagonal pair unloads.',
+    hint:'Use 4WD low range. Lock both axles for the center notch, or follow the short blue stakes on the right-hand bench.',
     stations:[7,12,18,24,31,40],
+    shoulderStakes:[5,9,15,21,26],
     notes:[
-      'Select low range and set the axle lockers before the first ledge.',
-      'Crawl onto the first shelf with the wheels straight.',
+      'Shift into low range. Lock both axles for the center or take the short blue stakes on the right.',
+      'Crawl straight across the diagonal notch. On the bench, stay inside the short blue stakes.',
       'Feed in steady throttle as the high side switches.',
-      'Keep the nose square across the last offset shelf.',
+      'Hold your chosen line across the last offset shelf.',
       'Ease off as the front axle crests.',
       'Use light braking off the rock shoulder.'
     ],
-    relief:graniteFaultRelief
+    relief:graniteFaultRelief,
+    grit:graniteFaultGrit
   }
 ];
 
@@ -81,15 +83,39 @@ const graniteShelves=[
   [23.8,.47,1.18,1.10]
 ];
 
+function shelfBand(value,start,levelStart,levelEnd,end) {
+  return smooth((value-start)/(levelStart-start))*(1-smooth((value-levelEnd)/(end-levelEnd)));
+}
+
+function graniteFaultGrit(s,t) {
+  // Clay collects on the floors of the low pockets, away from the high
+  // bedrock corners and the blue-staked bench.
+  const front=shelfBand(s,11.15,12,14.6,15.6)*bump((t-.20-.09*Math.sin(s*1.7))/1.03);
+  const rear=shelfBand(s,8.1,9,11.3,12.3)*bump((t+1.15-.12*Math.sin(s*1.4))/1.22);
+  return Math.max(front,rear)>.31;
+}
+
 function graniteFaultRelief(s,t) {
-  const shoulder=1-smooth((Math.abs(t)-2.9)/4.1);
+  const shoulderStart=t>0?3.35:2.9;
+  const shoulder=1-smooth((Math.abs(t)-shoulderStart)/(7-shoulderStart));
+  const bench=smooth((t-.95)/.85);
   const lateralPhase=Math.tanh(t/.8);
   let relief=.47*smooth((s-2)/4.5);
   for(const [station,rise,offset,halfFace] of graniteShelves){
-    relief+=rise*smooth((s-station+offset*lateralPhase+halfFace)/(2*halfFace));
+    const run=halfFace+(2.75-halfFace)*bench;
+    relief+=rise*smooth((s-station+offset*lateralPhase+run)/(2*run));
     const lowSide=Math.max(0,-offset*lateralPhase);
-    relief-=.07*lowSide*bump((s-station)/1.42);
+    relief-=.07*lowSide*bump((s-station)/1.42)*(1-bench);
   }
+
+  // The floors are flat along the route for over two metres. A tire
+  // stays in the low corner between successive one-metre mesh vertices.
+  const frontPocket=shelfBand(s,11.18,12.15,14.30,16.25)*
+    smooth((t+.85)/.57)*(1-smooth((t-.72)/.82));
+  const rearPocket=shelfBand(s,8.16,9.14,11.29,13.20)*
+    smooth((-t-.16)/.45)*(1-smooth((-t-1.88)/.74));
+  const notchFloor=.22*shelfBand(s,8.40,10.28,13.20,15.20)*bump((t+.10)/1.37);
+  relief-=.36*(frontPocket+rearPocket)+notchFloor;
   const bedding=.04*Math.sin(s*1.1+t*.95)*bump((s-19)/12);
   return shoulder*(relief*(1-smooth((s-27)/15))+bedding);
 }
@@ -102,9 +128,15 @@ function onExposedRock(course,s,t) {
   return Math.abs(t-offset)<=rockWidth;
 }
 
+function exposedSurface(course,s,t) {
+  if(!onExposedRock(course,s,t))return null;
+  return course.grit?.(s,t)?2:course.surface;
+}
+
 export function terrainChallengeSurface(x,y,originalSurface) {
   for(const course of terrainChallenges){
-    if(onExposedRock(course,x-course.x,y-course.y))return course.surface;
+    const surface=exposedSurface(course,x-course.x,y-course.y);
+    if(surface!==null)return surface;
   }
   return originalSurface;
 }
@@ -137,8 +169,9 @@ export function addTerrainChallenges(world,field) {
         field.writeFloatLE(field.readFloatLE(at)+relief,at);
         changedCells++;
       }
-      if(onExposedRock(course,s,t)&&field[at+8]!==course.surface){
-        field[at+8]=course.surface;
+      const surface=exposedSurface(course,s,t);
+      if(surface!==null&&field[at+8]!==surface){
+        field[at+8]=surface;
         paintedCells++;
       }
     }
@@ -147,6 +180,10 @@ export function addTerrainChallenges(world,field) {
     for(const s of [0,...course.stations])for(const side of [-1,1]){
       const position=point(x+s,y+side*4);
       stakes.get(side).push({p:position,q:[0,0,0,1],s:[1,1,1],color:[1,1,1]});
+    }
+    for(const s of course.shoulderStakes??[]){
+      const position=point(x+s,y+3.5);
+      stakes.get(1).push({p:position,q:[0,0,0,1],s:[.70,.70,.58],color:[1,1,1]});
     }
     newRoutes.push({routeIndex:world.routes.length,surface:course.surface,changedCells,
       ...(course.paintRock?{paintRock:true,paintedCells}:{}),minX:x-5,maxX:x+length+5,minY:y-7,maxY:y+7});

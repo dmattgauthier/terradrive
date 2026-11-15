@@ -1,19 +1,28 @@
-param([string]$Executable='', [int]$TimeoutSeconds=1200, [switch]$GroundOnly, [switch]$LockersOnly, [switch]$BrakeOnly)
+param([string]$Executable='', [int]$TimeoutSeconds=1200, [switch]$GroundOnly, [switch]$LockersOnly, [switch]$BrakeOnly, [string]$OutputDirectory='')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 if (!$Executable) { $Executable=Join-Path $projectRoot 'Build\Windows\TerraDrive\Binaries\Win64\TerraDrive.exe' }
 if (!(Test-Path -LiteralPath $Executable)) { throw "Packaged executable missing: $Executable" }
 if(Get-Process -Name TerraDrive,UnrealEditor,UnrealEditor-Cmd -ErrorAction SilentlyContinue){throw 'Close game/editor before the isolated native check.'}
-$output=Join-Path $projectRoot 'Saved\Validation'
+$output=if($OutputDirectory){[IO.Path]::GetFullPath($OutputDirectory)}else{Join-Path $projectRoot 'Saved\Validation'}
+if($OutputDirectory -and (Test-Path -LiteralPath $output)){throw "Native validation output already exists: $output"}
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $report=Join-Path $output $(if($GroundOnly){'ground-contact.json'}elseif($LockersOnly){'lockers.json'}elseif($BrakeOnly){'braking.json'}else{'native-validation.json'})
 $log=Join-Path $output $(if($GroundOnly){'ground-contact.log'}elseif($LockersOnly){'lockers.log'}elseif($BrakeOnly){'braking.log'}else{'packaged-game.log'})
 $started=Get-Date
 $arguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1280','-ResY=720',
-    '-NoSound','-TerraValidate','-TerraCapture','-TerraTestFPS=20','-UseFixedTimeStep','-FPS=20',('-TerraReport="'+$report+'"'),
+    '-NoSound','-TerraValidate','-TerraCapture','-TerraTestFPS=20',
+    '-ini:Engine:[/Script/Engine.Engine]:bUseFixedFrameRate=True','-ini:Engine:[/Script/Engine.Engine]:FixedFrameRate=20.0',
+    ('-TerraReport="'+$report+'"'),
     ('-TerraGarage="'+(Join-Path $output 'validation-garage.json')+'"'),
     ('-TerraGraphics="'+(Join-Path $output 'validation-graphics.json')+'"'),
     ('-abslog="'+$log+'"'))
+if($OutputDirectory){
+    New-Item -ItemType Directory -Path (Join-Path $output 'Screenshots') | Out-Null
+    $arguments+=@(('-UserDir="'+(Join-Path $output 'User')+'"'),
+        ('-TerraControls="'+(Join-Path $output 'validation-controls.json')+'"'),
+        ('-TerraCaptureDir="'+(Join-Path $output 'Screenshots')+'"'))
+}
 if($GroundOnly){$arguments+=@('-TerraGroundOnly')}
 if($LockersOnly){$arguments+=@('-TerraLockersOnly')}
 if($BrakeOnly){$arguments+=@('-TerraBrakeOnly')}
@@ -57,7 +66,7 @@ $failed=@($result.tests | Where-Object { !$_.pass })
 $roster=Get-Content -LiteralPath (Join-Path $projectRoot 'Content/NativeData/vehicle-ground-probes.json') -Raw | ConvertFrom-Json
 $vehicleCount=@($roster.vehicles).Count
 # Per car:3 mesh,2 service-brake,5 garage,6 lamp and3 banked-ground checks.
-$minimumChecks=if($GroundOnly){1+3*$vehicleCount}elseif($LockersOnly){4}elseif($BrakeOnly){6+2*$vehicleCount}else{173+19*$vehicleCount}
+$minimumChecks=if($GroundOnly){1+3*$vehicleCount}elseif($LockersOnly){4}elseif($BrakeOnly){6+2*$vehicleCount}else{174+19*$vehicleCount}
 if(@($result.tests).Count -ne $minimumChecks){throw "Native check count changed; expected exactly $minimumChecks. Inspect $report"}
 if ($gameExit -ne 0 -or $failed.Count -gt 0 -or @($result.tests).Count -lt $minimumChecks) {
     $failed | Format-Table | Out-String | Write-Output

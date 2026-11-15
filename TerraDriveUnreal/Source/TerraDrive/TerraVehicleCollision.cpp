@@ -21,7 +21,10 @@ TArray<FCoachwork> LoadCoachwork(){
   TSharedPtr<FJsonObject> Root;const TArray<TSharedPtr<FJsonValue>>* Vehicles=nullptr;
   if(!FFileHelper::LoadFileToString(Json,*File)||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)||!Root.IsValid()||
       !Root->TryGetArrayField(TEXT("vehicles"),Vehicles)||Vehicles->Num()!=ATerraVehicle::VehicleCount)return Profiles;
-  for(const auto& Value:*Vehicles){
+  TArray<TSharedPtr<FJsonValue>> Entries=*Vehicles;
+  const TArray<TSharedPtr<FJsonValue>>* Variants=nullptr;
+  if(Root->TryGetArrayField(TEXT("variants"),Variants))Entries.Append(*Variants);
+  for(const auto& Value:Entries){
     const auto Item=Value->AsObject();FCoachwork P;const TArray<TSharedPtr<FJsonValue>>* Hulls=nullptr;
     if(!Item.IsValid()||!Item->TryGetStringField(TEXT("asset"),P.Asset)||!Item->TryGetStringField(TEXT("objSha256"),P.Hash)||P.Hash.Len()!=64||
         !Item->TryGetArrayField(TEXT("hulls"),Hulls)||Hulls->Num()!=12)return {};
@@ -39,7 +42,10 @@ TMap<FString,FString> LoadMeshHashes(){
   TMap<FString,FString> Result;FString Json;TSharedPtr<FJsonObject> Root;const TArray<TSharedPtr<FJsonValue>>* Vehicles=nullptr;
   if(!FFileHelper::LoadFileToString(Json,*(FPaths::ProjectContentDir()/TEXT("NativeData/vehicle-ground-probes.json")))||
       !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json),Root)||!Root.IsValid()||!Root->TryGetArrayField(TEXT("vehicles"),Vehicles))return Result;
-  for(const auto& Value:*Vehicles){const auto V=Value->AsObject();FString Asset,Hash;if(V.IsValid()&&V->TryGetStringField(TEXT("asset"),Asset)&&V->TryGetStringField(TEXT("objSha256"),Hash))Result.Add(Asset,Hash);}
+  TArray<TSharedPtr<FJsonValue>> Entries=*Vehicles;
+  const TArray<TSharedPtr<FJsonValue>>* Variants=nullptr;
+  if(Root->TryGetArrayField(TEXT("variants"),Variants))Entries.Append(*Variants);
+  for(const auto& Value:Entries){const auto V=Value->AsObject();FString Asset,Hash;if(V.IsValid()&&V->TryGetStringField(TEXT("asset"),Asset)&&V->TryGetStringField(TEXT("objSha256"),Hash))Result.Add(Asset,Hash);}
   return Result;
 }
 }

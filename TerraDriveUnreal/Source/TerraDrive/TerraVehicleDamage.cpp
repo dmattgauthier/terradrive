@@ -86,6 +86,7 @@ bool ATerraVehicle::PrepareDamageMesh(){
 
 void ATerraVehicle::RepairDamage(){
   StructuralDamage=TerraSim::DamageState();Damage=0;DamageEventCount=DeformedVertexCount=0;MaximumDentCM=0;
+  PanelImpacts.Empty();
   DamageVisualCache.Reset();
   if(DamageBody){DamageBody->ClearAllMeshSections();DamageBody->SetVisibility(false);}
   if(DamageScars){DamageScars->ClearAllMeshSections();DamageScars->SetVisibility(false);}
@@ -120,16 +121,40 @@ void ATerraVehicle::RegisterDamageImpact(FVector Impulse,const FHitResult& Hit,b
   auto Candidate=StructuralDamage;const auto R=TerraSim::AccumulateDamage(Candidate,I);if(!R.Accepted)return;
   const double DamageStarted=FPlatformTime::Seconds();
   if(!PrepareDamageMesh())return;
-  const bool FirstDent=DamageBody->GetNumSections()==0;
   StructuralDamage=Candidate;Damage=TerraSim::DamageAmount(StructuralDamage);DamageEventCount=StructuralDamage.Events;
+  const FPanelImpact Impact{Local,Transform.InverseTransformVectorNoScale(Hit.ImpactNormal),R};
+  PanelImpacts.Add(Impact);
+  const int Changed=ApplyPanelImpact(Impact);
+  UE_LOG(LogTemp,Display,TEXT("TERRA_DAMAGE_IMPACT vehicle=%d ground=%d zone=%d deltaV=%.3f severity=%.3f events=%d changed=%d totalVertices=%d maxDentCM=%.3f health=%.3f cpuMs=%.3f"),
+    VehicleIndex,Ground,int(I.Zone),I.DeltaV,R.Severity,DamageEventCount,Changed,DeformedVertexCount,MaximumDentCM,1-Damage,(FPlatformTime::Seconds()-DamageStarted)*1000);
+}
+
+void ATerraVehicle::RebuildDamageVisuals(){
+  DamageVisualCache.Reset();
+  if(DamageBody){DamageBody->ClearAllMeshSections();DamageBody->SetVisibility(false);}
+  if(DamageScars){DamageScars->ClearAllMeshSections();DamageScars->SetVisibility(false);}
+  Body->SetVisibility(true,false);
+  DeformedVertexCount=0;MaximumDentCM=0;
+  if(!PanelImpacts.IsEmpty()&&PrepareDamageMesh()){
+    // Preserve the ordered deformation history, then upload the completed body once.
+    const int Last=PanelImpacts.Num()-1;
+    for(int I=0;I<Last;++I)ApplyPanelImpact(PanelImpacts[I],false);
+    ApplyPanelImpact(PanelImpacts[Last]);
+  }
+}
+
+int ATerraVehicle::ApplyPanelImpact(const FPanelImpact& Impact,bool UploadBody){
+  const FVector Local=Impact.Point;
+  const auto& R=Impact.Shape;
+  const bool FirstDent=UploadBody&&DamageBody->GetNumSections()==0;
   // A later dent can move a previously scratched panel. Remove only scars
   // intersecting that region, then create a new surface-projected replacement.
   for(int Scar=0;Scar<16;++Scar)if(DamageVisualCache->ScarRadii[Scar]>0&&
       FVector::Dist(DamageVisualCache->ScarCenters[Scar],Local)<R.RadiusCM+DamageVisualCache->ScarRadii[Scar]){
     DamageScars->ClearMeshSection(Scar);DamageVisualCache->ScarRadii[Scar]=0;
   }
-  FVector Inward=Transform.InverseTransformVectorNoScale(Hit.ImpactNormal).GetSafeNormal();
-  const FVector ToCenter=(Bounds.Origin-Local).GetSafeNormal();
+  FVector Inward=Impact.Normal.GetSafeNormal();
+  const FVector ToCenter=(Body->GetStaticMesh()->GetBounds().Origin-Local).GetSafeNormal();
   if(Inward.IsNearlyZero()||FVector::DotProduct(Inward,ToCenter)<.1f)Inward=ToCenter;
   int NearestSection=-1,NearestVertex=-1;float NearestDistance=FLT_MAX;int Changed=0;
   for(int Section=0;Section<DamageVisualCache->Sections.Num();++Section){
@@ -161,14 +186,16 @@ void ATerraVehicle::RegisterDamageImpact(FVector Impulse,const FHitResult& Hit,b
     // On the first impact upload the already deformed geometry once, rather
     // than creating a pristine copy and immediately uploading changed sections.
     if(FirstDent)DamageBody->CreateMeshSection(Section,S.Positions,S.Triangles,S.Normals,S.UV,TArray<FColor>(),S.Tangents,false);
-    else if(ChangedSection)DamageBody->UpdateMeshSection(Section,S.Positions,S.Normals,S.UV,TArray<FColor>(),S.Tangents);
+    else if(UploadBody&&ChangedSection)DamageBody->UpdateMeshSection(Section,S.Positions,S.Normals,S.UV,TArray<FColor>(),S.Tangents);
     if(ChangedSection){
       if(Cast<UMaterialInstanceDynamic>(DamageBody->GetMaterial(Section)))S.LampDamage=FMath::Max(S.LampDamage,R.Severity);
     }
   }
-  DeformedVertexCount=0;
-  for(const auto& S:DamageVisualCache->Sections)for(int IVertex=0;IVertex<S.Positions.Num();++IVertex)
-    if(!S.Positions[IVertex].Equals(S.Original[IVertex],.05f))++DeformedVertexCount;
+  if(UploadBody){
+    DeformedVertexCount=0;
+    for(const auto& S:DamageVisualCache->Sections)for(int IVertex=0;IVertex<S.Positions.Num();++IVertex)
+      if(!S.Positions[IVertex].Equals(S.Original[IVertex],.05f))++DeformedVertexCount;
+  }
   // Small, bounded surface scars supplement the actual dents. Glass gets a
   // fractured star; painted surfaces get short scrape strokes. No particles or
   // detached rigid bodies are spawned and collision hulls stay stable.
@@ -199,9 +226,8 @@ void ATerraVehicle::RegisterDamageImpact(FVector Impulse,const FHitResult& Hit,b
     DamageScars->CreateMeshSection(Scar,P,T,Normals,UV,TArray<FColor>(),TArray<FProcMeshTangent>(),false);
     DamageScars->SetMaterial(Scar,LoadObject<UMaterialInterface>(nullptr,S.Glass?TEXT("/Game/Materials/Native_Chrome"):TEXT("/Game/Materials/Native_RunningGearRubber")));
   }
-  UpdateDamageVisuals();
-  UE_LOG(LogTemp,Display,TEXT("TERRA_DAMAGE_IMPACT vehicle=%d ground=%d zone=%d deltaV=%.3f severity=%.3f events=%d changed=%d totalVertices=%d maxDentCM=%.3f health=%.3f cpuMs=%.3f"),
-    VehicleIndex,Ground,int(I.Zone),I.DeltaV,R.Severity,DamageEventCount,Changed,DeformedVertexCount,MaximumDentCM,1-Damage,(FPlatformTime::Seconds()-DamageStarted)*1000);
+  if(UploadBody)UpdateDamageVisuals();
+  return Changed;
 }
 void ATerraVehicle::UpdateDamageVisuals(){
   if(!DamageEnabled||!DamageVisualCache.IsValid())return;
