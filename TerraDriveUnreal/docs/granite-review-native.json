@@ -1,0 +1,115 @@
+{
+  "engine": "5.8.3",
+  "testedSourceCommit": "fba68aa7529f0d6fe5fb4fed2d246bbd83ef6171",
+  "scope": "Windows Development package. Rendered fixtures ran offscreen at a fixed 20 Hz with isolated settings and a 77 C GPU cutoff. The fitment matrix used fixed 20 Hz NullRHI. These runs establish functional behavior.",
+  "migration": {
+    "method": "Copied a completed local import and restored the base importer's rigid finishes on its tire slots. Ran Tools/build-native.ps1 -Package against that copy.",
+    "legacyMaterialRecipeCommit": "4512271cd6a3ebd8c8bd1047238a1c091b357fde",
+    "legacyMeshes": 79,
+    "legacySlots": 202,
+    "materialInstances": 27,
+    "reboundMeshes": 79,
+    "importReceiptSha256BeforeAndAfter": "0b95024337b06d85e1dcc0a64a38afc0942b8aa1609bdae2b4701e1fa4ae2a92",
+    "sourceExportSha256": "565dc53b58d93e6cfbb0deb9fabd69b7369d02f1e7d504b5eec81d2dbaaa3bf6",
+    "tireCarcassRecipeSha256": "9eea4cd9aa89f9f9bb21c8f69ab5be67d13ecce8fa855ed41455656377619a20",
+    "cookedTreeSha256": "d24edfb22838bba50d9f2301c115892b148575a8bbf72ac1028f385eeb985d13",
+    "packagingReceiptChecks": 3
+  },
+  "windowsExecutableSha256": "fae43633db47db8c2f4eed7fb88d9a98eee3c1da08cc0ce70563a1702bff20f7",
+  "stagedContent": [
+    {
+      "path": "TerraDrive/Content/Paks/global.ucas",
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/global.utoc",
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "sha256": "89b2b7f4abb7e5cc27132163144e60c41caec9c5fec1487a81c98f67f8bf7eb3"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "sha256": "6102f9a1a3907da04ed96cbeb90f3d731d70c59a1df20d0da797606bbaf0549c"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "sha256": "8d3d47955e63d95dc2b12aabb41d0687d4cb413ee3545df4efd0939d89b7dbd8"
+    }
+  ],
+  "symmetricIncline": {
+    "radiusCM": 63.5,
+    "treadWidthCM": 40,
+    "riseOverRun": 0.5,
+    "expectedTravelCM": 29.00484,
+    "centerToleranceCM": 0.001,
+    "method": "The center and longitudinal tangent matched in both triangle traversal orders. Adding a lateral slope retained the loaded shoulder. The centered-contact check failed on the prior helper.",
+    "portableCoreChecks": 745,
+    "portableExecutableSha256": "0694759c1d650ce32e7ca4c62f77901e8bd8e6c30f961e3d491d48a34c498949"
+  },
+  "targetedHummer": {
+    "command": "Tools/verify-fidelity.ps1 -Mode GraniteFit -GraniteRender -GraniteVehicle 4 -GraniteStage 6 -GranitePSI 16",
+    "diameterInches": 50,
+    "measuredPSI": 16,
+    "gates": 2,
+    "progressCM": 1330.1184,
+    "sampledMinimumTreadClearanceCM": 0.2086,
+    "png": "granite-fit-v4-stage6-on-ledge.png",
+    "width": 1600,
+    "height": 900,
+    "pngSha256": "e658b748b7699de3970c97ccd13d0f35a39774fcfc6ff1611d96a423acba5794",
+    "checks": 6,
+    "peakTemperatureC": 50.86
+  },
+  "regressionRuns": [
+    {
+      "name": "hummer-ledge-locks",
+      "checks": 4,
+      "captures": 2,
+      "peakTemperatureC": 49.97
+    },
+    {
+      "name": "hummer-rollover",
+      "checks": 100,
+      "captures": 13,
+      "peakTemperatureC": 52.12
+    },
+    {
+      "name": "native-ruts",
+      "checks": 117,
+      "captures": 16,
+      "peakTemperatureC": 54.48
+    },
+    {
+      "name": "carcass",
+      "checks": 19,
+      "captures": 8,
+      "peakTemperatureC": 55.05
+    },
+    {
+      "name": "granite-air-down-matrix",
+      "checks": 201,
+      "captures": 0,
+      "peakTemperatureC": 48.97,
+      "fitments": 40,
+      "bodyWitnessesSha256": "9055f814f108443002aa4018e0c2a4235e243b1a77d1659ef491edfaaa9929fd"
+    }
+  ],
+  "retainedFailures": [
+    {
+      "run": "Original PR head, targeted Hummer render",
+      "sourceCommit": "7aee80244a7d226d0e4c823f679c9ef97c1084ba",
+      "windowsExecutableSha256": "31de40d093469bfd9740919a8a2cbba52aa8cb47803948b6b44e95e3be4ff468",
+      "observation": "Six passing in-game checks and zero screenshots. The verifier rejected the missing PNG."
+    },
+    {
+      "run": "First fixed-package targeted Hummer render",
+      "observation": "Six passing in-game checks and a PNG with the same SHA-256 as the successful retry. The verifier timed out while waiting for engine shutdown."
+    },
+    {
+      "run": "First fixed-package 16 PSI fitment matrix",
+      "observation": "The cached Grave Digger coachwork sample hash differed from the cooked body hash, so the fixture could not evaluate two checks. The rerun used samples baked from the verified source export."
+    }
+  ]
+}
