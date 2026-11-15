@@ -1,0 +1,89 @@
+{
+  "engine": "5.8.3",
+  "windowsExecutableSha256": "f5659ddced5c4960ab8a5b02641f6b520658b4725e665f2a919ae73efe643484",
+  "sourceExportSha256": "5489115316d12e957824a8ffea5a7c6185792acd558c2472f46cba7c80b401a1",
+  "vehicleCollisionSha256": "444917f1f2ec34c43f7099912297ac0475e9b19bccaafa2122faa2e62ae7b0bc",
+  "cookedTreeSha256": "96a827526e3bd83f6389be73a6095b14eb60e7e3832bb7a8d9eb37b0745f9c0a",
+  "stagedContent": [
+    {
+      "path": "TerraDrive/Content/Paks/global.ucas",
+      "sha256": "ccf8a0ba03d85e28895f62a1edf6735ce093451947b64ff50a49618556e55bae"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/global.utoc",
+      "sha256": "e28c0abdf6327c865222813ce27817110cc3eb89b0f72c9a12324c160626081b"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.pak",
+      "sha256": "16c374804d2a522bc49c20651967edcae4750ec050c4c651e194a382143c29db"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.ucas",
+      "sha256": "f79d83bacd1e7eb804de80faaf856bfd80eaf7f90b76e3039221676cabf15bda"
+    },
+    {
+      "path": "TerraDrive/Content/Paks/TerraDrive-Windows.utoc",
+      "sha256": "5b25555037f4e0f9302a7bf5d2f2059b3da054ac6a512ec12aac7567b207bc54"
+    }
+  ],
+  "validationNote": "Expanded and Ruts ran on the previous executable built from identical gameplay code and byte-identical staged content. The final executable adds localized Granite timing to the validation fixture and repeats the four drive trials.",
+  "nativeRuns": [
+    {
+      "mode": "RockCrawl",
+      "checks": 22,
+      "captures": 6,
+      "executableSha256": "f5659ddced5c4960ab8a5b02641f6b520658b4725e665f2a919ae73efe643484",
+      "peakTemperatureC": 56.63
+    },
+    {
+      "mode": "Expanded",
+      "checks": 286,
+      "captures": 29,
+      "executableSha256": "5c0593e09ec2a1d73dbea6aa3e448d7e70bde932c150d9d7a9a67f2aeb9b08d3",
+      "peakTemperatureC": 60.53
+    },
+    {
+      "mode": "Ruts",
+      "checks": 117,
+      "captures": 16,
+      "executableSha256": "5c0593e09ec2a1d73dbea6aa3e448d7e70bde932c150d9d7a9a67f2aeb9b08d3",
+      "peakTemperatureC": 57.52
+    }
+  ],
+  "stockWranglerTrials": [
+    {
+      "mode": "4H open",
+      "gates": 0,
+      "progressFeet": 2.86,
+      "elapsedSeconds": 58.049,
+      "notchSeconds": 0.0
+    },
+    {
+      "mode": "4L open",
+      "gates": 3,
+      "progressFeet": 63.87,
+      "elapsedSeconds": 58.049,
+      "notchSeconds": 43.799
+    },
+    {
+      "mode": "4L locked center",
+      "gates": 6,
+      "progressFeet": 131.5,
+      "elapsedSeconds": 32.2,
+      "notchSeconds": 2.8
+    },
+    {
+      "mode": "4L open right bench",
+      "gates": 6,
+      "progressFeet": 131.57,
+      "elapsedSeconds": 32.0,
+      "notchSeconds": 2.05
+    }
+  ],
+  "sourceTireFitChecks": 582,
+  "portableChecks": {
+    "simulationCore": 730,
+    "centerDifferential": 315,
+    "energy": 31
+  }
+}

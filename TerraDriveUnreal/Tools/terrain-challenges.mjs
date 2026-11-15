@@ -58,7 +58,8 @@ export const terrainChallenges = [
       'Ease off as the front axle crests.',
       'Use light braking off the rock shoulder.'
     ],
-    relief:graniteFaultRelief
+    relief:graniteFaultRelief,
+    grit:graniteFaultGrit
   }
 ];
 
@@ -82,6 +83,18 @@ const graniteShelves=[
   [23.8,.47,1.18,1.10]
 ];
 
+function shelfBand(value,start,levelStart,levelEnd,end) {
+  return smooth((value-start)/(levelStart-start))*(1-smooth((value-levelEnd)/(end-levelEnd)));
+}
+
+function graniteFaultGrit(s,t) {
+  // Clay collects on the floors of the low pockets, away from the high
+  // bedrock corners and the blue-staked bench.
+  const front=shelfBand(s,11.15,12,14.6,15.6)*bump((t-.20-.09*Math.sin(s*1.7))/1.03);
+  const rear=shelfBand(s,8.1,9,11.3,12.3)*bump((t+1.15-.12*Math.sin(s*1.4))/1.22);
+  return Math.max(front,rear)>.31;
+}
+
 function graniteFaultRelief(s,t) {
   const shoulderStart=t>0?3.35:2.9;
   const shoulder=1-smooth((Math.abs(t)-shoulderStart)/(7-shoulderStart));
@@ -95,13 +108,14 @@ function graniteFaultRelief(s,t) {
     relief-=.07*lowSide*bump((s-station)/1.42)*(1-bench);
   }
 
-  // Opposing pockets about one Wrangler wheelbase apart deepen the two
-  // low corners of the first ledge. Ease their uphill ends into the rock.
-  const front=s-13.0,rear=s-9.95;
-  const frontPocket=bump(front/(front<0?1.82:2.8))*smooth((t+.43)/.42)*(1-smooth((t-.83)/.69));
-  const rearPocket=bump(rear/(rear<0?1.82:2.5))*smooth((-t-.30)/.55)*(1-smooth((-t-1.51)/.82));
-  const notchFloor=.15*bump((s-11.4)/2.6)*bump((t+.13)/1.27);
-  relief-=.43*(frontPocket+rearPocket)+notchFloor;
+  // The floors are flat along the route for over two metres. A tire
+  // stays in the low corner between successive one-metre mesh vertices.
+  const frontPocket=shelfBand(s,11.18,12.15,14.30,16.25)*
+    smooth((t+.85)/.57)*(1-smooth((t-.72)/.82));
+  const rearPocket=shelfBand(s,8.16,9.14,11.29,13.20)*
+    smooth((-t-.16)/.45)*(1-smooth((-t-1.88)/.74));
+  const notchFloor=.22*shelfBand(s,8.40,10.28,13.20,15.20)*bump((t+.10)/1.37);
+  relief-=.36*(frontPocket+rearPocket)+notchFloor;
   const bedding=.04*Math.sin(s*1.1+t*.95)*bump((s-19)/12);
   return shoulder*(relief*(1-smooth((s-27)/15))+bedding);
 }
@@ -114,9 +128,15 @@ function onExposedRock(course,s,t) {
   return Math.abs(t-offset)<=rockWidth;
 }
 
+function exposedSurface(course,s,t) {
+  if(!onExposedRock(course,s,t))return null;
+  return course.grit?.(s,t)?2:course.surface;
+}
+
 export function terrainChallengeSurface(x,y,originalSurface) {
   for(const course of terrainChallenges){
-    if(onExposedRock(course,x-course.x,y-course.y))return course.surface;
+    const surface=exposedSurface(course,x-course.x,y-course.y);
+    if(surface!==null)return surface;
   }
   return originalSurface;
 }
@@ -149,8 +169,9 @@ export function addTerrainChallenges(world,field) {
         field.writeFloatLE(field.readFloatLE(at)+relief,at);
         changedCells++;
       }
-      if(onExposedRock(course,s,t)&&field[at+8]!==course.surface){
-        field[at+8]=course.surface;
+      const surface=exposedSurface(course,s,t);
+      if(surface!==null&&field[at+8]!==surface){
+        field[at+8]=surface;
         paintedCells++;
       }
     }

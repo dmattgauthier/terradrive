@@ -99,12 +99,12 @@ for(const course of data.terrainChallenges){
  const [startX,startY]=route.spawn.map(v=>v/100),finishX=route.gates.at(-1)[0]/100;
  for(let x=startX;x<=finishX;x++)for(let y=startY-2;y<=startY+2;y+=.5){
   const at=16+(Math.round((x+400)*2)*1601+Math.round((y+400)*2))*9;
-  assert.equal(b[at+8],course.surface,route.name+' surface across the tire lanes');
+  assert.equal(b[at+8],terrainChallengeSurface(x,y,course.surface),route.name+' surface across the tire lanes');
   assert.ok(b.readFloatLE(at+4)<.02,route.name+' dry lane');
  }
  for(const [x,y,z] of [route.spawn,...route.gates]){
   const at=16+(Math.round((x/100+400)*2)*1601+Math.round((y/100+400)*2))*9;
-  assert.equal(b[at+8],course.surface,route.name+' native surface');
+  assert.equal(b[at+8],terrainChallengeSurface(x/100,y/100,course.surface),route.name+' native surface');
   assert.ok(Math.abs(b.readFloatLE(at)*100-z)<.51,route.name+' marker height');
  }
  for(let x=course.minX;x<=course.maxX;x+=.5)for(let y=course.minY;y<=course.maxY;y+=.5){
@@ -124,12 +124,10 @@ assert.ok(fault.paintRock&&fault.paintedCells>1000,'exposed bedrock is present i
 assert.ok(faultHeight(30)-faultHeight(0)>6,'fault-line climb rises over six metres');
 const apronGrade=(faultHeight(6)-faultHeight(2))/4;
 assert.ok(apronGrade>.14&&apronGrade<.24,'moderate lead-in before the shelves');
-for(const s of [10,17,20.5,24]){
+for(const s of [10,13.5,17,20.5,24]){
  const grade=faultHeight(s+.5)-faultHeight(s-.5);
  assert.ok(grade>.37&&grade<.62,'ledge has a steep but continuous face');
 }
-const notchGrade=faultHeight(14)-faultHeight(13);
-assert.ok(notchGrade>.60&&notchGrade<.73,'diagonal notch has a steep exit face');
 for(const [s,side] of [[12,-1],[15,1],[18.5,-1],[22,1]]){
  const front=faultHeight(s+1.5,1)-faultHeight(s+1.5,-1);
  const rear=faultHeight(s-1.5,1)-faultHeight(s-1.5,-1);
@@ -144,9 +142,12 @@ function faultMeshHeight(x,y){
 const stockRubicon=data.vehicles[0],halfBase=stockRubicon.wheelbase/2,halfTrack=stockRubicon.track/2;
 const stockAxleStep=(s,t)=>faultMeshHeight(s,t+halfTrack)-faultMeshHeight(s,t-halfTrack);
 const notchTwist=(s,t)=>stockAxleStep(s+halfBase,t)-stockAxleStep(s-halfBase,t);
-for(const s of [11.25,11.5,11.75])for(const t of [-.55,-.25,0]){
- assert.ok(notchTwist(s,t)<-1.27,'the center notch sustains opposing low corners');
+for(let s=11;s<=12.5;s+=.25)for(const t of [-.55,-.25,0]){
+ assert.ok(notchTwist(s,t)<-1.08,'the center notch sustains opposing low corners');
 }
+for(let s=9;s<=11.5;s+=.5)assert.equal(b[faultSample(s,-1)+8],2,'rear low corner has continuous clay');
+for(let s=12;s<=15;s+=.5)assert.equal(b[faultSample(s,.5)+8],2,'front low corner has continuous clay');
+for(const [s,t] of [[10,.5],[13,-1]])assert.equal(b[faultSample(s,t)+8],4,'high corner retains its bedrock grip');
 const benchCenter=2.15;
 for(let s=5;s<=26;s+=.25){
  assert.ok(Math.abs(notchTwist(s,benchCenter))<.46,'right bench maintains paired wheel support');

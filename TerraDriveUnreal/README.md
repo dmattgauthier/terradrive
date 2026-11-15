@@ -1,7 +1,7 @@
 # Terra Drive native port
 
 **Granite fault-line crawl** is a six-gate rock ascent under **Esc → Challenges**.
-The deeper diagonal notch can unload one wheel on each axle. Engage both axle
+The diagonal notch has two clay-lined low corners and can unload one wheel on each axle. Engage both axle
 lockers before taking the center line, or follow the blue stakes along the
 right-hand bench in low range.
 
@@ -12,6 +12,9 @@ grip at the selected diameter. Large kits use reshaped wheel wells and limits
 on upward travel or steering to retain clearance. Older saved kits move to the
 nearest supported size at or below the saved diameter, with the required
 suspension fitted when an explicit kit was already saved.
+
+The [native validation record](docs/granite-tire-fit-native.json) identifies the
+tested Windows build and records the drive times, garage checks and rut checks.
 
 Open **Esc → Challenges** on the trail to choose a route. The three newest
 terrain courses are Pine Ridge cross-axle crawl, Copper Dunes crest run and

@@ -259,32 +259,26 @@ void CheckTireFitments(ATerraVehicle* V,const FJsonObject& Spec,
   Check(TEXT("all selectable compounds affect grip without changing tire diameter or tire mesh"),IndependentCompound,Largest);
   Check(TEXT("ride height only rises by the added tire radius and selected suspension lift"),Stance,WorstRiseError*100);
 }
-bool ClickTireGarage(ATerraVehicle* V,const TSharedPtr<STerraGarage>& Garage){
+bool BeginTireGarage(ATerraVehicle* V,const TSharedPtr<STerraGarage>& Garage){
   if(!Garage.IsValid()||Garage->UpgradePartWidget(TerraSim::TireSize)!=Garage->UpgradePartWidget(TerraSim::Tires))return false;
   const int Largest=V->UpgradeMaxStage(TerraSim::TireSize);
   for(int Stage=0;Stage<=Largest;++Stage)if(!Garage->TireDiameterButton(Stage).IsValid())return false;
   for(int Stage=0;Stage<=V->UpgradeMaxStage(TerraSim::Tires);++Stage)if(!Garage->TireCompoundButton(Stage).IsValid())return false;
-  const auto Stock=Garage->TireDiameterButton(0),Diameter=Garage->TireDiameterButton(Largest);
-  const auto Compound=Garage->TireCompoundButton(1);
-  if(!Stock->IsEnabled()||!Compound->IsEnabled())return false;
+  const auto Stock=Garage->TireDiameterButton(0);
+  if(!Stock->IsEnabled()||!Garage->TireCompoundButton(1)->IsEnabled())return false;
   Stock->SimulateClick();
   V->SetUpgrade(TerraSim::Suspension,0,false);
-  bool Valid=V->UpgradeStage(TerraSim::TireSize)==0&&V->UpgradeStage(TerraSim::Suspension)==0;
-  if(Largest>0){
-    Valid&=!Diameter->IsEnabled();
-    V->SetUpgrade(TerraSim::Suspension,V->RequiredTireSuspensionStage(Largest),false);
-    Valid&=Diameter->IsEnabled();
-    Diameter->SimulateClick();
-  }
-  Compound->SimulateClick();
-  return Valid&&V->UpgradeStage(TerraSim::TireSize)==Largest&&V->UpgradeStage(TerraSim::Tires)==1;
+  return V->UpgradeStage(TerraSim::TireSize)==0&&V->UpgradeStage(TerraSim::Suspension)==0;
 }
 }
 bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
-  static int Model=0,Phase=0;static float Time=0,Travel=0;static FVector Start,Previous,BeforeRecovery;static int Gate=0,Route=0;static float Energy=0,Damage=0;
+  static int Model=0,Phase=0;static float Time=0,Travel=0;static FVector Previous,BeforeRecovery;static int Gate=0,Route=0;static float Energy=0,Damage=0;
   static TWeakObjectPtr<ACameraActor> GraniteCamera;static int GraniteView=0;
   static FVector GraniteOutside,GraniteInside;static bool GraniteSamplesValid=false;
   static int DiameterStages[ATerraVehicle::VehicleCount],DiameterInches[ATerraVehicle::VehicleCount];
+  static bool GarageValid=false,MotionFinite=true;
+  static float RollingDistance[ATerraVehicle::MaxWheels],PatchDistance[ATerraVehicle::MaxWheels];
+  static int MotionFrames[ATerraVehicle::MaxWheels];
   Time+=Dt;if(Phase==3){V->TestThrottle=FMath::Abs(V->Speed)<2.2f?.30f:0.f;V->TestBrake=FMath::Abs(V->Speed)>2.5f?.20f:0.f;Travel+=FVector::Dist2D(V->GetActorLocation(),Previous);Previous=V->GetActorLocation();}
   auto Next=[&](int P){Phase=P;Time=0;};
   const FString Prefix=FString::Printf(TEXT("expanded vehicle %d "),Model);
@@ -381,14 +375,54 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   }else if(Phase==13&&Time>.35f){
     // Screenshot requests execute after tick; retain the tested near camera
     // until its frame is captured before starting the separate driving trial.
-    V->SetNearCamera(false);Start=Previous=V->GetActorLocation();Travel=0;V->TestBrake=0;V->TestThrottle=.55f;V->TestSteer=1;Next(3);
+    // Leave the road spawn and its nearby props before the steering test.
+    V->SetNearCamera(false);
+    FVector Road=V->Terrain->Spawns[1]+FVector(3000,0,0);
+    Road.Z=V->Terrain->Height(Road.X,Road.Y)+V->ExpectedRideHeight()*100+5;
+    V->SetActorLocationAndRotation(Road,FRotator::ZeroRotator,false,nullptr,ETeleportType::TeleportPhysics);
+    V->Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);
+    V->Chassis->SetPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+    Next(17);
+  }else if(Phase==17&&Time>.6f){
+    Previous=V->GetActorLocation();Travel=0;V->TestBrake=0;V->TestThrottle=.55f;V->TestSteer=1;Next(3);
   }else if(Phase==3&&Time>4){
     Test(TEXT("largest-tire vehicle accelerates forward"),Travel>180,Travel);
-    float RollingSpeed=0,PatchSpeed=0;for(int I=0;I<V->WheelCount();++I){RollingSpeed+=FMath::Abs(V->WheelState[I].Omega)*V->TireDiameter()*.0254f*.5f;PatchSpeed+=FMath::Abs(V->WheelState[I].LongSpeed);}
-    Test(TEXT("moving tire spin follows travel"),FMath::IsFinite(RollingSpeed)&&PatchSpeed>.1f&&RollingSpeed>PatchSpeed*.25f&&RollingSpeed<PatchSpeed*4,RollingSpeed/FMath::Max(.01f,PatchSpeed));
     if(Model==10){const float ShaftError=FMath::Abs((V->WheelState[0].Omega+V->WheelState[1].Omega-V->WheelState[2].Omega-V->WheelState[3].Omega)*.5f);
       Test(TEXT("fixed transfer constrains real front and rear shaft speeds while turning"),V->HasRigidTransfer()&&ShaftError<.01f,ShaftError);}
-    V->TestThrottle=0;V->TestBrake=1;V->TestSteer=0;Next(4);
+    V->TestThrottle=V->TestBrake=0;
+    MotionFinite=true;
+    for(int I=0;I<V->WheelCount();++I){RollingDistance[I]=PatchDistance[I]=0;MotionFrames[I]=0;}
+    Next(16);
+  }else if(Phase==16&&Time>.15f){
+    // Keep full steering, let acceleration slip settle and compare each
+    // contacting tire against the direction and travel of its own patch.
+    for(int I=0;I<V->WheelCount();++I){
+      const auto& Wheel=V->WheelState[I];
+      MotionFinite&=FMath::IsFinite(Wheel.Omega)&&FMath::IsFinite(Wheel.LongSpeed);
+      if(!Wheel.ContactValid||Wheel.Load<=100||FMath::Abs(Wheel.LongSpeed)<.35f)continue;
+      RollingDistance[I]+=Wheel.Omega*V->TireDiameter()*.0127f*FMath::Sign(Wheel.LongSpeed)*Dt;
+      PatchDistance[I]+=FMath::Abs(Wheel.LongSpeed)*Dt;
+      ++MotionFrames[I];
+    }
+    if(Time>.75f){
+      bool Rolling=MotionFinite;
+      float Roll=0,Patch=0;
+      for(int Axle=0;Axle<V->AxleCount();++Axle){
+        bool AxleSampled=false;
+        for(int I=Axle*2;I<Axle*2+2;++I){
+          UE_LOG(LogTemp,Display,TEXT("TERRA_ROLLING model=%d wheel=%d samples=%d signedRollM=%.3f patchTravelM=%.3f"),
+            Model,I,MotionFrames[I],RollingDistance[I],PatchDistance[I]);
+          if(MotionFrames[I]<3)continue;
+          AxleSampled=true;
+          const float Ratio=RollingDistance[I]/FMath::Max(.001f,PatchDistance[I]);
+          Rolling&=Ratio>.25f&&Ratio<4.f;
+          Roll+=RollingDistance[I];Patch+=PatchDistance[I];
+        }
+        Rolling&=AxleSampled;
+      }
+      Test(TEXT("moving tire spin follows travel"),Rolling,Roll/FMath::Max(.01f,Patch));
+      V->TestBrake=1;V->TestSteer=0;Next(4);
+    }
   }else if(Phase==4&&Time>5){
     Test(TEXT("service brake stops enlarged tires"),V->Chassis->GetPhysicsLinearVelocity().Size2D()<45,V->Chassis->GetPhysicsLinearVelocity().Size2D());
     V->TeleportRoute(5);V->GateIndex=2;V->RouteTime=38;Gate=V->GateIndex;Route=V->RouteIndex;
@@ -410,8 +444,32 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
     }else Next(8);
   }else if(Phase==7&&Time>.8f){
     const auto Garage=V->GetGarageWidget();
-    Test(TEXT("unified tire card is visible and its diameter and compound buttons work independently"),
-      TireUpgradeRowVisible(Garage)&&ClickTireGarage(V,Garage));
+    GarageValid=TireUpgradeRowVisible(Garage)&&BeginTireGarage(V,Garage);
+    Next(14);
+  }else if(Phase==14&&Time>.15f){
+    // Slate updates bound enabled states during its attribute pass.
+    const int Largest=V->UpgradeMaxStage(TerraSim::TireSize);
+    if(GarageValid&&Largest>0){
+      const auto Diameter=V->GetGarageWidget()->TireDiameterButton(Largest);
+      GarageValid=Diameter.IsValid()&&!Diameter->IsEnabled();
+      V->SetUpgrade(TerraSim::Suspension,V->RequiredTireSuspensionStage(Largest),false);
+    }
+    Next(15);
+  }else if(Phase==15&&Time>.15f){
+    if(GarageValid){
+      const auto Garage=V->GetGarageWidget();
+      const int Largest=V->UpgradeMaxStage(TerraSim::TireSize);
+      const auto Diameter=Garage->TireDiameterButton(Largest),Compound=Garage->TireCompoundButton(1);
+      GarageValid=Diameter.IsValid()&&Diameter->IsEnabled()&&Compound.IsValid()&&Compound->IsEnabled();
+      if(GarageValid){
+        Diameter->SimulateClick();
+        const float Fitted=V->TireDiameter();
+        Compound->SimulateClick();
+        GarageValid=V->UpgradeStage(TerraSim::TireSize)==Largest&&V->UpgradeStage(TerraSim::Tires)==1&&
+          FMath::IsNearlyEqual(V->TireDiameter(),Fitted,.01f);
+      }
+    }
+    Test(TEXT("unified tire card is visible and its diameter and compound buttons work independently"),GarageValid);
     Capture(*FString::Printf(TEXT("expanded-tire-garage-%d.png"),Model));Next(8);
   }else if(Phase==8&&Time>.3f){
     if(++Model>=ATerraVehicle::VehicleCount){

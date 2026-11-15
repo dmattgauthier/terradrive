@@ -7,13 +7,19 @@ namespace TerraRockCrawlValidation {
 namespace {
 constexpr int RouteIndex=17;
 constexpr float CrawlDemand=.28f;
+constexpr float NotchStartCM=980.f,NotchEndCM=1250.f;
 
 enum class EPhase { Menu, Settle, Drive, Hold };
 
 struct FTrial {
   int32 Gates=0, RockFrames=0, CrossAxleFrames=0, LockedFrames=0, MovingFrames=0;
   float Progress=0, Pitch=0, MaxLaneError=0, PeakWheelDriveNm=0, FinishTime=0;
+  float NotchEntry=-1,NotchExit=-1;
   bool Upright=true, Captured=false;
+
+  float NotchTime() const{
+    return NotchEntry<0?0:(NotchExit<0?FinishTime:NotchExit)-NotchEntry;
+  }
 };
 struct FRun {
   TWeakObjectPtr<ATerraVehicle> Vehicle;
@@ -112,6 +118,8 @@ bool Tick(ATerraVehicle* V,float Delta,
       const float Aim=R.Yaw-FMath::RadiansToDegrees(FMath::Atan2(LaneError,LookAhead));
       const float Error=FMath::FindDeltaAngleDegrees(V->GetActorRotation().Yaw,Aim);
       Trial.Progress=FMath::Max(Trial.Progress,Progress);
+      if(Trial.NotchEntry<0&&Progress>=NotchStartCM)Trial.NotchEntry=Run.Time;
+      if(Trial.NotchExit<0&&Progress>=NotchEndCM)Trial.NotchExit=Run.Time;
       Trial.Pitch=FMath::Max(Trial.Pitch,float(V->GetActorRotation().Pitch));
       Trial.MaxLaneError=FMath::Max(Trial.MaxLaneError,FMath::Abs(Lane));
       Trial.Gates=V->GateIndex;
@@ -152,9 +160,9 @@ bool Tick(ATerraVehicle* V,float Delta,
       if(Trial.Gates==R.Gates.Num()||Run.Time>58.f||!Trial.Upright||FMath::Abs(Lane)>430||Progress<-400){
         const FString Label=Trials[Run.Index];
         Trial.FinishTime=Run.Time;
-        UE_LOG(LogTemp,Display,TEXT("TERRA_ROCK_CRAWL mode=%s gates=%d progressCM=%.2f pitch=%.2f laneErrorCM=%.2f slowTorqueNm=%.2f rockFrames=%d crossAxleFrames=%d lockFrames=%d movingFrames=%d seconds=%.3f terrainHits=%d objectHits=%d"),
+        UE_LOG(LogTemp,Display,TEXT("TERRA_ROCK_CRAWL mode=%s gates=%d progressCM=%.2f pitch=%.2f laneErrorCM=%.2f slowTorqueNm=%.2f rockFrames=%d crossAxleFrames=%d lockFrames=%d movingFrames=%d seconds=%.3f notchSeconds=%.3f terrainHits=%d objectHits=%d"),
             *Label,Trial.Gates,Trial.Progress,Trial.Pitch,Trial.MaxLaneError,Trial.PeakWheelDriveNm,
-            Trial.RockFrames,Trial.CrossAxleFrames,Trial.LockedFrames,Trial.MovingFrames,Run.Time,V->TerrainBodyHits,V->ObjectBodyHits);
+            Trial.RockFrames,Trial.CrossAxleFrames,Trial.LockedFrames,Trial.MovingFrames,Run.Time,Trial.NotchTime(),V->TerrainBodyHits,V->ObjectBodyHits);
         Check(Label+TEXT(" encounters real rock under loaded tires"),Trial.RockFrames>=6,Trial.RockFrames);
         Check(Label+TEXT(" stays in the lane and upright"),Trial.Upright&&Trial.MaxLaneError<R.GateWidth*50,Trial.MaxLaneError);
         if(!Trial.Captured){Capture(TrialPictures[Run.Index]);Trial.Captured=true;}
@@ -182,8 +190,12 @@ bool Tick(ATerraVehicle* V,float Delta,
   const float LockedFraction=LowLocked.LockedFrames/float(FMath::Max(1,LowLocked.MovingFrames));
   Check(TEXT("both locks couple their wheel speeds while driving"),
         LockedFraction>.98f,LockedFraction);
-  Check(TEXT("low range with open axles reaches the notch but cannot clear the center line"),
-        LowOpen.Progress>=800.f&&LowOpen.Progress<1800.f&&!Run.Complete[1],LowOpen.Progress);
+  // Measure only the notch. A stock open-axle vehicle may eventually rock
+  // onto a different line, but cannot keep crawling through at matched pace.
+  const float FastNotch=FMath::Max(LowLocked.NotchTime(),RightBench.NotchTime());
+  Check(TEXT("low range with open axles stalls at the notch under matched crawl demand"),
+        LowOpen.NotchTime()>=20.f&&FastNotch>0&&LowOpen.NotchTime()>FastNotch*4.f&&!Run.Complete[1],
+        LowOpen.NotchTime());
   Check(TEXT("stock Wrangler in low range with both axle locks completes the center crawl"),
         Run.Complete[2]&&LowLocked.Progress>LowOpen.Progress+1000.f,LowLocked.Gates);
   Check(TEXT("stock Wrangler in low range with open axles completes the marked right bench"),
