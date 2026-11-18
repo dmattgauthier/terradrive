@@ -38,19 +38,20 @@ void Select(int NewMode,bool Persist){
   Mode=FMath::Clamp(NewMode,0,2);
   // Keep textures and deformable terrain intact. Limit pixels, screen-space
   // lighting and shadow filtering rather than removing physical obstacles.
-  CVar(TEXT("r.ScreenPercentage"),Mode==0?75:Mode==1?85:100);
+  const int RenderPercentage=Mode==0?65:Mode==1?85:100;
+  CVar(TEXT("r.ScreenPercentage"),RenderPercentage);
   CVar(TEXT("r.SSGI.Quality"),Mode==2?2:1);
   CVar(TEXT("r.DynamicGlobalIlluminationMethod"),Mode==2?2:0);
   CVar(TEXT("r.SSR.Quality"),Mode==0?0:Mode==1?1:2);
   CVar(TEXT("r.Shadow.MaxResolution"),Mode==0?1024:Mode==1?1536:2048);
   CVar(TEXT("r.Shadow.CSM.MaxCascades"),Mode==0?2:3);
-  CVar(TEXT("r.Shadow.DistanceScale"),Mode==0?.55f:Mode==1?.75f:1.f);
+  CVar(TEXT("r.Shadow.DistanceScale"),Mode==0?.42f:Mode==1?.75f:1.f);
   CVar(TEXT("r.TSR.History.ScreenPercentage"),100);
   CVar(TEXT("r.VSync"),0);
   AppliedLimit=-1;
   Tick(false,false);
   if(Persist&&!SettingsPath.IsEmpty()&&!Save(SettingsPath))UE_LOG(LogTemp,Warning,TEXT("TERRA_GRAPHICS settings could not be saved"));
-  UE_LOG(LogTemp,Display,TEXT("TERRA_GRAPHICS mode=%d name=%s"),Mode,Name());
+  UE_LOG(LogTemp,Display,TEXT("TERRA_GRAPHICS mode=%d name=%s renderScale=%d%%"),Mode,Name(),RenderPercentage);
 }
 float FrameLimit(bool Garage,bool Background){
   float Limit=Background?15:Garage?FMath::Min(Rates[Mode],20):Rates[Mode];

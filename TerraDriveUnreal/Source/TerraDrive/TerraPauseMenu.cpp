@@ -32,7 +32,8 @@ void STerraPauseMenu::Construct(const FArguments& Args){
   auto Add=[&](const FString& Text,int Index,TFunction<FReply()> Click){
     auto Button=SNew(SButton).ButtonStyle(&Style()).ContentPadding(FMargin(18,15)).HAlign(HAlign_Left)
       .ButtonColorAndOpacity_Lambda([this,Index]{return Page==Index?FLinearColor(.19f,.35f,.27f):FLinearColor(.085f,.14f,.14f);})
-      .OnClicked_Lambda([Click]{return Click();})[Label(Text,15,White,true)];
+      .OnClicked_Lambda([Click]{return Click();})
+      [SNew(STextBlock).Text(FText::FromString(Text)).Font(Font(15,true)).ColorAndOpacity(White)];
     Navigation->AddSlot().AutoHeight().Padding(0,0,0,10)
       [Button];
     return Button;
@@ -73,7 +74,7 @@ void STerraPauseMenu::Construct(const FArguments& Args){
                 +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right)
                 [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(16,true)).ColorAndOpacity(Muted)]
                 +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right).Padding(0,5,0,0)
-                [Label(Build,11,Muted)]]]
+                [SNew(STextBlock).Text(FText::FromString(Build)).Font(Font(11)).ColorAndOpacity(Muted)]]]
             +SVerticalBox::Slot().FillHeight(1)
             [SNew(SHorizontalBox)
               +SHorizontalBox::Slot().AutoWidth().Padding(0,0,24,0)[SNew(SBox).WidthOverride(226)[Navigation]]
