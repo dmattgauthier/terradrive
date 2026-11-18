@@ -47,9 +47,9 @@ export const terrainChallenges = [
   },
   {
     name:'Granite fault-line crawl', zone:2, x:236, y:-122, length:40, surface:4, paintRock:true,
-    hint:'Use 4WD low range. Lock both axles for the center notch, or follow the short blue stakes on the right-hand bench.',
+    hint:'Use 4WD low range. Follow amber into the center notch with both axles locked. For an open-axle route, keep between the short blue stakes on the right-hand bench.',
     stations:[7,12,18,24,31,40],
-    shoulderStakes:[5,9,15,21,26],
+    lineStakes:[5,9,13,17,21,25],
     notes:[
       'Shift into low range. Lock both axles for the center or take the short blue stakes on the right.',
       'Crawl straight across the diagonal notch. On the bench, stay inside the short blue stakes.',
@@ -182,9 +182,16 @@ export function addTerrainChallenges(world,field) {
       const position=point(x+s,y+side*4);
       stakes.get(side).push({p:position,q:[0,0,0,1],s:[1,1,1],color:[1,1,1]});
     }
-    for(const s of course.shoulderStakes??[]){
-      const position=point(x+s,y+3.5);
-      stakes.get(1).push({p:position,q:[0,0,0,1],s:[.70,.70,.58],color:[1,1,1]});
+    if(course.lineStakes){
+      for(const s of course.lineStakes){
+        for(const t of [1.14,3.44])
+          stakes.get(1).push({p:point(x+s,y+t),q:[0,0,0,1],s:[.84,.84,.66],color:[1,1,1]});
+        stakes.get(-1).push({p:point(x+s,y-1.42),q:[0,0,0,1],s:[.86,.86,.80],color:[1,1,1]});
+      }
+      for(const [asset,t] of [['granite_line_lockers',-1.88],['granite_line_bench',3.37]]){
+        world.nativeDetails.push({asset,solid:false,crushable:false,snapToGround:true,surface:4,
+          instances:[{p:point(x+2.0,y+t),q:[0,0,0,1],s:[1,1,1],color:[1,1,1]}]});
+      }
     }
     newRoutes.push({routeIndex:world.routes.length,surface:course.surface,changedCells,
       ...(course.paintRock?{paintRock:true,paintedCells}:{}),minX:x-5,maxX:x+length+5,minY:y-7,maxY:y+7});

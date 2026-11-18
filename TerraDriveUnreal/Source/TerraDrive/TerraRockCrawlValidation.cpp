@@ -75,7 +75,11 @@ bool Tick(ATerraVehicle* V,float Delta,
       const auto Menu=V->GetPauseMenuWidget();
       const auto Button=Menu.IsValid()?Menu->ChallengeButton(RouteIndex):nullptr;
       const bool Enabled=Button.IsValid()&&Button->IsEnabled()&&Menu->ActivePage()==3;
-      if(Enabled)Button->SimulateClick();
+      if(Enabled){
+        Button->SimulateClick();
+        if(const auto StartButton=Menu->CourseStartButton();StartButton&&Menu->ActivePage()==STerraPauseMenu::CourseBriefPageIndex)
+          StartButton->SimulateClick();
+      }
       const bool Started=Enabled&&!V->PauseMenuOpen&&V->RouteIndex==RouteIndex&&V->GateIndex==0&&
         FVector::Dist2D(V->GetActorLocation(),R.Spawn)<1;
       Check(TEXT("opens the rock crawl through the pause menu with marked gates"),

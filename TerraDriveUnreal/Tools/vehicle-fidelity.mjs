@@ -80,12 +80,12 @@ function factoryRim(spec){
       const shape=new THREE.Shape();shape.absarc(0,0,r*.963,0,Math.PI*2,false);
       for(let i=0;i<5;i++){
         const hole=new THREE.Path(),a=i*Math.PI*2/5+Math.PI/5;
-        const contour=[[.34,0],[.50,-.49],[.86,-.49],[.935,-.30],[.935,.30],[.86,.49],[.50,.49]];
+        const contour=[[.319,0],[.532,-.515],[.812,-.525],[.928,-.290],[.928,.290],[.812,.525],[.532,.515]];
         contour.forEach(([rad,angle],j)=>hole[j?'lineTo':'moveTo'](Math.cos(a+angle)*r*rad,Math.sin(a+angle)*r*rad));hole.closePath();shape.holes.push(hole);
         const relief=new THREE.Path(),b=i*Math.PI*2/5;
-        [[.78,0],[.935,-.13],[.935,.13]].forEach(([rad,angle],j)=>relief[j?'lineTo':'moveTo'](Math.cos(b+angle)*r*rad,Math.sin(b+angle)*r*rad));relief.closePath();shape.holes.push(relief);
+        [[.690,0],[.923,-.142],[.923,.142]].forEach(([rad,angle],j)=>relief[j?'lineTo':'moveTo'](Math.cos(b+angle)*r*rad,Math.sin(b+angle)*r*rad));relief.closePath();shape.holes.push(relief);
       }
-      const geo=new THREE.ExtrudeGeometry(shape,{depth:.012,bevelEnabled:true,bevelSize:.0035,bevelThickness:.003,bevelSegments:3,curveSegments:80}),p=geo.attributes.position;
+      const geo=new THREE.ExtrudeGeometry(shape,{depth:.010,bevelEnabled:true,bevelSize:.0023,bevelThickness:.0024,bevelSegments:3,curveSegments:80}),p=geo.attributes.position;
       for(let i=0;i<p.count;i++){const yy=p.getX(i),zz=p.getY(i),rr=Math.hypot(yy,zz)/r;p.setXYZ(i,face+side*(.016-.033*(1-rr*rr)+p.getZ(i)),yy,zz);}geo.computeVertexNormals();mesh(g,geo,rimMaterial);
     }else if(style==='van'){
       const shape=new THREE.Shape();shape.absarc(0,0,r*.94,0,Math.PI*2,false);
@@ -100,7 +100,7 @@ function factoryRim(spec){
       }
     }
     ring(g,rimMaterial,face,r*.976,.004);ring(g,black,face-side*.01,r*.84,.002);
-    ring(g,alloy,side*w*.451,r*.973,.0014);
+    ring(g,style==='urus'?rimMaterial:alloy,side*w*.451,r*.973,.0014);
     disc(g,rimMaterial,face+side*.025,r*(style==='hummer'?.42:.30),.025);
     const lugCount=style==='hummer'?8:style==='van'||style==='bronco'?6:5;
     for(let i=0;i<lugCount;i++){
@@ -116,7 +116,12 @@ function factoryRim(spec){
     if(style==='van'){
       ring(g,alloy,face+side*.052,r*.115,.0018);
       for(let i=0;i<3;i++){const a=i*Math.PI*2/3;rod(g,alloy,[face+side*.054,0,0],[face+side*.054,Math.cos(a)*r*.115,Math.sin(a)*r*.115],.002);}
-    }else if(style!=='bronco'&&style!=='urus'){
+    }else if(style==='urus'){
+      const crest=new THREE.Shape();crest.moveTo(-.011,.010);crest.lineTo(.011,.010);
+      crest.quadraticCurveTo(.011,-.004,0,-.014);crest.quadraticCurveTo(-.011,-.004,-.011,.010);
+      const badge=mesh(g,new THREE.ShapeGeometry(crest,16),new THREE.MeshStandardMaterial({color:'#a08337',roughness:.31}),[face+side*.051,0,0]);
+      badge.rotation.y=side*Math.PI/2;
+    }else if(style!=='bronco'){
       const cap=text(g,style==='hummer'?'GMC':style==='sedan'?'H':'JEEP',r*.25,r*.095,alloy);
       cap.position.set(face+side*.052,-r*.047,0);cap.rotation.y=side*Math.PI/2;
     }

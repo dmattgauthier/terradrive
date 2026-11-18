@@ -2,21 +2,21 @@
   "pass": true,
   "n": 1601,
   "coverageSamples": 2563201,
-  "mixedPixels": 105168,
+  "mixedPixels": 123744,
   "pureInteriorPixels": [
-    2123448,
+    2104663,
     29233,
     27203,
     40391,
-    61652,
+    61861,
     100675,
     75431
   ],
   "visualMaskValidated": true,
-  "slateRimVisualPixels": 43814,
-  "graniteApronPixels": 81381,
+  "slateRimVisualPixels": 46281,
+  "graniteApronPixels": 79995,
   "quarryLaneMaskValidated": true,
-  "sourceTerrainSHA256": "a3fdcfb4d11b19e4b00d4e0cecf0f2979998c8ea1ef2e5289e9f17b23c8aa98e",
+  "sourceTerrainSHA256": "1d3c92878807a8e39792b3a4f134a49bacdc199fe5a6bd6af87b8b955b8f572b",
   "lines": [
     {
       "surfacePair": "dirt-asphalt",

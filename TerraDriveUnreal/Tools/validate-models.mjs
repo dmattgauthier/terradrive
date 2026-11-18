@@ -46,7 +46,7 @@ for(const spec of VEHICLES){
    const gap=backing?backing.distance-pane.distance:5;
    assert.ok(gap>.1524,label+' has no opaque sheet behind the pane');visibility.push({pane:label,clearDepthM:gap});
   }
-  assert.equal(view.root.userData.visualModel.version,12);
+  assert.equal(view.root.userData.visualModel.version,13);
   assert.ok(view.root.userData.visualModel.camberedClosedSpoiler&&view.root.userData.visualModel.crownedGreenhouse&&view.root.userData.visualModel.sculptedDoorCups,'Urus compound coachwork revision');
   // Above the vent's center, the first solid surface is below the bonnet
   // skin. This fails for the former opaque hood with a black patch on top.
@@ -77,7 +77,7 @@ for(const spec of VEHICLES){
    if(object.name==='urus-swept-grille-blade')grilleBlades++;
   });assert.equal(handles,4);assert.equal(grilleBlades,3);
   let carbonProbes=0;
-  for(const [z,half]of [[.80,.60],[1.0,.58],[1.2,.57],[1.4,.56],[1.6,.54],[1.8,.54],[2.0,.53],[2.14,.50],[2.20,.35],[2.245,.20]])for(let i=-4;i<=4;i++){
+  for(const [z,half]of [[.95,.61],[1.12,.59],[1.28,.58],[1.46,.56],[1.64,.54],[1.82,.51],[1.99,.47],[2.12,.39],[2.19,.29],[2.23,.17]])for(let i=-4;i<=4;i++){
    const x=half*i/4,hit=firstSolid([x,2,z],[0,-1,0]);assert.equal(hit.material.userData.automotive,'carbon','Urus carbon bonnet contains no painted overlap');carbonProbes++;
   }
   for(const side of [-1,1])for(const [x,y]of [[.71,.742],[.70,.65],[.76,.60],[.80,.54],[.78,.438]]){

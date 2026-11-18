@@ -26,6 +26,7 @@
 #include "TerraRolloverPerformanceValidation.h"
 #include "TerraFieldValidation.h"
 #include "TerraQuarryPerformanceValidation.h"
+#include "TerraCourseValidation.h"
 #include "TerraBodyGroundValidation.h"
 #include "TerraMechanicalValidation.h"
 #include "TerraTurningValidation.h"
@@ -60,7 +61,8 @@ ATerraGameMode::ATerraGameMode() {
   PrimaryActorTick.bCanEverTick = true;
   PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))||
     FParse::Param(FCommandLine::Get(),TEXT("TerraEnergyLockOnly"))||
-    FParse::Param(FCommandLine::Get(),TEXT("TerraChallengesOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraRockCrawlOnly"));
+    FParse::Param(FCommandLine::Get(),TEXT("TerraChallengesOnly"))||FParse::Param(FCommandLine::Get(),TEXT("TerraRockCrawlOnly"))||
+    FParse::Param(FCommandLine::Get(),TEXT("TerraCourseOnly"));
 }
 void ATerraGameMode::BeginPlay() {
   Super::BeginPlay();
@@ -176,6 +178,9 @@ void ATerraGameMode::Tick(float Dt) {
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraGardenOnly"))){
     if(TerraGardenValidation::Tick(V,Dt,Check,Capture))FinishValidation();
     return;
+  }
+  if(FParse::Param(FCommandLine::Get(),TEXT("TerraCourseOnly"))){
+    if(TerraCourseValidation::Tick(V,Check,Capture))FinishValidation();return;
   }
   if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarryPerformanceOnly"))){
     if(TerraQuarryPerformanceValidation::Tick(V,Dt,Check,Capture))FinishValidation();
@@ -1191,13 +1196,14 @@ void ATerraGameMode::Tick(float Dt) {
       const auto &WorldData=V->Terrain->Data;
       const auto UrusBody=WorldData->GetArrayField(TEXT("vehicles"))[5]->AsObject()->GetObjectField(TEXT("nativeModel"))->GetObjectField(TEXT("bodyShape"));
       if(FParse::Param(FCommandLine::Get(),TEXT("TerraQuarrySurvey"))){
-        double ArtPilot=0,ExtensionVersion=0;
-        const TSharedPtr<FJsonObject>* Extension=nullptr;
-        const bool CurrentHood=UrusBody->TryGetNumberField(TEXT("artPilot"),ArtPilot)&&ArtPilot==4;
-        const bool CurrentQuarry=WorldData->TryGetObjectField(TEXT("slateRimExtension"),Extension)&&
-          (*Extension)->TryGetNumberField(TEXT("version"),ExtensionVersion)&&ExtensionVersion==1;
+        double ArtPilot=0;
+        const TSharedPtr<FJsonObject>* Workings=nullptr;
+        const TArray<TSharedPtr<FJsonValue>>* Sections=nullptr;
+        const bool CurrentHood=UrusBody->TryGetNumberField(TEXT("artPilot"),ArtPilot)&&ArtPilot==5;
+        const bool CurrentQuarry=WorldData->TryGetObjectField(TEXT("slateRimWorkings"),Workings)&&
+          (*Workings)->TryGetArrayField(TEXT("sections"),Sections)&&Sections->Num()==8;
         Check(TEXT("quarry survey requires the current Urus hood art"),CurrentHood,ArtPilot);
-        Check(TEXT("quarry survey requires the Slate Rim extension"),CurrentQuarry,ExtensionVersion);
+        Check(TEXT("quarry survey loads eight sculpted quarry sections"),CurrentQuarry,Sections?Sections->Num():0);
         if(!CurrentHood||!CurrentQuarry){FinishValidation();return;}
       }
       V->SelectVehicle(5);V->ResetUpgrades(false);V->SetGarage(false);V->TeleportRoute(8);
@@ -1206,7 +1212,7 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.IsValidIndex(8)&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),UrusBody->GetIntegerField(TEXT("version"))==12);
+      Check(TEXT("Urus body uses the new surface and cabin revision"),UrusBody->GetIntegerField(TEXT("version"))==13);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){

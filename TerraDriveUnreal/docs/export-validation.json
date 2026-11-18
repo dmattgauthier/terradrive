@@ -68,13 +68,13 @@
       "heightM": 12.272045135498047
     }
   ],
-  "meshSources": 379,
+  "meshSources": 381,
   "constructedGroups": 2,
   "challengeRoutes": 18,
   "quarryDeckHeightM": 26.172911834716796,
   "trees": 386,
   "placements": 10613,
-  "detailInstances": 12436,
+  "detailInstances": 12451,
   "solidDetailInstances": 1806,
   "tintedMaterials": 37,
   "preservedInstanceColors": true,
@@ -187,5 +187,67 @@
     "sha256": "fab093775cd20e9a2a5d3cc1777200454b2f944a7a7b40045dbeffb320a8a816",
     "bytes": 1971740,
     "pass": true
+  },
+  "slateRimWorkings": {
+    "version": 1,
+    "minimumAdditionalRouteClearanceM": 2.451,
+    "sections": [
+      {
+        "fromM": 11,
+        "toM": 57,
+        "side": -1,
+        "changedCells": 2904,
+        "maxRiseM": 4.437
+      },
+      {
+        "fromM": 63,
+        "toM": 106,
+        "side": -1,
+        "changedCells": 2743,
+        "maxRiseM": 5.725
+      },
+      {
+        "fromM": 110,
+        "toM": 133,
+        "side": 1,
+        "changedCells": 1197,
+        "maxRiseM": 3.514
+      },
+      {
+        "fromM": 137,
+        "toM": 180,
+        "side": 1,
+        "changedCells": 2199,
+        "maxRiseM": 5.669
+      },
+      {
+        "fromM": 186,
+        "toM": 204,
+        "side": 1,
+        "changedCells": 772,
+        "maxRiseM": 3.566
+      },
+      {
+        "fromM": 207,
+        "toM": 237,
+        "side": -1,
+        "changedCells": 2163,
+        "maxRiseM": 4.545
+      },
+      {
+        "fromM": 241,
+        "toM": 283,
+        "side": -1,
+        "changedCells": 2600,
+        "maxRiseM": 5.473
+      },
+      {
+        "fromM": 289,
+        "toM": 315,
+        "side": 1,
+        "changedCells": 2089,
+        "maxRiseM": 3.415
+      }
+    ]
   }
 }

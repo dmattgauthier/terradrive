@@ -80,7 +80,7 @@ for(let i=0;i<normal.count;i++){
  bonnetMinVertexNormalY=Math.min(bonnetMinVertexNormalY,up);
 }
 let bonnetGridProbes=0;
-for(const [z,half]of [[.80,.60],[1.0,.58],[1.2,.57],[1.4,.56],[1.6,.54],[1.8,.54],[2.0,.53],[2.14,.50],[2.20,.35],[2.245,.20]])for(let i=-4;i<=4;i++){
+for(const [z,half]of [[.95,.61],[1.12,.59],[1.28,.58],[1.46,.56],[1.64,.54],[1.82,.51],[1.99,.47],[2.12,.39],[2.19,.29],[2.23,.17]])for(let i=-4;i<=4;i++){
  const x=half*i/4,origin=view.body.localToWorld(new T.Vector3(x,2,z)),direction=new T.Vector3(0,-1,0).transformDirection(view.body.matrixWorld);
  const paintHits=new T.Raycaster(origin,direction,0,2).intersectObjects(paintMeshes,true).filter(h=>view.body.worldToLocal(h.point.clone()).y>.94);
  assert.equal(paintHits.length,0,`hidden painted bonnet overlaps carbon at ${x},${z}`);bonnetGridProbes++;

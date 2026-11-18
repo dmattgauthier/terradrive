@@ -1,10 +1,72 @@
 param([switch]$Package,[switch]$ImportAssets,[switch]$SkipBuild,[switch]$SkipExport,[switch]$SkipCook,[ValidateRange(1,512)][int]$ImportBatchSize=8,
-      [string]$EngineRoot='C:\Program Files\Epic Games\UE_5.8',[string]$ArchiveDirectory)
+      [string]$EngineRoot,[string]$ArchiveDirectory,
+      [switch]$DriveLocalData,[ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,47}$')][string]$BuildLabel,
+      [ValidateRange(0,6)][int]$CookShaderWorkers=0)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $project=Join-Path $projectRoot 'TerraDrive.uproject'
 if(!$ArchiveDirectory){$ArchiveDirectory=Join-Path $projectRoot 'Build'}
 $ArchiveDirectory=[IO.Path]::GetFullPath($ArchiveDirectory)
+$drive=[IO.Path]::GetPathRoot($projectRoot)
+if(!$EngineRoot){
+    $sameDriveEngine=Join-Path $drive 'TerraDriveTools\UE_5.8'
+    if(Test-Path -LiteralPath (Join-Path $sameDriveEngine 'Engine\Build\BatchFiles\Build.bat') -PathType Leaf){
+        $EngineRoot=$sameDriveEngine
+        $DriveLocalData=$true
+    } else {
+        $EngineRoot='C:\Program Files\Epic Games\UE_5.8'
+    }
+}
+$engineRoot=[IO.Path]::GetFullPath($EngineRoot)
+if($DriveLocalData){
+    foreach($path in @($engineRoot,$ArchiveDirectory)){
+        if([IO.Path]::GetPathRoot($path) -ne $drive){
+            throw "Drive-local packaging needs the engine and output on $drive. Received $path."
+        }
+    }
+    $cache=Join-Path $projectRoot 'Saved\BuildData'
+    $variables=@{
+        TEMP='Temp'; TMP='Temp'; APPDATA='AppData\Roaming'; LOCALAPPDATA='AppData\Local'
+        DOTNET_CLI_HOME='DotNet'; 'UE-LocalDataCachePath'='DerivedDataCache'
+    }
+    foreach($name in $variables.Keys){
+        $path=Join-Path $cache $variables[$name]
+        [void][IO.Directory]::CreateDirectory($path)
+        [Environment]::SetEnvironmentVariable($name,$path,'Process')
+    }
+}
+$editorCacheArgs=@()
+$cookerOptions=@()
+$uatEditorArgs=@()
+$buildArgs=@()
+$uatBuildArguments='-NoUBA -MaxParallelActions=2'
+if($DriveLocalData){
+    $editorCacheArgs=@('-DDC=InstalledNoZenLocalFallback')
+    $cookerOptions+='-DDC=InstalledNoZenLocalFallback'
+    # A relocated installed engine can carry shared PCHs with absolute paths.
+    $buildArgs=@('-NoPCH',("-Log="+(Join-Path $cache 'Editor-build.log')))
+    $uatBuildArguments+=' -NoPCH'
+    # The script builds the editor separately above. UAT's editor target
+    # does not receive game -UbtArgs and can reuse a C:-bound PCH.
+    $uatEditorArgs=@('-skipbuildeditor')
+}
+if($CookShaderWorkers){
+    $logical=[Environment]::ProcessorCount
+    $reserved=[Math]::Max(2,$logical-$CookShaderWorkers)
+    $percentage=[Math]::Floor(100*$reserved/[Math]::Max(1,$logical))
+    $cookerOptions+=@("-ini:Engine:[DevOptions.Shaders]:NumUnusedShaderCompilingThreads=$reserved",
+        "-ini:Engine:[DevOptions.Shaders]:PercentageUnusedShaderCompilingThreads=$percentage")
+}
+$cookerCacheArgs=@()
+if($cookerOptions.Count){$cookerCacheArgs=@('-AdditionalCookerOptions='+($cookerOptions -join ' '))}
+$revision=$null
+if($BuildLabel){
+    if(!$Package){throw '-BuildLabel requires -Package.'}
+    $revision=(& git -C $projectRoot rev-parse HEAD)
+    if($LASTEXITCODE -or $revision -notmatch '^[a-f0-9]{40}$'){throw 'Could not identify build source revision.'}
+    $changed=@(& git -C $projectRoot status --porcelain --untracked-files=normal)
+    if($LASTEXITCODE -or $changed.Count){throw 'Commit the source before packaging a labeled revision.'}
+}
 $env:UBA_ROOT=Join-Path $projectRoot 'Saved\UBA'
 $env:uebp_LogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
 $env:uebp_FinalLogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
@@ -84,7 +146,7 @@ if ($ImportAssets -and $SkipExport) {
     $exportHash=Get-SourceExportHash
 }
 if (!$SkipBuild) {
-    & "$engineRoot\Engine\Build\BatchFiles\Build.bat" TerraDriveEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE -NoUBA -MaxParallelActions=2
+    & "$engineRoot\Engine\Build\BatchFiles\Build.bat" TerraDriveEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE -NoUBA -MaxParallelActions=2 @buildArgs
     if ($LASTEXITCODE) { throw 'Editor compilation failed' }
 }
 if ($ImportAssets) {
@@ -118,7 +180,7 @@ if ($ImportAssets) {
     $env:TERRA_IMPORT_START=[string]$taskStart;$env:TERRA_IMPORT_END=[string]$taskEnd
     $taskBatchLog=Join-Path $projectRoot ('Saved/Logs/import-assets-'+$taskStart+'.log')
     $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$scriptPath+'"'),'-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$taskBatchLog+'"'))
-    $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList $editorArgs -WindowStyle Hidden -PassThru
+    $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList ($editorArgs+$editorCacheArgs) -WindowStyle Hidden -PassThru
     # Wait for the commandlet itself. Start-Process -Wait can also wait on
     # persistent compiler/cache descendants after the commandlet has exited.
     $editorProcess.WaitForExit()
@@ -170,7 +232,7 @@ if ($Package) {
             $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$recipePath+'"'),
                 '-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$materialLog+'"'))
             $materialStarted=Get-Date
-            $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList $editorArgs -WindowStyle Hidden -PassThru
+            $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList ($editorArgs+$editorCacheArgs) -WindowStyle Hidden -PassThru
             $editorProcess.WaitForExit()
             $editorProcess.Refresh()
             $generatedLog=Get-Item -LiteralPath $materialLog -ErrorAction SilentlyContinue
@@ -183,7 +245,7 @@ if ($Package) {
     & node (Join-Path $PSScriptRoot 'garden-geology.mjs')
     if($LASTEXITCODE){throw 'Garden geology cache generation failed'}
     $packageStarted=Get-Date
-    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output '-UbtArgs=-NoUBA -MaxParallelActions=2'
+    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output "-UbtArgs=$uatBuildArguments" @cookerCacheArgs @uatEditorArgs
     if ($LASTEXITCODE) { throw 'Packaging failed' }
     if (!$SkipCook) {
         $cookLogs=@(Get-ChildItem -LiteralPath $env:uebp_LogFolder -Filter 'Cook-*.txt' | Where-Object { $_.LastWriteTime -ge $packageStarted })
@@ -193,6 +255,18 @@ if ($Package) {
     }
     if (!(Test-Path -LiteralPath (Join-Path $ArchiveDirectory 'Windows\TerraDrive.exe'))) {
         throw 'AutomationTool returned success but the packaged launcher is missing.'
+    }
+    $windows=Join-Path $ArchiveDirectory 'Windows'
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start Terra Drive.cmd') -Destination $windows
+    $buildInfo=Join-Path $windows 'TerraDrive\Content\NativeData\build-info.json'
+    if($BuildLabel){
+        [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($buildInfo))
+        Write-BuildReceipt $buildInfo @{
+            label=$BuildLabel; revision=$revision; assetImportSHA256=$importHash
+            executableSHA256=(Get-BuildFileHash (Join-Path $windows 'TerraDrive\Binaries\Win64\TerraDrive.exe'))
+        }
+    } elseif(Test-Path -LiteralPath $buildInfo -PathType Leaf){
+        Remove-Item -LiteralPath $buildInfo
     }
     if (!$SkipCook) {
         if ((Get-CompletedImportHash) -ne $importHash) { throw 'Asset import changed during packaging. Rerun -Package.' }

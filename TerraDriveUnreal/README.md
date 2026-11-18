@@ -172,7 +172,7 @@ From this directory:
 .\Tools\build-native.ps1 -ImportAssets -Package
 ```
 
-The current script expects the standard `C:\Program Files\Epic Games\UE_5.8` installation. Pass `-EngineRoot 'D:\YourEngine'` for another installation. Conversion reads the adjacent `TerraDrive-v1.13` folder. Do not substitute an older source ZIP over that updated folder.
+The build script uses `TerraDriveTools\UE_5.8` on the checkout drive when that installation exists. It then enables drive-local cache and output paths. For other layouts, pass `-EngineRoot` explicitly. The standard Epic installation is the fallback. Conversion reads the adjacent `TerraDrive-v1.13` folder.
 
 Open `TerraDrive.uproject` to edit. Packaged output is under `Build/Windows/`. Debug symbols stay in `Binaries/Win64` for local diagnosis; packaging omits a second copy. Packaging also regenerates the bounded native garden geology field before staging `NativeData`. Generated assets are recreated with `Tools/export-source.mjs` and `Tools/import-assets.py`; `Content/NativeData` must be staged with the game. `UBA_ROOT` is deliberately project-local so the build accelerator does not need to write to ProgramData.
 
@@ -201,7 +201,9 @@ Wait for that commandlet to finish, then run `Tools/build-native.ps1 -Package` f
 
 The unused Android File Server plugin is explicitly disabled. `Tools/prepare-github.mjs` rejects credential-like configuration values before preparing an upload; do not publish server tokens that Unreal may generate in local settings.
 
-After packaging, launch `Build/Windows/TerraDrive.exe`. Use `-ArchiveDirectory` to stage a separate candidate for validation. Keep the entire `Windows` directory together; the executable requires the adjacent cooked content. To run the native automated driving checks and capture the regions and challenge routes:
+After packaging, launch `Build/Windows/Start Terra Drive.cmd`. The launcher saves the player profile in the sibling `Build/PlayerData` directory. Keep the entire `Windows` directory together because the executable requires its staged content. Use `-ArchiveDirectory` to stage a separate candidate. For drive-local tools, logs and caches, pass `-DriveLocalData` with an engine root and archive on the same drive as the checkout. See the [quarry playtest plan](docs/quarry-playtest-plan.md) for storage and verification details.
+
+The command below runs the native automated driving checks and captures the regions and challenge routes.
 
 ```powershell
 .\Tools\verify-native.ps1

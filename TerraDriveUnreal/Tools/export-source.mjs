@@ -16,7 +16,8 @@ import {scannedEnvironment} from './scanned-environment.mjs';
 import {quarryTrail} from './quarry-trail.mjs';
 import {addPerimeterTrail} from './perimeter-trail.mjs';
 import {addTerrainChallenges} from './terrain-challenges.mjs';
-import {applySlateRimExtension,applySlateRimPilot} from './slate-rim-pilot.mjs';
+import {geometryText} from './vehicle-fidelity.mjs';
+import {applySlateRimExtension,applySlateRimPilot,applySlateRimWorkings} from './slate-rim-pilot.mjs';
 import {refineRockPlacements} from './rock-fidelity.mjs';
 import {DEEP_MUD,deepMudWaterAsset,adventureRoutes} from './deep-mud.mjs';
 import {OffroadWorld} from '../../TerraDrive-v1.13/dist/src/world.js';
@@ -183,6 +184,25 @@ for(const [name,color] of [['amber','#ffae43'],['blue','#40b6e3']]){
  post.add(base,cap);
  exportObj('trail_challenge_'+name,post);
 }
+function exportGraniteLineSign(name,text,color,direction){
+ const sign=new THREE.Group();
+ const stem=new THREE.Mesh(new THREE.CylinderGeometry(.036,.055,1.28,12),
+  new THREE.MeshStandardMaterial({color:'#333a3a',roughness:.78}));
+ stem.position.y=.64;sign.add(stem);
+ const board=new THREE.Mesh(new THREE.BoxGeometry(1.26,.37,.065),
+  new THREE.MeshStandardMaterial({color,roughness:.57}));
+ board.position.y=1.30;sign.add(board);
+ const ink=new THREE.MeshStandardMaterial({color:'#f4eee1',roughness:.68});
+ const label=geometryText(sign,text,1.00,.119,ink);
+ label.position.set(0,1.255,-.037);label.rotation.y=Math.PI;
+ for(const [x,y,angle]of [[.625,1.332,-direction*Math.PI/4],[.625,1.266,direction*Math.PI/4]]){
+  const arrow=new THREE.Mesh(new THREE.BoxGeometry(.085,.026,.018),ink);
+  arrow.position.set(direction*x,y,-.035);arrow.rotation.z=angle;sign.add(arrow);
+ }
+ exportObj(name,sign);
+}
+exportGraniteLineSign('granite_line_lockers','LOCKERS','#7b430e',1);
+exportGraniteLineSign('granite_line_bench','BENCH','#245a77',-1);
 const tinted=new Set();
 for(const g of [...placements,...environment.placements])if(g.instances.some(i=>i.color.some(c=>Math.abs(c-1)>.00001)))
  for(const slot of assets.find(a=>a.name===g.asset).slots)tinted.add(slot);
@@ -197,6 +217,7 @@ addPerimeterTrail(manifest,field,(x,y)=>terrain.heightAt(-y,x),landmarks);
 applySlateRimPilot(manifest,field);
 applySlateRimExtension(manifest,field);
 addTerrainChallenges(manifest,field);
+applySlateRimWorkings(manifest,field);
 // Fit the exact exported coachwork before publishing either manifest.
 await bakeTireFits(root,manifest);
 fs.copyFileSync(path.join(root,'..','TerraDrive-v1.13','dist','assets','terrain','manifest.json'),path.join(data,'texture-credits.json'));

@@ -8,8 +8,12 @@
 #include "TerraPressure.h"
 #include "TerraDamage.h"
 #include "TerraControls.h"
+#include "TerraCourse.h"
+#include "TerraDriveFeedback.h"
 #include "TerraVehicle.generated.h"
 class UBoxComponent;
+class UAudioComponent;
+class USoundWaveProcedural;
 class UStaticMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
@@ -63,6 +67,11 @@ public:
   void TeleportZone(int Index);
   void TeleportRoute(int Index);
   FString RouteHint(const FString& Hint)const;
+  FTerraCourseRun Course;
+  FTerraDriveCue DriveCue;
+  bool DriveFeedbackPlaying()const;
+  double CourseBest(int Index)const;
+  void LoadCourseRecords();
   uint64 RouteNoticeId() const { return RouteNoticeSerial; }
   void ToggleLocker(bool Front);
   UFUNCTION()
@@ -268,6 +277,16 @@ public:
 private:
   TerraControls::Bindings Controls;
   TSharedPtr<STerraPauseMenu> PauseMenuWidget;
+  TMap<FString,double> CourseRecords;
+  UPROPERTY(Transient) TObjectPtr<UAudioComponent> DriveAudio;
+  UPROPERTY(Transient) TObjectPtr<USoundWaveProcedural> DriveWave;
+  FTerraDriveSynth DriveSynth;
+  float PendingFeedbackImpact=0,LastFeedbackLoad=0,FeedbackInterval=0;
+  void UpdateDriveFeedback(float Dt);
+  void StopDriveFeedback();
+  FString CourseRecordKey(int Index)const;
+  bool SaveCourseRecords()const;
+  void CompleteCourse(const FTerraRoute& Route);
   bool RequireControlRelease=false,RecoveryBrakeHold=false;
   TSharedPtr<FTerraDamageVisualCache> DamageVisualCache;
   bool PrepareDamageMesh();
