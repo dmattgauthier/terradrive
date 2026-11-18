@@ -28,7 +28,10 @@ struct FSession {
   int Closest=0,Seconds=600,Laps=0;
   bool IceAudio=false,EVAudible=false,Captured=false;
   EPhase Phase=EPhase::Garage;
-  void Advance(EPhase Next,double Now){Phase=Next;PhaseStarted=Now;Captured=false;}
+  void Advance(EPhase Next,double Now){
+    Phase=Next;PhaseStarted=Now;Captured=false;
+    UE_LOG(LogTemp,Display,TEXT("TERRA_PLAYTEST phase=%s elapsed=%.1f"),PhaseNames[int(Phase)],Now-Started);
+  }
 } Run;
 
 void Hold(ATerraVehicle& V){

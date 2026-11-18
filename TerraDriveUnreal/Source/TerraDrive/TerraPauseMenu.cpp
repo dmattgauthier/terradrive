@@ -58,7 +58,6 @@ void STerraPauseMenu::Construct(const FArguments& Args){
   Navigation->AddSlot().FillHeight(1);
   Navigation->AddSlot().AutoHeight()[Label(TEXT("Esc  Back / resume"),12,Muted)];
   const FString Build=TerraBuildDescription();
-  if(!Build.IsEmpty())Navigation->AddSlot().AutoHeight().Padding(0,7,0,0)[Label(Build,11,Muted)];
   ChildSlot[SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.008f,.014f,.018f,.78f)).Padding(0)
     [SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
       [SNew(SBox).WidthOverride(1240).HeightOverride(690)
@@ -70,7 +69,11 @@ void STerraPauseMenu::Construct(const FArguments& Args){
                 +SVerticalBox::Slot().AutoHeight()[Label(TEXT("TERRA DRIVE"),13,Mint,true)]
                 +SVerticalBox::Slot().AutoHeight().Padding(0,5,0,0)[Label(TEXT("PAUSED"),29,White,true)]]
               +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center).HAlign(HAlign_Right)
-              [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(16,true)).ColorAndOpacity(Muted)]]
+              [SNew(SVerticalBox)
+                +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right)
+                [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(16,true)).ColorAndOpacity(Muted)]
+                +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right).Padding(0,5,0,0)
+                [Label(Build,11,Muted)]]]
             +SVerticalBox::Slot().FillHeight(1)
             [SNew(SHorizontalBox)
               +SHorizontalBox::Slot().AutoWidth().Padding(0,0,24,0)[SNew(SBox).WidthOverride(226)[Navigation]]

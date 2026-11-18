@@ -81,20 +81,23 @@ void ATerraVehicle::UpdateDriveFeedback(float Dt){
     FMath::Clamp(Rolling*RoadTexture[Surface]*.17f+Slip*.31f+Impact*.8f,0.f,1.f),Surface,Electric};
 
   if(!DriveAudio&&GEngine&&GEngine->UseSound()&&GetWorld()->GetAudioDeviceRaw()){
-    DriveWave=NewObject<USoundWaveProcedural>(this);
-    DriveWave->SetSampleRate(FTerraDriveSynth::Rate);
-    DriveWave->NumChannels=1;
-    DriveWave->Duration=INDEFINITELY_LOOPING_DURATION;
     DriveAudio=NewObject<UAudioComponent>(this);
     DriveAudio->bAutoActivate=false;
     DriveAudio->bAllowSpatialization=false;
     DriveAudio->SetVolumeMultiplier(.64f);
-    DriveAudio->SetSound(DriveWave);
     DriveAudio->RegisterComponent();
   }
   if(DriveAudio){
+    if(!DriveWave){
+      DriveWave=NewObject<USoundWaveProcedural>(this);
+      DriveWave->SetSampleRate(FTerraDriveSynth::Rate);
+      DriveWave->NumChannels=1;
+      DriveWave->Duration=INDEFINITELY_LOOPING_DURATION;
+      DriveAudio->SetSound(DriveWave);
+    }
     constexpr int TargetSamples=FTerraDriveSynth::Rate*64/1000;
-    const int Missing=TargetSamples-DriveWave->GetAvailableAudioByteCount()/int(sizeof(int16));
+    const int Queued=FMath::Clamp(DriveWave->GetAvailableAudioByteCount()/int(sizeof(int16)),0,TargetSamples);
+    const int Missing=TargetSamples-Queued;
     if(Missing>0){
       int16 Samples[TargetSamples];
       DriveSynth.Render(DriveCue,Samples,Missing);
@@ -121,8 +124,13 @@ bool ATerraVehicle::DriveFeedbackPlaying()const{
 }
 
 void ATerraVehicle::StopDriveFeedback(){
-  if(DriveAudio&&DriveAudio->IsPlaying())DriveAudio->Stop();
-  if(DriveWave)DriveWave->ResetAudio();
+  if(DriveAudio&&DriveWave){
+    DriveAudio->Stop();
+    // The mixer can still be consuming the old wave after Stop. Start the next
+    // playback with a fresh queue instead of resetting its byte count in flight.
+    DriveAudio->SetSound(nullptr);
+    DriveWave=nullptr;
+  }
   DriveSynth={};
   DriveCue={};
   PendingFeedbackImpact=LastFeedbackLoad=FeedbackInterval=0;

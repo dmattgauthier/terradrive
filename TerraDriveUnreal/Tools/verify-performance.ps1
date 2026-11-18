@@ -2,7 +2,8 @@
 param([ValidatePattern('^[a-z0-9-]+$')][string]$Name='quarry',
  [ValidateRange(10,45)][int]$Cap=30,[ValidateRange(0,2)][int]$Quality=0,[switch]$Legacy,[switch]$Trace,
  [ValidateRange(1280,1920)][int]$Width=1280,[ValidateRange(720,1080)][int]$Height=720,[string]$OutputRoot='',[string]$PackageDirectory='',
- [ValidateRange(0,900)][int]$PlaytestSeconds=0)
+ [ValidateRange(0,900)][int]$PlaytestSeconds=0,
+ [ValidateRange(0,4)][int]$PSOThreadLimit=0)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'staged-package-content.ps1')
 $project22=Split-Path $PSScriptRoot -Parent
@@ -27,6 +28,7 @@ if($PlaytestSeconds){
  $args22=@($args22|Where-Object {$_ -notin @('-NoSound','-TerraQuarryPerformanceOnly')})
  $args22+=@('-TerraCourseOnly',('-TerraPlaytestSeconds='+$PlaytestSeconds))
 }
+if($PSOThreadLimit){$args22+=("-ini:Engine:[SystemSettings]:r.pso.PrecompileThreadPoolSizeMax="+$PSOThreadLimit)}
 if($Legacy){$args22+=@('-TerraLegacySoilMeshLayout','-TerraLegacySoilReset','-TerraLegacySoilLeafEdges')}
 if($Trace){$args22+=@('-statnamedevents','-trace=cpu,frame,log,bookmark,region,task',('-tracefile="'+(Join-Path $out22 'cpu.utrace')+'"'))}else{$args22+='-NoTrace'}
 $source22=@(Get-ChildItem -LiteralPath (Join-Path $project22 'Source') -Recurse -File | Sort-Object FullName | ForEach-Object {
@@ -50,7 +52,9 @@ $pi22=[Diagnostics.ProcessStartInfo]::new();$pi22.FileName=$exe22;$pi22.Argument
 $pi22.WorkingDirectory=Split-Path $exe22 -Parent;$pi22.UseShellExecute=$false;$pi22.CreateNoWindow=$true;$pi22.WindowStyle=[Diagnostics.ProcessWindowStyle]::Hidden
 $nativeDirs22=@{TEMP='Temp';TMP='Temp';LOCALAPPDATA='AppData/Local';APPDATA='AppData/Roaming'}
 foreach($variable22 in $nativeDirs22.Keys){
- $directory22=Join-Path $out22 ('ProcessData/'+$nativeDirs22[$variable22])
+ # Preserve each -UserDir and settings file while sharing local graphics caches
+ # between repetitions of the Windows native performance test.
+ $directory22=Join-Path $root22 ('TestRuntime/'+$nativeDirs22[$variable22])
  [void][IO.Directory]::CreateDirectory($directory22)
  $pi22.EnvironmentVariables[$variable22]=$directory22
 }
