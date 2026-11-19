@@ -201,7 +201,7 @@ Wait for that commandlet to finish, then run `Tools/build-native.ps1 -Package` f
 
 The unused Android File Server plugin is explicitly disabled. `Tools/prepare-github.mjs` rejects credential-like configuration values before preparing an upload; do not publish server tokens that Unreal may generate in local settings.
 
-After packaging, launch `Build/Windows/Start Terra Drive.cmd`. The launcher saves the player profile in the sibling `Build/PlayerData` directory. Keep the entire `Windows` directory together because the executable requires its staged content. Use `-ArchiveDirectory` to stage a separate candidate. For drive-local tools, logs and caches, pass `-DriveLocalData` with an engine root and archive on the same drive as the checkout. See the [quarry playtest plan](docs/quarry-playtest-plan.md) for storage and verification details.
+After packaging, launch `Build/Windows/Start Terra Drive.cmd`. The launcher saves the player profile in the sibling `Build/PlayerData` directory. On the first launch with an older `Windows/TerraDrive/Saved` profile, it copies missing settings, records, and save files into `PlayerData/Saved`. Existing files in `PlayerData` take precedence. Keep the entire `Windows` directory together because the executable requires its staged content. Use `-ArchiveDirectory` to stage a separate candidate. For drive-local tools, logs and caches, pass `-DriveLocalData` with an engine root and archive on the same drive as the checkout. See the [quarry playtest plan](docs/quarry-playtest-plan.md) for storage and verification details.
 
 The command below runs the native automated driving checks and captures the regions and challenge routes.
 

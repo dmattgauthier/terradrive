@@ -53,10 +53,12 @@
 #include "TerraCarcassValidation.h"
 #include "TerraExpandedValidation.h"
 #include "TerraRecoveryValidation.h"
+#include "TerraPlayerController.h"
 #include "Misc/App.h"
 #include "UnrealClient.h"
 ATerraGameMode::ATerraGameMode() {
   DefaultPawnClass = ATerraVehicle::StaticClass();
+  PlayerControllerClass = ATerraPlayerController::StaticClass();
   HUDClass = ATerraHUD::StaticClass();
   PrimaryActorTick.bCanEverTick = true;
   PrimaryActorTick.bTickEvenWhenPaused = FParse::Param(FCommandLine::Get(),TEXT("TerraInterfaceOnly"))||

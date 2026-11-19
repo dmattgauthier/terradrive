@@ -13,7 +13,7 @@
 #include "TerraVehicle.generated.h"
 class UBoxComponent;
 class UAudioComponent;
-class USoundWaveProcedural;
+class UTerraDriveSoundWave;
 class UStaticMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
@@ -70,6 +70,8 @@ public:
   FTerraCourseRun Course;
   FTerraDriveCue DriveCue;
   bool DriveFeedbackPlaying()const;
+  int64 DriveFeedbackRenderedSamples()const;
+  uint64 DriveFeedbackRumblePulse()const{return DriveRumbleHandle;}
   double CourseBest(int Index)const;
   void LoadCourseRecords();
   uint64 RouteNoticeId() const { return RouteNoticeSerial; }
@@ -279,8 +281,8 @@ private:
   TSharedPtr<STerraPauseMenu> PauseMenuWidget;
   TMap<FString,double> CourseRecords;
   UPROPERTY(Transient) TObjectPtr<UAudioComponent> DriveAudio;
-  UPROPERTY(Transient) TObjectPtr<USoundWaveProcedural> DriveWave;
-  FTerraDriveSynth DriveSynth;
+  UPROPERTY(Transient) TObjectPtr<UTerraDriveSoundWave> DriveWave;
+  uint64 DriveRumbleHandle=0;
   float PendingFeedbackImpact=0,LastFeedbackLoad=0,FeedbackInterval=0;
   void UpdateDriveFeedback(float Dt);
   void StopDriveFeedback();

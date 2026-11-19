@@ -25,6 +25,11 @@ $args22=@('-unattended','-windowed','-ForceRes','-RenderOffscreen',('-ResX='+$Wi
  ('-abslog="'+(Join-Path $out22 'game.log')+'"'))
 if($PlaytestSeconds){
  if($PlaytestSeconds -lt 180 -or $Legacy){throw 'The full playtest needs at least 180 seconds and the current terrain layout.'}
+ $testSaved22=Join-Path $out22 'User/Saved'
+ $testPersonalBest22=Join-Path $testSaved22 'course-bests.json'
+ [void][IO.Directory]::CreateDirectory($testSaved22)
+ '{"version":1,"bestSeconds":{"Slate Rim quarry trail / urus-performante":0.25}}' | Set-Content -LiteralPath $testPersonalBest22 -Encoding ascii
+ $testPersonalHash22=(Get-FileHash -LiteralPath $testPersonalBest22).Hash
  $args22=@($args22|Where-Object {$_ -notin @('-NoSound','-TerraQuarryPerformanceOnly')})
  $args22+=@('-TerraCourseOnly',('-TerraPlaytestSeconds='+$PlaytestSeconds))
 }
@@ -82,6 +87,15 @@ try{
  $receipt22.checks=@($result22.tests).Count;$receipt22.failures=@($result22.tests|Where-Object {!$_.pass})
  if($receipt22.failures.Count -or (!$PlaytestSeconds -and $receipt22.checks -ne 14) -or ($PlaytestSeconds -and $receipt22.checks -lt 15)){
   throw 'A benchmark functional guard failed'
+ }
+ if($PlaytestSeconds){
+  if((Get-FileHash -LiteralPath $testPersonalBest22).Hash -ne $testPersonalHash22){throw 'Course validation rewrote the player record fixture'}
+  $records22=@(Get-ChildItem -LiteralPath (Join-Path $testSaved22 'Validation') -File -Filter 'course-bests-*.json')
+  if($records22.Count -ne 1){throw 'The playtest must write one session-specific validation record'}
+  $courseRecord22=Get-Content -LiteralPath $records22[0].FullName -Raw|ConvertFrom-Json
+  if($courseRecord22.bestSeconds.'Slate Rim quarry trail / urus-performante' -le 0.25){throw 'The validation record does not contain a fresh lap'}
+  $receipt22.validationCourseRecord=$records22[0].Name
+  $receipt22.personalCourseRecordUnchanged=$true
  }
  $metricsFile22=if($PlaytestSeconds){'quarry-playtest.json'}else{'quarry-performance.json'}
  $metric22=Get-Content -LiteralPath (Join-Path $out22 $metricsFile22) -Raw|ConvertFrom-Json

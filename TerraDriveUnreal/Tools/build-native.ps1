@@ -18,6 +18,12 @@ if(!$EngineRoot){
     }
 }
 $engineRoot=[IO.Path]::GetFullPath($EngineRoot)
+$automationLogDirectory=Join-Path $projectRoot 'Saved\AutomationLogs'
+$buildEnvironment=@{
+    UBA_ROOT=Join-Path $projectRoot 'Saved\UBA'
+    uebp_LogFolder=$automationLogDirectory
+    uebp_FinalLogFolder=$automationLogDirectory
+}
 if($DriveLocalData){
     foreach($path in @($engineRoot,$ArchiveDirectory)){
         if([IO.Path]::GetPathRoot($path) -ne $drive){
@@ -32,7 +38,7 @@ if($DriveLocalData){
     foreach($name in $variables.Keys){
         $path=Join-Path $cache $variables[$name]
         [void][IO.Directory]::CreateDirectory($path)
-        [Environment]::SetEnvironmentVariable($name,$path,'Process')
+        $buildEnvironment[$name]=$path
     }
 }
 $editorCacheArgs=@()
@@ -67,9 +73,6 @@ if($BuildLabel){
     $changed=@(& git -C $projectRoot status --porcelain --untracked-files=normal)
     if($LASTEXITCODE -or $changed.Count){throw 'Commit the source before packaging a labeled revision.'}
 }
-$env:UBA_ROOT=Join-Path $projectRoot 'Saved\UBA'
-$env:uebp_LogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
-$env:uebp_FinalLogFolder=Join-Path $projectRoot 'Saved\AutomationLogs'
 $importMarker=Join-Path $projectRoot 'Saved\import-complete.json'
 $cookMarker=Join-Path $projectRoot 'Saved\native-cook-complete.json'
 $cookPath=Join-Path $projectRoot 'Saved\Cooked\Windows'
@@ -142,14 +145,16 @@ function Get-CompletedImportHash {
     }
     return (Get-BuildFileHash $importMarker)
 }
-if ($ImportAssets -and $SkipExport) {
-    $exportHash=Get-SourceExportHash
+function Restore-BuildEnvironment([hashtable]$Snapshot) {
+    foreach($name in $Snapshot.Keys){
+        if($null -eq $Snapshot[$name]){
+            Remove-Item -LiteralPath ('Env:'+$name) -ErrorAction SilentlyContinue
+        } else {
+            [Environment]::SetEnvironmentVariable($name,$Snapshot[$name],'Process')
+        }
+    }
 }
-if (!$SkipBuild) {
-    & "$engineRoot\Engine\Build\BatchFiles\Build.bat" TerraDriveEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE -NoUBA -MaxParallelActions=2 @buildArgs
-    if ($LASTEXITCODE) { throw 'Editor compilation failed' }
-}
-if ($ImportAssets) {
+function Import-NativeAssets {
     if (!$SkipExport) {
         & node (Join-Path $PSScriptRoot 'export-source.mjs')
         if ($LASTEXITCODE) { throw 'Source conversion failed' }
@@ -174,26 +179,29 @@ if ($ImportAssets) {
     $started=Get-Date
     $taskImportData=Get-Content -LiteralPath (Join-Path $projectRoot 'SourceAssets/import.json') -Raw|ConvertFrom-Json
     $taskAssetCount=@($taskImportData.assets).Count
+    $previousImportEnvironment=@{
+        TERRA_IMPORT_START=[Environment]::GetEnvironmentVariable('TERRA_IMPORT_START','Process')
+        TERRA_IMPORT_END=[Environment]::GetEnvironmentVariable('TERRA_IMPORT_END','Process')
+    }
     try {
-    for($taskStart=0;$taskStart -lt $taskAssetCount;$taskStart+=$ImportBatchSize){
-    $taskEnd=[Math]::Min($taskAssetCount,$taskStart+$ImportBatchSize)
-    $env:TERRA_IMPORT_START=[string]$taskStart;$env:TERRA_IMPORT_END=[string]$taskEnd
-    $taskBatchLog=Join-Path $projectRoot ('Saved/Logs/import-assets-'+$taskStart+'.log')
-    $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$scriptPath+'"'),'-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$taskBatchLog+'"'))
-    $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList ($editorArgs+$editorCacheArgs) -WindowStyle Hidden -PassThru
-    # Wait for the commandlet itself. Start-Process -Wait can also wait on
-    # persistent compiler/cache descendants after the commandlet has exited.
-    $editorProcess.WaitForExit()
-    $editorProcess.Refresh()
-    if($editorProcess.ExitCode){throw "Asset batch $taskStart failed; inspect $taskBatchLog"}
-    if($taskEnd -lt $taskAssetCount){
-      $taskBatchMarker=Join-Path $projectRoot ('Saved/import-batch-'+$taskStart+'.json')
-      if(!(Test-Path -LiteralPath $taskBatchMarker) -or (Get-Item -LiteralPath $taskBatchMarker).LastWriteTime -lt $started){throw "No fresh batch marker for $taskStart"}
-    }
-    Write-Output ('Imported mesh batch '+$taskStart+'..'+($taskEnd-1)+' / '+$taskAssetCount)
-    }
+        for($taskStart=0;$taskStart -lt $taskAssetCount;$taskStart+=$ImportBatchSize){
+            $taskEnd=[Math]::Min($taskAssetCount,$taskStart+$ImportBatchSize)
+            $env:TERRA_IMPORT_START=[string]$taskStart;$env:TERRA_IMPORT_END=[string]$taskEnd
+            $taskBatchLog=Join-Path $projectRoot ('Saved/Logs/import-assets-'+$taskStart+'.log')
+            $editorArgs=@(('"'+$project+'"'),'-run=pythonscript',('-script="'+$scriptPath+'"'),'-unattended','-nullrhi','-nosplash','-NoSound','-stdout','-FullStdOutLogOutput',('-abslog="'+$taskBatchLog+'"'))
+            $editorProcess=Start-Process -FilePath "$engineRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -ArgumentList ($editorArgs+$editorCacheArgs) -WindowStyle Hidden -PassThru
+            # Wait for the commandlet itself, without waiting for cache helpers.
+            $editorProcess.WaitForExit()
+            $editorProcess.Refresh()
+            if($editorProcess.ExitCode){throw "Asset batch $taskStart failed; inspect $taskBatchLog"}
+            if($taskEnd -lt $taskAssetCount){
+                $taskBatchMarker=Join-Path $projectRoot ('Saved/import-batch-'+$taskStart+'.json')
+                if(!(Test-Path -LiteralPath $taskBatchMarker) -or (Get-Item -LiteralPath $taskBatchMarker).LastWriteTime -lt $started){throw "No fresh batch marker for $taskStart"}
+            }
+            Write-Output ('Imported mesh batch '+$taskStart+'..'+($taskEnd-1)+' / '+$taskAssetCount)
+        }
     } finally {
-    Remove-Item Env:TERRA_IMPORT_START,Env:TERRA_IMPORT_END -ErrorAction SilentlyContinue
+        Restore-BuildEnvironment $previousImportEnvironment
     }
     if (!(Test-Path -LiteralPath $importMarker) -or (Get-Item -LiteralPath $importMarker).LastWriteTime -lt $started -or !(Test-Path -LiteralPath $mapPath)) { throw "Asset import did not produce a fresh completion marker and map. Inspect the batch logs in Saved/Logs." }
     $importReceipt=Read-BuildReceipt $importMarker
@@ -205,7 +213,7 @@ if ($ImportAssets) {
     $importReceipt | Add-Member -NotePropertyName vehicleCollisionSHA256 -NotePropertyValue $collisionHash
     Write-BuildReceipt $importMarker $importReceipt
 }
-if ($Package) {
+function Build-WindowsPackage {
     $importHash=Get-CompletedImportHash
     $carcassHash=Get-BuildFileHash $carcassRecipe
     $cookReceipt=$null
@@ -244,6 +252,9 @@ if ($Package) {
     }
     & node (Join-Path $PSScriptRoot 'garden-geology.mjs')
     if($LASTEXITCODE){throw 'Garden geology cache generation failed'}
+    $windows=Join-Path $ArchiveDirectory 'Windows'
+    $profileScript=Join-Path $PSScriptRoot 'Initialize Terra Drive Profile.ps1'
+    & $profileScript -PackageDirectory $windows
     $packageStarted=Get-Date
     & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output "-UbtArgs=$uatBuildArguments" @cookerCacheArgs @uatEditorArgs
     if ($LASTEXITCODE) { throw 'Packaging failed' }
@@ -256,8 +267,7 @@ if ($Package) {
     if (!(Test-Path -LiteralPath (Join-Path $ArchiveDirectory 'Windows\TerraDrive.exe'))) {
         throw 'AutomationTool returned success but the packaged launcher is missing.'
     }
-    $windows=Join-Path $ArchiveDirectory 'Windows'
-    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start Terra Drive.cmd') -Destination $windows
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start Terra Drive.cmd'),$profileScript -Destination $windows
     $buildInfo=Join-Path $windows 'TerraDrive\Content\NativeData\build-info.json'
     if($BuildLabel){
         [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($buildInfo))
@@ -273,4 +283,23 @@ if ($Package) {
         if ((Get-BuildFileHash $carcassRecipe) -ne $carcassHash) { throw 'Tire material recipe changed during packaging. Rerun -Package.' }
         Write-BuildReceipt $cookMarker @{assetImportSHA256=$importHash; tireCarcassRecipeSHA256=$carcassHash; cookedTreeSHA256=(Get-CookedTreeHash)}
     }
+}
+
+$previousBuildEnvironment=@{}
+try {
+    foreach($name in $buildEnvironment.Keys){
+        $previousBuildEnvironment[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+        [Environment]::SetEnvironmentVariable($name,$buildEnvironment[$name],'Process')
+    }
+    if ($ImportAssets -and $SkipExport) {
+        $exportHash=Get-SourceExportHash
+    }
+    if (!$SkipBuild) {
+        & "$engineRoot\Engine\Build\BatchFiles\Build.bat" TerraDriveEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE -NoUBA -MaxParallelActions=2 @buildArgs
+        if ($LASTEXITCODE) { throw 'Editor compilation failed' }
+    }
+    if ($ImportAssets) { Import-NativeAssets }
+    if ($Package) { Build-WindowsPackage }
+} finally {
+    Restore-BuildEnvironment $previousBuildEnvironment
 }

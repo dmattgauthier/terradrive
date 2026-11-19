@@ -1293,6 +1293,7 @@ void ATerraVehicle::SaveSetup() {
   GConfig->Flush(false, GGameUserSettingsIni);
 }
 void ATerraVehicle::EndPlay(const EEndPlayReason::Type EndPlayReason){
+  StopDriveFeedback();
   if(Initialized&&!AutoTest)SaveGarage(GaragePath());
   Super::EndPlay(EndPlayReason);
 }

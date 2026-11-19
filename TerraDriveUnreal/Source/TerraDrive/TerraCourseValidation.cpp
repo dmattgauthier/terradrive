@@ -1,8 +1,10 @@
 #include "TerraCourseValidation.h"
 #include "TerraPauseMenu.h"
+#include "TerraPlayerController.h"
 #include "TerraVehicle.h"
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
+#include "InputKeyEventArgs.h"
 #include "Misc/App.h"
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
@@ -23,10 +25,13 @@ struct FSession {
   TArray<FVector> Points;
   TArray<double> Frames[int(EPhase::Count)];
   double Started=0,PhaseStarted=0,Previous=0;
+  double QuarryAudioStarted=0,QuarryAudioSeconds=0;
+  int64 FirstQuarryAudioSamples=0,QuarryAudioSamples=0;
+  uint64 BeforeCoastPulse=0;
   float MudRut=0,PeakICE=0,PeakEV=0,PeakRumble=0,PeakImpact=0,PeakSlip=0;
   FVector MudStart=FVector::ZeroVector,RollStart=FVector::ZeroVector;
   int Closest=0,Seconds=600,Laps=0;
-  bool IceAudio=false,EVAudible=false,Captured=false;
+  bool IceAudio=false,EVAudible=false,CoastPulse=false,Captured=false;
   EPhase Phase=EPhase::Garage;
   void Advance(EPhase Next,double Now){
     Phase=Next;PhaseStarted=Now;Captured=false;
@@ -102,6 +107,11 @@ bool Finish(double Now,TFunctionRef<void(const FString&,bool,float)> Check){
   Stats->SetNumberField(TEXT("gamepadCue"),Run.PeakRumble);
   Stats->SetNumberField(TEXT("impactCue"),Run.PeakImpact);
   Stats->SetNumberField(TEXT("slipCue"),Run.PeakSlip);
+  const double AudioRate=Run.QuarryAudioSeconds>0?Run.QuarryAudioSamples/Run.QuarryAudioSeconds:0;
+  Stats->SetNumberField(TEXT("quarryAudioSamplesPerSecond"),AudioRate);
+  Stats->SetNumberField(TEXT("quarryAudioSeconds"),Run.QuarryAudioSeconds);
+  Check(TEXT("quarry audio renders at the configured sample rate across game frames"),
+    Run.QuarryAudioSeconds>10&&FMath::Abs(AudioRate-FTerraDriveSynth::Rate)<.02*FTerraDriveSynth::Rate,AudioRate);
   Check(TEXT("sustained session uses real wall time"),Now-Run.Started>=Run.Seconds&&Run.Laps>0,Now-Run.Started);
   Check(TEXT("live ICE sound plays and responds to load"),Run.IceAudio&&Run.PeakICE>.12f,Run.PeakICE);
   Check(TEXT("live EV audio plays under propulsion load"),Run.EVAudible&&Run.PeakEV>.12f,Run.PeakEV);
@@ -170,6 +180,15 @@ bool Tick(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,T
       if(Time>2){Run.Closest=0;Run.Advance(EPhase::QuarryDrive,Now);}
       return false;
     case EPhase::QuarryDrive:{
+      const int64 Samples=V->DriveFeedbackRenderedSamples();
+      if(Time>=4&&Samples>0){
+        if(Run.QuarryAudioStarted==0){
+          Run.QuarryAudioStarted=Now;
+          Run.FirstQuarryAudioSamples=Samples;
+        }
+        Run.QuarryAudioSeconds=Now-Run.QuarryAudioStarted;
+        Run.QuarryAudioSamples=Samples-Run.FirstQuarryAudioSamples;
+      }
       if(const auto Menu=V->GetPauseMenuWidget();Menu&&Menu->ActivePage()==STerraPauseMenu::CourseResultsPageIndex){
         Check(TEXT("stock Urus reaches every quarry gate cleanly"),V->GateIndex==Route.Gates.Num()&&
           V->Course.CleanGates==Route.Gates.Num()&&V->Course.Recoveries==0,V->GateIndex);
@@ -221,15 +240,42 @@ bool Tick(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,T
       V->SelectVehicle(4);V->ResetUpgrades(false);V->TeleportRoute(Quarry);Hold(*V);
       Run.Advance(EPhase::Roll,Now);return false;
     case EPhase::Roll:{
-      if(Time<1.5)return false;
+      auto* PC=Cast<ATerraPlayerController>(V->GetController());
+      const FKey& Trigger=EKeys::Gamepad_RightTriggerAxis;
+      if(Time<1.5){
+        if(PC)PC->InputKey(FInputKeyEventArgs::CreateSimulated(Trigger,IE_Axis,.7f,1));
+        return false;
+      }
       if(Run.RollStart.IsZero()){
+        // PlayerInput accumulates analog samples within a frame. Release only
+        // after previous frames have reported a held trigger.
+        const float HeldTrigger=PC?PC->GetInputAnalogKeyState(Trigger):0;
+        if(PC)PC->InputKey(FInputKeyEventArgs::CreateSimulated(Trigger,IE_Axis,0.f,1));
+        Check(TEXT("releasing the trigger preserves the last gamepad input device"),PC&&HeldTrigger>.1f&&PC->UsesGamepad(),HeldTrigger);
+        Run.BeforeCoastPulse=V->DriveFeedbackRumblePulse();
         Run.RollStart=V->GetActorLocation();
-        FVector P=Run.RollStart+FVector(0,0,125);
+        V->TestBrake=0;
+        const FVector P=Run.RollStart+FVector(0,0,125);
         Place(*V,P,FRotator(0,V->GetActorRotation().Yaw,90));
+      }
+      const uint64 Pulse=V->DriveFeedbackRumblePulse();
+      if(V->DriveCue.Impact>.08f&&!Run.CoastPulse){
+        const float TriggerValue=PC?PC->GetInputAnalogKeyState(Trigger):1.f;
+        Run.CoastPulse=PC&&PC->UsesGamepad()&&FMath::IsNearlyZero(TriggerValue)&&V->Throttle==0&&
+          Pulse&&Pulse!=Run.BeforeCoastPulse;
+        UE_LOG(LogTemp,Display,TEXT("TERRA_COAST_RUMBLE trigger=%.3f impact=%.3f dispatched=%d"),
+          TriggerValue,V->DriveCue.Impact,Run.CoastPulse);
       }
       if(Time<4.5)return false;
       if(!Run.Captured){
         Check(TEXT("side contact disables vehicle drive"),V->Overturned&&V->Throttle==0,V->GetActorUpVector().Z);
+        Check(TEXT("rollover impact issues a rumble pulse with the trigger released"),Run.CoastPulse,0);
+        if(PC){
+          PC->InputKey(FInputKeyEventArgs::CreateSimulated(EKeys::W,IE_Pressed,1.f));
+          PC->InputKey(FInputKeyEventArgs::CreateSimulated(EKeys::W,IE_Released,0.f));
+          PC->InputKey(FInputKeyEventArgs::CreateSimulated(Trigger,IE_Axis,.02f,1));
+        }
+        Check(TEXT("keyboard input takes over despite neutral gamepad drift"),PC&&!PC->UsesGamepad(),0);
         Capture(TEXT("playtest-rollover.png"));Run.Captured=true;return false;
       }
       const FVector P=V->GetActorLocation();

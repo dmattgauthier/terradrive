@@ -11,7 +11,13 @@
 #include "Serialization/JsonWriter.h"
 
 namespace {
-FString RecordsPath(){return FPaths::ProjectSavedDir()/TEXT("course-bests.json");}
+FString RecordsPath(bool Validate){
+  if(Validate){
+    static const FString SessionFile=TEXT("course-bests-")+FGuid::NewGuid().ToString(EGuidFormats::Digits)+TEXT(".json");
+    return FPaths::ProjectSavedDir()/TEXT("Validation")/SessionFile;
+  }
+  return FPaths::ProjectSavedDir()/TEXT("course-bests.json");
+}
 
 TSharedPtr<FJsonObject> ReadObject(const FString& Path){
   FString Text;
@@ -40,7 +46,7 @@ FString ATerraVehicle::CourseRecordKey(int Index)const{
 
 void ATerraVehicle::LoadCourseRecords(){
   CourseRecords.Reset();
-  const auto Root=ReadObject(RecordsPath());
+  const auto Root=ReadObject(RecordsPath(AutoTest));
   const TSharedPtr<FJsonObject>* Times=nullptr;
   double Version=0;
   if(!Root||!Root->TryGetNumberField(TEXT("version"),Version)||Version!=1||
@@ -60,7 +66,7 @@ bool ATerraVehicle::SaveCourseRecords()const{
   Root->SetObjectField(TEXT("bestSeconds"),Times);
   FString Text;
   if(!FJsonSerializer::Serialize(Root,TJsonWriterFactory<>::Create(&Text)))return false;
-  const FString Path=RecordsPath(),Temp=Path+TEXT(".tmp");
+  const FString Path=RecordsPath(AutoTest),Temp=Path+TEXT(".tmp");
   IFileManager::Get().MakeDirectory(*FPaths::GetPath(Path),true);
   return FFileHelper::SaveStringToFile(Text,*Temp)&&IFileManager::Get().Move(*Path,*Temp,true,true);
 }

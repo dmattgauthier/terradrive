@@ -3,8 +3,9 @@
 #include "Components/AudioComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
-#include "GameFramework/PlayerController.h"
-#include "Sound/SoundWaveProcedural.h"
+#include "TerraDriveSoundWave.h"
+#include "TerraPlayerController.h"
+#include "Misc/ScopeLock.h"
 
 namespace {
 constexpr float RoadTexture[]={.74f,.25f,.59f,.65f,1.f,.61f,.49f};
@@ -52,6 +53,27 @@ void FTerraDriveSynth::Render(const FTerraDriveCue& Cue,int16* Output,int Count)
   }
 }
 
+void UTerraDriveSoundWave::SetDriveCue(const FTerraDriveCue& NewCue){
+  FScopeLock Lock(&CueLock);
+  const float UnplayedImpact=Cue.Impact;
+  Cue=NewCue;
+  Cue.Impact=FMath::Max(Cue.Impact,UnplayedImpact);
+}
+
+int32 UTerraDriveSoundWave::OnGeneratePCMAudio(TArray<uint8>& OutAudio,int32 NumSamples){
+  FTerraDriveCue Snapshot;
+  {
+    FScopeLock Lock(&CueLock);
+    Snapshot=Cue;
+    Cue.Impact=0;
+  }
+  // The mixer requests a full block even when the game thread misses a frame.
+  OutAudio.SetNumUninitialized(NumSamples*sizeof(int16),EAllowShrinking::No);
+  Synth.Render(Snapshot,reinterpret_cast<int16*>(OutAudio.GetData()),NumSamples);
+  RenderedSamples+=NumSamples;
+  return NumSamples;
+}
+
 void ATerraVehicle::UpdateDriveFeedback(float Dt){
   if(!DriveAudio&&(!GEngine||!GEngine->UseSound())&&AutoTest)return;
   const bool Electric=IsElectric();
@@ -89,32 +111,21 @@ void ATerraVehicle::UpdateDriveFeedback(float Dt){
   }
   if(DriveAudio){
     if(!DriveWave){
-      DriveWave=NewObject<USoundWaveProcedural>(this);
+      DriveWave=NewObject<UTerraDriveSoundWave>(this);
       DriveWave->SetSampleRate(FTerraDriveSynth::Rate);
       DriveWave->NumChannels=1;
       DriveWave->Duration=INDEFINITELY_LOOPING_DURATION;
       DriveAudio->SetSound(DriveWave);
     }
-    constexpr int TargetSamples=FTerraDriveSynth::Rate*64/1000;
-    const int Queued=FMath::Clamp(DriveWave->GetAvailableAudioByteCount()/int(sizeof(int16)),0,TargetSamples);
-    const int Missing=TargetSamples-Queued;
-    if(Missing>0){
-      int16 Samples[TargetSamples];
-      DriveSynth.Render(DriveCue,Samples,Missing);
-      DriveWave->QueueAudio(reinterpret_cast<const uint8*>(Samples),Missing*sizeof(int16));
-      if(!DriveAudio->IsPlaying())DriveAudio->Play();
-    }
+    DriveWave->SetDriveCue(DriveCue);
+    if(!DriveAudio->IsPlaying())DriveAudio->Play();
   }
   PendingFeedbackImpact*=FMath::Exp(-Dt*22.f);
 
   FeedbackInterval-=Dt;
   if(FeedbackInterval>0||DriveCue.Rumble<.028f)return;
-  auto* PC=Cast<APlayerController>(GetController());
-  if(!PC)return;
-  const float Pad=FMath::Max3(FMath::Abs(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX)),
-    PC->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis),PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis));
-  if(Pad>.075f){
-    PC->PlayDynamicForceFeedback(DriveCue.Rumble,.10f,true,false,false,true);
+  if(auto* PC=Cast<ATerraPlayerController>(GetController());PC&&PC->UsesGamepad()){
+    DriveRumbleHandle=PC->PlayDynamicForceFeedback(DriveCue.Rumble,.10f,true,false,false,true);
     FeedbackInterval=.10f;
   }
 }
@@ -123,15 +134,21 @@ bool ATerraVehicle::DriveFeedbackPlaying()const{
   return DriveAudio&&DriveAudio->IsPlaying();
 }
 
+int64 ATerraVehicle::DriveFeedbackRenderedSamples()const{
+  return DriveWave?DriveWave->GetRenderedSamples():0;
+}
+
 void ATerraVehicle::StopDriveFeedback(){
   if(DriveAudio&&DriveWave){
     DriveAudio->Stop();
-    // The mixer can still be consuming the old wave after Stop. Start the next
-    // playback with a fresh queue instead of resetting its byte count in flight.
+    // The mixer may still finish an old request after Stop. Resume with a
+    // fresh wave whose synthesis state belongs to its own playback.
     DriveAudio->SetSound(nullptr);
     DriveWave=nullptr;
   }
-  DriveSynth={};
+  if(auto* PC=Cast<APlayerController>(GetController());PC&&DriveRumbleHandle)
+    PC->PlayDynamicForceFeedback(0,0,false,false,false,false,EDynamicForceFeedbackAction::Stop,DriveRumbleHandle);
+  DriveRumbleHandle=0;
   DriveCue={};
   PendingFeedbackImpact=LastFeedbackLoad=FeedbackInterval=0;
 }
