@@ -32,8 +32,20 @@ The live Windows audio mixer ran during the ten-minute session. The ICE and EV m
 
 ## D: installation and evidence
 
-The 1.65 GiB verified package is in `Build/Windows`. Use `Build/Windows/Start Terra Drive.cmd` for the sibling `Build/PlayerData/Saved` profile. Existing garage and graphics settings were copied and hash-checked. The previous package is available in `Saved/QuarryPlaytest/Rollback-before-quarry-playtest-m1/Windows`.
+The original 1.65 GiB milestone package was deployed to `Build/Windows`. Use `Build/Windows/Start Terra Drive.cmd` for the sibling `Build/PlayerData/Saved` profile. Existing garage and graphics settings were copied and hash-checked. The previous package is available in `Saved/QuarryPlaytest/Rollback-before-quarry-playtest-m1/Windows`.
 
 Native logs, receipts, captures and isolated profiles are under `Saved/QuarryPlaytest/release-d-*`. The Unreal Engine copy, generated assets, cook cache and staging all live on D:. Windows and the installed Visual Studio compiler and SDK run from C:. UnrealBuildTool wrote its small system-profile trace there during compilation.
 
 The mesh research and acceptance criteria are in the [quarry playtest plan](quarry-playtest-plan.md).
+
+## PR #19 review follow-up
+
+The updated D: package is `quarry-playtest-pr19-review`, built from `0c11a3f79cbe2949b5957648de217950b9fb53a0`. Its native executable SHA-256 is `a9c8b9248980684068a40d09f2a4dc94428f180362c71dbee50a533d3c475bf6`. All three final receipts match the installed executable and staged content hashes.
+
+- The Windows launcher imported seven legacy files in tests covering a fresh profile, a partly populated profile, and a retry after a copy failure. The fixtures verified retention of existing files and that a completed migration does not restore an intentionally reset setting. The installed update preserved all six existing player files byte for byte.
+- The build restored the calling shell’s original environment after success, a missing-engine failure, and a full D: package. The test covered both set and unset variables.
+- The 1080p, 15 FPS-cap playtest passed all 22 checks in 184.8 seconds. The Urus completed all 20 gates, saved and loaded a 100.02-second validation record under `Saved/Validation`, and preserved the seeded 0.25-second personal record byte for byte.
+- The Windows mixer generated 23,999 PCM samples per second over 94.0 seconds of quarry driving at the 24 kHz source rate. The rollover dispatched an Unreal force-feedback pulse with the trigger at zero. Keyboard input then took over despite analog drift. Physical controller vibration still needs a hardware test.
+- The interface suite passed 166 checks. Both 30 FPS-cap quarry benchmarks passed their 14 driving and terrain checks. The updated build measured 24.16 FPS with a 56.30 ms 95th-percentile frame time. The previous build measured 24.39 FPS with a 53.78 ms 95th-percentile frame time under the same test settings.
+
+The updated launcher is at `Build/Windows/Start Terra Drive.cmd`. The previous package is at `Saved/PR19Review/Rollback-before-review-fixes/Windows`. The benchmark and gameplay receipts are in `Saved/PR19Review/Final`. The earlier 10-minute result above identifies the original milestone package.
