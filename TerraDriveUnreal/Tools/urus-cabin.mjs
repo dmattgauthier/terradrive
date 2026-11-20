@@ -31,8 +31,18 @@ export function urusCabin(g,m,carbon,{sidePoint,belt}){
   instrumentDisplay(g,m.satinMetal,[0,y-.003,z-.010],[w,h],layout,-.29);
  }
  const console=box(g,carbon,[0,.726,-.11],[.30,.18,.75],.024);console.rotation.x=-.07;
- const cover=box(g,m.redPaint||m.interior,[0,.820,.04],[.045,.018,.048],.005);cover.rotation.x=-.30;
- for(const s of [-1,1])for(let k=0;k<4;k++)box(g,metal,[s*.095,.803,-.02-k*.047],[.044,.009,.026],.004);
+ const redGuard=new T.MeshPhysicalMaterial({color:'#a80e18',roughness:.27,clearcoat:.65});
+ const shell=box(g,m.interior,[0,.818,-.015],[.087,.040,.097],.012);shell.rotation.x=-.17;
+ const cover=box(g,redGuard,[0,.843,-.052],[.049,.012,.059],.004);cover.rotation.x=-.31;
+ box(g,metal,[0,.851,-.064],[.024,.005,.013],.002);
+ for(const s of [-1,1]){
+  const selector=box(g,m.interior,[s*.086,.819,-.022],[.049,.033,.064],.006);selector.rotation.x=-.13;
+  for(let k=0;k<3;k++)box(g,metal,[s*.086,.837,-.004-k*.015],[.027,.002,.002],.0005);
+ }
+ for(let k=-3;k<=3;k++){
+  const switchCap=box(g,k===0?redGuard:m.interior,[k*.036,.891,.181],[.027,.014,.019],.002);
+  switchCap.rotation.x=-.42;
+ }
  box(g,m.upholstery,[0,.837,-.43],[.25,.08,.34],.029);
  // Flat-bottom steering rim, spokes, separate hub and column.
  const steering=new T.Group();steering.position.set(.40,1.025,.095);steering.rotation.x=-.24;g.add(steering);
@@ -50,8 +60,15 @@ export function urusCabin(g,m,carbon,{sidePoint,belt}){
   surface(g,m.upholstery,32,28,(u,v)=>{const x=(u*2-1)*.242,q=Math.abs(u*2-1);return[sx+x,.706+.052*Math.sin(v*Math.PI)+.049*q**5,lerp(z-.23,z+.24,v)];},true);
   const back=[[-.02,.207,.032],[.18,.228,.045],[.38,.211,.040],[.52,.145,.025]];
   surface(g,m.upholstery,36,36,(u,v)=>{const h=v*.52,x=(u*2-1)*station(back,h,1),q=Math.abs(u*2-1);return[sx+x,.755+h,z-.19-h*.22+station(back,h,2)*(1-q*q)+.060*q**5];},true);
-  box(g,m.upholstery,[sx,1.340,z-.30],[.245,.157,.102],.033);
-  for(const dx of [-.065,.065])box(g,metal,[sx+dx,1.280,z-.30],[.009,.068,.009],.003);
+  if(rear){
+   box(g,m.upholstery,[sx,1.340,z-.30],[.245,.157,.102],.033);
+   for(const dx of [-.065,.065])box(g,metal,[sx+dx,1.280,z-.30],[.009,.068,.009],.003);
+  }else{
+   const rest=box(g,m.upholstery,[sx,1.336,z-.288],[.258,.165,.106],.034);rest.rotation.x=-.18;
+   box(g,m.badge,[sx,1.363,z-.231],[.029,.039,.003],.008);
+   for(const side of [-1,1])curve(g,stitch,[[sx+side*.112,1.286,z-.237],[sx+side*.092,1.402,z-.245],
+    [sx+side*.038,1.415,z-.250]],.00075);
+  }
   for(const side of [-1,1])curve(g,stitch,[[sx+side*.19,.80,z-.177],[sx+side*.20,1.00,z-.22],[sx+side*.165,1.21,z-.275]],.0009);
   for(let k=0;k<6;k++)curve(g,m.interior,[[sx-.10,.89+k*.044,z-.19-(.135+k*.044)*.22+.037],[sx+.10,.89+k*.044,z-.19-(.135+k*.044)*.22+.037]],.0011);
  }

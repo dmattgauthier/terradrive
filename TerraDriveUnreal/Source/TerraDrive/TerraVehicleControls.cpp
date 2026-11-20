@@ -44,6 +44,7 @@ void ATerraVehicle::SetPauseMenu(bool Open){
   if(Open){
     // Preserve velocities and pose: pausing is not a hidden brake or recovery.
     if(!PC->SetPause(true)){Notice=TEXT("Pause is unavailable right now");return;}
+    StopDriveFeedback();
     Throttle=Brake=Steer=0;Reeling=false;
     PauseMenuWidget=SNew(STerraPauseMenu).Vehicle(this);
     GEngine->GameViewport->AddViewportWidgetContent(PauseMenuWidget.ToSharedRef(),100);

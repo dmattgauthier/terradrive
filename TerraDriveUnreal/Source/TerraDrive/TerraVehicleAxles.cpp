@@ -1,6 +1,7 @@
 #include "TerraVehicle.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
 
 int ATerraVehicle::WheelCount()const{return Number(TEXT("wheelCount"),4)==6?6:4;}

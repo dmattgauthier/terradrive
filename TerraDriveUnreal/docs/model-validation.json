@@ -104,37 +104,37 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 772784,
-      "normalizedFraction": 0.9995885007971179,
+      "vertices": 805337,
+      "normalizedFraction": 0.9996076176805486,
       "visibility": [
         {
           "pane": "windshield",
-          "clearDepthM": 1.0255480290258188
+          "clearDepthM": 1.240767734917257
         },
         {
           "pane": "hatch",
-          "clearDepthM": 0.33807887929465785
+          "clearDepthM": 0.2837050799469183
         },
         {
           "pane": "bonnet vent",
-          "firstSurfaceYM": 1.074969660221413
+          "firstSurfaceYM": 1.078950293666641
         },
         {
           "pane": "hatch plate well",
-          "firstSurfaceZM": -2.4637399266623623
+          "firstSurfaceZM": -2.4518865162380923
         },
         {
           "pane": "roof crown",
-          "centreHeightM": 1.617997546049787,
-          "transverseCrownM": 0.021960227739866944
+          "centreHeightM": 1.6138078375698548,
+          "transverseCrownM": 0.02140753722641775
         },
         {
           "pane": "closed spoiler",
-          "thicknessM": 0.018905834159153256
+          "thicknessM": 0.020957031913147572
         },
         {
           "pane": "sculpted door",
-          "shoulderOutsetM": 0.07880488214464598
+          "shoulderOutsetM": 0.08220203080614963
         },
         {
           "pane": "partitioned bonnet and open intake",
@@ -697,7 +697,7 @@
     {
       "vehicle": "Mercedes-AMG G 63 4x4 squared",
       "vertices": 241959,
-      "normalizedFraction": 0.9996817642658467,
+      "normalizedFraction": 0.9999834682735504,
       "visibility": [],
       "tire": {
         "revision": 24,
@@ -709,7 +709,7 @@
         "vehicle": "Mercedes-AMG G 63 4x4 squared",
         "id": "mercedes-amg-g63",
         "style": "g63",
-        "checks": 28,
+        "checks": 31,
         "pass": true,
         "sourceOnly": true,
         "geometry": {
@@ -738,8 +738,8 @@
           {
             "case": "unit shading normals",
             "pass": true,
-            "nonunit": 77,
-            "normalizedFraction": 0.9996817642658467
+            "nonunit": 4,
+            "normalizedFraction": 0.9999834682735504
           },
           {
             "case": "bounded triangle budget without cab duplication",
@@ -844,6 +844,26 @@
               0.9162999987602234,
               0.24000000208616257
             ]
+          },
+          {
+            "case": "exposed spare rear sidewall faces the outside ray",
+            "pass": true,
+            "hitCoordinate": 0.11817161979256774,
+            "outward": 0.9988387924647306,
+            "shadingOutward": 0.986605776690809
+          },
+          {
+            "case": "exposed spare outer tread faces the outside ray",
+            "pass": true,
+            "hitCoordinate": 0.457014810305579,
+            "outward": 0.9990482139480515,
+            "shadingOutward": 0.9886477288729812
+          },
+          {
+            "case": "spare bead seam has matching unit normals",
+            "pass": true,
+            "worstLengthError": 2.4070741622139735e-8,
+            "worstSeamDelta": 0
           },
           {
             "case": "4x4 marking fits the lower-half carrier, leaving the wheel visible above",
@@ -1429,7 +1449,7 @@
     },
     {
       "vehicle": "Grave Digger",
-      "vertices": 190725,
+      "vertices": 191029,
       "normalizedFraction": 1,
       "visibility": [],
       "tire": {
@@ -1440,18 +1460,18 @@
       },
       "addedReference": {
         "id": "grave-digger",
-        "checks": 25,
-        "vertices": 190725,
+        "checks": 26,
+        "vertices": 191029,
         "bodySizeM": [
           1.9999902248382568,
-          2.458979520251848,
+          2.4686113986925933,
           4.63100004196167
         ],
         "results": [
           {
             "name": "finite bounded authored geometry",
             "pass": true,
-            "vertices": 190725,
+            "vertices": 191029,
             "bad": 0
           },
           {
@@ -1524,6 +1544,13 @@
             "pass": true
           },
           {
+            "name": "factory 66-inch tires clear coachwork over both full steering and suspension sweeps",
+            "pass": true,
+            "minimumClearanceM": 0.008222509125449307,
+            "poses": 1092,
+            "surfaceSamples": 13102
+          },
+          {
             "name": "grave-digger-domed-wagon-roof present",
             "pass": true
           },
@@ -1550,11 +1577,11 @@
           {
             "name": "exposed triangulated tubular chassis",
             "pass": true,
-            "tubes": 98,
-            "diagonalBraces": 40,
+            "tubes": 100,
+            "diagonalBraces": 42,
             "sizeM": [
-              1.6319944895625662,
-              2.2968348576620423,
+              1.6333876595534083,
+              2.3064667361027875,
               4.3010000036954885
             ]
           },
@@ -2003,6 +2030,6 @@
       "pass": true
     }
   ],
-  "newExpeditionChecks": 157,
+  "newExpeditionChecks": 160,
   "pass": true
 }

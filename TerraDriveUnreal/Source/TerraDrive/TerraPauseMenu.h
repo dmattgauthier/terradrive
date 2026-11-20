@@ -18,6 +18,9 @@ public:
   virtual FReply OnPreviewMouseButtonDown(const FGeometry&,const FPointerEvent&)override;
   void ShowPage(int Index);
   int ActivePage()const{return Page;}
+  static constexpr int CourseBriefPageIndex=4,CourseResultsPageIndex=5;
+  TSharedPtr<SButton> CourseStartButton()const{return StartCourse;}
+  TSharedPtr<SButton> CourseRetryButton()const{return RetryCourse;}
   void BeginRebind(TerraControls::Action Action);
   bool CaptureBinding(FKey Key);
   bool IsRebinding()const{return WaitingForBinding;}
@@ -36,6 +39,8 @@ private:
   TSharedPtr<SScrollBox> ControlsScroll;
   TSharedPtr<SButton> RecoverHere;
   TSharedPtr<SButton> RestartRoute;
+  TSharedPtr<SButton> StartCourse,RetryCourse;
+  int BriefRoute=INDEX_NONE;
   TArray<TSharedPtr<SButton>> ChallengeButtons;
   TArray<TSharedPtr<SWidget>> Rows;
   bool WaitingForBinding=false,ExitRequested=false;
@@ -45,4 +50,5 @@ private:
   TSharedRef<SWidget> HomePage();
   TSharedRef<SWidget> ControlsPage();
   TSharedRef<SWidget> ChallengesPage();
+  TSharedRef<SWidget> CoursePage(bool Results);
 };

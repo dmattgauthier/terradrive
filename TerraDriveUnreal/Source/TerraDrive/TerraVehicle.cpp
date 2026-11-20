@@ -130,6 +130,7 @@ void ATerraVehicle::BeginPlay() {
   AutoTest = FParse::Param(FCommandLine::Get(), TEXT("TerraValidate"));
   TireCarcassEnabled=!(AutoTest&&FParse::Param(FCommandLine::Get(),TEXT("TerraRigidTireControl")));
   LoadControls(ControlsPath());
+  LoadCourseRecords();
   // Tires supply terrain grip. A grounded metal/plastic undertray should
   // slide over a crest rather than behaving like a second high-friction tire.
   // Normal collision impulses remain active against terrain and solid props.
@@ -289,6 +290,8 @@ void ATerraVehicle::TeleportZone(int Index) {
   Terrain->BreakTireMarks();
   Zone = (Index + Terrain->Spawns.Num()) % Terrain->Spawns.Num();
   RouteIndex = -1;
+  Course = {};
+  StopDriveFeedback();
   RouteStatus.Empty();
   FVector P =
       Terrain->Spawns[Zone] + FVector(0, 0, CG * 100 + 12 + Tuning.Lift * 100 + (Radius-Number(TEXT("tireRadius"),.42f))*100);
@@ -419,6 +422,10 @@ bool ATerraVehicle::RecoverInPlace() {
   ResetContactTelemetry();Overturned=false;Speed=Throttle=Steer=0;Brake=1;ReverseHold=0;
   ReverseReleaseRequired=false;RequireControlRelease=true;RecoveryBrakeHold=true;SpawnCooldown=.7f;
   WinchAttached=Reeling=false;PreviousRoutePosition=Position;
+  if(Terrain->Routes.IsValidIndex(RouteIndex)&&GateIndex<Terrain->Routes[RouteIndex].Gates.Num()){
+    ++Course.Recoveries;
+    Course.LegClean=false;
+  }
   Parcels.Empty();for(auto& Budget:SprayBudget)Budget=0;for(auto Mesh:SprayMeshes)Mesh->ClearInstances();
   Notice=FVector::DistSquared2D(Old,Position)<1.f
     ?TEXT("Recovered here. Challenge progress, damage and fuel are retained.")
@@ -487,10 +494,18 @@ void ATerraVehicle::UpdateRoute(float Dt) {
     if(Route.GateHeadings.IsValidIndex(GateIndex))GateForward=FRotator(0,Route.GateHeadings[GateIndex],0).Vector();
     else if(RouteIndex==8){const FVector Previous=GateIndex>0?Route.Gates[GateIndex-1]:Route.Spawn;GateForward=(G-Previous).GetSafeNormal2D();}
     const FVector GateSide(-GateForward.Y,GateForward.X,0);
-    if (FVector::DotProduct(PreviousRoutePosition-G,GateForward)<0 && FVector::DotProduct(P-G,GateForward)>=0 &&
-        FMath::Abs(FVector::DotProduct(P-G,GateSide)) < Route.GateWidth*50 && FMath::Abs(P.Z-G.Z)<300) {
-      ++GateIndex;
-      if(GateIndex==Route.Gates.Num()&&!Route.GateNotes.IsEmpty())Notice=Route.Name+TEXT(" complete");
+    if(Overturned)Course.LegClean=false;
+    const double Before=FVector::DotProduct(PreviousRoutePosition-G,GateForward);
+    const double After=FVector::DotProduct(P-G,GateForward);
+    if(Before<0&&After>=0){
+      const FVector Crossing=FMath::Lerp(PreviousRoutePosition,P,-Before/(After-Before));
+      const double Lateral=FMath::Abs(FVector::DotProduct(Crossing-G,GateSide));
+      if(Lateral<Route.GateWidth*50&&FMath::Abs(Crossing.Z-G.Z)<300){
+        Course.CleanGates+=Course.LegClean?1:0;
+        Course.LegClean=true;
+        ++GateIndex;
+        if(GateIndex==Route.Gates.Num())CompleteCourse(Route);
+      } else if(Lateral<Route.GateWidth*100)Course.LegClean=false;
     }
     PreviousRoutePosition = P;
   }
@@ -1142,6 +1157,7 @@ void ATerraVehicle::Tick(float Dt) {
     UpdateTireAir(Dt);
     Simulate(Dt);
     UpdateSpray(Dt);
+    UpdateDriveFeedback(Dt);
     UpdateRoute(Dt);
   }else{
     PendingBodyGroundContacts.Reset();
@@ -1232,6 +1248,7 @@ void ATerraVehicle::BodyHit(UPrimitiveComponent *Hit, AActor *OtherActor,
     return;
   CacheRolledBodyContact(Other,Result);
   const float Impact=Impulse.Size()/FMath::Max(1.f,Chassis->GetMass()*100);
+  if(Impact>.45f)PendingFeedbackImpact=FMath::Max(PendingFeedbackImpact,FMath::Min(1.f,(Impact-.45f)/5.f));
   const bool GroundHit=Other&&(Other->ComponentHasTag(TEXT("TerraGround"))||
       Other->GetClass()->GetName().StartsWith(TEXT("Landscape")));
   if(GroundHit){++TerrainBodyHits;TerrainImpactMPS=FMath::Max(TerrainImpactMPS,Impact);}
@@ -1276,6 +1293,7 @@ void ATerraVehicle::SaveSetup() {
   GConfig->Flush(false, GGameUserSettingsIni);
 }
 void ATerraVehicle::EndPlay(const EEndPlayReason::Type EndPlayReason){
+  StopDriveFeedback();
   if(Initialized&&!AutoTest)SaveGarage(GaragePath());
   Super::EndPlay(EndPlayReason);
 }

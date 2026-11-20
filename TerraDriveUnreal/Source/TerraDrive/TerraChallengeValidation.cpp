@@ -76,7 +76,11 @@ bool Tick(ATerraVehicle* Vehicle,float Delta,
     const auto Menu=Vehicle->GetPauseMenuWidget();
     const auto Button=Menu.IsValid()?Menu->ChallengeButton(Index):nullptr;
     const bool StartEnabled=Button.IsValid()&&Button->IsEnabled()&&Menu->ActivePage()==3;
-    if(StartEnabled)Button->SimulateClick();
+    if(StartEnabled){
+      Button->SimulateClick();
+      if(const auto StartButton=Menu->CourseStartButton();StartButton&&Menu->ActivePage()==STerraPauseMenu::CourseBriefPageIndex)
+        StartButton->SimulateClick();
+    }
     const bool Travelled=StartEnabled&&!Vehicle->PauseMenuOpen&&Vehicle->RouteIndex==Index&&
       Vehicle->GateIndex==0&&FVector::Dist2D(Vehicle->GetActorLocation(),Route.Spawn)<1;
     Test(TEXT("starts from the challenge menu with six gates"),Travelled&&Route.Gates.Num()==6&&

@@ -17,7 +17,7 @@ const quarry=slateRimVisualCoverage(world),quarryLane=quarryLaneMask(world.quarr
 const hash=crypto.createHash('sha256').update(bytes).update(fs.readFileSync(import.meta.filename))
  .update(fs.readFileSync(new URL('./perimeter-trail.mjs',import.meta.url))).update(JSON.stringify(trail??null))
  .update(fs.readFileSync(new URL('./slate-rim-pilot.mjs',import.meta.url))).update(JSON.stringify(world.slateRimPilot??null))
- .update(JSON.stringify(world.slateRimExtension??null))
+ .update(JSON.stringify(world.slateRimExtension??null)).update(JSON.stringify(world.slateRimWorkings??null))
  .update(fs.readFileSync(new URL('./granite-ground.mjs',import.meta.url)))
  .update(fs.readFileSync(new URL('./offroad-courses.mjs',import.meta.url)))
  .update(JSON.stringify(world.quarryTrail?.samples??null)).digest('hex');

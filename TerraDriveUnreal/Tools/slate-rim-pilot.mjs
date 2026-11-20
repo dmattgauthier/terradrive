@@ -144,7 +144,12 @@ export function slateRimVisualCoverage(world){
   const pilot=world.slateRimPilot?.visualCoverage?slateRimCoverage(world.quarryTrail.samples):()=>null;
   if(!world.slateRimExtension?.visualCoverage)return pilot;
   const extension=slateRimExtensionCoverage(world.quarryTrail.samples);
-  return (x,y)=>pilot(x,y)??extension(x,y);
+  return (x,y)=>{
+    const base=pilot(x,y)??extension(x,y);
+    if(!world.slateRimWorkings||!base)return base;
+    const layers=workedSection(base);
+    return layers?{...base,rock:Math.max(base.rock,layers.rock)}:base;
+  };
 }
 
 function terrainHeight(field){
@@ -263,6 +268,80 @@ export function applySlateRimPilot(world,field){
   world.slateRimPilot={version:1,startM:start,endM:end,counts,
     minimumClearanceM:+minClearance.toFixed(3),visualCoverage:true};
   return world.slateRimPilot;
+}
+
+
+// Open-cut profiles in metres along the quarry centreline. Three working
+// levels step back behind each high face; spoiled material fans at the feet.
+const workings=[
+  {from:11,to:57,side:-1,toe:9.1,rise:4.2},
+  {from:63,to:106,side:-1,toe:9.8,rise:5.5},
+  {from:110,to:133,side:1,toe:9.7,rise:3.3},
+  {from:137,to:180,side:1,toe:9.5,rise:5.4},
+  {from:186,to:204,side:1,toe:9.8,rise:3.4},
+  {from:207,to:237,side:-1,toe:9.7,rise:4.3},
+  {from:241,to:283,side:-1,toe:10.2,rise:5.2},
+  {from:289,to:315,side:1,toe:10.6,rise:3.2},
+];
+
+function workedSection(p){
+  if(!p)return null;
+  const bank=workings.find(w=>p.d>w.from&&p.d<w.to&&Math.sign(p.side)===w.side);
+  if(!bank)return null;
+  const u=p.d-bank.from;
+  const strike=bank.toe+.53*Math.sin(p.d*.267)+.24*Math.sin(p.d*.94)+.13*Math.sin(p.d*2.46);
+  const q=Math.abs(p.side)-strike;
+  if(q<-3.7||q>12.5)return null;
+  const lengthFade=pulse(bank.from,bank.to,p.d,5.25);
+  const rise=bank.rise*(.91+.09*Math.sin(u*.20)+.041*Math.sin(u*.77));
+  const lower=smooth(-.50,.74,q),middle=smooth(2.00,3.03,q-.27*Math.sin(u*.34));
+  const upper=smooth(4.05,5.16,q+.22*Math.sin(u*.53));
+  const crownFade=1-smooth(6.1,12.5,q);
+  const strata=.086*Math.sin(q*6.4+u*.25)+.049*Math.sin(q*12.7-u*.38);
+  const spoil=.30*smooth(-3.7,-.48,q)*(1-lower)*Math.pow(.5+.5*Math.sin(u*.57-q*.7),1.4);
+  const relief=lengthFade*((rise*(.55*lower+.29*middle+.16*upper)+strata*lower)*crownFade+spoil);
+  const face=lengthFade*crownFade*(
+    .84*lower+.16*Math.pow(.5+.5*Math.sin(q*6.4+u*.25),2))*smooth(-1.1,.16,q);
+  return {index:workings.indexOf(bank),relief,rock:saturate(face+spoil*.9)};
+}
+
+export function slateRimWorkingProfile(world){
+  const edges=segments(world.quarryTrail.samples),available=slateRimRouteClearance(world);
+  return (x,y)=>{
+    const bank=workedSection(nearest(edges,x,y));
+    if(!bank||bank.relief<.004)return null;
+    const clearance=available(x,y);
+    const relief=bank.relief*smooth(2.15,3.55,clearance);
+    return relief>=.012?{...bank,relief,clearance}:null;
+  };
+}
+
+export function applySlateRimWorkings(world,field){
+  if(world.slateRimWorkings)throw Error('Slate Rim workings must be applied once per source export');
+  const samples=world.quarryTrail.samples,profile=slateRimWorkingProfile(world);
+  const n=field.readUInt32LE(4),step=field.readFloatLE(8),origin=field.readFloatLE(12);
+  const low=(k)=>Math.max(0,Math.floor((Math.min(...samples.map(p=>p[k]))-26-origin)/step));
+  const high=(k)=>Math.min(n-1,Math.ceil((Math.max(...samples.map(p=>p[k]))+26-origin)/step));
+  const sections=workings.map(w=>({fromM:w.from,toM:w.to,side:w.side,changedCells:0,maxRiseM:0}));
+  let minimumClearance=Infinity;
+  for(let i=low('x'),last=high('x');i<=last;i++){
+    for(let j=low('y'),endIndex=high('y');j<=endIndex;j++){
+      const x=origin+i*step,y=origin+j*step,rock=profile(x,y),offset=16+(i*n+j)*9;
+      // Protect the original wheel lines, course junctions and paved runs.
+      if(!rock||field[offset+8]===1||field.readFloatLE(offset+4)>.09)continue;
+      const {relief}=rock;
+      field.writeFloatLE(field.readFloatLE(offset)+relief,offset);
+      if(relief>.41&&rock.rock>.65)field[offset+8]=4;
+      const section=sections[rock.index];
+      section.changedCells++;
+      section.maxRiseM=Math.max(section.maxRiseM,relief);
+      minimumClearance=Math.min(minimumClearance,rock.clearance);
+    }
+  }
+  if(sections.some(s=>s.changedCells<50||s.maxRiseM<1.5))
+    throw Error('Slate Rim workings did not fit outside the driving corridors');
+  for(const section of sections)section.maxRiseM=+section.maxRiseM.toFixed(3);
+  world.slateRimWorkings={version:1,minimumAdditionalRouteClearanceM:+minimumClearance.toFixed(3),sections};
 }
 
 export function applySlateRimExtension(world,field){

@@ -10,12 +10,12 @@
       "bodies": [
         {
           "name": "wrangler_rubicon_trail_clearance_body",
-          "sha256": "6567f8379347a3d7c9e18df6aa483ea8f826d725451db176ea8ce76d2bea3f3a",
+          "sha256": "7e1714639beda780e9309a600129dbc237ae74a8fad109ccdf6dc31c206fc96a",
           "samples": 13592
         },
         {
           "name": "wrangler_rubicon_clearance_body",
-          "sha256": "7db597e13347757a1137e608a203ee9ba1c780878c4fb226a3fded03ea1961ce",
+          "sha256": "c6b0b61fb7ba48d7474f06a46e686e5ccb3a8ec8af92e8728bcf8f5734e494eb",
           "samples": 12677
         }
       ],
@@ -259,12 +259,12 @@
       "bodies": [
         {
           "name": "bronco_badlands_trail_clearance_body",
-          "sha256": "1be0dcffae06481191d550692d12b4bc950f1166126b52675bf07be9a41a63d2",
+          "sha256": "b72b1c043dcd1328711c9989964ed55279c73b238c88ac950d858b4941b69369",
           "samples": 12805
         },
         {
           "name": "bronco_badlands_clearance_body",
-          "sha256": "85452f1822e19d5fcf6bb67f8ee51f2728312d00b30912bf0d0b9c0aff1c10db",
+          "sha256": "6be93240af8a838146eebdf7dc377dd3cd4f797c24d4d591503585beac89a5b0",
           "samples": 11855
         }
       ],
@@ -508,7 +508,7 @@
       "bodies": [
         {
           "name": "civic_sport_clearance_body",
-          "sha256": "3b18077edec2f92b92357151f06f1cf5d7e57f331b97bef477ef908e05c68e00",
+          "sha256": "4716f53cac529a5ae4eab4e36769354026c9d89e8455c8524396c3fcd63ac8ab",
           "samples": 13255
         }
       ],
@@ -636,12 +636,12 @@
       "bodies": [
         {
           "name": "sprinter_2500_trail_clearance_body",
-          "sha256": "5db7ea8b26de47d066941801ec3f50f2c6a9f8c8dd023f2861f579c8803ccd55",
+          "sha256": "ece4668fdabe306a5d6f34dbf92cec13dd1ef51a672dcf1ea16487e84179b395",
           "samples": 16527
         },
         {
           "name": "sprinter_2500_clearance_body",
-          "sha256": "12f7f60db14f5b08138102ad5b6596bce44926aa840ae5e6eef9b11bc77257ca",
+          "sha256": "57eb5c75f122baff3ca3f0a460e2700b77673e9eb2967a8963845a5dd76876c7",
           "samples": 16356
         }
       ],
@@ -827,12 +827,12 @@
       "bodies": [
         {
           "name": "hummer_ev_suv_3x_trail_clearance_body",
-          "sha256": "2c183348aa1c094e7d1a04d77b9ad750a739ae088f8caef9e4ac56288a37155d",
+          "sha256": "c30f4a32a70e823448d925bb57668c156018d2aa6c59fb4772597f36e146365d",
           "samples": 14594
         },
         {
           "name": "hummer_ev_suv_3x_clearance_body",
-          "sha256": "7fe99c33a6eb7667df08a852d1133872fc9df33650cd472aabbede9110aba316",
+          "sha256": "de1ab42dfa532c7989f5d69a6ee11cf70466b0a8578d2be5cec4fd7e049befcb",
           "samples": 13353
         }
       ],
@@ -1018,8 +1018,8 @@
       "bodies": [
         {
           "name": "urus_performante_clearance_body",
-          "sha256": "2d3e3bbfbc6fb87d9985e5c08ad166ce3d14f8579c75aa991159960a5a973428",
-          "samples": 14987
+          "sha256": "758252931e0c7582992f9177360258db4184ca794ac1d041f6656a5e694284a3",
+          "samples": 15214
         }
       ],
       "fits": [
@@ -1125,17 +1125,17 @@
             -1.7434799999999997
           ],
           "marginM": 0.024,
-          "minimumSeparatingClearanceM": 0.018427029202626732,
+          "minimumSeparatingClearanceM": 0.01837091543778524,
           "poseCount": 672,
           "witness": {
             "axle": 0,
             "side": -1,
-            "wheels": 0,
-            "steerDegrees": -7.8939882722844334,
+            "wheels": 1,
+            "steerDegrees": -26.736155950172055,
             "point": [
-              -0.60609231,
-              0.20950000000000002,
-              0.7713431500000001
+              -0.91292558,
+              0.72807179,
+              0.7642625700000001
             ]
           }
         }
@@ -1146,12 +1146,12 @@
       "bodies": [
         {
           "name": "earthcruiser_exp_trail_clearance_body",
-          "sha256": "3b5e976f6e1f308ff32c625e0b345ce1915dd0f48e35fc0870ee678227311026",
+          "sha256": "3e70a85dde5ebe1fa6ceb840ee78fd69d7a78f9390178d999d4e90745d39ff3d",
           "samples": 18423
         },
         {
           "name": "earthcruiser_exp_clearance_body",
-          "sha256": "48137b98b1bae1044560cc368c3022e96b541f1d939328dcddcb1cd7c55aa806",
+          "sha256": "409bf4d30ae9b08e17b811e62e00ccec85e476ae47b77876c0e8cf7ab5e2d713",
           "samples": 18127
         }
       ],
@@ -1366,12 +1366,12 @@
       "bodies": [
         {
           "name": "mercedes_g580_ev_trail_clearance_body",
-          "sha256": "7f3ef88c7e214996b6e7b44cc9e169dba2fb29516027ffaa30c2c5adb84731a6",
+          "sha256": "ef51e012415f57a6f7ebc0e1e19fe529e717cf797e3a9a5b4f5c7caa1790d277",
           "samples": 12059
         },
         {
           "name": "mercedes_g580_ev_clearance_body",
-          "sha256": "89b27033ce14ed972e758b96c2110f95327a14f71aff98756ddb045f6d782a1c",
+          "sha256": "e68bbff841a21cc85e185b0de0a1c4286f144e7661a83704d9ea26db8263fd31",
           "samples": 11490
         }
       ],
@@ -1615,12 +1615,12 @@
       "bodies": [
         {
           "name": "mercedes_amg_g63_trail_clearance_body",
-          "sha256": "f85ddcc2ec4f486229c021bc2fccfa66a0f0153b5585351ee50b994196b1cd5f",
+          "sha256": "77b6f190f1edb414691e7716eb355986ce52bee22883b9ff880f5c35cecc57a3",
           "samples": 12030
         },
         {
           "name": "mercedes_amg_g63_clearance_body",
-          "sha256": "800d9f5fe34897a84e9d1ec3a29fd3f5c49be7c74bdd5094804606d55fa9d8e8",
+          "sha256": "f5fcca961073632c8c717b71b2c65230e18bce00ac49e411b5e64aefd38ab27f",
           "samples": 11832
         }
       ],
@@ -1835,7 +1835,7 @@
       "bodies": [
         {
           "name": "mercedes_amg_g63_6x6_clearance_body",
-          "sha256": "9dd5dca747b68c4d487051c9a0e74a40b013ecb0686e4affaf941603eaaf17e8",
+          "sha256": "3da0d4ea564b2c025e2ab631c1af94f70afc99590729952301221367947e2414",
           "samples": 16336
         }
       ],
@@ -1997,7 +1997,7 @@
       "bodies": [
         {
           "name": "subaru_22b_sti_clearance_body",
-          "sha256": "8466a71af553f36edc88e559630c5c57b7099e72b9b1647947f74816edecc4c0",
+          "sha256": "e4cdd6470dfa88ec2c4565234133ad5ad0e870d52856d9c53f27bc348c065dfd",
           "samples": 11781
         }
       ],

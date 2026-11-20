@@ -9,5 +9,6 @@ public class TerraDrive : ModuleRules {
         // Collider telemetry reads installed Chaos mesh geometry in both the
         // monolithic game and the separately linked editor module.
         PrivateDependencyModuleNames.Add("Chaos");
+        PrivateDependencyModuleNames.Add("AudioExtensions");
     }
 }

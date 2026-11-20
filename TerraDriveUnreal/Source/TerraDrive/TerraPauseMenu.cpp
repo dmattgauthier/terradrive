@@ -2,6 +2,7 @@
 #include "TerraVehicle.h"
 #include "TerraGarage.h"
 #include "TerraGraphics.h"
+#include "TerraCourse.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Framework/Application/SlateApplication.h"
 #include "GameFramework/PlayerController.h"
@@ -31,7 +32,8 @@ void STerraPauseMenu::Construct(const FArguments& Args){
   auto Add=[&](const FString& Text,int Index,TFunction<FReply()> Click){
     auto Button=SNew(SButton).ButtonStyle(&Style()).ContentPadding(FMargin(18,15)).HAlign(HAlign_Left)
       .ButtonColorAndOpacity_Lambda([this,Index]{return Page==Index?FLinearColor(.19f,.35f,.27f):FLinearColor(.085f,.14f,.14f);})
-      .OnClicked_Lambda([Click]{return Click();})[Label(Text,15,White,true)];
+      .OnClicked_Lambda([Click]{return Click();})
+      [SNew(STextBlock).Text(FText::FromString(Text)).Font(Font(15,true)).ColorAndOpacity(White)];
     Navigation->AddSlot().AutoHeight().Padding(0,0,0,10)
       [Button];
     return Button;
@@ -55,7 +57,8 @@ void STerraPauseMenu::Construct(const FArguments& Args){
   Add(TEXT("GRAPHICS"),2,[this]{ShowPage(2);return FReply::Handled();});
   Add(TEXT("EXIT GAME"),-2,[this]{RequestExit();return FReply::Handled();});
   Navigation->AddSlot().FillHeight(1);
-  Navigation->AddSlot().AutoHeight()[Label(TEXT("Esc  Back / resume\nYour driving session is paused."),12,Muted)];
+  Navigation->AddSlot().AutoHeight()[Label(TEXT("Esc  Back / resume"),12,Muted)];
+  const FString Build=TerraBuildDescription();
   ChildSlot[SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.008f,.014f,.018f,.78f)).Padding(0)
     [SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
       [SNew(SBox).WidthOverride(1240).HeightOverride(690)
@@ -67,7 +70,11 @@ void STerraPauseMenu::Construct(const FArguments& Args){
                 +SVerticalBox::Slot().AutoHeight()[Label(TEXT("TERRA DRIVE"),13,Mint,true)]
                 +SVerticalBox::Slot().AutoHeight().Padding(0,5,0,0)[Label(TEXT("PAUSED"),29,White,true)]]
               +SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center).HAlign(HAlign_Right)
-              [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(16,true)).ColorAndOpacity(Muted)]]
+              [SNew(SVerticalBox)
+                +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right)
+                [SNew(STextBlock).Text_Lambda([this]{return FText::FromString(Vehicle.IsValid()?Vehicle->VehicleName:TEXT(""));}).Font(Font(16,true)).ColorAndOpacity(Muted)]
+                +SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right).Padding(0,5,0,0)
+                [SNew(STextBlock).Text(FText::FromString(Build)).Font(Font(11)).ColorAndOpacity(Muted)]]]
             +SVerticalBox::Slot().FillHeight(1)
             [SNew(SHorizontalBox)
               +SHorizontalBox::Slot().AutoWidth().Padding(0,0,24,0)[SNew(SBox).WidthOverride(226)[Navigation]]
@@ -76,7 +83,9 @@ void STerraPauseMenu::Construct(const FArguments& Args){
                 +SWidgetSwitcher::Slot()[HomePage()]
                 +SWidgetSwitcher::Slot()[ControlsPage()]
                 +SWidgetSwitcher::Slot()[STerraGarage::GraphicsPage()]
-                +SWidgetSwitcher::Slot()[ChallengesPage()]]]]]]]];
+                +SWidgetSwitcher::Slot()[ChallengesPage()]
+                +SWidgetSwitcher::Slot()[CoursePage(false)]
+                +SWidgetSwitcher::Slot()[CoursePage(true)]]]]]]]];
 }
 TSharedRef<SWidget> STerraPauseMenu::HomePage(){
   return SNew(SBorder).BorderImage(&Card).BorderBackgroundColor(FLinearColor(.055f,.095f,.095f)).Padding(28)
@@ -136,8 +145,9 @@ TSharedRef<SWidget> STerraPauseMenu::ChallengesPage(){
           .IsEnabled_Lambda([this]{return Vehicle.IsValid()&&!Vehicle->Garage;})
           .OnClicked_Lambda([this,Index]{
             if(ATerraVehicle* V=Vehicle.Get();V&&!V->Garage){
-              V->SetPauseMenu(false);
-              V->TeleportRoute(Index);
+              BriefRoute=Index;
+              ShowPage(CourseBriefPageIndex);
+              if(StartCourse)FSlateApplication::Get().SetKeyboardFocus(StartCourse);
             }
             return FReply::Handled();
           })
@@ -161,8 +171,67 @@ TSharedRef<SWidget> STerraPauseMenu::ChallengesPage(){
         })]
     +SVerticalBox::Slot().FillHeight(1)[List];
 }
+TSharedRef<SWidget> STerraPauseMenu::CoursePage(bool Results){
+  auto Selected=[this,Results]{return Results&&Vehicle.IsValid()?Vehicle->RouteIndex:BriefRoute;};
+  auto Route=[this,Selected]() -> const FTerraRoute* {
+    auto* V=Vehicle.Get();
+    const int Index=Selected();
+    return V&&V->Terrain&&V->Terrain->Routes.IsValidIndex(Index)?&V->Terrain->Routes[Index]:nullptr;
+  };
+  auto Action=SNew(SButton).ButtonStyle(&Style()).ButtonColorAndOpacity(FLinearColor(.19f,.35f,.27f))
+    .ContentPadding(FMargin(19,13))
+    .OnClicked_Lambda([this,Selected]{
+      if(auto* V=Vehicle.Get();V&&!V->Garage){
+        const int Index=Selected();
+        V->SetPauseMenu(false);
+        V->TeleportRoute(Index);
+      }
+      return FReply::Handled();
+    })[Label(Results?TEXT("RETRY COURSE"):TEXT("START COURSE"),14,White,true)];
+  if(Results)RetryCourse=Action;
+  else StartCourse=Action;
+
+  return SNew(SBorder).BorderImage(&Card).BorderBackgroundColor(FLinearColor(.055f,.095f,.095f)).Padding(28)
+    [SNew(SVerticalBox)
+      +SVerticalBox::Slot().AutoHeight()[Label(Results?TEXT("COURSE COMPLETE"):TEXT("COURSE BRIEF"),12,Mint,true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,6,0,0)
+      [SNew(STextBlock).Text_Lambda([Route]{
+        const auto* R=Route();return R?FText::FromString(R->Name):FText::GetEmpty();
+      }).Font(Font(28,true)).ColorAndOpacity(White).AutoWrapText(true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,17,0,0)
+      [SNew(STextBlock).Text_Lambda([this,Results,Route]{
+        const auto* R=Route();const auto* V=Vehicle.Get();
+        if(!R||!V)return FText::GetEmpty();
+        if(!Results)return FText::FromString(V->RouteHint(R->Hint));
+        return FText::FromString(FString::Printf(TEXT("%.1f s    |    %d/%d clean gates    |    %d recoveries"),
+          V->RouteTime,V->Course.CleanGates,R->Gates.Num(),V->Course.Recoveries));
+      }).Font(Font(17)).ColorAndOpacity(White).AutoWrapText(true)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,16,0,0)
+      [SNew(STextBlock).Text_Lambda([this,Results,Route,Selected]{
+        const auto* R=Route();const auto* V=Vehicle.Get();
+        if(!R||!V)return FText::GetEmpty();
+        if(Results&&V->Course.RecordWriteFailed)return FText::FromString(TEXT("Personal best could not be saved."));
+        if(Results&&V->Course.RecordSaved)return FText::FromString(TEXT("New clean personal best saved."));
+        const double Best=V->CourseBest(Selected());
+        if(Best>0)return FText::FromString(FString::Printf(TEXT("Clean personal best  %.1f s"),Best));
+        return FText::FromString(TEXT("Clean personal best  —"));
+      }).Font(Font(15,true)).ColorAndOpacity(Mint)]
+      +SVerticalBox::Slot().AutoHeight().Padding(0,9,0,0)
+      [SNew(STextBlock).Text_Lambda([Results,Route]{
+        const auto* R=Route();
+        if(Results||!R)return FText::GetEmpty();
+        return FText::FromString(FString::Printf(TEXT("%d gates. A rollover, a missed gate or recovery marks the current leg as assisted."),R->Gates.Num()));
+      }).Font(Font(14)).ColorAndOpacity(Muted).AutoWrapText(true)]
+      +SVerticalBox::Slot().FillHeight(1)
+      +SVerticalBox::Slot().AutoHeight()
+      [SNew(SHorizontalBox)
+        +SHorizontalBox::Slot().AutoWidth().Padding(0,0,10,0)[Action]
+        +SHorizontalBox::Slot().AutoWidth()
+        [SNew(SButton).ButtonStyle(&Style()).ButtonColorAndOpacity(FLinearColor(.085f,.14f,.14f)).ContentPadding(FMargin(19,13))
+          .OnClicked_Lambda([this]{ShowPage(3);return FReply::Handled();})[Label(TEXT("ALL COURSES"),14,White,true)]]]];
+}
 void STerraPauseMenu::ShowPage(int Index){
-  Page=FMath::Clamp(Index,0,3);WaitingForBinding=false;BindingAction=TerraControls::Action::Count;
+  Page=FMath::Clamp(Index,0,CourseResultsPageIndex);WaitingForBinding=false;BindingAction=TerraControls::Action::Count;
   if(Pages.IsValid())Pages->SetActiveWidgetIndex(Page);
 }
 void STerraPauseMenu::Tick(const FGeometry& Geometry,double CurrentTime,float DeltaTime){
@@ -196,7 +265,12 @@ FReply STerraPauseMenu::OnPreviewKeyDown(const FGeometry&,const FKeyEvent& E){
     }
     return FReply::Handled();
   }
-  if(E.GetKey()==EKeys::Escape){if(Page!=0)ShowPage(0);else if(Vehicle.IsValid())Vehicle->SetPauseMenu(false);return FReply::Handled();}
+  if(E.GetKey()==EKeys::Escape){
+    if(Page==CourseBriefPageIndex)ShowPage(3);
+    else if(Page!=0)ShowPage(0);
+    else if(Vehicle.IsValid())Vehicle->SetPauseMenu(false);
+    return FReply::Handled();
+  }
   return FReply::Unhandled();
 }
 FReply STerraPauseMenu::OnKeyDown(const FGeometry& G,const FKeyEvent& E){return OnPreviewKeyDown(G,E);}

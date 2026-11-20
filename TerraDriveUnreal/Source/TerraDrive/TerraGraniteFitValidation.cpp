@@ -1,4 +1,5 @@
 #include "TerraGraniteFitValidation.h"
+#include "Engine/World.h"
 #include "TerraTireProbeValidation.h"
 #include "TerraVehicle.h"
 

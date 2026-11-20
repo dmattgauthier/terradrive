@@ -409,6 +409,7 @@ void ATerraVehicle::SetGarage(bool Open){
   auto *PC=Cast<APlayerController>(GetController());
   if(!PC||!GEngine||!GEngine->GameViewport)return;
   Garage=Open;
+  if(Open)StopDriveFeedback();
   Throttle=Steer=0;Brake=1;Reeling=false;
   Chassis->SetPhysicsLinearVelocity(FVector::ZeroVector);
   Chassis->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
