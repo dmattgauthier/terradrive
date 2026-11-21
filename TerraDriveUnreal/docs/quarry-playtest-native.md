@@ -67,3 +67,20 @@ PR #19's five review fixes are present from `0c11a3f`. Three profile migration f
 The separate traced replay passed all 22 in-game checks and wrote a 353,830,185-byte `cpu.utrace` file to D:. Unreal returned its crash-reporting-thread exit code 777003 during shutdown on that run. The normal replay exited with code zero.
 
 The installed package is `drive-local-diagnostics-final` from revision `ba93ac22cc3780778ca54af4bc9e3b6147e450ec`. Its executable SHA-256 is `fd8c4a703023a59edc89fb1c942340bcf0ee802104e8865e14535787790ca04d`. The installed executable and assets matched both passing native receipts. The six player profile files retained their checksums. Audit receipts and historical diagnostics are under `Saved/DriveIsolation`.
+
+## Traced replay shutdown follow-up
+
+The previous package reproduced process exit code 777003 after all 22 gameplay checks passed. A debugger captured the initiating breakpoint on the main thread during static destruction. The failing check was the engine's page allocator assertion that all pages must be returned. Closing the trace before teardown, turning off forced named events, and disabling the trace writer thread individually left the assertion reproducible while the CPU channel was active. UE 5.8.3's CPU profiler keeps dynamic scope-name pages in thread-local buffers, and its public flush function leaves those allocations alive.
+
+The Windows replay verifier now captures frame timings, log events, bookmarks, regions, and task scheduling in `replay.utrace`. Full CPU scope capture remains affected by the UE 5.8.3 allocator issue. The game drains the active trace before final teardown. The verifier still requires a zero process exit code, a passing gameplay report, and a fresh nonempty trace for a traced run.
+
+| Packaged Windows run | Gameplay checks | Process status | Trace on D: |
+| --- | ---: | ---: | ---: |
+| Previous 184-second traced replay | 22 / 22 | 777003 | 357,469,067 bytes |
+| Current 30-second traced smoke run | 14 / 14 | 0 | 45,398,397 bytes |
+| Current 184-second traced replay | 22 / 22 | 0 | 227,498,210 bytes |
+| Current 184-second normal replay | 22 / 22 | 0 | — |
+
+Whole-volume monitoring and project-directory snapshots found zero C: project-file changes during packaging and the final native tests. The watchers recorded 546 packaging and 6,419 gameplay events with zero overflows or read errors. The only game-related C: paths detected were Windows Prefetch entries. Build logs and UBA traces were verified on D:, along with all native logs and recordings.
+
+The installed `trace-shutdown` package was built from `10b4383c075e77d09c110ce2fa13a84133110c8a`. The tested replay configuration is from `0a786e6cfea9a73564a14476259e5e52b2a08b9f`. Its executable SHA-256 is `e5fd741124818dc23c36ba9f2a3d4104f48018e4dd47bad53552d7e08b17311e`. The installer matched all three native receipts and verified all six player-profile checksums. Original and final logs, audit reports, and traces are under `Saved/TraceShutdown`.
