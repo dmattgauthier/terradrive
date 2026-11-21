@@ -1214,7 +1214,10 @@ void ATerraGameMode::Tick(float Dt) {
       UE_LOG(LogTemp,Display,TEXT("TERRA_TRAIL_BODY mass=%.1f inertia=%s"),V->Chassis->GetMass(),*V->Chassis->GetInertiaTensor().ToString());
       if(auto *PC=Cast<APlayerController>(V->GetController())){PC->SetViewTarget(V);if(PC->GetHUD())PC->GetHUD()->bShowHUD=true;}
       Check(TEXT("Slate Rim trail is available as the ninth native challenge"),V->Terrain->Routes.IsValidIndex(8)&&V->Terrain->Routes[8].Gates.Num()==20);
-      Check(TEXT("Urus body uses the new surface and cabin revision"),UrusBody->GetIntegerField(TEXT("version"))==13);
+      const int32 CoachworkRevision=UrusBody->GetIntegerField(TEXT("version"));
+      Check(TEXT("Urus body has the formed fender openings and greenhouse stations"),
+        CoachworkRevision>=15&&UrusBody->GetBoolField(TEXT("perforatedFenderReturns"))&&
+        UrusBody->GetBoolField(TEXT("wrappedHeadlamps"))&&UrusBody->GetBoolField(TEXT("referenceGreenhouseStations")),CoachworkRevision);
       int ScanRockHits=0,GrassCount=0;
       TArray<UInstancedStaticMeshComponent*> Components;V->Terrain->GetComponents(Components);
       for(auto *C:Components)if(C->GetStaticMesh()){

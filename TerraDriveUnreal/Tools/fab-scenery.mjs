@@ -45,9 +45,25 @@ export function fabScenery(root,terrain,routes,quarryBase){
    const sample=terrain.sample(-y,x);
    if(!allowed||grass&&sample.surface!=='dirt'||(ice||snow)&&sample.surface!=='snow'||!grass&&!ice&&!snow&&!['dirt','rock'].includes(sample.surface))continue;
    const size=grass?.42+random()*.30:snow?.55+random()*.9:ice?.75+random()*.8:.35+random()*.45;
-   // Meadow blades are low irregular tufts, with varied height independent
-   // of their footprint. More small instances replace the waist-high clumps.
-   group.instances.push({p:[x*100,y*100,ground(x,y)*100],q:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),random()*Math.PI*2).toArray(),s:snow?[size*(1.4+random()),size,size*.55]:grass?[size,size,size*(.70+random()*.25)]:[size,size,size]});
+   const yaw=random()*Math.PI*2;
+   let heading=yaw, scale=[size,size,size];
+   if(snow){
+    // Low, elongated banks follow the same prevailing direction as ripples
+    // in the snow material, with small local variation between drifts.
+    const variation=random(),windHeading=Math.atan2(1.7,4.2);
+    heading=windHeading+(yaw/(Math.PI*2)-.5)*1.04;
+    scale=[size*(1.55+variation*.95),size*(.78+variation*.22),size*(.37+variation*.18)];
+   }else if(grass){
+    // Meadow tussocks spread more broadly on gentler ground, with shorter
+    // blades where the slope retains less moisture.
+    const variation=random(),shelter=T.MathUtils.smoothstep(sample.normal.y,.81,.98);
+    scale=[size*(.86+variation*.25),size*(.88+shelter*.19),size*(.61+shelter*.18+variation*.16)];
+   }
+   group.instances.push({
+    p:[x*100,y*100,ground(x,y)*100],
+    q:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),heading).toArray(),
+    s:scale
+   });
   }
  }
  const cache=process.env.TERRA_FAB_CACHE||path.join(process.env.ProgramData||'C:/ProgramData','Epic/EpicGamesLauncher/VaultCache/FabLibrary',recipe.cacheFolder);

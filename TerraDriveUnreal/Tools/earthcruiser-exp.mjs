@@ -4,6 +4,7 @@
 // Source axes: X width, Y up from the ground, +Z forward; axle midpoint Z=0.
 import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {instrumentDial,instrumentDisplay} from './cabin-controls.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 import {VEHICLES as BrowserVehicles} from '../../TerraDrive-v1.13/dist/src/vehicles.js';
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {nativeGeometry as G,mergeStaticMeshes} from './vehicle-geometry.mjs';
@@ -63,7 +64,7 @@ function rod(g,m,a,b,r=.008,n=12){const A=new T.Vector3(...a),B=new T.Vector3(..
 function cylinder(g,m,p,r,d,axis='y',n=32){const o=mesh(g,new T.CylinderGeometry(r,r,d,n),m,p);if(axis==='x')o.rotation.z=Math.PI/2;if(axis==='z')o.rotation.x=Math.PI/2;return o;}
 function round(points,r=.025,n=5){return G.roundedOutline(points.map(p=>[...p,0]),r,n).map(p=>p.slice(0,2));}
 function inset(points,amount){const c=points.reduce((a,p)=>[a[0]+p[0],a[1]+p[1]],[0,0]).map(x=>x/points.length);return points.map(p=>p.map((v,i)=>lerp(v,c[i],amount)));}
-function trimRing(g,m,outer,inner,map,flip=false){mappedPolygon(g,m,outer,map,[inner],flip,2);}
+function trimRing(g,m,outer,inner,map,flip=false){mappedPolygon(g,m,outer,map,[inner],flip,8);}
 function aperture(g,m,contour,map,{flip=false,depth=.016,glass=m.glass,frame=.12}={}){
   const inner=inset(contour,frame),back=(u,v)=>{const p=map(u,v);return[p[0],p[1],p[2]];};
   trimRing(g,m.black,contour,inner,map,flip);
@@ -103,7 +104,7 @@ export function earthCruiserRim(spec=EARTHCRUISER_EXP_SPEC){
 
 function cab(view){
   const g=view.body,m=view.materials,L=EARTHCRUISER_EXP_LANDMARKS,half=L.cabHalfWidth,frontAxle=L.frontAxleZ,wy=view.spec.tireRadius;
-  const frontZ=(x,y)=>station([[.70,2.47],[1.02,2.50],[1.40,2.47],[1.58,2.44],[2.43,2.18],[2.53,2.14]],y,1)-.070*(Math.abs(x)/half)**4
+  const frontZ=(x,y)=>station([[.70,2.47],[1.02,2.50],[1.40,2.47],[1.58,2.44],[2.43,2.18],[2.53,2.14]],y,1)-.112*(Math.abs(x)/half)**4
     +.027*(1-(x/half)**2)*Math.exp(-(((y-1.43)/.13)**2));
   const face=(x,y,off=0)=>[x,y,frontZ(x,y)+off];
   const frontEdge=round([[-.98,.73],[-.995,1.40],[-.965,2.42],[-.86,2.52],[.86,2.52],[.965,2.42],[.995,1.40],[.98,.73]],.065,7);
@@ -120,27 +121,36 @@ function cab(view){
   label(g,m.chrome,'ISUZU',.38,.070,face(0,1.325,.016));label(g,m.black,'EXP',.115,.052,face(-.71,1.455,.009));
   for(const [idx,s]of [-1,1].entries()){
     const outline=lamps[idx],map=(u,v)=>face(u,v,-.017);aperture(g,m,outline,map,{glass:m.lens,frame:.07});
-    const cy=1.087,cx=s*.765,p=face(cx,cy,-.035);
+    const cy=1.087,cx=s*.765;
     const bowl=round([[cx-.133,cy-.104],[cx-.133,cy+.104],[cx+.133,cy+.104],[cx+.133,cy-.104]],.019,5);
     const opticOpening=round([[cx-.107,cy-.080],[cx-.107,cy+.080],[cx+.107,cy+.080],[cx+.107,cy-.080]],.014,5);
-    mappedPolygon(g,m.chrome,bowl,(x,y)=>face(x,y,-.033),[],false,5);
+    mappedPolygon(g,m.dark,bowl,(x,y)=>face(x,y,-.071),[],false,5);
     trimRing(g,m.satinMetal,bowl,opticOpening,(x,y)=>face(x,y,-.027));
-    const reflector=mesh(g,new T.CircleGeometry(.080,40),m.chrome,[p[0],p[1],p[2]+.002]);reflector.scale.x=1.22;
-    const optic=mesh(g,new T.CircleGeometry(.049,32),m.headlampCore,[p[0],p[1],p[2]+.003]);optic.scale.y=.87;
-    const lip=mesh(g,new T.TorusGeometry(.078,.004,8,48),m.satinMetal,[p[0],p[1],p[2]+.004]);lip.scale.x=1.22;
-    box(g,m.amber,face(s*.786,1.357,-.026),[.19,.042,.012],.008);
+    // Form a deep freeform reflector behind the NPR's rectangular bezel.
+    // The bulb and amber compartment are independently seated inside it.
+    surface(g,m.headlampReflector,48,10,(u,v)=>{
+      const angle=u*Math.PI*2,r=lerp(.060,1,v),c=Math.cos(angle),d=Math.sin(angle);
+      const sq=(p)=>Math.sign(p)*Math.abs(p)**.62;
+      return face(cx+.106*r*sq(c),cy+.079*r*sq(d),-.064+.036*r*r);
+    },true).name='exp98-deep-npr-reflector';
+    const bulb=mesh(g,new T.SphereGeometry(.012,24,12),m.headlampCore,face(cx,cy,-.047));
+    bulb.scale.set(.77,1,1.44);bulb.name='exp98-recessed-halogen-bulb';
+    moldedOptic(g,m.amber,'exp98-prismatic-amber-signal',
+      opticFace(face(s*.786,1.357,-.025),.190,.042,.008,.002,1),
+      {cells:16,rows:5,relief:.0012,facing:1});
     box(g,m.chrome,face(s*.785,1.278,-.031),[.22,.055,.010],.009);
   }
   // Cab side sheets have a real open front arch and the NPR's downward
   // sweeping window sill. Their door seams run into the separate front cowl.
   for(const side of [-1,1]){
     const sx=(z,y)=>side*(half-.025*clamp((y-1.55)/.98,0,1)-.018*clamp((z-2.1)/.4,0,1)
-      +.010*Math.exp(-(((y-1.39)/.27)**2))*Math.sin(clamp((z-.96)/1.52,0,1)*Math.PI));
+      +.022*Math.exp(-(((y-1.40)/.29)**2))*Math.sin(clamp((z-.96)/1.52,0,1)*Math.PI)
+      -.021*T.MathUtils.smoothstep(y,1.78,2.50));
     const sideMap=(z,y,off=0)=>[sx(z,y)+side*off,y,z];
     const lower=Array.from({length:65},(_,i)=>{const z=lerp(.96,2.46,i/64),d=z-frontAxle;return[z,Math.max(.70,Math.abs(d)<.555?wy+Math.sqrt(Math.max(0,.555**2-d*d)):.70)];});
     const outline=[...lower,[2.48,1.40],[2.43,1.58],[2.16,2.49],[1.03,2.52],[.96,2.43]];
     const window=round([[1.075,1.820],[1.075,2.393],[1.16,2.436],[2.05,2.407],[2.265,1.690],[1.57,1.738]],.022,5);
-    mappedPolygon(g,m.paint,outline,(z,y)=>sideMap(z,y),[window],side>0,5).name='exp98-open-arch-cab-side';
+    mappedPolygon(g,m.paint,outline,(z,y)=>sideMap(z,y),[window],side>0,9).name='exp98-open-arch-cab-side';
     // Turn the NPR's steel cheeks into the side skin. A front plate and a
     // separate side plate previously left a sharp, open seam at this corner.
     surface(g,m.paint,14,56,(u,v)=>{
@@ -182,13 +192,24 @@ function cab(view){
   for(const x of [-.95,.95])rod(g,m.black,[x,2.69,1.02],[x,2.69,2.18],.018);
   // Washer jets and articulated wipers sit on the glass rather than float.
   for(const s of [-1,1]){line(g,m.black,[face(s*.37,1.568,.017),face(s*.47,1.710,.018)],.006);line(g,m.black,[face(s*.17,1.628,.020),face(s*.75,1.691,.020)],.004);}
-  // Tubular front bull bar, true winch opening and a folded lower bumper.
-  box(g,m.dark,[0,.792,2.558],[1.98,.296,.266],.045);
+  // The heavy bar rolls under the winch and sweeps back into the cab cheeks.
+  const bumper=round([[-.768,.646],[-.941,.692],[-.983,.791],[-.987,.918],
+    [.987,.918],[.983,.791],[.941,.692],[.768,.646]],.034,6);
+  const bumperFace=(x,y,offset=0)=>[x,y,2.697-.111*(Math.abs(x)/.987)**2.6
+    -.037*(1-T.MathUtils.smoothstep(y,.647,.748))+offset];
+  mappedPolygon(g,m.dark,bumper,(x,y)=>bumperFace(x,y),[],false,8).name='exp98-formed-front-bumper-face';
+  for(let j=0;j<bumper.length;j++){
+    const a=bumper[j],b=bumper[(j+1)%bumper.length];
+    surface(g,m.dark,5,4,(u,v)=>{
+      const x=lerp(a[0],b[0],u),y=lerp(a[1],b[1],u);
+      return bumperFace(x*(1-.018*v),y,-.218*v);
+    }).name='exp98-formed-front-bumper-return';
+  }
   const apron=mesh(g,new T.BoxGeometry(1.32,.035,.38),m.satinMetal,[0,.557,2.36]);apron.rotation.x=-.34;
   for(const s of [-1,1]){
     curve(g,m.black,[[s*.89,.716,2.64],[s*.89,1.38,2.65],[s*.80,1.49,2.65],[s*.46,1.44,2.65]],.034);
     rod(g,m.black,[s*.45,.85,2.652],[s*.45,1.30,2.652],.032);
-    oval(g,m.black,s*.77,.787,2.665,.12,.12,false);
+    oval(g,m.black,s*.77,.787,bumperFace(s*.77,.787,.003)[2],.12,.12,false);
     box(g,m.satinMetal,[s*.485,.764,2.675],[.035,.068,.017],.007);
     const shackle=mesh(g,new T.TorusGeometry(.027,.007,8,24,Math.PI*1.70),m.satinMetal,[s*.485,.740,2.676]);shackle.rotation.z=.27;
   }
@@ -241,14 +262,39 @@ function cab(view){
 
 function house(view){
   const g=view.body,m=view.materials,L=EARTHCRUISER_EXP_LANDMARKS,half=L.houseHalfWidth,rear=L.houseRearZ,front=L.houseFrontZ,wy=view.spec.tireRadius,axle=L.rearAxleZ;
-  const w=(z,y)=>half-.027*clamp((y-2.52)/.12,0,1)-.022*clamp((Math.abs(z+1.15)-2.03)/.10,0,1);
+  // The molded end and side sheets meet at the same rounded edge station.
+  const rearBlend=z=>1-T.MathUtils.smoothstep(z,rear,rear+.49);
+  const shellLower=z=>.865+.083*rearBlend(z)+.041*T.MathUtils.smoothstep(z,front-.41,front);
+  const skirtLower=z=>.648+.284*rearBlend(z)+.134*T.MathUtils.smoothstep(z,front-.43,front);
+  // Keep the molded wall flat across the hatches. Tuck the underside into
+  // the skirt below the body line so the wall doesn't acquire stamped dents.
+  const w=(z,y)=>half-.033*T.MathUtils.smoothstep(y,2.46,2.62)
+    -.032*(1-T.MathUtils.smoothstep(y,.73,shellLower(z)+.06))
+    -.035*rearBlend(z)-.027*T.MathUtils.smoothstep(z,front-.15,front);
+  const rearSetback=(x,y)=>.053*(Math.abs(x)/half)**3
+    +.145*(1-T.MathUtils.smoothstep(y,.825,1.24));
+  const tail=(x,y,depth=0)=>[x,y,rear+rearSetback(x,y)-depth];
+  const rearWallTop=x=>2.615-.060*Math.abs(x)**8;
+  const rearWallRows=64,skirtRows=8,skirtOffset=.004;
+  // Both surfaces share the same edge heights. Long independent chords
+  // otherwise cut through the curved rear corner at different depths.
+  const rearWallEdge=Array.from({length:rearWallRows+1},(_,i)=>lerp(shellLower(rear),rearWallTop(1),i/rearWallRows));
+  const rearSkirtEdge=Array.from({length:skirtRows+1},(_,i)=>lerp(skirtLower(rear),shellLower(rear)+.005,i/skirtRows));
   for(const side of [-1,1]){
-    const map=(z,y,off=0)=>[side*(w(z,y)+off),y,z];
-    const bottom=Array.from({length:105},(_,i)=>{const z=lerp(rear,front,i/104),dz=z-axle;return[z,Math.max(.865,Math.abs(dz)<.545?wy+Math.sqrt(Math.max(0,.545**2-dz*dz)):.865)];});
-    const outline=[...bottom,[front,2.555],[front-.04,2.615],[rear+.06,2.615],[rear,2.555]];
+    const map=(z,y,off=0)=>{
+      const x=side*(w(z,y)+off);
+      return [x,y,z+rearBlend(z)*rearSetback(x,y)];
+    };
+    const bottom=Array.from({length:105},(_,i)=>{
+      const z=lerp(rear,front,i/104),d=z-axle;
+      const arch=Math.abs(d)<.545?wy+Math.sqrt(.545**2-d*d):0;
+      return [z,Math.max(shellLower(z),arch)];
+    });
+    const outline=[...bottom,[front,2.555],[front-.04,2.615],[rear+.06,2.615],
+      ...rearWallEdge.slice(1).reverse().map(y=>[rear,y])];
     const windows=[round([[-2.99,1.985],[-2.99,2.400],[-1.97,2.400],[-1.97,1.985]],.027,6),round([[.08,1.985],[.08,2.400],[.79,2.400],[.79,1.985]],.027,6)];
     const door=round([[-1.36,.947],[-1.36,2.375],[-.73,2.375],[-.73,.947]],.026,6);
-    mappedPolygon(g,m.whiteShell,outline,(z,y)=>map(z,y),side<0?[...windows,door]:windows,side>0,4).name='exp98-camper-wall-with-real-openings';
+    mappedPolygon(g,m.whiteShell,outline,(z,y)=>map(z,y),side<0?[...windows,door]:windows,side>0,12).name='exp98-camper-wall-with-real-openings';
     for(const contour of windows){
       aperture(g,m,contour,(z,y)=>map(z,y,.003),{flip:side>0,glass:m.privacyGlass,frame:.10});
       const outer=inset(contour,.03),inner=inset(contour,.075);trimRing(g,m.satinMetal,outer,inner,(z,y)=>map(z,y,.007),side>0);
@@ -256,9 +302,14 @@ function house(view){
     }
     // Kinetic-mount skirts sit below the molded house; the rear tire has
     // an open arch and a flexible mudflap, never an opaque rectangular cover.
-    const skirtBottom=Array.from({length:105},(_,i)=>{const z=lerp(rear+.06,front-.03,i/104),d=z-axle;return[z,Math.abs(d)<.565?wy+Math.sqrt(Math.max(0,.565**2-d*d)):.648];});
+    const skirtBottom=Array.from({length:105},(_,i)=>{
+      const z=lerp(rear,front,i/104),d=z-axle;
+      return [z,Math.max(skirtLower(z),Math.abs(d)<.565?wy+Math.sqrt(.565**2-d*d):0)];
+    });
     const skirtTop=[...bottom].reverse().map(([z,y])=>[z,y+.005]);
-    mappedPolygon(g,m.dark,[...skirtBottom,...skirtTop],(z,y)=>map(z,y,.004),[],side>0,2);
+    const skirtOutline=[...skirtBottom,...skirtTop,...rearSkirtEdge.slice(1,-1).reverse().map(y=>[rear,y])];
+    mappedPolygon(g,m.dark,skirtOutline,(z,y)=>map(z,y,skirtOffset),[],side>0,5)
+      .name='exp98-shaped-camper-skirt';
     const arc=Array.from({length:41},(_,i)=>{const a=lerp(.00,Math.PI,i/40);return map(axle+.552*Math.cos(a),wy+.552*Math.sin(a),.010);});curve(g,m.black,arc,.010);
     box(g,m.rubber,map(axle-.51,.436,-.03),[.029,.386,.333],.011).rotation.z=side*.04;
     if(side<0){
@@ -296,11 +347,24 @@ function house(view){
     }
   }
   // Molded end walls and roof returns close the shell around the side sheets.
-  box(g,m.whiteShell,[0,1.725,rear+.014],[2.065,1.716,.034],.035);
+  surface(g,m.whiteShell,45,rearWallRows,(u,v)=>{
+    const centered=2*u-1,y=lerp(shellLower(rear),rearWallTop(centered),v);
+    return tail(centered*w(rear,y),y);
+  },true).name='exp98-molded-rear-camper-closure';
+  surface(g,m.whiteShell,45,8,(u,v)=>{
+    const centered=2*u-1,y=rearWallTop(centered);
+    const panel=tail(centered*w(rear,y),y);
+    const gasket=[centered*1.010,2.615,rear+.025+.032*Math.abs(centered)**4];
+    return panel.map((value,axis)=>lerp(value,gasket[axis],v));
+  },true).name='exp98-rear-roof-gasket-return';
+  surface(g,m.dark,40,skirtRows,(u,v)=>{
+    const centered=2*u-1,y=lerp(rearSkirtEdge[0],rearSkirtEdge.at(-1),v);
+    return tail(centered*(w(rear,y)+skirtOffset),y);
+  },true).name='exp98-tapered-rear-skirt-return';
   const pass=round([[-.51,1.18],[-.51,1.92],[.51,1.92],[.51,1.18]],.055,6);
   mappedPolygon(g,m.whiteShell,[[-1.03,.985],[-1.03,2.555],[1.03,2.555],[1.03,.985]],(x,y)=>[x,y,front-.012],[pass],false,4);
   trimRing(g,m.dark,pass,inset(pass,.08),(x,y)=>[x,y,front-.028]);
-  box(g,m.interior,[0,.888,-1.15],[1.98,.056,4.18],.012);
+  box(g,m.interior,[0,.888,-1.10],[1.98,.056,4.07],.012);
   // The closed pop-top has an inset seam/gasket and a softly cambered cap,
   // not the tall fixed roof or raised fabric canopy of the FX/camping view.
   box(g,m.black,[0,2.625,-1.15],[2.084,.020,4.30],.035);
@@ -318,18 +382,25 @@ function house(view){
   // Rear utilities are asymmetric: storage box to vehicle left, covered
   // spare to vehicle right, paired upper brake/reverse/indicator lamps.
   const rearFace=rear-.026;
-  box(g,m.whiteShell,[.497,1.380,rearFace-.105],[.833,.991,.206],.023);
-  trimRing(g,m.dark,round([[.100,.960],[.100,1.808],[.894,1.808],[.894,.960]],.022,4),round([[.112,.973],[.112,1.795],[.882,1.795],[.882,.973]],.020,4),(x,y)=>[x,y,rearFace-.212],true);
-  for(const x of [.17,.82])box(g,m.black,[x,1.055,rearFace-.222],[.035,.126,.018],.006);
+  const storageCenter=tail(.497,1.380,.101),storageBack=storageCenter[2]-.107;
+  box(g,m.whiteShell,storageCenter,[.833,.991,.206],.023);
+  trimRing(g,m.dark,round([[.100,.960],[.100,1.808],[.894,1.808],[.894,.960]],.022,4),round([[.112,.973],[.112,1.795],[.882,1.795],[.882,.973]],.020,4),(x,y)=>[x,y,storageBack],true);
+  for(const x of [.17,.82])box(g,m.black,[x,1.055,storageBack-.010],[.035,.126,.018],.006);
   const spare=mesh(g,new T.CylinderGeometry(.493,.487,.377,80),m.rubber,[-.529,1.409,L.rearZ+.1885]);spare.rotation.x=Math.PI/2;spare.name='exp98-roof-down-covered-rear-spare';
   const cover=mesh(g,new T.CircleGeometry(.487,80),m.dark,[-.529,1.409,L.rearZ-.002]);cover.rotation.y=Math.PI;
   for(const x of [-.754,-.309])line(g,m.rubber,[[x,1.012,L.rearZ+.006],[x,1.80,L.rearZ+.006]],.006);
   const coverSeam=mesh(g,new T.TorusGeometry(.469,.003,6,72),m.black,[-.529,1.409,L.rearZ+.005]);coverSeam.rotation.y=Math.PI;
   box(g,m.dark,[-.529,1.004,rear-.196],[.148,.529,.102],.015);
   for(const s of [-1,1]){
-    oval(g,m.reverse,s*.729,2.366,rearFace-.005,.186,.081);
-    oval(g,m.red,s*.729,2.236,rearFace-.007,.186,.085);
-    oval(g,m.amber,s*.729,2.104,rearFace-.009,.186,.085);
+    for(const [y,height,emitter,name] of [[2.366,.081,m.reverse,'reverse'],[2.236,.085,m.red,'brake'],[2.104,.085,m.amber,'indicator']]){
+      const x=s*.729;
+      oval(g,m.black,x,y,tail(x,y,.014)[2],.204,height+.014);
+      const lens=(u,v,depth)=>{
+        const vertical=(2*v-1)*.97,w=Math.sqrt(1-vertical*vertical),horizontal=(2*u-1)*w;
+        return tail(x+.093*horizontal,y+height/2*vertical,.021+.004*(1-horizontal*horizontal-vertical*vertical)+depth);
+      };
+      moldedOptic(g,emitter,'exp98-molded-'+name+'-lamp',lens,{cells:12,rows:12,relief:.0013});
+    }
     box(g,m.black,[s*.806,.755,rearFace-.101],[.279,.092,.105],.015);
     box(g,m.red,[s*.826,.756,rearFace-.158],[.158,.056,.012],.005);
     box(g,m.amber,[s*.713,.756,rearFace-.159],[.060,.056,.012],.005);
@@ -338,7 +409,7 @@ function house(view){
   box(g,m.satinMetal,[0,.609,rearFace-.173],[.207,.035,.247],.008);
   box(g,m.black,[0,.611,rearFace-.158],[.072,.066,.231],.006);
   for(const x of [-.32,.32]){const shackle=mesh(g,new T.TorusGeometry(.025,.007,8,24,Math.PI*1.8),m.satinMetal,[x,.650,rearFace-.266]);shackle.rotation.y=Math.PI;}
-  box(g,m.black,[0,2.272,rearFace-.016],[.244,.112,.018],.012);label(g,m.satinMetal,'EXP',.15,.043,[0,2.256,rearFace-.029]).rotation.y=Math.PI;
+  box(g,m.black,tail(0,2.272,.014),[.244,.112,.018],.012);label(g,m.satinMetal,'EXP',.15,.043,tail(0,2.256,.027)).rotation.y=Math.PI;
   // Camper fittings seen through the genuine side apertures. No raised-roof
   // headroom is invented while the vehicle is in its driving configuration.
   box(g,m.headliner,[0,2.555,-1.15],[1.93,.028,4.13],.012);
@@ -375,8 +446,8 @@ export function buildEarthCruiser(spec=EARTHCRUISER_EXP_SPEC){
   cab(view);house(view);underbody(view);
   // Batch by material only after openings, split body seams and trim are built.
   mergeStaticMeshes(body);
-  root.userData.nativeConstruction={version:3,bodySurfaceRevision:14,automotiveFinishes:true,originalReferenceGeometry:true,sourceConfiguration:'2022 EXP98 single-cab Isuzu NPR GM6.6V8',cabOver:true,closedPopTop:true,asymmetricOverhangs:true,realWindowApertures:true,geometryLettering:true};
-  root.userData.bodyRefinement={version:24,style:'earthcruiser',method:'Original formed cab-over, deeper NPR front-sheet crown and rolled corners, molded camper shell',preservedHardpoints:true};
+  root.userData.nativeConstruction={version:3,bodySurfaceRevision:16,automotiveFinishes:true,originalReferenceGeometry:true,sourceConfiguration:'2022 EXP98 single-cab Isuzu NPR GM6.6V8',cabOver:true,closedPopTop:true,asymmetricOverhangs:true,realWindowApertures:true,geometryLettering:true};
+  root.userData.bodyRefinement={version:26,style:'earthcruiser',method:'Original formed cab-over, deeper NPR front-sheet crown and rolled corners, molded camper shell',preservedHardpoints:true};
   root.userData.visualModel={type:'Original primary-reference reconstruction; no OEM CAD',version:14,landmarks:EARTHCRUISER_EXP_LANDMARKS};
   root.userData.nativeFidelity={version:3,splitTireAndRim:true,factorySpokeProfile:'Method-style eight-window',bodyClearcoat:true,geometryLettering:true,matchingCoveredSpare:true,measuredManufacturerCAD:false};
   view.dispose=()=>{const gs=new Set(),ms=new Set();for(const group of [root,...view.wheels.map(w=>w.root)])group.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const mat of Array.isArray(o.material)?o.material:[o.material])ms.add(mat);});view.wheels.forEach(w=>w.deformation?.dispose?.());gs.forEach(x=>x.dispose());ms.forEach(x=>x.dispose());scene.clear();};

@@ -2,6 +2,7 @@
 // Official class dimensions and tires anchor scale; chassis/body stations are estimates.
 import {T,mesh,box,surface,mappedPolygon,line,curve,lerp,station,roundedContour,panelReturn,newReferenceView,finishMaterial,rod,cylinder,ring,label,pane,rimBarrel,refineReferenceWheel} from './reference-vehicle-kit.mjs';
 import {instrumentDial} from './cabin-controls.mjs';
+import {moldedOptic} from './vehicle-optics.mjs';
 export const GRAVE_DIGGER_SPEC={id:'grave-digger',name:'Grave Digger',brand:'Monster Jam',year:2024,trim:'Supercharged methanol V8 / tube chassis / 66-inch tires',bodyStyle:'monster',monsterTruck:1,droopTravel:.42,wheelInertia:48,color:'#111518',powertrain:'combustion',fuelCapacityGallons:30,bodyWidthM:2.0,powerHP:1500,torqueNm:2000,torqueLbFt:2000/1.3558179483,mass:12000*.45359237,curbMass:12000*.45359237,length:17*.3048,width:12.5*.3048,height:10.5*.3048,wheelbase:3.50,track:2.72,trackFront:2.72,trackRear:2.72,frontWeightFraction:.5,cgHeight:1.45,clearance:.65,tireSize:'66X43R25',tireRadius:66*.0254/2,tireWidth:43*.0254,rearTireWidth:43*.0254,tireType:'mud-terrain',rimDiameterInches:25,stockPSI:23,stockPSIFront:23,stockPSIRear:23,transmissionType:'automatic',transmissionName:'Two-speed racing automatic',gears:[1.8,1],reverseRatio:1.8,finalDrive:12,lowRatio:1,defaultMode:'4H',driveModes:['4H'],frontTorqueFraction:.5,dragCoefficient:.70,topSpeedMPH:75,features:{frontLocker:true,rearLocker:true,swayDisconnect:false,tractionControl:false,abs:false,hillDescent:false},engine:{idleRPM:1200,redlineRPM:8500,peakTorqueRPM:5000,peakPowerRPM:7500,curve:[[1200,550],[2500,1250],[4000,1800],[5000,2000],[6500,1820],[7500,1424.2],[8500,1050]],curveStatus:'Simulator curve through representative 1500 hp class output, not a measured Grave Digger dyno'},suspension:{travel:.762,droopTravel:.42,restLength:.94,springRate:105000,damping:12000,antiRoll:14000,frontType:'four-link solid axle with nitrogen shocks',rearType:'four-link solid axle with nitrogen shocks',parameterStatus:'Official class 30-inch travel; estimated spring/damper calibration'},notes:['Reference reconstruction of the modern black/green 1951 Chevy-panel-wagon-inspired body with exposed green tube cage, rear engine and red headlights.','Official class approximate envelope, 12000-pound mass, 1500 hp, 66x43-inch tires and 30-inch travel. Exact chassis number, wheelbase, track, CG, torque, fuel capacity and gearing are estimates.','Stock 66-inch monster tires are retained; the passenger/off-road 50-inch conversion limit does not shrink this truck. Independent rear-steer control is simplified to speed-sensitive coordinated rear steering.'],sources:['https://www.monsterjam.com/en-us/truck/grave-digger/','https://www.monsterjam.com/en-gb/monster-jam-101/']};
 const tailZ=-2.24;
 const roofFront=.16;
@@ -19,42 +20,48 @@ export const GRAVE_DIGGER_LANDMARKS={
 // Black-and-green 2024 fiberglass shell. The lower rear edge follows the
 // tire cutout, while the roof rounds down and in toward the open tail.
 const roofStations=[
-  [tailZ,.823,3.033],[-2.10,.903,3.117],[-1.70,.944,3.169],
+  [tailZ,.796,3.015],[-2.10,.868,3.098],[-1.70,.937,3.161],
   [-.85,.941,3.190],[-.36,.915,3.195],[.03,.858,3.161],[roofFront,.825,3.104]
 ];
 const rockerStations=[
-  [tailZ,2.235],[-2.01,2.186],[-1.67,2.348],[-1.39,2.209],
+  [tailZ,2.311],[-2.01,2.275],[-1.70,2.413],[-1.39,2.262],
   [-1.13,1.985],[-.68,1.907],[.11,1.910],[.45,1.973],[cowlZ,2.091]
 ];
 const sideWindow=roundedContour([[-.523,2.515],[.527,2.505],[.121,2.904],[-.493,2.990]],.049,9);
 const low=z=>station(rockerStations,z,1);
-const top=z=>z<=roofFront?station(roofStations,z,2)-.157:
+const roofRoll=z=>.157+.052*(1-T.MathUtils.smoothstep(z,tailZ,-.57));
+const top=z=>z<=roofFront?station(roofStations,z,2)-roofRoll(z):
   lerp(roofStations.at(-1)[2]-.157,2.467,(z-roofFront)/(cowlZ-roofFront));
 const sideWidthStations=[...roofStations,[cowlZ,.765,2.624]];
 const width=z=>station(sideWidthStations,z,1);
 
+// The fiberglass corners fold in together above the rear axle.
+const tailTuck=(x,y,z)=>z+(1-T.MathUtils.smoothstep(z,tailZ,-1.68))*(
+  .046*(Math.abs(x)/.9)**2+.073*(1-T.MathUtils.smoothstep(y,2.26,2.66)));
 function roofPoint(u,z) {
   const a=(2*u-1)*Math.PI/2;
-  return [Math.sin(a)*width(z),station(roofStations,z,2)-.157*(1-Math.cos(a)),z];
+  const x=Math.sin(a)*width(z),y=station(roofStations,z,2)-roofRoll(z)*(1-Math.cos(a));
+  return [x,y,tailTuck(x,y,z)];
 }
 
 export function graveSidePaintBase(side,z,y) {
   const t=(y-low(z))/(top(z)-low(z));
   const bulge=.029*Math.sin(Math.PI*t)-.042*(1-t)**2;
-  return [side*(width(z)+bulge),y,z];
+  const x=side*(width(z)+bulge);
+  return [x,y,tailTuck(x,y,z)];
 }
 
 const hoodStations=[
   [cowlZ,.765,2.473,.118],[.94,.725,2.456,.158],
-  [1.45,.662,2.417,.182],[1.98,.593,2.346,.175],
-  [2.26,.532,2.266,.147],[noseZ,.492,2.142,.078]
+  [1.45,.654,2.403,.190],[1.98,.565,2.323,.196],
+  [2.26,.505,2.228,.170],[noseZ,.467,2.116,.111]
 ];
 
 export function graveHoodPaintBase(x,z) {
   const width=station(hoodStations,z,1);
   const u=x/width;
   const crown=station(hoodStations,z,3)*(1-u*u);
-  const corner=.066*u*u*T.MathUtils.smoothstep(z,1.70,noseZ);
+  const corner=.107*u*u*T.MathUtils.smoothstep(z,1.70,noseZ);
   return [x,station(hoodStations,z,2)+crown,z-corner];
 }
 
@@ -63,9 +70,9 @@ function hoodPoint(u,z) {
 }
 
 const fenderStations=[
-  [.58,.712,.871,2.422,2.154],[.92,.675,.959,2.417,2.201],
-  [1.31,.642,.987,2.425,2.244],[1.73,.595,1.000,2.411,2.226],
-  [2.12,.543,.987,2.351,2.181],[2.384,.500,.909,2.232,2.079]
+  [.58,.712,.871,2.422,2.154],[.92,.675,.951,2.409,2.195],
+  [1.31,.638,.987,2.418,2.223],[1.73,.571,1.000,2.382,2.203],
+  [2.12,.519,.968,2.318,2.157],[2.384,.476,.909,2.212,2.059]
 ];
 function fenderPoint(side,u,t) {
   const z=lerp(fenderStations[0][0],fenderStations.at(-1)[0],u);
@@ -647,8 +654,7 @@ function addShell(g,m) {
     [graveSidePaintBase(-1,tailZ,lipBottom)[0],lipBottom]
   ];
   const inner=rearOutline.map(([x,y])=>[x*.935,lerp(2.585,y,.91)]);
-  const tail=(x,y,d=0)=>[x,y,tailZ+.041*(x/.83)**2+.027*(y-2.59)**2+d];
-  const rim=(x,y,d=0)=>tail(x,y,d-.034*(x/.83)**2-.02*(y-2.59)**2);
+  const rim=(x,y,d=0)=>[x,y,tailTuck(x,y,tailZ)+d];
   panelReturn(g,m.paint,rearOutline,inner,rim,.038,true).name='grave-digger-open-tail-surround';
   panelReturn(g,m.dark,inner,inner,(x,y,d)=>rim(x,y,.038+d),.107,true).name='grave-tail-inner-return';
 
@@ -672,6 +678,12 @@ function addShell(g,m) {
   },true).name='grave-closed-cowl';
   surface(g,m.paint,64,96,(u,t)=>hoodPoint(u,lerp(cowlZ,noseZ,t)),true)
     .name='grave-digger-domed-narrow-bonnet';
+  surface(g,m.paint,64,8,(u,v)=>{
+    const p=hoodPoint(u,noseZ);
+    p[1]-=.047*Math.sin(v*Math.PI*.62);
+    p[2]-=.039*v*v;
+    return p;
+  },true).name='grave-bonnet-rolled-leading-lip';
 
   for(const side of [-1,1]) {
     surface(g,m.paint,92,32,(u,t)=>fenderPoint(side,u,t),side<0)
@@ -683,7 +695,8 @@ function addShell(g,m) {
     surface(g,m.paint,76,7,(u,t)=>{
       const p=fenderPoint(side,u,1);
       p[0]-=side*.024*t;
-      p[1]-=.031*Math.sin(t*Math.PI*.53);
+      const rollDepth=lerp(.031,.014,T.MathUtils.smoothstep(u,.62,.80));
+      p[1]-=rollDepth*Math.sin(t*Math.PI*.53);
       return p;
     },side<0).name='grave-fender-rolled-edge';
     surface(g,m.paint,30,7,(u,t)=>{
@@ -709,19 +722,17 @@ function addHeadlights(g,m) {
   });
   lens.userData.nativeRole='';
   for(const side of [-1,1]) {
-    const x=side*.849,y=2.201,z=2.345;
+    const x=side*.849,y=2.181,z=2.342;
     cylinder(g,m.dark,[x,y,z-.015],.112,.067,'z',42);
     ring(g,m.satinMetal,[x,y,z+.022],.089,.012,'z');
     ring(g,m.glossBlack,[x,y,z+.022],.079,.004,'z');
-    surface(g,lens,44,12,(u,t)=>{
-      const angle=u*Math.PI*2,r=lerp(.001,.078,t);
-      return [x+Math.cos(angle)*r,y+Math.sin(angle)*r,z+.024+.022*(1-t*t)];
-    },true).name='monster-constant-red-headlight';
-    for(let i=0;i<11;i++) {
-      const pos=lerp(-.063,.063,i/10);
-      const height=Math.sqrt(.073**2-pos**2)*.83;
-      rod(g,lens,[x+pos,y-height,z+.037],[x+pos,y+height,z+.037],.001,5);
-    }
+    // The red sealed beam has optical flutes molded into the domed face.
+    // Its separate ring and bezel seat it in the wagon's original round lamp.
+    moldedOptic(g,lens,'monster-constant-red-headlight',(u,v,depth)=>{
+      const vertical=(2*v-1)*.984,horizontal=(2*u-1)*Math.sqrt(1-vertical*vertical);
+      const crown=.020*(1-horizontal*horizontal-vertical*vertical);
+      return [x+horizontal*.078,y+vertical*.078,z+.024+crown+depth];
+    },{cells:13,rows:18,relief:.0013,facing:1});
   }
 }
 
@@ -774,11 +785,11 @@ export function graveDiggerView(spec=GRAVE_DIGGER_SPEC) {
   paintRoof(g,inks);
   Object.assign(view.root.userData,{
     nativeConstruction:{
-      version:4,bodySurfaceRevision:3,paintedLivery:true,originalReferenceGeometry:true,
+      version:4,bodySurfaceRevision:4,paintedLivery:true,originalReferenceGeometry:true,
       realWindowApertures:true,exposedTubeChassis:true,geometryLettering:true
     },
     bodyRefinement:{
-      version:3,style:'monster',
+      version:4,style:'monster',
       method:'2024 photo-matched fiberglass shell, open tail and cab, tapered spaceframe and original painted details',
       preservedHardpoints:true
     },

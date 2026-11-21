@@ -48,7 +48,7 @@ for(let i=0;i<hatchIndex.count;i+=3){
 const hatchNormalMaxDeg=Math.max(...hatchNormalErrors),hatchChordMaxM=Math.max(...hatchChordErrorsM);
 assert.ok(hatchNormalErrors.length>1000&&hatchNormalMaxDeg<2&&hatchChordMaxM<.0015,
   `hatch reflection needs a smooth panel: ${hatchNormalMaxDeg} degrees, ${hatchChordMaxM} metres`);
-bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);
+view.root.updateMatrixWorld(true);
 const fascia=view.body.getObjectByName('urus-perforated-front-fascia'),frame=view.body.getObjectByName('urus-lower-composite-intake-frame');
 assert.ok(fascia&&frame);
 const counts=[0,0,0,0];
@@ -143,6 +143,66 @@ for(const s of [-1,1]){
  const rearJoint=view.body.children.filter(o=>o.name==='urus-rear-bumper-joint');
  assert.equal(rearJoint.length,2,'both rear bumper seams follow the folded end closure');
 }
+const pocketDepthM=[];
+for(const side of [-1,1]){
+ const headlamp=probe([side*1.6,.943,2.220],[-side,0,0]);
+ assert.equal(headlamp[0]?.object.name,'urus-outboard-lamp-lens','fender visibly wraps the lamp around the front corner');
+ assert.equal(headlamp[1]?.object.name,'urus-outboard-headlamp-recess','side lamp replaces the solid paint sheet with an optical pocket');
+ pocketDepthM.push(headlamp[1].distance-headlamp[0].distance);
+ assert.ok(pocketDepthM.at(-1)>.030&&pocketDepthM.at(-1)<.045,'formed lamp pocket has measurable depth');
+ assert.equal(firstSolid([side*1.6,.550,2.213],[-side,0,0])?.name,'urus-front-air-curtain-recess',
+  'corner intake has an unobstructed side aperture and a formed inner wall');
+}
+const cornerSeamsM=[];
+for(const side of [-1,1]){
+ const lens=name=>view.body.children.find(o=>o.name===name&&Math.sign(o.geometry.attributes.position.getX(0))===side).geometry;
+ const sideLens=lens('urus-outboard-lamp-lens'),frontLens=lens('urus-formed-clear-headlamp-cover');
+ for(const y of [.931,.974]){
+  const corner=geometry=>{
+   const {position,uv}=geometry.attributes;
+   const cornerU=geometry===sideLens?2.48:T.MathUtils.lerp(.955,.843,(y-.883)/(1.025-.883));
+   for(let i=0;i<uv.count;i++)if(Math.abs(uv.getX(i)-cornerU)<.00001&&Math.abs(uv.getY(i)-y)<.00001){
+    return new T.Vector3().fromBufferAttribute(position,i);
+   }
+   assert.fail('lens extends to both corner seam endpoints');
+  };
+  const gap=corner(sideLens).distanceTo(corner(frontLens));
+  assert.ok(gap<.0001,'outboard and front lens cover meet at the same fender corner');
+  cornerSeamsM.push(gap);
+ }
+}
+const sectionBounds=name=>new T.Box3().setFromBufferAttribute(view.body.getObjectByName(name).geometry.attributes.position);
+const frontGlass=sectionBounds('urus-side-glass-seal-0');
+const quarterGlass=sectionBounds('urus-side-glass-seal-2');
+const greenhouse={roofFrontM:view.root.userData.visualModel.landmarks.roofFrontZ,
+ frontDoorGlazingM:frontGlass.max.z-frontGlass.min.z,quarterGlazingM:quarterGlass.max.z-quarterGlass.min.z,
+ quarterTrailingM:quarterGlass.min.z};
+assert.ok(greenhouse.roofFrontM>.27&&greenhouse.roofFrontM<.34,'windshield upper edge reaches the front roof bow');
+assert.ok(greenhouse.quarterTrailingM> -1.54&&greenhouse.quarterGlazingM<.61&&greenhouse.frontDoorGlazingM>.97,
+ 'narrow quarter glazing leaves the rear shoulder and D-pillar while the front door opening remains full-size');
+// Evaluate the final profile after the shared panel-and-trim deformation.
+bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);
+const splitter=view.body.getObjectByName('urus-splitter-closed-leading-edge');
+const endZ=(mesh,height,accept,foremost=true)=>{
+ const positions=mesh.geometry.attributes.position;
+ let limit=foremost?-Infinity:Infinity;
+ for(let i=0;i<positions.count;i++){
+  if(!accept(positions.getY(i),height))continue;
+  limit=foremost?Math.max(limit,positions.getZ(i)):Math.min(limit,positions.getZ(i));
+ }
+ return limit;
+};
+const frontTip=endZ(splitter,0,(y,h)=>y>h);
+const upperBrow=endZ(fascia,.93,(y,h)=>y>h);
+const hatchLip=endZ(hatch,0,(y,h)=>y>h,false);
+const lowDiffuser=endZ(diffuser,.37,(y,h)=>y<h,false);
+const profile={upperBrowSetbackM:frontTip-upperBrow,lowerRearTuckM:lowDiffuser-hatchLip,overallM:frontTip-hatchLip};
+assert.ok(profile.upperBrowSetbackM>.13&&profile.upperBrowSetbackM<.23,'upper nose rolls back above the projecting splitter');
+assert.ok(profile.lowerRearTuckM>.20&&profile.lowerRearTuckM<.30,'the bottom of the valance tucks forward below the hatch');
+assert.ok(Math.abs(profile.overallM-URUS.length)<.035,'rounded fascia stays within the body length tolerance');
+const passiveReflectors=view.body.children.filter(o=>o.name==='urus-bumper-reflector');
+assert.ok(passiveReflectors.length===2&&passiveReflectors.every(o=>o.material!==view.materials.red&&
+ o.material.emissive.getHex()===0),'bumper reflectors remain passive when applying the brakes');
 const {version:revision,artPilot}=view.root.userData.visualModel;
-const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,radiatorOpenCells:radiator.userData.openCells,openRadiatorProbes,solidRadiatorProbes,shoulderReliefM,hatchReflection:{sampledTriangles:hatchNormalErrors.length,maxNormalErrorDeg:hatchNormalMaxDeg,maxChordErrorM:hatchChordMaxM},pass:true};
+const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,profile,greenhouse,pocketDepthM,cornerSeamsM,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,radiatorOpenCells:radiator.userData.openCells,openRadiatorProbes,solidRadiatorProbes,shoulderReliefM,hatchReflection:{sampledTriangles:hatchNormalErrors.length,maxNormalErrorDeg:hatchNormalMaxDeg,maxChordErrorM:hatchChordMaxM},pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();

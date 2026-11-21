@@ -22,7 +22,8 @@ assert.equal(data.loopFrames.length,25);
 for(const f of data.loopFrames){assert.ok(Math.abs(Math.hypot(f.p[0]-5800,f.p[2]-2472)-2000)<1e-6);assert.ok(Math.abs(Math.hypot(...f.n)-1)<1e-6);}
 assert.ok(Math.abs(data.loopFrames[6].p[0]-7800)<1e-6);
 assert.ok(Math.abs(data.loopFrames[18].p[0]-3800)<1e-6);
-assert.equal(data.vehicles[5].nativeModel.bodyShape.version,13);
+assert.equal(data.vehicles[5].nativeModel.bodyShape.version,15);
+assert.ok(data.vehicles[5].nativeModel.bodyShape.wrappedHeadlamps);
 assert.ok(data.vehicles[5].nativeModel.bodyShape.sculptedBonnetRidges&&data.vehicles[5].nativeModel.bodyShape.foldedRearHatch);
 assert.equal(data.vehicles[2].nativeModel.construction.bodySurfaceRevision,12);
 assert.ok(data.vehicles[2].nativeModel.construction.straightAPillarEdges&&data.vehicles[2].nativeModel.construction.formedBonnetAndTrunk);

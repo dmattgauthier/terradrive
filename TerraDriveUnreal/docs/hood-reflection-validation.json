@@ -4,16 +4,16 @@
   "before": {
     "triangles": 8640,
     "samples": 14438,
-    "meanDegrees": 0.16175827564273287,
-    "p95Degrees": 0.6154967981716677,
-    "maxDegrees": 1.0804221130965466
+    "meanDegrees": 0.2540171792018465,
+    "p95Degrees": 0.9639045687615567,
+    "maxDegrees": 1.6515219627165234
   },
   "after": {
     "triangles": 32000,
     "samples": 79316,
-    "meanDegrees": 0.013539655804384,
-    "p95Degrees": 0.03085223718539066,
-    "maxDegrees": 0.3715429955865701
+    "meanDegrees": 0.021138848354135865,
+    "p95Degrees": 0.048464593183540745,
+    "maxDegrees": 0.6242034206034838
   },
   "pass": true
 }

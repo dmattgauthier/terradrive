@@ -40,6 +40,12 @@ export function inspectGVariant(view,spec,parts){
   glass('rear cab window',[0,1.8,-1.25],[0,0,1]);
   for(const z of [-1.85,-2.35]){const h=ray([0,3,z],[0,-1,0]).find(h=>!mat(h).transparent),y=h&&view.body.worldToLocal(h.point.clone()).y;check('cargo bed is open over its bamboo floor '+z,!!h&&y>.95&&y<1.015,{firstSurfaceM:y});}
   check('pickup has distinct tailgate and closed cab back',names.includes('g63-six-sculpted-tailgate')&&names.includes('g63-six-closed-cab-rear-wall'),{});
+  const tailgateZ=x=>{
+   const hit=ray([x,1.17,-4],[0,0,1]).find(h=>h.object.name==='g63-six-sculpted-tailgate');
+   return hit&&view.body.worldToLocal(hit.point.clone()).z;
+  };
+  const centre=tailgateZ(0),returns=[-.887,.887].map(x=>tailgateZ(x)-centre);
+  check('pickup tailgate is a formed sheet tapering into both rear corners',returns.every(d=>d>.023&&d<.045)&&names.includes('g63-six-tailgate-inner-sheet'),{returnDepthM:returns});
   check('classic AMG front uses twin blades instead of thirteen modern slats',names.filter(n=>n==='g63-six-twin-blade-grille').length===2&&!names.includes('g63-panamericana-grille-bar'),{});
   check('classic front has one emblem with no retained donor badge group',view.body.getObjectsByProperty('name','g63-six-classic-star-badge').length===1&&!view.body.getObjectByName('gclass-rigid-star-badge'),{});
   check('classic front retains two projector assemblies',view.body.getObjectsByProperty('name','g63-six-classic-projector-headlamp').length===2,{});
@@ -126,7 +132,13 @@ export function inspectGVariant(view,spec,parts){
   check('squared conversion retains the 113.8-inch wheelbase',Math.abs(spec.wheelbase-2.89)<1e-6,{wheelbaseM:spec.wheelbase});
   check('newer 4x4 squared uses 22-inch wheels with 325/55 tires',spec.tireSize==='325/55R22'&&spec.rimDiameterInches===22,{tireSize:spec.tireSize});
   check('squared has four wide carbon arch faces',names.filter(n=>n.startsWith('g63-squared-carbon-extension-outer-')).length===4,{});
-  check('roof lamps are two separate recessed factory modules',names.filter(n=>n.startsWith('g63-squared-roof-carbon-light-housing-')).length===2,{});
+  const top=view.body.getObjectByName('g63-squared-formed-roof-spoiler'),topSize=new T.Box3().setFromObject(top).getSize(new T.Vector3());
+  const faceAt=x=>ray([x,2.232,2.85],[0,0,-1]).find(h=>h.object.name==='g63-squared-roof-spoiler-front-return');
+  check('formed roof spoiler connects both real aperture recesses',topSize.x>1.60&&topSize.z>.39&&!!faceAt(0)&&!faceAt(.574)&&!faceAt(-.574)&&
+    names.filter(n=>n.startsWith('g63-squared-roof-carbon-light-housing-')).length===2,{spoilerWidthM:topSize.x,spoilerDepthM:topSize.z});
+  const frontArch=view.body.getObjectByName('g63-squared-carbon-extension-outer-1-1.445').geometry.attributes.position;
+  const lipGap=Math.min(...Array.from({length:frontArch.count},(_,i)=>Math.abs(frontArch.getZ(i)-1.445)<.05?frontArch.getY(i)-2*spec.tireRadius:Infinity));
+  check('4×4² fender crown follows the taller stock tire with a bounded opening',lipGap>.17&&lipGap<.22,{radialClearanceM:lipGap});
   const spare=view.body.getObjectByName('g63-squared-exposed-spare'),box=spare&&new T.Box3().setFromObject(spare).getSize(new T.Vector3());
   check('exposed spare is round and matches the larger tires',!!box&&Math.abs(box.x-box.y)<.002&&Math.abs(box.x/2-spec.tireRadius)<.003,{diametersM:box?.toArray()});
   const carcass=spare.getObjectByName('g63-squared-spare-carcass');
@@ -164,5 +176,5 @@ export function inspectGVariant(view,spec,parts){
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
  const rows=[];for(const s of VEHICLES.filter(portalStyle)){const {view,parts}=prepareNativeVehicle(s);try{rows.push(inspectGVariant(view,s,parts));}finally{view.dispose();}}
- assert.equal(rows.length,2);const report={revision:31,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0),vehicles:rows};fs.writeFileSync(new URL('../docs/gclass-variants-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.id,checks:r.checks,vertices:r.geometry.vertices,triangles:r.geometry.triangles}))}));
+ assert.equal(rows.length,2);const report={revision:32,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0),vehicles:rows};fs.writeFileSync(new URL('../docs/gclass-variants-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.id,checks:r.checks,vertices:r.geometry.vertices,triangles:r.geometry.triangles}))}));
 }

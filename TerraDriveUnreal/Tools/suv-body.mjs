@@ -1,6 +1,7 @@
 // Native-only coachwork fork; browser source remains immutable.
 import {panelJoint,roundSUVLamp,cellularGrille} from './coachwork-craft.mjs';
 import {instrumentDisplay} from './cabin-controls.mjs';
+import {moldedOptic,opticFace,passiveRuby} from './vehicle-optics.mjs';
 export function buildSUV(view, geometry, bronco) {
   const { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText } = geometry;
 
@@ -67,7 +68,7 @@ export function buildSUV(view, geometry, bronco) {
       // The real outer wings rise out of a drawn wheel haunch. The former
       // sheet remained almost planar behind the separate plastic flares.
       // The broad stamped shoulder stays inside the flare's factory envelope.
-      const wing=bronco?.014:.008;
+      const wing=bronco?.023:.015;
       const haunch=wing*(Math.exp(-(((z-f)/.52)**4))+Math.exp(-(((z-r)/.51)**4)))
         *Math.exp(-(((y-(bronco?1.035:.996))/.235)**2))
         *(1-THREE.MathUtils.smoothstep(y,upper-.035,upper));
@@ -113,10 +114,11 @@ export function buildSUV(view, geometry, bronco) {
       const z = THREE.MathUtils.lerp(hoodRear, nose + .030, v), x = u * 2 - 1;
       const shoulder = Math.exp(-Math.pow((Math.abs(x) - (bronco ? .83 : .75)) / .14, 2));
       const fade=THREE.MathUtils.smoothstep(v,0,.14)*(1-THREE.MathUtils.smoothstep(v,.79,1));
-      // Bronco's broad, low central plateau and the JL's narrower bonnet
-      // shoulders are stamped into the skin, with continuous rolled returns.
-      const plateau=bronco?.020*(1-THREE.MathUtils.smoothstep(Math.abs(x),.57,.73))*fade:
-        -.010*Math.exp(-((x/.46)**6))*fade;
+      // Ford carries a wide plateau almost to the raised sight lines. The
+      // Rubicon has a narrower power dome that settles into the outer wings.
+      const a=Math.abs(x);
+      const plateau=bronco?.025*(1-THREE.MathUtils.smoothstep(a,.55,.76))*fade:
+        (.027*(1-THREE.MathUtils.smoothstep(a,.36,.61))-.006*Math.exp(-(((a-.65)/.083)**2)))*fade;
       const y = THREE.MathUtils.lerp(hood + .032, 1.218, v) + (bronco ? .013 : .037) * (1 - x * x)
         + (bronco ? .018 : .025) * shoulder * Math.sin(v * Math.PI)+plateau;
       return [x * hoodHalf(v), y, z];
@@ -603,6 +605,7 @@ export function buildSUV(view, geometry, bronco) {
         return a.map((value,k)=>THREE.MathUtils.lerp(value,b[k],v));
       },true);
     }
+    const lampBacking=passiveRuby(m.red);
     for (const side of [-1, 1]) {
       const lampX = side * (bronco ? 0.638 : 0.636);
       roundSUVLamp(g,m,lampX,1.029,nose+(bronco?.007:.015),bronco?.131:.124,bronco);
@@ -615,7 +618,7 @@ export function buildSUV(view, geometry, bronco) {
         const shape=new THREE.Shape();outline.forEach(([a,b],i)=>shape[i?'lineTo':'moveTo'](a,b));shape.closePath();
         finish(new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.078,bevelEnabled:true,bevelSize:.006,bevelThickness:.006,bevelSegments:3,steps:1}),m.black),g,0,0,tail-.092);
         const rear=frontSkinProjector(g,[],-1,tail-.094),scaled=(sx,sy)=>outline.map(([a,b])=>[x+(a-x)*sx,y+(b-y)*sy,0]);
-        rear.patch(m.red,scaled(bronco?.93:.88,bronco?.96:.93),.007);
+        rear.patch(lampBacking,scaled(bronco?.93:.88,bronco?.96:.93),.007);
         rear.patch(m.dark,scaled(bronco?.60:.61,bronco?.81:.64),.009);
         const ribbon=(material,points,width,offset)=>{
           const curve=new THREE.CatmullRomCurve3(points.map(([a,b])=>v3(x+side*a,y+b,0)),false,'centripetal');
@@ -635,17 +638,24 @@ export function buildSUV(view, geometry, bronco) {
           // JL lamps retain the square outer red guide, with a separate low
           // reverse chamber and layered optics instead of a red/white block.
           const ring=scaled(.73,.77);curvedLine(g,m.red,[...ring,ring[0]].map(p=>rear.point(p,.013)),.0055);
-          rear.patch(m.reverse,[[x-.059,y-.051,0],[x+.059,y-.051,0],[x+.059,y-.006,0],[x-.059,y-.006,0]],.012);
-          for(let k=0;k<8;k++)rear.patch(m.chrome,[[x-.052+k*.014,y-.047,0],[x-.048+k*.014,y-.047,0],[x-.048+k*.014,y-.010,0],[x-.052+k*.014,y-.010,0]],.013);
+          moldedOptic(g,m.reverse,'wrangler-square-clear-reverse-optic',
+            opticFace([x,y-.0285,tail-.106],.118,.045,.005,.0015),
+            {cells:9,rows:7,relief:.0017});
           rear.patch(m.red,[[x-.061,y+.012,0],[x+.061,y+.012,0],[x+.061,y+.057,0],[x-.061,y+.057,0]],.011);
           for(const xx of [-.048,.048])cylinder(g,m.dark,x+xx,y+.045,tail-.109,.010,.009,'z',16);
         }
-        // The slightly bowed outer cover catches a continuous edge highlight.
-        const center=v3(x,y,tail-.116),verts=[center.toArray(),...scaled(.92,.95).map(p=>rear.point(p,.019))];
-        const lensGeo=new THREE.BufferGeometry(),ids=[];
-        lensGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts.flat(),3));
-        for(let i=0;i<outline.length;i++)ids.push(0,1+(i+1)%outline.length,1+i);
-        lensGeo.setIndex(ids);lensGeo.computeVertexNormals();finish(new THREE.Mesh(lensGeo,m.lens),g);
+        // The molded cover follows the rectangular Wrangler rim or the
+        // Bronco's clipped corner. Curvature is sampled across the full face.
+        const lensRim=scaled(.92,.95);
+        const lens=perforatedFace(g,m.lens,lensRim,[],(lx,ly)=>{
+          const radial=Math.max(0,1-((lx-x)/(w*.49))**2)*Math.max(0,1-((ly-y)/(h*.49))**2);
+          return rear.point([lx,ly,0],.017+.005*radial);
+        },.021);
+        const ids=lens.geometry.index.array,uv=lens.geometry.attributes.uv,positions=lens.geometry.attributes.position;
+        for(let i=0;i<ids.length;i+=3)[ids[i+1],ids[i+2]]=[ids[i+2],ids[i+1]];
+        for(let i=0;i<uv.count;i++)uv.setXY(i,(positions.getX(i)-x)/w+.5,(positions.getY(i)-y)/h+.5);
+        lens.geometry.computeVertexNormals();
+        lens.name=bronco?'bronco-clipped-tail-lamp-cover':'wrangler-square-tail-lamp-cover';
         if(bronco)for(const mesh of g.children.slice(lampFirstChild))mesh.position.z+=.022;
       }
       if(bronco) {

@@ -3,6 +3,30 @@
 
 namespace TerraSim {
 struct DriverDemand { float Throttle=0, Brake=0; };
+
+// The launch multiplier tapers as the drivetrain couples, in either gear direction.
+inline float ConverterLaunchMultiplier(float speed) {
+    const float t=std::clamp(std::abs(speed)-1.5f,0.f,1.f);
+    return 1.f+.35f*(1.f-t*t*(3.f-2.f*t));
+}
+
+// Allocate the existing brake authority using the estimated loaded axle balance.
+// The same brake torque remains available at low speed for hill holds and ledges.
+inline constexpr float BrakeBiasStartMPS=.8f;
+inline float FrontServiceBrakeShare(float speed,float demandG,float availableGripG,
+    float staticFrontShare,float cgHeight,float axleSpan,int wheelCount) {
+    const float standingShare=2.f/std::max(2,wheelCount);
+    constexpr float fullBiasMPS=2.5f;
+    const float t=std::clamp((std::abs(speed)-BrakeBiasStartMPS)/(fullBiasMPS-BrakeBiasStartMPS),0.f,1.f);
+    const float deceleration=std::clamp(std::min(demandG,availableGripG),0.f,.85f);
+    const float transfer=deceleration*std::max(0.f,cgHeight)/std::max(.5f,axleSpan);
+    const float dynamicShare=std::clamp(staticFrontShare+std::copysign(transfer,speed),.15f,.85f);
+    return standingShare+(dynamicShare-standingShare)*t*t*(3.f-2.f*t);
+}
+
+inline float AirDragPerSpeed(float speed,float coefficient,float frontalArea) {
+    return .5f*1.225f*std::abs(speed)*std::max(0.f,coefficient)*std::max(0.f,frontalArea);
+}
 // S/Down/LT brakes, then selects reverse after a continuous 0.65s stop.
 // Space is a dedicated hold: it never changes gear or applies drive torque.
 inline DriverDemand DriverControls(int &direction,bool forward,bool reverse,
