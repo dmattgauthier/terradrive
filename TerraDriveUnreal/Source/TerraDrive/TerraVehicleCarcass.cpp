@@ -30,7 +30,7 @@ void ATerraVehicle::PresentWheels(){
   // Chaos advances the chassis after the force solve. Bind the tire and its
   // fixed rim to the current surface using the new chassis transform.
   const FVector Up=GetActorUpVector();
-  if(TireCarcassEnabled&&!Tracks&&!Overturned&&Up.Z>.55f&&Radius>=.50f){
+  if(TireCarcassEnabled&&!Tracks&&!Overturned&&Up.Z>.55f){
     const FTransform Pose=GetActorTransform();
     const float RadiusCM=Radius*100,MaxTravelCM=(Rest+Droop)*100;
     for(int I=0;I<WheelCount();++I){
