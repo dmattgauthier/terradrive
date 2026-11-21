@@ -40,8 +40,34 @@ The installed package is coachwork-proportions-2 from source revision 368efca00a
 
 The first candidate also passed the 685-check all-roster rollover matrix, expanded tire and recovery tests, the 50-inch Hummer at 16 PSI on Granite, and the 6×6 drivetrain checks. The final build was retested with the revised collision data for all 40 tire-fit configurations.
 
-The same additional EarthCruiser fixture passed 97 of 100 checks on the prior installed release. It measured 2.71 and 1.92 in of transient tire intrusion in powered turns following the two 55-degree drops. The revised build measured 2.62 and 1.92 in in those same cases. Its 90-degree side case cleared the tire threshold, and both builds recovered in every pose. This is a remaining tire-contact limitation.
+The same additional EarthCruiser fixture passed 97 of 100 checks on the prior installed release. It measured 2.71 and 1.92 in of transient tire intrusion in powered turns following the two 55-degree drops. The revised build measured 2.62 and 1.92 in in those same cases. Its 90-degree side case cleared the tire threshold, and both builds recovered in every pose. The shallow-angle tire contact issue in that package is resolved in the follow-up below.
 
 At 1920 × 1080 with the Cool preset and a 30 FPS cap, the final 30-second quarry sample averaged 29.82 FPS, with a 33.95 ms 95th-percentile frame time and 62.08°C peak GPU temperature. The previous release's short sample averaged 29.85 FPS using those settings.
 
 Launch Build/Windows/Start Terra Drive.cmd on D:. The installation audit matched all six player profile files. Receipts and before-and-after captures are under Saved/BodyProportions, and the previous package is in its Rollback-before-coachwork directory.
+
+## Pine Ridge tire contact follow-up
+
+The stock EarthCruiser's 37-inch tires now use the current chassis pose for their final terrain alignment. They previously used the last physics step's surface during the powered turn because their radius was below the visual alignment cutoff. Natural terrain now uses the same alignment for stock and oversized tires, with the existing suspension travel limits and pressure-dependent carcass flex.
+
+The Windows fixture dropped the stock truck at both 55-degree angles, let it right itself, then applied full throttle and steering. These are minimum signed clearances from the live rendered tread probes in the sampled settling and drive-away window.
+
+| Pine Ridge drop | Previous build | Verified build |
+| --- | ---: | ---: |
+| −55° | 2.616 in below ground | 0.201 in above ground |
+| +55° | 1.922 in below ground | 0.293 in above ground |
+
+The recovery fixture sent the bound `R` input on both sides and the roof. Each recovery regained all four supporting tires and drove away. The initial placement shifted at most 1.21 in horizontally and 0.33° in heading.
+
+| Windows verification | Checks passed |
+| --- | ---: |
+| EarthCruiser rollovers, powered turns and in-place recovery | 100 / 100 |
+| Full roster rollover matrix | 685 / 685 |
+| Roster movement | 145 / 145 |
+| Pressure and tire flex | 19 / 19 |
+| Granite ledges at full lock, 50-inch Hummer at 16 PSI | 4 / 4 |
+| Real-time quarry benchmark | 14 / 14 |
+
+The paired 30-second quarry runs used 1920 × 1080, the Cool preset, and a 30 FPS cap. The old and new builds averaged 29.96 and 29.93 FPS, with 95th-percentile frame times of 33.78 and 33.83 ms respectively.
+
+The installed `earthcruiser-pine-tires` package was built from source revision `2a6478873cfa81180b5fd3bbe2ddf960f3e44259`. Its executable SHA-256 is `fd8c4a703023a59edc89fb1c942340bcf0ee802104e8865e14535787790ca04d`. All six final receipts match the installed executable and assets. The D: drive evidence and rollback package are under `Saved/EarthCruiserPineFix`.
