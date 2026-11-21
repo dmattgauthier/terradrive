@@ -687,7 +687,7 @@ void ATerraVehicle::Simulate(float Dt) {
       Electric
           ? FMath::Min(Number(TEXT("wheelTorqueNm"), 15000)*PortalReduction()*Low,
                        Power / FMath::Max(MeanOmega, 1.f))
-          : Torque * Ratio * Final * Low * .84f * (Speed < 2 ? 1.35f : 1.f);
+          : Torque * Ratio * Final * Low * .84f * TerraSim::ConverterLaunchMultiplier(Speed);
   // The implicit wheel/axle limiter below supplies only the requested engine
   // torque needed to balance tire reaction at redline. A second cut based on
   // last frame's RPM made loaded locked axles alternate drive and zero torque.
@@ -706,6 +706,7 @@ void ATerraVehicle::Simulate(float Dt) {
   ContactCount = 0;
   LastTireForceN = 0;
   const int Count=WheelCount(),Axles=AxleCount();
+  const float SteeringSpan=Axles==3?AxleOffsetM(0)-(AxleOffsetM(1)+AxleOffsetM(2))*.5f:Wheelbase;
   const float ResponseBodyMass=Chassis->GetMass();
   const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
   const FQuat BodyRotation=Chassis->BodyInstance.GetMassSpaceToWorldSpace().GetRotation();
@@ -723,7 +724,6 @@ void ATerraVehicle::Simulate(float Dt) {
     W.MountLocal=FVector(AxleOffsetM(I/2)*100,
         (I%2 ? 1:-1)*Track*50, (Number(TEXT("tireRadius"),.42f)+Rest-CG-Preload-Tuning.Lift)*100);
     const FVector Mount = GetActorTransform().TransformPosition(W.MountLocal);
-    const float SteeringSpan=Axles==3?AxleOffsetM(0)-(AxleOffsetM(1)+AxleOffsetM(2))*.5f:Wheelbase;
     W.Angle=Tracks?(Front?SteerAngle:RearSteerAngle):TerraSim::AckermannAngle(Front?SteerAngle:RearSteerAngle,
         Front?RearSteerAngle:SteerAngle,(I%2?1.f:-1.f)*Track*.5f,Front?SteeringSpan:-SteeringSpan);
     const FVector WF = FQuat(Up,W.Angle).RotateVector(Forward);
@@ -864,7 +864,18 @@ void ATerraVehicle::Simulate(float Dt) {
   const float Inertia=Tracks?24.f+Tuning.RotatingMass:WheelInertia(), R=Radius;
   const float WheelRevLimit=Electric?0:RedlineRPM*2*PI/
       (60*FMath::Max(.1f,Ratio*Final*Low));
+  constexpr float FullBrakeDemandG=1.6f;
+  const float BrakeDemandG=EffectiveBrake*FullBrakeDemandG*DamageBrakeFactor();
+  float FrontBrakeShare=2.f/Count;
+  if(BrakeDemandG>0&&!Tracks&&!LowRange&&!Overturned&&FMath::Abs(Speed)>TerraSim::BrakeBiasStartMPS){
+    float GripForce=0;
+    for(int I=0;I<Count;++I)GripForce+=WheelState[I].Grip*WheelState[I].Load;
+    const float RideCG=CG+Radius-Number(TEXT("tireRadius"),.42f)+Tuning.Lift-.02f*UpgradeStage(TerraSim::Frame);
+    FrontBrakeShare=TerraSim::FrontServiceBrakeShare(Speed,BrakeDemandG,GripForce/(Mass*9.81f),FrontWeight,RideCG,SteeringSpan,Count);
+  }
+  const float TotalServiceTorque=BrakeDemandG*Mass*9.81f*R;
   float Stiffness[MaxWheels]={}, Drag[MaxWheels]={}, Lateral[MaxWheels]={}, LongLimit[MaxWheels]={};
+  float PassiveDrag[MaxWheels]={}, BrakeDrag[MaxWheels]={}, RegenRequest[MaxWheels]={};
   for(int I=0;I<Count;++I){
     const auto &W=WheelState[I];
     const float Share=Mass*AxleLoadFraction(I/2)*.5f;
@@ -875,15 +886,17 @@ void ATerraVehicle::Simulate(float Dt) {
     const float EngineBrake=!Electric&&Driven&&Throttle<.05f&&LowRange?Mass*9.81f*R*.035f*(4.f/Count):0.f;
     const float Rut=TerraSim::RutResistance(W.RutDepth,R,W.Ground.Softness,W.Ground.Packing,Tracks);
     const auto Air=TerraSim::EvaluateTirePressure(WheelPressure(I),Number(I<2?TEXT("stockPSIFront"):TEXT("stockPSIRear"),Number(TEXT("stockPSI"),35)),Share*9.81f,Number(TEXT("mass"),2100)*9.81f*AxleLoadFraction(I/2)*.5f,Speed,W.Ground.Softness,Tracks);
-    const float Service=EffectiveBrake*Mass*9.81f*R*(Count==6?4.f/6.f:1.f)*.4f*DamageBrakeFactor();
+    const float BrakeShare=I<2?FrontBrakeShare*.5f:(1.f-FrontBrakeShare)/(Count-2);
+    const float Service=TotalServiceTorque*BrakeShare;
     const int MotorWheel=I>=4?I-2:I;
     const float RearScale=Count==6&&I>=2?.5f:1.f;
     const float Regen=RearScale*(Regeneration.Independent[MotorWheel]?Regeneration.Wheel[MotorWheel]:Regeneration.Axle[I<2?0:1]*.5f);
-    LastWheelRegenNm[I]=FMath::Min(Regen,FMath::Max(Service,Throttle<.01f?Regen:0.f));
-    // Regeneration supplies part of the requested service brake, with friction
-    // supplying the rest. Only modest coast regen is additional drag.
-    const float BlendedBrake=FMath::Max(Service,LastWheelRegenNm[I]);
-    Drag[I]=(W.Ground.Rolling*(Tracks?1.45f:1.f)+Rut+Air.RollingCoefficientAdd)*W.Load*R+BlendedBrake+EngineBrake;
+    RegenRequest[I]=FMath::Min(Regen,FMath::Max(Service,Throttle<.01f?Regen:0.f));
+    LastWheelRegenNm[I]=RegenRequest[I];
+    // Regeneration replaces friction torque within the total braking request.
+    BrakeDrag[I]=FMath::Max(Service,RegenRequest[I]);
+    PassiveDrag[I]=(W.Ground.Rolling*(Tracks?1.45f:1.f)+Rut+Air.RollingCoefficientAdd)*W.Load*R+EngineBrake;
+    Drag[I]=PassiveDrag[I]+BrakeDrag[I];
     const float Limit=W.Grip*W.Load,SideLimit=W.SideGrip*W.Load;
     const float LateralRate=W.Load*5.5f*W.CorneringResponse/FMath::Max(2.f,FMath::Abs(W.LongSpeed));
     const float LateralResponse=1+LateralRate*Dt*TerraSim::ContactCoupling/Share;
@@ -892,7 +905,11 @@ void ATerraVehicle::Simulate(float Dt) {
   }
   bool IndependentMotor[MaxWheels],DrivenContact[MaxWheels];
   for(int I=0;I<Count;++I){IndependentMotor[I]=IndependentWheel(I);DrivenContact[I]=DrivenWheel(I);}
-  const bool TractionControl=Spec->GetObjectField(TEXT("features"))->GetBoolField(TEXT("tractionControl"));
+  const auto Features=Spec->GetObjectField(TEXT("features"));
+  const bool TractionControl=Features->GetBoolField(TEXT("tractionControl"));
+  // A mechanically coupled driveline cannot regulate each tire independently.
+  const bool AntiLock=!Tracks&&!LowRange&&!Overturned&&!FrontLocked&&!RearLocked&&
+      !CenterCoupled&&!TandemLockActive()&&Features->GetBoolField(TEXT("abs"));
   auto SolveAxles=[&](float CenterTorque,float TandemTorque=0.f){
     for(int I=0;I<Count;++I)WheelState[I].Omega=Omega[I];
     for(int Axle=0;Axle<Axles;++Axle){
@@ -929,8 +946,12 @@ void ATerraVehicle::Simulate(float Dt) {
       const float Drive=(Electric?Demand:TerraSim::RevLimitedTorque(Demand,W.Omega,Inertia,Dt,WheelRevLimit,Reaction,DragTorque))+Coupling*.5f;
       LastWheelDriveNm[I]=Drive;
       const float Free=W.Omega+Drive*Dt/Inertia;
+      const float LateralFraction=Lateral[I]/FMath::Max(1.f,W.SideGrip*W.Load);
+      const float BrakeTorque=AntiLock?TerraSim::AntiLockServiceTorque(BrakeDrag[I],PassiveDrag[I],
+        Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I],LateralFraction,W.Ground.PavementCoverage):BrakeDrag[I];
+      LastWheelRegenNm[I]=FMath::Min(RegenRequest[I],BrakeTorque);
       W.Omega=TerraSim::CombinedWheelOmega(Free,Stiffness[I],W.LongSpeed,R,Dt,Inertia,LongLimit[I],
-          Lateral[I]/FMath::Max(1.f,W.SideGrip*W.Load),Drag[I]);
+          LateralFraction,PassiveDrag[I]+BrakeTorque);
     }
   }
     float RearMean=0;for(int I=2;I<Count;++I)RearMean+=WheelState[I].Omega/(Count-2);
@@ -1104,9 +1125,9 @@ void ATerraVehicle::Simulate(float Dt) {
   WheelPresentationPending=true;
   if (SoilTimer >= .025f)
     SoilTimer = 0;
-  Chassis->AddForce(-Velocity * Velocity.Size() * .5f * 1.2f * .5f * Tuning.Drag *
-                    Number(TEXT("width"), 1.8) * Number(TEXT("height"), 1.8) *
-                    100);
+  const float FrontalArea=.82f*Number(TEXT("width"),1.8f)*Number(TEXT("height"),1.8f);
+  Chassis->AddForce(-Velocity*TerraSim::AirDragPerSpeed(Velocity.Size(),
+    Number(TEXT("dragCoefficient"),.50f)*Tuning.Drag,FrontalArea)*100);
   if (WinchAttached) {
     FVector Hook =
         GetActorLocation() + Forward * Number(TEXT("length"), 4.8) * 47;

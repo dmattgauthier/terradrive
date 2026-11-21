@@ -1,4 +1,5 @@
 // Native-only coachwork fork; browser source remains immutable.
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 export function buildSprinter(view, geometry) {
   const { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText } = geometry;
 
@@ -643,8 +644,11 @@ export function buildSprinter(view, geometry) {
         const p=housingLoop[Math.round(u*(housingLoop.length-1))],q=rearLampPoint(p[0],p[1],-.023);q[2]+=v*.049;return q;
       });
       const lampCell=(cy,height,material,cover)=>{
-        const outline=roundedOutline([[-.054,cy-height/2,0],[.054,cy-height/2,0],[.054,cy+height/2,0],[-.054,cy+height/2,0]],.009,7).map(([x,y])=>[x,y]);
-        rearLampPatch(material,outline,-.005);
+        const reflector=opticFace([0,cy,0],.108,height,.009,.0017,1);
+        moldedOptic(g,material,'sprinter-prismatic-lamp-compartment',(u,v,depth)=>{
+          const [x,y,dish]=reflector(u,v,depth);
+          return rearLampPoint(x,y,-.006+dish);
+        },{cells:9,rows:12,horizontal:true,relief:.0014});
         const edgeRows=[];for(let i=0;i<=4;i++)edgeRows.push(-height/2+.009*(1-Math.cos(i*Math.PI/8)));
         const rows=[...edgeRows,0,...edgeRows.map(y=>-y).reverse()];
         const lens=faceRear(surface(g,cover,14,rows.length-1,(u,v)=>{

@@ -1,6 +1,7 @@
 // Original 1998 JDM 22B STI. Published anchors: STI heritage spec; photo-fitted panels.
 import {T,mesh,box,surface,mappedPolygon,line,lerp,station,roundedContour,panelReturn,G,newReferenceView,finishMaterial,rod,cylinder,ring,label,pane,rimBarrel,refineReferenceWheel} from './reference-vehicle-kit.mjs';
 import {instrumentDial} from './cabin-controls.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 export const SUBARU_22B_SPEC={id:'subaru-22b-sti',name:'Subaru Impreza 22B STI',brand:'Subaru',year:1998,trim:'2.2 turbo boxer / 5-speed / DCCD AWD',bodyStyle:'subaru22b',color:'#075da8',powertrain:'combustion',fuelCapacityGallons:60/3.785411784,powerHP:206000/745.699872,torqueNm:363,torqueLbFt:363/1.3558179483,mass:1270,curbMass:1270,length:4.365,width:1.770,height:1.390,wheelbase:2.520,track:1.49,trackFront:1.48,trackRear:1.50,frontWeightFraction:.58,cgHeight:.50,clearance:.14,tireSize:'235/40R17',tireRadius:.3099,tireWidth:.235,rearTireWidth:.235,tireType:'road-performance',rimDiameterInches:17,stockPSI:32,stockPSIFront:32,stockPSIRear:30,transmissionType:'manual',transmissionName:'5-speed close-ratio manual (automatic shifting in simulator)',gears:[3.083,2.062,1.545,1.151,.825],reverseRatio:3.416,finalDrive:4.444,lowRatio:1,defaultMode:'AWD',driveModes:['AWD'],frontTorqueFraction:.35,dragCoefficient:.36,features:{frontLocker:false,rearLocker:false,centerLocker:true,swayDisconnect:false,tractionControl:false,abs:false,hillDescent:false},engine:{idleRPM:850,redlineRPM:7900,peakTorqueRPM:3200,peakPowerRPM:6000,curve:[[850,90],[1800,190],[2800,350],[3200,363],[5200,350],[6000,327.86],[7200,252],[7900,205]],curveStatus:'Estimated interpolation through manufacturer output peaks'},suspension:{travel:.18,restLength:.30,springRate:29000,damping:3200,antiRoll:16000,frontType:'independent inverted MacPherson struts',rearType:'independent MacPherson struts',parameterStatus:'Simulation rates, damping, rest and travel; not measured Bilstein/Eibach data'},notes:['Original two-door 1998 JDM 22B, distinct from later WRX STI sedans. Driver-adjustable centre coupling is simplified as a centre-lock control.','Factory dimensions, 17-inch BBS wheel/tire designation, rated output and curb mass. Panel coordinates, CG, pressure, torque interpolation and suspension coefficients are photo/simulation estimates.'],sources:['https://www.subaru.co.jp/news/archives/98_1_3/3_16_1.html','https://www.sti.jp/brand/heritage/1998/impreza-22b/','https://collectingcars.com/for-sale/1998-subaru-impreza-sti-22b-5']};
 const frontZ=2.1825;
 const rearZ=-frontZ;
@@ -36,15 +37,18 @@ const inset=(outline,scale)=>{
 // The hood falls to the grille, and the deck remains above the front fenders.
 const beltStations=[
   [rearZ,.893],[-1.94,.938],[-1.47,.965],[-.90,.943],[-.30,.920],
-  [.45,.903],[.89,.898],[1.30,.842],[1.72,.760],[2.01,.704],[frontZ,.674]
+  [.45,.903],[.89,.898],[1.30,.829],[1.72,.749],[2.01,.682],[frontZ,.665]
 ];
-const sillStations=[[rearZ,.215],[-1.91,.199],[-1.30,.187],[.84,.179],[1.73,.174],[frontZ,.178]];
+// The molded skirts sit low between the axles. The bumper rolls up behind
+// the rear wheel and the front lip turns back toward the intake.
+const sillStations=[[rearZ,.184],[-1.91,.174],[-1.30,.160],[-.83,.142],
+  [.82,.143],[1.73,.147],[frontZ,.154]];
 const frontReturns=[
-  [.17,.080],[.212,.014],[.240,.029],[.328,.044],[.430,.029],
-  [.499,0],[.532,.006],[.550,.026],[.562,.016],[.650,.030],[.710,.063]
+  [.153,.075],[.184,.010],[.223,.006],[.269,.031],[.328,.055],[.430,.038],
+  [.499,0],[.532,.007],[.550,.028],[.562,.018],[.650,.039],[.710,.084]
 ];
 const rearReturns=[
-  [.21,.105],[.27,.044],[.36,.008],[.49,0],[.55,.014],
+  [.18,.158],[.236,.108],[.275,.058],[.36,.013],[.49,0],[.55,.014],
   [.583,.029],[.609,.012],[.69,.021],[.81,.036],[.93,.073]
 ];
 const belt=z=>station(beltStations,z,1);
@@ -63,14 +67,15 @@ function contourEnd([x,y,z]) {
 }
 
 function halfWidth(z,y) {
-  const frontFlare=gauss(z,1.27,.44);
-  const rearFlare=gauss(z,-1.29,.49);
-  const fullness=.75+.25*gauss(y,.568,.24);
+  const frontFlare=gauss(z,1.29,.408);
+  const rearFlare=gauss(z,-1.30,.472);
   const section=T.MathUtils.clamp((y-sill(z))/(sideTop(z)-sill(z)),0,1);
-  const door=T.MathUtils.smoothstep(z,-1.05,-.71)*(1-T.MathUtils.smoothstep(z,.77,1.07));
-  const pressing=.010*Math.sin(Math.PI*section)-.025*(1-section)**2;
-  const crease=-door*.007*gauss(y,.535,.017);
-  return Math.min(.8848,.807+.062*frontFlare*fullness+.068*rearFlare*fullness+
+  const door=T.MathUtils.smoothstep(z,-1.04,-.68)*(1-T.MathUtils.smoothstep(z,.72,1.10));
+  const blisterHeight=.585+.034*rearFlare;
+  const fullness=.66+.34*gauss(y,blisterHeight,.138);
+  const pressing=.012*Math.sin(Math.PI*section)-.037*(1-section)**2;
+  const crease=-door*.007*gauss(y,.535,.017)-door*.014*gauss(y,.382,.081);
+  return Math.min(.8848,.803+.083*frontFlare*fullness+.093*rearFlare*fullness+
     .020*gauss(Math.abs(z),2.05,.34)+pressing+crease);
 }
 
@@ -593,8 +598,8 @@ function addFront(g,m) {
 
 function addWing(g,m) {
   const support=roundedContour([
-    [-1.621,.939],[-2.003,.927],[-2.079,1.271],
-    [-1.854,1.281],[-1.721,1.141]
+    [-1.545,.952],[-1.685,.924],[-2.007,.926],[-2.111,1.261],
+    [-1.901,1.275],[-1.800,1.216],[-1.675,1.074]
   ],.046,8);
   const upright=(side,z,y,d=0)=>{
     const t=T.MathUtils.smoothstep(y,.931,1.27);
@@ -635,9 +640,12 @@ function addRear(g,m) {
     .name='22b-formed-rear-closure';
   recessed(g,m,plate,tail,.065,true);
   const plateInset=roundedContour([[-.213,.433],[.213,.433],[.213,.315],[-.213,.315]],.011);
-  mappedPolygon(g,m.white,plateInset,(x,y)=>tail(x,y,.051),[],true,5);
-  label(g,m.black,'22B STI',.285,.045,tail(0,.339,.046),Math.PI);
-  for(const x of [-.18,.18])cylinder(g,m.satinMetal,tail(x,.415,.046),.004,.004,'z',12);
+  // The plate itself is flat inside the rolled bumper's pocket. Lettering
+  // and mounting screws share its plane across the whole visible height.
+  const plateZ=tail(0,.374,.051)[2];
+  mappedPolygon(g,m.white,plateInset,(x,y)=>[x,y,plateZ],[],true,5).name='22b-flat-rear-plate';
+  label(g,m.black,'22B STI',.285,.045,[0,.339,plateZ-.0018],Math.PI).name='22b-rear-plate-characters';
+  for(const x of [-.18,.18])cylinder(g,m.satinMetal,[x,.415,plateZ-.0008],.004,.004,'z',12);
 
   const unlitRed=finishMaterial('#72101c','paint',.38);
   const tailCover=m.lens.clone();
@@ -651,12 +659,20 @@ function addRear(g,m) {
       [side*.402,.618],[side*.804,.616],[side*.803,.658],[side*.404,.661]
     ],.008,5);
     mappedPolygon(g,m.satinMetal,clear,(x,y)=>tail(x,y,.004),[],true,6);
-    mappedPolygon(g,m.reverse,roundedContour([
-      [side*.408,.624],[side*.506,.623],[side*.506,.655],[side*.409,.655]
-    ],.006),(x,y)=>tail(x,y,.002),[],true,5);
-    const lit=roundedContour([[side*.439,.688],[side*.766,.685],[side*.755,.722],[side*.444,.728]],.014);
-    mappedPolygon(g,m.red,lit,(x,y)=>tail(x,y,.007),[],true,6);
-    mappedPolygon(g,tailCover,lens,(x,y)=>tail(x,y,-.0015),[],true,6);
+    // Period incandescent lamps have a shallow fluted reflector behind
+    // the clear inboard reversing window and wide upper stop-light chamber.
+    const reverse=opticFace([side*.457,.6395,0],.098,.031,.006,.0018,1);
+    moldedOptic(g,m.reverse,'22b-period-clear-reverse-cell',(u,v,depth)=>{
+      const [x,y,convex]=reverse(u,v,depth);
+      return tail(x,y,.002-convex);
+    },{cells:8,rows:6,relief:.0012});
+    const stop=opticFace([side*.599,.704,0],.317,.033,.010,.0019,1);
+    moldedOptic(g,m.red,'22b-period-incandescent-stop-cell',(u,v,depth)=>{
+      const [x,y,convex]=stop(u,v,depth);
+      return tail(x,y-.005*(Math.abs(x)-.44)/.32,.007-convex);
+    },{cells:20,rows:7,relief:.0014});
+    mappedPolygon(g,tailCover,lens,(x,y)=>tail(x,y,-.0015),[clear],true,6);
+    mappedPolygon(g,m.lens,clear,(x,y)=>tail(x,y,-.0015),[],true,6).name='22b-colorless-reverse-and-indicator-cover';
     const reveal=Array.from({length:24},(_,j)=>{
       const t=j/23;
       return tail(side*lerp(.384,.590,t*t),lerp(.583,.904,t),-.0006);
@@ -753,11 +769,11 @@ export function subaru22bView(spec=SUBARU_22B_SPEC) {
   ]);
   Object.assign(view.root.userData,{
     nativeConstruction:{
-      version:4,endClosureRevision:3,greenhouseClosureRevision:3,bodySurfaceRevision:2,
+      version:4,endClosureRevision:4,greenhouseClosureRevision:3,bodySurfaceRevision:3,
       automotiveFinishes:true,originalReferenceGeometry:true,realWindowApertures:true,geometryLettering:true
     },
     bodyRefinement:{
-      version:3,style:'subaru22b',
+      version:4,style:'subaru22b',
       method:'Stock photo-matched coupe profile, rounded bumper returns, split lens optics and molded wing',
       preservedHardpoints:true
     },

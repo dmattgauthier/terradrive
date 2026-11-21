@@ -11,7 +11,7 @@ export const hood=(x,z,off=0)=>{
   const ridge=ridgeAt(z);
   // Top view: a shallow central plane with two creases that diverge toward
   // the grille. The outer vent shoulders are a different, broader pressing.
-  const blade=.019*gauss(a,ridge,.082)-.0045*gauss(a,ridge+.126,.079);
+  const blade=.032*gauss(a,ridge,.082)-.0045*gauss(a,ridge+.126,.079);
   const shoulder=.032*gauss(a,.89,.105)+.005*gauss(a,.99,.14);
   const sweep=.154*smooth(z,1.84,2.48)*t*t;
   return[x,station(hoodRows,z,1)+.027*(1-t*t)+fade*(blade+shoulder)+off,z-sweep];

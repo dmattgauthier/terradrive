@@ -18,7 +18,7 @@ if(!$PackageDirectory){$PackageDirectory=Join-Path $project22 'Build/Windows'}
 $package22=(Resolve-Path -LiteralPath $PackageDirectory).ProviderPath
 $exe22=Join-Path $package22 'TerraDrive/Binaries/Win64/TerraDrive.exe'
 $args22=@('-unattended','-windowed','-ForceRes','-RenderOffscreen',('-ResX='+$Width),('-ResY='+$Height),'-NoSound',
- '-TerraValidate','-TerraQuarryPerformanceOnly','-TerraCapture',('-TerraTestFPS='+$Cap),('-TerraGraphicsMode='+$Quality),
+ '-NoTraceServer','-TerraValidate','-TerraQuarryPerformanceOnly','-TerraCapture',('-TerraTestFPS='+$Cap),('-TerraGraphicsMode='+$Quality),
  ('-UserDir="'+(Join-Path $out22 'User')+'"'),('-TerraReport="'+(Join-Path $out22 'result.json')+'"'),
  ('-TerraCaptureDir="'+(Join-Path $out22 'Screenshots')+'"'),('-TerraGarage="'+(Join-Path $out22 'garage.json')+'"'),
  ('-TerraGraphics="'+(Join-Path $out22 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $out22 'controls.json')+'"'),
@@ -35,7 +35,12 @@ if($PlaytestSeconds){
 }
 if($PSOThreadLimit){$args22+=("-ini:Engine:[SystemSettings]:r.pso.PrecompileThreadPoolSizeMax="+$PSOThreadLimit)}
 if($Legacy){$args22+=@('-TerraLegacySoilMeshLayout','-TerraLegacySoilReset','-TerraLegacySoilLeafEdges')}
-if($Trace){$args22+=@('-statnamedevents','-trace=cpu,frame,log,bookmark,region,task',('-tracefile="'+(Join-Path $out22 'cpu.utrace')+'"'))}else{$args22+='-NoTrace'}
+$tracePath22=Join-Path $out22 'replay.utrace'
+if($Trace){
+ # In UE 5.8 on Windows, CPU scope-name pages can outlive the page allocator.
+ # Keep frame timings, log events, bookmarks, regions and task scheduling.
+ $args22+=@('-trace=frame,log,bookmark,region,task',('-tracefile="'+$tracePath22+'"'))
+}else{$args22+='-NoTrace'}
 $source22=@(Get-ChildItem -LiteralPath (Join-Path $project22 'Source') -Recurse -File | Sort-Object FullName | ForEach-Object {
  [pscustomobject]@{path=$_.FullName.Substring($project22.Length+1).Replace('\','/');sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower()}})
 $player22=@{}
@@ -104,6 +109,15 @@ try{
  }
  $errors22=@(Select-String -LiteralPath (Join-Path $out22 'game.log') -Pattern 'Fatal error|Assertion failed|Ensure condition failed|LogOutputDevice: Error|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
  if($errors22.Count){throw 'Native engine errors occurred'}
+ if($Trace){
+  $traceFile22=Get-Item -LiteralPath $tracePath22
+  if(!$traceFile22.Length -or $traceFile22.LastWriteTimeUtc -lt $start22){throw 'No fresh native trace file'}
+  $receipt22.traceFile=$traceFile22.FullName
+  $receipt22.traceBytes=$traceFile22.Length
+ }
+ if(Select-String -LiteralPath (Join-Path $out22 'game.log') -Pattern 'TERRA_TRACE_CLOSE_TIMEOUT' -Quiet){
+  throw 'Native trace writer did not close before engine shutdown'
+ }
  $receipt22.pass=$true
 }catch{$problem22=$_;$receipt22.error=$_.ToString()}finally{
  if($launched22 -and !$game22.HasExited){$game22.Kill();$game22.WaitForExit()}

@@ -16,7 +16,7 @@ if exist "%~dp0TerraDrive\Saved\" if not exist "%profile%\Saved\.legacy-profile-
     if errorlevel 1 exit /b 1
 )
 pushd "%~dp0"
-start "" "%~dp0TerraDrive\Binaries\Win64\TerraDrive.exe" -UserDir="%profile%" -NoTrace
+start "" "%~dp0TerraDrive\Binaries\Win64\TerraDrive.exe" -UserDir="%profile%" -NoTrace -NoTraceServer
 set "status=%ERRORLEVEL%"
 popd
 exit /b %status%

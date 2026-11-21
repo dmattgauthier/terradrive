@@ -30,6 +30,13 @@ export function bodyRefinement(view,spec){
    // keep the principal upright window/door edges fixed.
    dy+=.012*gauss(x,0,.50)*gauss(z,1.28,.57)*smooth(y,1.16,1.25);
    dx+=sign*.010*side*gauss(z,-1.46,.35)*gauss(y,1.05,.16);
+   // Roll the ends of the upright grille into the fender tops and draw
+   // the upper Freedom Top corners in behind the rear doors.
+   const grilleCorner=smooth(z,1.95,2.18)*smooth(ax,.47,.85)*smooth(y,.86,1.19);
+   dz-=.047*grilleCorner;
+   dy-=.021*grilleCorner;
+   const hardtopTaper=gauss(z,-1.96,.44)*smooth(y,1.31,1.78);
+   dx-=sign*.033*side*hardtopTaper;
   }else if(style==='bronco'){
    // Wide flatter bonnet, more tucked upper cabin, gentle door crown.
    dx+=sign*sheet*(.008*Math.sin(level*Math.PI)-.005*gauss(y,.72,.12));
@@ -42,6 +49,14 @@ export function bodyRefinement(view,spec){
      +.006*door*gauss(y,1.215,.041)-.008*door*gauss(y,.59,.11));
    dy+=.014*gauss(Math.abs(x),.43,.105)*gauss(z,1.40,.53)*smooth(y,1.16,1.28);
    dz-=.020*gauss(z,2.16,.14)*smooth(ax,.52,.89)*gauss(y,.85,.25);
+   // Move the entire front header and upper pillars rearward to give the
+   // windscreen the rake seen in the side elevation. Close both hardtop
+   // ends and their seals through the same deformation.
+   const frontHeader=gauss(z,.365,.240)*smooth(y,1.405,1.845);
+   dz-=.075*frontHeader;
+   dz+=.052*gauss(z,-2.052,.235)*smooth(y,1.429,1.834);
+   dx-=sign*.024*side*gauss(z,-1.957,.392)*smooth(y,1.43,1.82);
+   dz-=.044*smooth(z,1.93,2.18)*smooth(ax,.51,.87)*smooth(y,.79,1.19);
   }else if(style==='sedan'){
    // Civic's low cowl, gently arched roof and integrated rear haunch.
    dx+=sign*sheet*(.016*Math.sin(level*Math.PI)-.014*gauss(y,.51-z*.025,.09));
@@ -58,6 +73,10 @@ export function bodyRefinement(view,spec){
    dz-=.014*gauss(z,2.29,.17)*smooth(ax,.38,.85)*(1-smooth(y,.94,1.00));
    dy+=.012*gauss(x,0,.53)*gauss(z,-1.95,.27)*smooth(y,.87,.96);
    dx+=sign*.011*side*gauss(z,-1.51,.31)*gauss(y,.86,.14);
+   // The rear arch wears a broad stamped shoulder. Carry the swelling
+   // forward into the rear door and fade it below the window reveal.
+   const haunch=.021*gauss(z,-1.52,.44)*gauss(y,.894,.106)*lower;
+   dx+=sign*side*haunch;
   }else if(style==='van'){
    // W906 body tapers into the roof and has a broad softly drawn cargo side.
    dx-=sign*cab*side*.042*smooth(y,1.50,2.42);
@@ -71,6 +90,15 @@ export function bodyRefinement(view,spec){
    dz+=.020*gauss(x,0,.74)*gauss(z,1.80,.44)*gauss(y,1.91,.47);
    dx-=sign*.012*side*gauss(z,-2.91,.18)*smooth(y,1.21,2.35);
    dy+=.015*gauss(x,0,.64)*gauss(z,2.33,.44)*gauss(y,1.16,.21);
+   // The W906 cab rolls from a crowned bonnet into the front wings.
+   // Behind the long roof, progressively tuck the rear header and jambs.
+   const bonnet=gauss(z,2.52,.365)*smooth(y,1.10,1.23)*(1-smooth(y,1.40,1.55));
+   dy+=.035*bonnet*(1-1.44*smooth(ax,.42,.91));
+   const rearHeader=gauss(z,-2.92,.282)*smooth(y,1.92,2.425);
+   dz+=.073*rearHeader;
+   dx-=sign*.028*side*rearHeader;
+   dz+=.043*gauss(z,-3.04,.230)*smooth(ax,.56,.983)*smooth(y,1.30,1.64)
+     *(1-smooth(y,2.19,2.40));
   }else if(style==='hummer'){
    // HUMMER's bluff hood, full rear haunch and tapered upper greenhouse.
    dx-=sign*cab*side*.037*smooth(y,1.45,1.93);
@@ -83,6 +111,11 @@ export function bodyRefinement(view,spec){
    dz+=.018*gauss(z,-2.32,.17)*smooth(ax,.66,1.01)*gauss(y,1.37,.46);
    dx+=sign*.012*side*gauss(z,-1.58,.30)*gauss(y,1.31,.16);
    dy+=.011*gauss(Math.abs(x),.48,.15)*gauss(z,1.59,.43)*smooth(y,1.27,1.43);
+   // The rear roof cap angles into the tailgate while its broad shoulders
+   // remain low. Follow the inset corner glass and top of the rear pillars.
+   const rearCanopy=gauss(z,-2.31,.432)*smooth(y,1.59,1.93);
+   dz+=.056*rearCanopy;
+   dx-=sign*.031*side*rearCanopy;
   }else{
    // Original V8 Performante: the shoulder flows into a full rear haunch,
    // then folds into a narrower hatch. The front doors have one shallow
@@ -92,6 +125,15 @@ export function bodyRefinement(view,spec){
      -.007*door*gauss(y,.57+.048*z,.105));
    dx-=sign*.009*side*gauss(z,-1.94,.28)*smooth(y,1.33,1.52);
    dz+=.022*smooth(ax,.25,.87)*gauss(z,-2.48,.16)*gauss(y,.91,.32);
+   // Turn the bonnet and lamp brow down into the splitter overhang. Apply
+   // one shared profile to the fascia, duct returns and adjoining sheet.
+   const browRoll=smooth(z,2.055,2.575)*smooth(y,.775,1.025);
+   dy-=.093*browRoll;
+   dz-=.066*browRoll;
+   // The lower valance tucks in toward the rear tyre below the hatch.
+   const tailTuck=(1-smooth(z,-2.54,-2.06))*(1-smooth(y,.34,.68));
+   dz+=.174*tailTuck*(.70+.30*smooth(ax,.44,.98));
+   dy+=.032*tailTuck*smooth(ax,.42,.90);
   }
   return new T.Vector3(x+dx,y+dy,z+dz);
  };
@@ -115,5 +157,5 @@ export function bodyRefinement(view,spec){
   }
   geo.computeBoundingBox();geo.computeBoundingSphere();
  });
- view.root.userData.bodyRefinement={version:24,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true,formedEndAndQuarterSurfaces:true};
+ view.root.userData.bodyRefinement={version:25,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true,formedEndAndQuarterSurfaces:true};
 }

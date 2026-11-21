@@ -1,5 +1,6 @@
 // Native-only coachwork fork; browser source remains immutable.
 import {panelJoint} from './coachwork-craft.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 export function buildCivic(view, geometry) {
   const { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText } = geometry;
 
@@ -23,7 +24,7 @@ export function buildCivic(view, geometry) {
     const topPoint = (x,z,offset=0) => {
       const half=interpolate(stations,z,1)-.047;
       const crown=.031*(1-(x/half)**2);
-      const deck= .010*THREE.MathUtils.smoothstep(-z,1.58,1.88)*(1-THREE.MathUtils.smoothstep(-z,2.16,2.35))*(1-(x/half)**2);
+      const deck= .018*THREE.MathUtils.smoothstep(-z,1.58,1.88)*(1-THREE.MathUtils.smoothstep(-z,2.16,2.35))*(1-(x/half)**2);
       return [x,interpolate(stations,z,2)+crown+hoodRelief(x,z)+deck+offset,z];
     };
     // Extra rows are confined to the hood's crease and rolled leading edge.
@@ -378,8 +379,11 @@ export function buildCivic(view, geometry) {
       const reverseChamber=roundedOutline([[.374,.860],[.473,.876],[.488,.811],[.446,.825]].map(lampPoint),.006);
       rearPatch(m.redPaint,innerLamp,[reverseChamber],.003);
       rearPatch(m.dark,reverseChamber,[],-.015);
-      rearPatch(m.reverse,reverseChamber.map(([x,y,z])=>[sxp(.443)+(x-sxp(.443))*.92,.846+(y-.846)*.91,z]),[],-.004);
-      for(let line=0;line<4;line++)flatGuide(rearLamp,m.chrome,[[sxp(.420+line*.015),.837,tail],[sxp(.419+line*.015),.865,tail]],.00055,.002);
+      const reverseFloor=reverseChamber.map(([x,y,z])=>[sxp(.443)+(x-sxp(.443))*.92,.846+(y-.846)*.91,z]);
+      rearPatch(m.satinMetal||m.chrome,reverseFloor,[],-.007);
+      moldedOptic(g,m.reverse,'civic-inset-clear-reverse-lens',
+        opticFace([sxp(.447),.846,tail+.003],.061,.025,.004,.0015),
+        {cells:9,rows:7,relief:.0011});
       flatGuide(rearLamp,m.red,[[sxp(.350),.882,tail],[sxp(.480),.893,tail]],.0055,.011);
       rearPatch(m.redLens||m.lens,innerLamp,[reverseChamber],.018);
       rearPatch(m.lens,outerLamp,[],.022);rearPatch(m.lens,innerLamp,[],.022);
@@ -534,11 +538,20 @@ export function buildCivic(view, geometry) {
         // Deep, broad cheek undercut under the lamp and a rolled upper jaw
         // break the former flat vertical face into the real bumper volumes.
         const jaw=.010*Math.exp(-(((q.y-.643)/.029)**2))*(1-THREE.MathUtils.smoothstep(Math.abs(q.x),.53,.84));
-        q.z+=end*(jaw-.058*cheek);
+        // The Sport lower skin recedes into the underside. The outer cheek
+        // turns back sooner than the shallow center of the intake.
+        const taper=(1-THREE.MathUtils.smoothstep(q.y,.320,.610))
+          *(.024+.041*THREE.MathUtils.smoothstep(Math.abs(q.x),.41,.80));
+        q.z+=end*(jaw-.058*cheek-taper);
       }
-      if(q.z<-1.91&&q.y<.493){
-        const rear=1-THREE.MathUtils.smoothstep(q.z,-2.34,-1.91),low=1-THREE.MathUtils.smoothstep(q.y,.283,.493);
-        q.z+=.085*rear*low;q.x*=1-.022*rear*low;
+      if(q.z<-1.91&&q.y<.610){
+        const rear=1-THREE.MathUtils.smoothstep(q.z,-2.34,-1.91);
+        const valance=1-THREE.MathUtils.smoothstep(q.y,.283,.493);
+        // The painted bumper rolls around the rear quarter above the black
+        // valance, extending the tapered silhouette higher at the corners.
+        const corner=THREE.MathUtils.smoothstep(Math.abs(q.x),.46,.84)
+          *(1-THREE.MathUtils.smoothstep(q.y,.380,.610));
+        q.z+=rear*(.085*valance+.052*corner);q.x*=1-rear*(.022*valance+.018*corner);
       }
       if(q.z<-1.91&&q.y>.50&&q.y<1.02){
         const end=1-THREE.MathUtils.smoothstep(q.z,-2.32,-1.91),centre=1-THREE.MathUtils.smoothstep(Math.abs(q.x),.48,.83);

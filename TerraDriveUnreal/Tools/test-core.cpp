@@ -101,6 +101,59 @@ int main(){
         const float balance=(next-wheel)*inertia/dt+TerraSim::CombinedLongitudinal(next,c,speed,r,limit,lateral)*r+direction*drag;
         check(std::abs(balance)<.1f,"implicit rolling solution balances tire and drag torque");
     }
+    for(float dt:{1.f/120,1.f/60,1.f/30,.1f})for(float direction:{-1.f,1.f})for(float lateral:{0.f,.9f}){
+        const float speed=direction*12,r=.34f,stiffness=6000,limit=4000,passive=20,inertia=2.5f,request=4200;
+        float omega=speed/r;
+        bool bounded=true;
+        for(int i=0;i<40;++i){
+            const float brake=TerraSim::AntiLockServiceTorque(request,passive,omega,stiffness,
+                speed,r,dt,inertia,limit,lateral,1);
+            bounded&=brake>=0&&brake<=request;
+            omega=TerraSim::CombinedWheelOmega(omega,stiffness,speed,r,dt,inertia,limit,lateral,brake+passive);
+        }
+        const float slip=1-omega*r/speed;
+        check(bounded,"anti-lock modulation cannot add service torque");
+        check(slip>.10f&&slip<.15f,"predictive anti-lock sustains rolling brake slip without locking in forward or reverse");
+        const float brakeForce=TerraSim::CombinedLongitudinal(omega,stiffness,speed,r,limit,lateral);
+        check(-brakeForce*direction>limit*.68f,"rolling service brake retains useful force while turning");
+        const float recoveryBrake=TerraSim::AntiLockServiceTorque(request,passive,0,stiffness,
+            speed,r,dt,inertia,limit,lateral,1);
+        const float recovered=TerraSim::CombinedWheelOmega(0,stiffness,speed,r,dt,inertia,limit,lateral,recoveryBrake+passive);
+        check(recoveryBrake<request&&recovered*direction>0,
+            "anti-lock releases enough brake for an already locked tire to recover rolling speed");
+        check(TerraSim::AntiLockServiceTorque(request,passive,0,stiffness,1,r,dt,inertia,limit,lateral,1)==request,
+            "anti-lock hands off to the full crawl-speed hill hold");
+    }
+    {
+        auto Front=[](float speed,float grip,float height,int wheels) {
+            return TerraSim::FrontServiceBrakeShare(speed,1.6f,grip,.54f,height,3.0f,wheels);
+        };
+        check(Front(10,.8f,.72f,4)>Front(10,.25f,.72f,4)&&Front(10,.8f,.72f,4)>.7f,
+            "brake bias increases the front share as available deceleration transfers load forward");
+        check(Front(-10,.8f,.72f,4)<.40f&&Front(10,.8f,1.05f,4)>Front(10,.8f,.72f,4),
+            "reverse braking shifts load rearward and a tall chassis transfers more load");
+        for(float direction:{-1.f,1.f}){
+            const float low=Front(direction*.8001f,.8f,.72f,4),mid=Front(direction*1.65f,.8f,.72f,4);
+            const float high=Front(direction*2.5f,.8f,.72f,4);
+            check(std::abs(low-.5f)<.0001f&&std::abs(mid-low)>0&&std::abs(high-.5f)>std::abs(mid-.5f)&&
+                std::abs(Front(direction*2.4999f,.8f,.72f,4)-high)<.0001f&&high==Front(direction*3,.8f,.72f,4),
+                "brake bias ramps smoothly out of hill hold in either direction");
+        }
+        for(int wheels:{4,6}){
+            const float atRest=Front(0,.8f,.72f,wheels),moving=Front(10,.8f,.72f,wheels);
+            const float frontWheel=moving*.5f,rearWheel=(1-moving)/(wheels-2);
+            check(std::abs(atRest-2.f/wheels)<.00001f&&std::abs(frontWheel*2+rearWheel*(wheels-2)-1)<.00001f,
+                "bias preserves per-wheel hill hold and total service authority including tandem axles");
+        }
+        check(TerraSim::ConverterLaunchMultiplier(-2)==TerraSim::ConverterLaunchMultiplier(2)&&
+            std::abs(TerraSim::ConverterLaunchMultiplier(1.999f)-TerraSim::ConverterLaunchMultiplier(2.001f))<.002f&&
+            TerraSim::ConverterLaunchMultiplier(0)==1.35f&&TerraSim::ConverterLaunchMultiplier(3)==1,
+            "launch torque tapers continuously and symmetrically as the drivetrain couples");
+        const float drag20=20*TerraSim::AirDragPerSpeed(20,.30f,2.0f);
+        check(std::abs(drag20-147.f)<.001f&&std::abs(40*TerraSim::AirDragPerSpeed(40,.30f,2)-4*drag20)<.001f&&
+            20*TerraSim::AirDragPerSpeed(20,.66f,5)>5*drag20,
+            "quadratic aerodynamic drag distinguishes the car from a tall blunt expedition body");
+    }
     for(float angle:{-.55f,.55f}){
         const float left=TerraSim::AckermannAngle(angle,0,-.8f,2.89f),right=TerraSim::AckermannAngle(angle,0,.8f,2.89f);
         const float leftRadius=2.89f/std::tan(left),rightRadius=2.89f/std::tan(right);

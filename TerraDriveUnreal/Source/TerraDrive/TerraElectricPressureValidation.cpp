@@ -202,9 +202,13 @@ bool ClearCorridor(ATerraVehicle* V,FVector P,int Surface,float LengthCM,float H
   const float MinimumNormalZ=Surface==5?.985f:.995f,MaximumReliefCM=Surface==5?150.f:60.f;
   const float Spacing=Surface==5?100:400;
   const float TerrainStart=Surface==5?-350:-RoadRearCM;
-  const int TerrainSteps=Surface==5?FMath::FloorToInt((LengthCM-TerrainStart)/Spacing):FMath::CeilToInt((LengthCM-TerrainStart)/Spacing);
+  // Verify the sand used by the drive, its bounded overshoot and the front
+  // tire reach. A dune beyond that window need not meet the slope limit,
+  // but the full corridor below still excludes all blocking scenery.
+  const float TerrainEnd=Surface==5?FMath::Min(LengthCM,SoilFinishM*100+300):LengthCM;
+  const int TerrainSteps=FMath::CeilToInt((TerrainEnd-TerrainStart)/Spacing);
   for(int Step=0;Step<=TerrainSteps;++Step)for(int Across=-2;Across<=2;++Across){
-    const float Along=FMath::Min(TerrainStart+Step*Spacing,LengthCM);
+    const float Along=FMath::Min(TerrainStart+Step*Spacing,TerrainEnd);
     if(Surface!=5&&FMath::Abs(Across)==1)continue;
     const float Side=HalfWidthCM*Across*.5f;
     const FVector Q=P+FVector(Along,Side,0);const auto S=T->Sample(Q);const auto B=T->SurfaceBlend(Q.X,Q.Y);

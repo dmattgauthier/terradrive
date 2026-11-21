@@ -33,7 +33,7 @@ if($DriveLocalData){
     $cache=Join-Path $projectRoot 'Saved\BuildData'
     $variables=@{
         TEMP='Temp'; TMP='Temp'; APPDATA='AppData\Roaming'; LOCALAPPDATA='AppData\Local'
-        DOTNET_CLI_HOME='DotNet'; 'UE-LocalDataCachePath'='DerivedDataCache'
+        DOTNET_CLI_HOME='DotNet'; 'UE-LocalDataCachePath'='DerivedDataCache'; TERRA_UNREAL_USER_SETTINGS='UnrealUserSettings'
     }
     foreach($name in $variables.Keys){
         $path=Join-Path $cache $variables[$name]
@@ -44,17 +44,24 @@ if($DriveLocalData){
 $editorCacheArgs=@()
 $cookerOptions=@()
 $uatEditorArgs=@()
+$uatPakArgs=@()
 $buildArgs=@()
 $uatBuildArguments='-NoUBA -MaxParallelActions=2'
 if($DriveLocalData){
-    $editorCacheArgs=@('-DDC=InstalledNoZenLocalFallback')
-    $cookerOptions+='-DDC=InstalledNoZenLocalFallback'
+    # UE 5.8 forwards the crash monitor's -abslog value without quoting it.
+    $crashLogDirectory=$automationLogDirectory
+    if($crashLogDirectory -match '\s'){$crashLogDirectory=Join-Path $drive 'TerraDriveBuildDiagnostics'}
+    [void][IO.Directory]::CreateDirectory($crashLogDirectory)
+    $crashLog=Join-Path $crashLogDirectory "CrashReportClient-$PID.log"
+    $editorCacheArgs=@('-DDC=InstalledNoZenLocalFallback','-NoTraceServer','-NotInstalledEngine',('-AbsCrashReportClientLog='+$crashLog))
+    $cookerOptions+=$editorCacheArgs
     # A relocated installed engine can carry shared PCHs with absolute paths.
     $buildArgs=@('-NoPCH',("-Log="+(Join-Path $cache 'Editor-build.log')))
     $uatBuildArguments+=' -NoPCH'
     # The script builds the editor separately above. UAT's editor target
     # does not receive game -UbtArgs and can reuse a C:-bound PCH.
     $uatEditorArgs=@('-skipbuildeditor')
+    $uatPakArgs=@('-AdditionalPakOptions=-NoTraceServer')
 }
 if($CookShaderWorkers){
     $logical=[Environment]::ProcessorCount
@@ -79,6 +86,24 @@ $cookPath=Join-Path $projectRoot 'Saved\Cooked\Windows'
 $maskPath=Join-Path $projectRoot 'Content\NativeData\terrain-blend.bin'
 $mapPath=Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'
 $carcassRecipe=Join-Path $PSScriptRoot 'tire-carcass-materials.py'
+
+function New-DriveLocalUnrealHook {
+    $sdkRoot=Join-Path $engineRoot 'Engine\Binaries\ThirdParty\DotNet\10.0\win-x64'
+    $sdk=Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'sdk') -Directory |
+        Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+    $refs=Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'packs\Microsoft.NETCore.App.Ref') -Directory |
+        Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+    $hook=Join-Path $cache 'TerraUnrealBuildSettings.dll'
+    $options=@(
+        '-nologo','-noconfig','-nostdlib+','-target:library','-deterministic+',
+        ('-reference:'+(Join-Path $refs.FullName 'ref\net10.0\System.Runtime.dll')),
+        ('-reference:'+(Join-Path $refs.FullName 'ref\net10.0\System.Console.dll')),
+        ('-out:'+$hook),(Join-Path $PSScriptRoot 'TerraUnrealBuildSettings.cs')
+    )
+    & (Join-Path $sdkRoot 'dotnet.exe') exec (Join-Path $sdk.FullName 'Roslyn\bincore\csc.dll') @options | Out-Host
+    if($LASTEXITCODE){throw 'Could not compile the drive-local Unreal build settings hook'}
+    return $hook
+}
 
 function Get-SourceExportHash {
     $output=@(& node (Join-Path $PSScriptRoot 'verify-source-export.mjs'))
@@ -256,7 +281,7 @@ function Build-WindowsPackage {
     $profileScript=Join-Path $PSScriptRoot 'Initialize Terra Drive Profile.ps1'
     & $profileScript -PackageDirectory $windows
     $packageStarted=Get-Date
-    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output "-UbtArgs=$uatBuildArguments" @cookerCacheArgs @uatEditorArgs
+    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output "-UbtArgs=$uatBuildArguments" @cookerCacheArgs @uatEditorArgs @uatPakArgs
     if ($LASTEXITCODE) { throw 'Packaging failed' }
     if (!$SkipCook) {
         $cookLogs=@(Get-ChildItem -LiteralPath $env:uebp_LogFolder -Filter 'Cook-*.txt' | Where-Object { $_.LastWriteTime -ge $packageStarted })
@@ -290,6 +315,11 @@ try {
     foreach($name in $buildEnvironment.Keys){
         $previousBuildEnvironment[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
         [Environment]::SetEnvironmentVariable($name,$buildEnvironment[$name],'Process')
+    }
+    if($DriveLocalData -and (!$SkipBuild -or $Package)){
+        $hook=New-DriveLocalUnrealHook
+        $previousBuildEnvironment['DOTNET_STARTUP_HOOKS']=$env:DOTNET_STARTUP_HOOKS
+        $env:DOTNET_STARTUP_HOOKS=(@($hook,$env:DOTNET_STARTUP_HOOKS)|Where-Object {$_}) -join [IO.Path]::PathSeparator
     }
     if ($ImportAssets -and $SkipExport) {
         $exportHash=Get-SourceExportHash
