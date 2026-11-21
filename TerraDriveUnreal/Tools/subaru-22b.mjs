@@ -640,9 +640,12 @@ function addRear(g,m) {
     .name='22b-formed-rear-closure';
   recessed(g,m,plate,tail,.065,true);
   const plateInset=roundedContour([[-.213,.433],[.213,.433],[.213,.315],[-.213,.315]],.011);
-  mappedPolygon(g,m.white,plateInset,(x,y)=>tail(x,y,.051),[],true,5);
-  label(g,m.black,'22B STI',.285,.045,tail(0,.339,.046),Math.PI);
-  for(const x of [-.18,.18])cylinder(g,m.satinMetal,tail(x,.415,.046),.004,.004,'z',12);
+  // The plate itself is flat inside the rolled bumper's pocket. Lettering
+  // and mounting screws share its plane across the whole visible height.
+  const plateZ=tail(0,.374,.051)[2];
+  mappedPolygon(g,m.white,plateInset,(x,y)=>[x,y,plateZ],[],true,5).name='22b-flat-rear-plate';
+  label(g,m.black,'22B STI',.285,.045,[0,.339,plateZ-.0018],Math.PI).name='22b-rear-plate-characters';
+  for(const x of [-.18,.18])cylinder(g,m.satinMetal,[x,.415,plateZ-.0008],.004,.004,'z',12);
 
   const unlitRed=finishMaterial('#72101c','paint',.38);
   const tailCover=m.lens.clone();
@@ -766,7 +769,7 @@ export function subaru22bView(spec=SUBARU_22B_SPEC) {
   ]);
   Object.assign(view.root.userData,{
     nativeConstruction:{
-      version:4,endClosureRevision:3,greenhouseClosureRevision:3,bodySurfaceRevision:3,
+      version:4,endClosureRevision:4,greenhouseClosureRevision:3,bodySurfaceRevision:3,
       automotiveFinishes:true,originalReferenceGeometry:true,realWindowApertures:true,geometryLettering:true
     },
     bodyRefinement:{
