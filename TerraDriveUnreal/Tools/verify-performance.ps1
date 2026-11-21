@@ -104,6 +104,16 @@ try{
  }
  $errors22=@(Select-String -LiteralPath (Join-Path $out22 'game.log') -Pattern 'Fatal error|Assertion failed|Ensure condition failed|LogOutputDevice: Error|doesn.t have a valid ShaderMap|LogProceduralComponent: Error|missing usage flag')
  if($errors22.Count){throw 'Native engine errors occurred'}
+ if($Trace){
+  $tracePath22=Join-Path $out22 'cpu.utrace'
+  $traceFile22=Get-Item -LiteralPath $tracePath22
+  if(!$traceFile22.Length -or $traceFile22.LastWriteTimeUtc -lt $start22){throw 'No fresh native trace file'}
+  $receipt22.traceFile=$traceFile22.FullName
+  $receipt22.traceBytes=$traceFile22.Length
+ }
+ if(Select-String -LiteralPath (Join-Path $out22 'game.log') -Pattern 'TERRA_TRACE_CLOSE_TIMEOUT' -Quiet){
+  throw 'Native trace writer did not close before engine shutdown'
+ }
  $receipt22.pass=$true
 }catch{$problem22=$_;$receipt22.error=$_.ToString()}finally{
  if($launched22 -and !$game22.HasExited){$game22.Kill();$game22.WaitForExit()}
