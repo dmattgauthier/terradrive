@@ -118,6 +118,29 @@ inline float CombinedLongitudinal(float omega,float c,float speed,float radius,
                                  float limit,float lateralFraction) {
     return CombinedTireForces(std::max(0.f,c)*(omega*radius-speed),lateralFraction,limit,1.f).Longitudinal;
 }
+// Limit the commanded brake torque to what the implicit solve can absorb before
+// the tire slows past a rolling slip target. The other drag torques still apply.
+inline float AntiLockServiceTorque(float requested,float passiveDrag,float freeOmega,
+    float stiffness,float roadVelocity,float radius,float dt,float inertia,
+    float forceLimit,float lateralFraction,float pavementCoverage) {
+    const float speed=std::abs(roadVelocity);
+    if(speed<=2.5f||requested<=0||forceLimit<=0)return requested;
+    const float direction=std::copysign(1.f,roadVelocity);
+    const float r=std::max(.05f,radius),step=std::max(.001f,dt);
+    const float slipFraction=.24f-.11f*std::clamp(pavementCoverage,0.f,1.f);
+    // At a long frame the coupled chassis response softens contact stiffness.
+    // Allow enough elastic slip to reach useful brake force at that frame rate.
+    const float elasticSlip=.85f*forceLimit/std::max(1.f,stiffness);
+    const float slipSpeed=std::min(speed*.5f,std::max(speed*slipFraction,elasticSlip));
+    const float target=(roadVelocity-direction*slipSpeed)/r;
+    const float reaction=CombinedLongitudinal(target,stiffness,roadVelocity,r,forceLimit,lateralFraction);
+    // Solve the wheel angular impulse balance at the rolling target for service torque.
+    const float available=direction*((freeOmega-target)*inertia/step-reaction*r)-passiveDrag;
+    const float limited=std::clamp(available,0.f,requested);
+    const float t=std::clamp((speed-2.5f)/2.5f,0.f,1.f);
+    return requested+(limited-requested)*t*t*(3.f-2.f*t);
+}
+
 // Monotone implicit wheel/contact solve, including genuine brake holding.
 // The bracket is the maximum available tire impulse, so it also handles an
 // unloaded tire, wheelspin, reverse and a fully locked service brake.

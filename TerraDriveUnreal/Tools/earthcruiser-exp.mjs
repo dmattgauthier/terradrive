@@ -4,6 +4,7 @@
 // Source axes: X width, Y up from the ground, +Z forward; axle midpoint Z=0.
 import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
 import {instrumentDial,instrumentDisplay} from './cabin-controls.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 import {VEHICLES as BrowserVehicles} from '../../TerraDrive-v1.13/dist/src/vehicles.js';
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {nativeGeometry as G,mergeStaticMeshes} from './vehicle-geometry.mjs';
@@ -120,15 +121,23 @@ function cab(view){
   label(g,m.chrome,'ISUZU',.38,.070,face(0,1.325,.016));label(g,m.black,'EXP',.115,.052,face(-.71,1.455,.009));
   for(const [idx,s]of [-1,1].entries()){
     const outline=lamps[idx],map=(u,v)=>face(u,v,-.017);aperture(g,m,outline,map,{glass:m.lens,frame:.07});
-    const cy=1.087,cx=s*.765,p=face(cx,cy,-.035);
+    const cy=1.087,cx=s*.765;
     const bowl=round([[cx-.133,cy-.104],[cx-.133,cy+.104],[cx+.133,cy+.104],[cx+.133,cy-.104]],.019,5);
     const opticOpening=round([[cx-.107,cy-.080],[cx-.107,cy+.080],[cx+.107,cy+.080],[cx+.107,cy-.080]],.014,5);
-    mappedPolygon(g,m.chrome,bowl,(x,y)=>face(x,y,-.033),[],false,5);
+    mappedPolygon(g,m.dark,bowl,(x,y)=>face(x,y,-.071),[],false,5);
     trimRing(g,m.satinMetal,bowl,opticOpening,(x,y)=>face(x,y,-.027));
-    const reflector=mesh(g,new T.CircleGeometry(.080,40),m.chrome,[p[0],p[1],p[2]+.002]);reflector.scale.x=1.22;
-    const optic=mesh(g,new T.CircleGeometry(.049,32),m.headlampCore,[p[0],p[1],p[2]+.003]);optic.scale.y=.87;
-    const lip=mesh(g,new T.TorusGeometry(.078,.004,8,48),m.satinMetal,[p[0],p[1],p[2]+.004]);lip.scale.x=1.22;
-    box(g,m.amber,face(s*.786,1.357,-.026),[.19,.042,.012],.008);
+    // Form a deep freeform reflector behind the NPR's rectangular bezel.
+    // The bulb and amber compartment are independently seated inside it.
+    surface(g,m.headlampReflector,48,10,(u,v)=>{
+      const angle=u*Math.PI*2,r=lerp(.060,1,v),c=Math.cos(angle),d=Math.sin(angle);
+      const sq=(p)=>Math.sign(p)*Math.abs(p)**.62;
+      return face(cx+.106*r*sq(c),cy+.079*r*sq(d),-.064+.036*r*r);
+    },true).name='exp98-deep-npr-reflector';
+    const bulb=mesh(g,new T.SphereGeometry(.012,24,12),m.headlampCore,face(cx,cy,-.047));
+    bulb.scale.set(.77,1,1.44);bulb.name='exp98-recessed-halogen-bulb';
+    moldedOptic(g,m.amber,'exp98-prismatic-amber-signal',
+      opticFace(face(s*.786,1.357,-.025),.190,.042,.008,.002,1),
+      {cells:16,rows:5,relief:.0012,facing:1});
     box(g,m.chrome,face(s*.785,1.278,-.031),[.22,.055,.010],.009);
   }
   // Cab side sheets have a real open front arch and the NPR's downward
@@ -327,9 +336,15 @@ function house(view){
   const coverSeam=mesh(g,new T.TorusGeometry(.469,.003,6,72),m.black,[-.529,1.409,L.rearZ+.005]);coverSeam.rotation.y=Math.PI;
   box(g,m.dark,[-.529,1.004,rear-.196],[.148,.529,.102],.015);
   for(const s of [-1,1]){
-    oval(g,m.reverse,s*.729,2.366,rearFace-.005,.186,.081);
-    oval(g,m.red,s*.729,2.236,rearFace-.007,.186,.085);
-    oval(g,m.amber,s*.729,2.104,rearFace-.009,.186,.085);
+    for(const [y,height,emitter,name] of [[2.366,.081,m.reverse,'reverse'],[2.236,.085,m.red,'brake'],[2.104,.085,m.amber,'indicator']]){
+      const x=s*.729;
+      oval(g,m.black,x,y,rearFace-.005,.204,height+.014);
+      const lens=(u,v,depth)=>{
+        const vertical=(2*v-1)*.97,w=Math.sqrt(1-vertical*vertical),horizontal=(2*u-1)*w;
+        return [x+.093*horizontal,y+height/2*vertical,rearFace-.012-.004*(1-horizontal*horizontal-vertical*vertical)-depth];
+      };
+      moldedOptic(g,emitter,'exp98-molded-'+name+'-lamp',lens,{cells:12,rows:12,relief:.0013});
+    }
     box(g,m.black,[s*.806,.755,rearFace-.101],[.279,.092,.105],.015);
     box(g,m.red,[s*.826,.756,rearFace-.158],[.158,.056,.012],.005);
     box(g,m.amber,[s*.713,.756,rearFace-.159],[.060,.056,.012],.005);

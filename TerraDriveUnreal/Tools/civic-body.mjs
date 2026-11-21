@@ -1,5 +1,6 @@
 // Native-only coachwork fork; browser source remains immutable.
 import {panelJoint} from './coachwork-craft.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 export function buildCivic(view, geometry) {
   const { THREE, UP, X_AXIS, clamp, v3, finish, box, roundedBox, roofCap, cylinder, panel, polygon, surface, interpolate, lowerShell, perforatedFace, recessedOpening, sweptBumper, subdivideBendRegions, roundBodyEnds, roundRoofShoulders, frontSkinProjector, curvedLine, roundedOutline, windowPanel, ellipseRing, profile, line, archPoints, sideText, frontText } = geometry;
 
@@ -378,8 +379,11 @@ export function buildCivic(view, geometry) {
       const reverseChamber=roundedOutline([[.374,.860],[.473,.876],[.488,.811],[.446,.825]].map(lampPoint),.006);
       rearPatch(m.redPaint,innerLamp,[reverseChamber],.003);
       rearPatch(m.dark,reverseChamber,[],-.015);
-      rearPatch(m.reverse,reverseChamber.map(([x,y,z])=>[sxp(.443)+(x-sxp(.443))*.92,.846+(y-.846)*.91,z]),[],-.004);
-      for(let line=0;line<4;line++)flatGuide(rearLamp,m.chrome,[[sxp(.420+line*.015),.837,tail],[sxp(.419+line*.015),.865,tail]],.00055,.002);
+      const reverseFloor=reverseChamber.map(([x,y,z])=>[sxp(.443)+(x-sxp(.443))*.92,.846+(y-.846)*.91,z]);
+      rearPatch(m.satinMetal||m.chrome,reverseFloor,[],-.007);
+      moldedOptic(g,m.reverse,'civic-inset-clear-reverse-lens',
+        opticFace([sxp(.447),.846,tail+.003],.061,.025,.004,.0015),
+        {cells:9,rows:7,relief:.0011});
       flatGuide(rearLamp,m.red,[[sxp(.350),.882,tail],[sxp(.480),.893,tail]],.0055,.011);
       rearPatch(m.redLens||m.lens,innerLamp,[reverseChamber],.018);
       rearPatch(m.lens,outerLamp,[],.022);rearPatch(m.lens,innerLamp,[],.022);

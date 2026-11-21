@@ -30,6 +30,7 @@ export function urusView(spec){
  const rubber=finish(new T.MeshStandardMaterial({color:'#101213',roughness:.66}),'rubber');
  const grille=finish(new T.MeshStandardMaterial({color:'#303337',roughness:.34,metalness:.9}),'metal');
  const dark=new T.MeshStandardMaterial({color:'#050708',roughness:.9});
+ const passiveReflector=new T.MeshPhysicalMaterial({color:'#7a0c0a',roughness:.28,clearcoat:.7});
  const frit=new T.MeshStandardMaterial({color:'#080d10',roughness:.44,side:T.DoubleSide});frit.userData.nativeRole='glazingFrit';
  const drl=new T.MeshStandardMaterial({color:'#e2efff',emissive:'#d5e6ff',emissiveIntensity:.85,roughness:.2});
  finish(m.paint,'paint');finish(m.chrome,'metal');finish(m.interior,'plastic');finish(m.upholstery,'alcantara');
@@ -457,7 +458,7 @@ export function urusView(spec){
   // Reflectors and parking sensors belong to the bumper, not the tail lamps.
   const reflector=roundContour([[.735,.587],[.842,.609],[.886,.631],[.896,.612],[.849,.587],[.733,.568]],.010,4);
   mappedPolygon(g,m.black,reflector,(x,y)=>tail(s*x,y,-.003),[],s>0,8);
-  mappedPolygon(g,m.red,inset(reflector,.84),(x,y)=>tail(s*x,y,-.0055),[],s>0,8).name='urus-bumper-reflector';
+  mappedPolygon(g,passiveReflector,inset(reflector,.84),(x,y)=>tail(s*x,y,-.0055),[],s>0,8).name='urus-bumper-reflector';
   for(const x of [.45,.87]){const sensor=mesh(g,new T.CircleGeometry(.007,20),black,tail(s*x,.648,-.006));sensor.rotation.y=Math.PI;}
   const opening=exhaustHoles[s<0?0:1],throat=inset(opening,.92);
   rearReturn(carbon,opening,throat,diffuser,.074,'urus-diffuser-outlet-return');
@@ -498,5 +499,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.697],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:13,artPilot:5,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,sweptDoorPressings:true,formedCarbonFlares:true,recessedRadiatorMesh:true,sculptedRearBumper:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:14,artPilot:5,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,sweptDoorPressings:true,formedCarbonFlares:true,recessedRadiatorMesh:true,sculptedRearBumper:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }

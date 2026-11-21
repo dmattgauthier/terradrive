@@ -3,6 +3,7 @@
 // Sources, variant choices and estimated quantities: docs/mercedes-gclass-research.md.
 import {VehicleView} from '../../TerraDrive-v1.13/dist/src/vehicle-view.js';
 import {gClassSteering,instrumentDisplay} from './cabin-controls.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 import {T,mesh,box,surface,mappedPolygon,line,lerp,smooth,clamp,station} from './body-surface.mjs';
 import {nativeInterior} from './vehicle-cabin.mjs';
 import {geometryText,refineFactoryWheel} from './vehicle-fidelity.mjs';
@@ -623,10 +624,21 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
   }
   for(const side of [-1,1]){
     box(g,black,[side*.689,.765,-2.329],[.303,.108,.023],.019);
-    box(g,m.red,[side*.689,.770,-2.344],[.274,.075,.009],.014);
-    box(g,m.reverse,[side*.689,.746,-2.350],[.146,.018,.007],.004);
-    box(g,trim,[side*.689,.770,-2.351],[.208,.031,.004],.006);
-    box(g,m.gReflector,[side*.741,.482,-2.372],[.108,.021,.004],.004);
+    const x=side*.689;
+    // The wide red light guide runs around a separate dark center insert.
+    // A clear outer shell brings a highlight across both circuits.
+    moldedOptic(g,m.red,'gclass-layered-red-light-guide',
+      opticFace([x,.771,-2.344],.274,.075,.014,.004),
+      {cells:ev?20:14,relief:.0008});
+    box(g,trim,[x,.773,-2.350],[.207,.028,.007],.006);
+    moldedOptic(g,m.reverse,'gclass-lower-clear-reverse-optic',
+      opticFace([x,.746,-2.352],.147,.015,.004,.0015),
+      {cells:13,rows:4,relief:.0006});
+    const cover=opticFace([x,.770,-2.353],.280,.081,.016,.0045);
+    surface(g,m.lens,24,14,(u,v)=>cover(u,v,0),true).name='gclass-curved-rear-lamp-cover';
+    moldedOptic(g,m.gReflector,'gclass-passive-bumper-reflector',
+      opticFace([side*.741,.482,-2.374],.108,.021,.004,.001),
+      {cells:14,rows:4,relief:.0009});
   }
   box(g,m.red,[0,1.896,-2.323],[.285,.018,.014],.004);
   if(ev){

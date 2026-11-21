@@ -1,6 +1,7 @@
 // Native refinement fork; preserved browser source is unchanged.
 import {panelJoint} from './coachwork-craft.mjs';
 import {instrumentDisplay} from './cabin-controls.mjs';
+import {moldedOptic,opticFace,passiveRuby} from './vehicle-optics.mjs';
 /**
  * Original MY24 GMC HUMMER EV SUV exterior, constructed from GMC's dimensioned
  * side elevation and published photographs. This is not imported OEM CAD.
@@ -437,14 +438,21 @@ export function buildNativeHummer(view, geometry) {
     return [x,y,z-.002*(1-(x/.905)**2)*Math.sin(v*Math.PI)];
   },true).name='hummer-lower-rear-glass-belt-closure';
   roundedBox(g,m.paint,0,1.081,tail-.010,1.748,.613,.058,.035);
+  const bumperRuby=passiveRuby(m.red);
   for(const side of [-1,1]){
     roundedBox(g,m.glossBlack,side*.971,1.103,tail-.024,.158,.547,.079,.027);
     const loop=roundedOutline([[side*.971-.049,.874,tail-.068],[side*.971+.049,.874,tail-.068],[side*.971+.049,1.334,tail-.068],[side*.971-.049,1.334,tail-.068]],.013);
     curvedLine(g,m.red,[...loop,loop[0]],.009);
     curvedLine(g,m.red,[[side*.971-.016,.948,tail-.071],[side*.971-.016,1.008,tail-.071],[side*.971-.035,1.044,tail-.071],[side*.971-.035,1.183,tail-.071],[side*.971-.016,1.221,tail-.071],[side*.971-.016,1.279,tail-.071]],.0045);
-    roundedBox(g,m.reverse,side*.971,.901,tail-.069,.058,.023,.010,.005);
-    roundedBox(g,m.redLens,side*.971,1.105,tail-.079,.108,.461,.010,.019);
-    roundedBox(g,m.red,side*.924,.650,tail-.051,.057,.109,.013,.010);
+    moldedOptic(g,m.reverse,'hummer-lower-clear-reverse-cell',
+      opticFace([side*.971,.901,tail-.073],.058,.023,.005,.002),
+      {cells:7,rows:6,relief:.0011});
+    // A colorless cover spans the tall ruby guides but keeps reverse white.
+    const cover=opticFace([side*.971,1.105,tail-.083],.124,.474,.016,.004);
+    surface(g,m.lens,12,32,(u,v)=>cover(u,v,0),true).name='hummer-crowned-vertical-tail-lamp-cover';
+    moldedOptic(g,bumperRuby,'hummer-passive-lower-reflector',
+      opticFace([side*.924,.650,tail-.056],.057,.109,.010,.003),
+      {cells:10,rows:10,relief:.0011});
     roundedBox(g,m.black,side*.362,.603,tail-.011,.598,.137,.157,.021);
     for(const y of [.555,.577,.599])roundedBox(g,m.grille,side*.362,y,tail-.095,.519,.008,.012,.002);
     for(const y of [.769,1.319])roundedBox(g,m.dark,-.871,y,tail-.027,.042,.065,.050,.008);

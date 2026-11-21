@@ -92,6 +92,15 @@ export function bodyRefinement(view,spec){
      -.007*door*gauss(y,.57+.048*z,.105));
    dx-=sign*.009*side*gauss(z,-1.94,.28)*smooth(y,1.33,1.52);
    dz+=.022*smooth(ax,.25,.87)*gauss(z,-2.48,.16)*gauss(y,.91,.32);
+   // Turn the bonnet and lamp brow down into the splitter overhang. Apply
+   // one shared profile to the fascia, duct returns and adjoining sheet.
+   const browRoll=smooth(z,2.055,2.575)*smooth(y,.775,1.025);
+   dy-=.093*browRoll;
+   dz-=.066*browRoll;
+   // The lower valance tucks in toward the rear tyre below the hatch.
+   const tailTuck=(1-smooth(z,-2.54,-2.06))*(1-smooth(y,.34,.68));
+   dz+=.174*tailTuck*(.70+.30*smooth(ax,.44,.98));
+   dy+=.032*tailTuck*smooth(ax,.42,.90);
   }
   return new T.Vector3(x+dx,y+dy,z+dz);
  };
@@ -115,5 +124,5 @@ export function bodyRefinement(view,spec){
   }
   geo.computeBoundingBox();geo.computeBoundingSphere();
  });
- view.root.userData.bodyRefinement={version:24,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true,formedEndAndQuarterSurfaces:true};
+ view.root.userData.bodyRefinement={version:style==='urus'?25:24,style,vertices:count,maximumSurfaceChangeM:maxMove,hardpointsPreserved:true,formedEndAndQuarterSurfaces:true};
 }

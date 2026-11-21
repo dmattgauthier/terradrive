@@ -1,8 +1,13 @@
 {
   "kind": "source-geometry",
   "nativeAcceptance": false,
-  "revision": 13,
+  "revision": 14,
   "artPilot": 5,
+  "profile": {
+    "upperBrowSetbackM": 0.15639567375183105,
+    "lowerRearTuckM": 0.24018287658691406,
+    "overallM": 5.162408351898193
+  },
   "intakeGridProbes": 1316,
   "perRegion": [
     148,
@@ -17,21 +22,21 @@
   "bonnetMinVertexNormalY": 0.9522117376327515,
   "paintedIntrusions": 0,
   "opticalDepthM": [
-    0.005485742014993633,
-    0.005479044131495137
+    0.006472117628082419,
+    0.006470697810386117
   ],
   "exhaustDepthM": [
-    0.06124519888926505,
-    0.06126353458278633,
-    0.06150923987797707,
-    0.06125594644888732
+    0.062168334199918185,
+    0.06230894666300424,
+    0.062421832768976504,
+    0.06230466623163311
   ],
   "radiatorOpenCells": 108,
   "openRadiatorProbes": 178,
   "solidRadiatorProbes": 38,
   "shoulderReliefM": [
-    0.06215631774109609,
-    0.06215631774109609
+    0.062112424673223865,
+    0.062112424673223865
   ],
   "hatchReflection": {
     "sampledTriangles": 5522,

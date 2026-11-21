@@ -48,7 +48,7 @@ for(let i=0;i<hatchIndex.count;i+=3){
 const hatchNormalMaxDeg=Math.max(...hatchNormalErrors),hatchChordMaxM=Math.max(...hatchChordErrorsM);
 assert.ok(hatchNormalErrors.length>1000&&hatchNormalMaxDeg<2&&hatchChordMaxM<.0015,
   `hatch reflection needs a smooth panel: ${hatchNormalMaxDeg} degrees, ${hatchChordMaxM} metres`);
-bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);
+view.root.updateMatrixWorld(true);
 const fascia=view.body.getObjectByName('urus-perforated-front-fascia'),frame=view.body.getObjectByName('urus-lower-composite-intake-frame');
 assert.ok(fascia&&frame);
 const counts=[0,0,0,0];
@@ -143,6 +143,29 @@ for(const s of [-1,1]){
  const rearJoint=view.body.children.filter(o=>o.name==='urus-rear-bumper-joint');
  assert.equal(rearJoint.length,2,'both rear bumper seams follow the folded end closure');
 }
+// Evaluate the final profile after the shared panel-and-trim deformation.
+bodyRefinement(view,URUS);view.root.updateMatrixWorld(true);
+const splitter=view.body.getObjectByName('urus-splitter-closed-leading-edge');
+const endZ=(mesh,height,accept,foremost=true)=>{
+ const positions=mesh.geometry.attributes.position;
+ let limit=foremost?-Infinity:Infinity;
+ for(let i=0;i<positions.count;i++){
+  if(!accept(positions.getY(i),height))continue;
+  limit=foremost?Math.max(limit,positions.getZ(i)):Math.min(limit,positions.getZ(i));
+ }
+ return limit;
+};
+const frontTip=endZ(splitter,0,(y,h)=>y>h);
+const upperBrow=endZ(fascia,.93,(y,h)=>y>h);
+const hatchLip=endZ(hatch,0,(y,h)=>y>h,false);
+const lowDiffuser=endZ(diffuser,.37,(y,h)=>y<h,false);
+const profile={upperBrowSetbackM:frontTip-upperBrow,lowerRearTuckM:lowDiffuser-hatchLip,overallM:frontTip-hatchLip};
+assert.ok(profile.upperBrowSetbackM>.13&&profile.upperBrowSetbackM<.23,'upper nose rolls back above the projecting splitter');
+assert.ok(profile.lowerRearTuckM>.20&&profile.lowerRearTuckM<.30,'the bottom of the valance tucks forward below the hatch');
+assert.ok(Math.abs(profile.overallM-URUS.length)<.035,'rounded fascia stays within the body length tolerance');
+const passiveReflectors=view.body.children.filter(o=>o.name==='urus-bumper-reflector');
+assert.ok(passiveReflectors.length===2&&passiveReflectors.every(o=>o.material!==view.materials.red&&
+ o.material.emissive.getHex()===0),'bumper reflectors remain passive when applying the brakes');
 const {version:revision,artPilot}=view.root.userData.visualModel;
-const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,radiatorOpenCells:radiator.userData.openCells,openRadiatorProbes,solidRadiatorProbes,shoulderReliefM,hatchReflection:{sampledTriangles:hatchNormalErrors.length,maxNormalErrorDeg:hatchNormalMaxDeg,maxChordErrorM:hatchChordMaxM},pass:true};
+const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,profile,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,radiatorOpenCells:radiator.userData.openCells,openRadiatorProbes,solidRadiatorProbes,shoulderReliefM,hatchReflection:{sampledTriangles:hatchNormalErrors.length,maxNormalErrorDeg:hatchNormalMaxDeg,maxChordErrorM:hatchChordMaxM},pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();

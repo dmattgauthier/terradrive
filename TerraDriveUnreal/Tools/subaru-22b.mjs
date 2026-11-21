@@ -1,6 +1,7 @@
 // Original 1998 JDM 22B STI. Published anchors: STI heritage spec; photo-fitted panels.
 import {T,mesh,box,surface,mappedPolygon,line,lerp,station,roundedContour,panelReturn,G,newReferenceView,finishMaterial,rod,cylinder,ring,label,pane,rimBarrel,refineReferenceWheel} from './reference-vehicle-kit.mjs';
 import {instrumentDial} from './cabin-controls.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 export const SUBARU_22B_SPEC={id:'subaru-22b-sti',name:'Subaru Impreza 22B STI',brand:'Subaru',year:1998,trim:'2.2 turbo boxer / 5-speed / DCCD AWD',bodyStyle:'subaru22b',color:'#075da8',powertrain:'combustion',fuelCapacityGallons:60/3.785411784,powerHP:206000/745.699872,torqueNm:363,torqueLbFt:363/1.3558179483,mass:1270,curbMass:1270,length:4.365,width:1.770,height:1.390,wheelbase:2.520,track:1.49,trackFront:1.48,trackRear:1.50,frontWeightFraction:.58,cgHeight:.50,clearance:.14,tireSize:'235/40R17',tireRadius:.3099,tireWidth:.235,rearTireWidth:.235,tireType:'road-performance',rimDiameterInches:17,stockPSI:32,stockPSIFront:32,stockPSIRear:30,transmissionType:'manual',transmissionName:'5-speed close-ratio manual (automatic shifting in simulator)',gears:[3.083,2.062,1.545,1.151,.825],reverseRatio:3.416,finalDrive:4.444,lowRatio:1,defaultMode:'AWD',driveModes:['AWD'],frontTorqueFraction:.35,dragCoefficient:.36,features:{frontLocker:false,rearLocker:false,centerLocker:true,swayDisconnect:false,tractionControl:false,abs:false,hillDescent:false},engine:{idleRPM:850,redlineRPM:7900,peakTorqueRPM:3200,peakPowerRPM:6000,curve:[[850,90],[1800,190],[2800,350],[3200,363],[5200,350],[6000,327.86],[7200,252],[7900,205]],curveStatus:'Estimated interpolation through manufacturer output peaks'},suspension:{travel:.18,restLength:.30,springRate:29000,damping:3200,antiRoll:16000,frontType:'independent inverted MacPherson struts',rearType:'independent MacPherson struts',parameterStatus:'Simulation rates, damping, rest and travel; not measured Bilstein/Eibach data'},notes:['Original two-door 1998 JDM 22B, distinct from later WRX STI sedans. Driver-adjustable centre coupling is simplified as a centre-lock control.','Factory dimensions, 17-inch BBS wheel/tire designation, rated output and curb mass. Panel coordinates, CG, pressure, torque interpolation and suspension coefficients are photo/simulation estimates.'],sources:['https://www.subaru.co.jp/news/archives/98_1_3/3_16_1.html','https://www.sti.jp/brand/heritage/1998/impreza-22b/','https://collectingcars.com/for-sale/1998-subaru-impreza-sti-22b-5']};
 const frontZ=2.1825;
 const rearZ=-frontZ;
@@ -651,12 +652,20 @@ function addRear(g,m) {
       [side*.402,.618],[side*.804,.616],[side*.803,.658],[side*.404,.661]
     ],.008,5);
     mappedPolygon(g,m.satinMetal,clear,(x,y)=>tail(x,y,.004),[],true,6);
-    mappedPolygon(g,m.reverse,roundedContour([
-      [side*.408,.624],[side*.506,.623],[side*.506,.655],[side*.409,.655]
-    ],.006),(x,y)=>tail(x,y,.002),[],true,5);
-    const lit=roundedContour([[side*.439,.688],[side*.766,.685],[side*.755,.722],[side*.444,.728]],.014);
-    mappedPolygon(g,m.red,lit,(x,y)=>tail(x,y,.007),[],true,6);
-    mappedPolygon(g,tailCover,lens,(x,y)=>tail(x,y,-.0015),[],true,6);
+    // Period incandescent lamps have a shallow fluted reflector behind
+    // the clear inboard reversing window and wide upper stop-light chamber.
+    const reverse=opticFace([side*.457,.6395,0],.098,.031,.006,.0018,1);
+    moldedOptic(g,m.reverse,'22b-period-clear-reverse-cell',(u,v,depth)=>{
+      const [x,y,convex]=reverse(u,v,depth);
+      return tail(x,y,.002-convex);
+    },{cells:8,rows:6,relief:.0012});
+    const stop=opticFace([side*.599,.704,0],.317,.033,.010,.0019,1);
+    moldedOptic(g,m.red,'22b-period-incandescent-stop-cell',(u,v,depth)=>{
+      const [x,y,convex]=stop(u,v,depth);
+      return tail(x,y-.005*(Math.abs(x)-.44)/.32,.007-convex);
+    },{cells:20,rows:7,relief:.0014});
+    mappedPolygon(g,tailCover,lens,(x,y)=>tail(x,y,-.0015),[clear],true,6);
+    mappedPolygon(g,m.lens,clear,(x,y)=>tail(x,y,-.0015),[],true,6).name='22b-colorless-reverse-and-indicator-cover';
     const reveal=Array.from({length:24},(_,j)=>{
       const t=j/23;
       return tail(side*lerp(.384,.590,t*t),lerp(.583,.904,t),-.0006);

@@ -2,6 +2,7 @@
 // Contact-plane metres; Y up, +Z forward. Panel/bar stations are estimates.
 import {T,box,mesh,surface,line,station,lerp} from './body-surface.mjs';
 import {geometryText} from './vehicle-fidelity.mjs';
+import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 
 export const SIX_PICKUP=Object.freeze({
  revision:25,height:2.326,width:2.185,length:5.875,bodyRise:.281,cabRoofY:2.260,
@@ -108,9 +109,19 @@ export function buildSixPickup(g,m){
  for(const s of [-1,1]){
   const x=s*.813,z=rear-.079;
   named(box(g,trim,[x,.967,z],[.281,.135,.042],.015),'g63-six-horizontal-rear-lamp-housing-'+s);
-  named(box(g,m.red,[x,.970,z-.024],[.246,.100,.013],.011),'g63-six-rear-brake-lamp-'+s);
-  box(g,m.reverse,[x-s*.084,.964,z-.033],[.051,.047,.005],.005);
-  box(g,m.gReflector,[x+s*.079,.964,z-.033],[.055,.046,.005],.005);
+  // Period horizontal clusters use folded reflector optics and a divided
+  // clear reversing cell, distinct from the modern wagon's LED light guide.
+  moldedOptic(g,m.red,'g63-six-rear-brake-lamp-'+s,
+    opticFace([x,.970,z-.024],.246,.100,.011,.004),
+    {cells:9,rows:10,horizontal:true,relief:.0015});
+  moldedOptic(g,m.reverse,'g63-six-clear-reverse-cell',
+    opticFace([x-s*.084,.964,z-.032],.051,.047,.005,.0018),
+    {cells:6,rows:5,relief:.0013});
+  moldedOptic(g,m.gReflector,'g63-six-passive-ruby-cell',
+    opticFace([x+s*.079,.964,z-.032],.055,.046,.005,.0015),
+    {cells:8,rows:6,relief:.0011});
+  const cover=opticFace([x,.966,z-.035],.253,.108,.014,.0033);
+  surface(g,m.lens,22,12,(u,v)=>cover(u,v,0),true).name='g63-six-molded-clear-cover';
   const label=geometryText(g,s<0?'6X6':'G63',.13,.026,metal);label.position.set(x-s*.02,1.250,rear-.063);label.rotation.y=Math.PI;
  }
  named(box(g,paint,[0,.822,rear-.061],[2.015,.145,.174],.036),'g63-six-independent-rear-bumper');
