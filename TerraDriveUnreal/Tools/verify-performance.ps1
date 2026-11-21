@@ -18,7 +18,7 @@ if(!$PackageDirectory){$PackageDirectory=Join-Path $project22 'Build/Windows'}
 $package22=(Resolve-Path -LiteralPath $PackageDirectory).ProviderPath
 $exe22=Join-Path $package22 'TerraDrive/Binaries/Win64/TerraDrive.exe'
 $args22=@('-unattended','-windowed','-ForceRes','-RenderOffscreen',('-ResX='+$Width),('-ResY='+$Height),'-NoSound',
- '-TerraValidate','-TerraQuarryPerformanceOnly','-TerraCapture',('-TerraTestFPS='+$Cap),('-TerraGraphicsMode='+$Quality),
+ '-NoTraceServer','-TerraValidate','-TerraQuarryPerformanceOnly','-TerraCapture',('-TerraTestFPS='+$Cap),('-TerraGraphicsMode='+$Quality),
  ('-UserDir="'+(Join-Path $out22 'User')+'"'),('-TerraReport="'+(Join-Path $out22 'result.json')+'"'),
  ('-TerraCaptureDir="'+(Join-Path $out22 'Screenshots')+'"'),('-TerraGarage="'+(Join-Path $out22 'garage.json')+'"'),
  ('-TerraGraphics="'+(Join-Path $out22 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $out22 'controls.json')+'"'),

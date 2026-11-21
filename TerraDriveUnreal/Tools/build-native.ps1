@@ -40,21 +40,28 @@ if($DriveLocalData){
         [void][IO.Directory]::CreateDirectory($path)
         $buildEnvironment[$name]=$path
     }
+    # The editor's crash monitor starts its own UE process before project
+    # settings load. It accepts the inherited development command line.
+    # Its default log otherwise goes to the Windows known folder.
+    $auxLog=Join-Path $automationLogDirectory "UnrealAuxiliary-$PID.log"
+    $buildEnvironment['UE-CmdLineArgs']='-NoTraceServer -NoAnalytics -abslog="'+$auxLog+'"'
 }
 $editorCacheArgs=@()
 $cookerOptions=@()
 $uatEditorArgs=@()
+$uatPakArgs=@()
 $buildArgs=@()
 $uatBuildArguments='-NoUBA -MaxParallelActions=2'
 if($DriveLocalData){
-    $editorCacheArgs=@('-DDC=InstalledNoZenLocalFallback')
-    $cookerOptions+='-DDC=InstalledNoZenLocalFallback'
+    $editorCacheArgs=@('-DDC=InstalledNoZenLocalFallback','-NoTraceServer')
+    $cookerOptions+=@('-DDC=InstalledNoZenLocalFallback','-NoTraceServer')
     # A relocated installed engine can carry shared PCHs with absolute paths.
     $buildArgs=@('-NoPCH',("-Log="+(Join-Path $cache 'Editor-build.log')))
     $uatBuildArguments+=' -NoPCH'
     # The script builds the editor separately above. UAT's editor target
     # does not receive game -UbtArgs and can reuse a C:-bound PCH.
     $uatEditorArgs=@('-skipbuildeditor')
+    $uatPakArgs=@('-AdditionalPakOptions=-NoTraceServer')
 }
 if($CookShaderWorkers){
     $logical=[Environment]::ProcessorCount
@@ -274,7 +281,7 @@ function Build-WindowsPackage {
     $profileScript=Join-Path $PSScriptRoot 'Initialize Terra Drive Profile.ps1'
     & $profileScript -PackageDirectory $windows
     $packageStarted=Get-Date
-    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output "-UbtArgs=$uatBuildArguments" @cookerCacheArgs @uatEditorArgs
+    & "$engineRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -build $cookArgument -stage -pak -iostore -archive -nodebuginfo "-archivedirectory=$ArchiveDirectory" -unattended -utf8output "-UbtArgs=$uatBuildArguments" @cookerCacheArgs @uatEditorArgs @uatPakArgs
     if ($LASTEXITCODE) { throw 'Packaging failed' }
     if (!$SkipCook) {
         $cookLogs=@(Get-ChildItem -LiteralPath $env:uebp_LogFolder -Filter 'Cook-*.txt' | Where-Object { $_.LastWriteTime -ge $packageStarted })

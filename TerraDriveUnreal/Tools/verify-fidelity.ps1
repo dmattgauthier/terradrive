@@ -34,7 +34,7 @@ $taskFlags.Recovery='-TerraRecoveryOnly'
 $taskFlags.GraveRecovery='-TerraGraveRecoveryOnly'
 $taskFlags.RolloverPerformance='-TerraRolloverPerformanceOnly'
 $taskQuality=if($Mode -in @('Art','UrusArt','Quarry','Garden','Ruts','Transitions','Detail','RutTransitions','Carcass','Expanded')){2}else{0}
-$taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-NoTrace','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraGraphicsMode='+$taskQuality),$taskFlags[$Mode],
+$taskArguments=@('-unattended','-windowed','-ForceRes','-RenderOffscreen','-ResX=1600','-ResY=900','-NoSound','-NoTrace','-NoTraceServer','-TerraValidate','-TerraCapture','-TerraTestFPS=20',('-TerraGraphicsMode='+$taskQuality),$taskFlags[$Mode],
  ('-TerraReport="'+$taskReport+'"'),('-TerraCaptureDir="'+$taskCaptures+'"'),('-TerraGarage="'+(Join-Path $taskOutput 'garage.json')+'"'),('-TerraGraphics="'+(Join-Path $taskOutput 'graphics.json')+'"'),('-TerraControls="'+(Join-Path $taskOutput 'controls.json')+'"'),('-UserDir="'+(Join-Path $taskOutput 'User')+'"'),('-abslog="'+(Join-Path $taskOutput 'game.log')+'"'),
  '-ini:Engine:[/Script/Engine.Engine]:bUseFixedFrameRate=True','-ini:Engine:[/Script/Engine.Engine]:FixedFrameRate=20.0')
 if($Mode -eq 'RolloverPerformance'){$taskArguments=@($taskArguments|Where-Object {$_ -notlike '-ini:Engine:*'});$taskArguments+=('-TerraPerfVehicle='+$PerformanceVehicle)}
