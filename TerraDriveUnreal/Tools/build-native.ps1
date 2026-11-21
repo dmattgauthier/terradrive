@@ -33,7 +33,7 @@ if($DriveLocalData){
     $cache=Join-Path $projectRoot 'Saved\BuildData'
     $variables=@{
         TEMP='Temp'; TMP='Temp'; APPDATA='AppData\Roaming'; LOCALAPPDATA='AppData\Local'
-        DOTNET_CLI_HOME='DotNet'; 'UE-LocalDataCachePath'='DerivedDataCache'
+        DOTNET_CLI_HOME='DotNet'; 'UE-LocalDataCachePath'='DerivedDataCache'; TERRA_UNREAL_USER_SETTINGS='UnrealUserSettings'
     }
     foreach($name in $variables.Keys){
         $path=Join-Path $cache $variables[$name]
@@ -79,6 +79,24 @@ $cookPath=Join-Path $projectRoot 'Saved\Cooked\Windows'
 $maskPath=Join-Path $projectRoot 'Content\NativeData\terrain-blend.bin'
 $mapPath=Join-Path $projectRoot 'Content\Maps\ProvingGround.umap'
 $carcassRecipe=Join-Path $PSScriptRoot 'tire-carcass-materials.py'
+
+function New-DriveLocalUnrealHook {
+    $sdkRoot=Join-Path $engineRoot 'Engine\Binaries\ThirdParty\DotNet\10.0\win-x64'
+    $sdk=Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'sdk') -Directory |
+        Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+    $refs=Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'packs\Microsoft.NETCore.App.Ref') -Directory |
+        Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+    $hook=Join-Path $cache 'TerraUnrealBuildSettings.dll'
+    $options=@(
+        '-nologo','-noconfig','-nostdlib+','-target:library','-deterministic+',
+        ('-reference:'+(Join-Path $refs.FullName 'ref\net10.0\System.Runtime.dll')),
+        ('-reference:'+(Join-Path $refs.FullName 'ref\net10.0\System.Console.dll')),
+        ('-out:'+$hook),(Join-Path $PSScriptRoot 'TerraUnrealBuildSettings.cs')
+    )
+    & (Join-Path $sdkRoot 'dotnet.exe') exec (Join-Path $sdk.FullName 'Roslyn\bincore\csc.dll') @options | Out-Host
+    if($LASTEXITCODE){throw 'Could not compile the drive-local Unreal build settings hook'}
+    return $hook
+}
 
 function Get-SourceExportHash {
     $output=@(& node (Join-Path $PSScriptRoot 'verify-source-export.mjs'))
@@ -290,6 +308,11 @@ try {
     foreach($name in $buildEnvironment.Keys){
         $previousBuildEnvironment[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
         [Environment]::SetEnvironmentVariable($name,$buildEnvironment[$name],'Process')
+    }
+    if($DriveLocalData -and (!$SkipBuild -or $Package)){
+        $hook=New-DriveLocalUnrealHook
+        $previousBuildEnvironment['DOTNET_STARTUP_HOOKS']=$env:DOTNET_STARTUP_HOOKS
+        $env:DOTNET_STARTUP_HOOKS=(@($hook,$env:DOTNET_STARTUP_HOOKS)|Where-Object {$_}) -join [IO.Path]::PathSeparator
     }
     if ($ImportAssets -and $SkipExport) {
         $exportHash=Get-SourceExportHash
