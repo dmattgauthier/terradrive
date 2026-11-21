@@ -153,6 +153,24 @@ for(const side of [-1,1]){
  assert.equal(firstSolid([side*1.6,.550,2.213],[-side,0,0])?.name,'urus-front-air-curtain-recess',
   'corner intake has an unobstructed side aperture and a formed inner wall');
 }
+const cornerSeamsM=[];
+for(const side of [-1,1]){
+ const lens=name=>view.body.children.find(o=>o.name===name&&Math.sign(o.geometry.attributes.position.getX(0))===side).geometry;
+ const sideLens=lens('urus-outboard-lamp-lens'),frontLens=lens('urus-formed-clear-headlamp-cover');
+ for(const y of [.931,.974]){
+  const corner=geometry=>{
+   const {position,uv}=geometry.attributes;
+   const cornerU=geometry===sideLens?2.48:T.MathUtils.lerp(.955,.843,(y-.883)/(1.025-.883));
+   for(let i=0;i<uv.count;i++)if(Math.abs(uv.getX(i)-cornerU)<.00001&&Math.abs(uv.getY(i)-y)<.00001){
+    return new T.Vector3().fromBufferAttribute(position,i);
+   }
+   assert.fail('lens extends to both corner seam endpoints');
+  };
+  const gap=corner(sideLens).distanceTo(corner(frontLens));
+  assert.ok(gap<.0001,'outboard and front lens cover meet at the same fender corner');
+  cornerSeamsM.push(gap);
+ }
+}
 const sectionBounds=name=>new T.Box3().setFromBufferAttribute(view.body.getObjectByName(name).geometry.attributes.position);
 const frontGlass=sectionBounds('urus-side-glass-seal-0');
 const quarterGlass=sectionBounds('urus-side-glass-seal-2');
@@ -186,5 +204,5 @@ const passiveReflectors=view.body.children.filter(o=>o.name==='urus-bumper-refle
 assert.ok(passiveReflectors.length===2&&passiveReflectors.every(o=>o.material!==view.materials.red&&
  o.material.emissive.getHex()===0),'bumper reflectors remain passive when applying the brakes');
 const {version:revision,artPilot}=view.root.userData.visualModel;
-const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,profile,greenhouse,pocketDepthM,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,radiatorOpenCells:radiator.userData.openCells,openRadiatorProbes,solidRadiatorProbes,shoulderReliefM,hatchReflection:{sampledTriangles:hatchNormalErrors.length,maxNormalErrorDeg:hatchNormalMaxDeg,maxChordErrorM:hatchChordMaxM},pass:true};
+const report={kind:'source-geometry',nativeAcceptance:false,revision,artPilot,profile,greenhouse,pocketDepthM,cornerSeamsM,intakeGridProbes:counts.reduce((a,b)=>a+b,0),perRegion:counts,bonnetGridProbes,bonnetTriangles:index.count/3,bonnetVertexNormals:normal.count,bonnetMinFaceNormalY,bonnetMinVertexNormalY,paintedIntrusions:0,opticalDepthM,exhaustDepthM,radiatorOpenCells:radiator.userData.openCells,openRadiatorProbes,solidRadiatorProbes,shoulderReliefM,hatchReflection:{sampledTriangles:hatchNormalErrors.length,maxNormalErrorDeg:hatchNormalMaxDeg,maxChordErrorM:hatchChordMaxM},pass:true};
 fs.writeFileSync(new URL('../docs/urus-panel-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));view.dispose();

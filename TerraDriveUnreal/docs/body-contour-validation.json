@@ -47,7 +47,7 @@
     {
       "name": "Lamborghini Urus Performante nose wraps back around the corners",
       "pass": true,
-      "valueIn": 5.04736603700982
+      "valueIn": 5.060706145676039
     },
     {
       "name": "Lamborghini Urus Performante rear corners taper around the central closure",
@@ -73,7 +73,7 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "noseCornerSweepIn": 5.04736603700982,
+      "noseCornerSweepIn": 5.060706145676039,
       "rearCornerSweepIn": 5.593436585588269
     }
   ],

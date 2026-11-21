@@ -104,8 +104,8 @@
     },
     {
       "vehicle": "Lamborghini Urus Performante",
-      "vertices": 861678,
-      "normalizedFraction": 0.9996332736822804,
+      "vertices": 859286,
+      "normalizedFraction": 0.999632252823856,
       "visibility": [
         {
           "pane": "windshield",

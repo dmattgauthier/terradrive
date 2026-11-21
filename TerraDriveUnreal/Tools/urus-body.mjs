@@ -89,14 +89,17 @@ export function urusView(spec){
   for(const centre of pulls){const dy=y-(belt(centre)-.077),dz=z-centre,q=Math.hypot(dy/.043,dz/.125);x-=.0045*(1-smooth(q,.20,1));}
   return x;
  };
+ // The fender and fascia share this piecewise-linear corner. The lens
+ // and both cutout boundaries use it at the same lamp seam heights.
+ const noseEdge=[[.24,.89],[.261,.89],[.44,.977],[.883,.955],[1.025,.843],[1.04,.81]];
+ const noseEdgeX=y=>{
+  const i=noseEdge.findIndex(p=>p[0]>=y),end=i<0?noseEdge.length-1:Math.max(1,i);
+  const a=noseEdge[end-1],b=noseEdge[end];
+  return lerp(a[1],b[1],clamp((y-a[0])/(b[0]-a[0]),0,1));
+ };
  const sidePoint=(s,z,y,offset=0)=>{
   const f=smooth(z,2.05,2.48),r=1-smooth(z,-2.48,-2.05);
-  // Match the fascia's piecewise-linear boundary exactly. Smooth interpolation
-  // here made a detached, curled strip along the bumper corners.
-  const edge=[[.24,.89],[.261,.89],[.44,.977],[.883,.955],[1.025,.843],[1.04,.81]];
-  const ei=Math.max(1,edge.findIndex(p=>p[0]>=y)),ea=edge[ei-1],eb=edge[ei];
-  const nose=lerp(ea[1],eb[1],clamp((y-ea[0])/(eb[0]-ea[0]),0,1));
-  const x=lerp(lerp(skinX(y,z),nose,f),tailEdge(y),r);
+  const x=lerp(lerp(skinX(y,z),noseEdgeX(y),f),tailEdge(y),r);
   // Offset the original longitudinal coordinate toward the end boundary.
   // Blending the coordinate itself into an end point folded the last strips.
   const noseZ=frontSurface(x,y),tailZ=urusRearSurface(x,y);
@@ -105,19 +108,20 @@ export function urusView(spec){
  const seam=(s,points)=>{const path=panelJoint(points,.028);line(g,dark,Array.from({length:111},(_,i)=>{const p=path.getPoint(i/110);return sidePoint(s,p.x,p.y,.0013);}),.00115);};
  const quad=(mat,a,b,c,d,nu=20,nv=12,flip=false)=>surface(g,mat,nu,nv,(u,v)=>a.map((n,k)=>lerp(lerp(n,b[k],u),lerp(d[k],c[k],u),v)),flip);
  function inset(points,scale){const center=points.reduce((a,p)=>a.map((v,k)=>v+p[k]/points.length),[0,0]);return points.map(p=>p.map((v,k)=>lerp(center[k],v,scale)));}
- function opening(contour,map,depth,lip=.005,kind='intake'){
+ function opening(contour,map,depth,lip=.005,kind='intake',openSeam=false){
   const inner=inset(contour,.935);
   const reverseReturn=contour.reduce((area,p,i)=>{const q=contour[(i+1)%contour.length];return area+p[0]*q[1]-q[0]*p[1];},0)<0;
   mappedPolygon(g,dark,inner,(x,y)=>map(x,y,-depth),[],false,8).name='urus-'+kind+'-back';
   const lipPoints=[];
-  for(let j=0;j<contour.length;j++){
+  const walls=contour.length-(openSeam?1:0);
+  for(let j=0;j<walls;j++){
    const a=contour[j],b=contour[(j+1)%contour.length],c=inner[j],d=inner[(j+1)%inner.length];
    const divisions=Math.max(2,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.013));
    const wall=surface(g,carbon,divisions,5,(u,v)=>{const p=map(lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v));p[2]-=depth*(v*.32+v*v*.68);return p;},reverseReturn);
    wall.name='urus-'+kind+'-return';
    for(let k=0;k<divisions;k++)lipPoints.push(map(lerp(a[0],b[0],k/divisions),lerp(a[1],b[1],k/divisions)));
   }
-  line(g,black,[...lipPoints,lipPoints[0]],lip);
+  line(g,black,[...lipPoints,openSeam?map(...contour.at(-1)):lipPoints[0]],lip);
  }
  // A physical-height grid keeps shoulder and handle detail on coherent rows.
  // The former wheel-arch-following parameter rows cut those thin features
@@ -131,14 +135,22 @@ export function urusView(spec){
  const fenderStart=2.018,fenderEnd=2.48;
  const sideZ=samples(-2.48,fenderStart,.022,pulls.flatMap(z=>samples(z-.145,z+.145,.008)));
  const sideY=samples(.24,1.28,.018,[...samples(.32,.53,.010),...samples(.84,1.27,.006)]);
- const lampPocket=roundContour([[2.082,.916],[2.199,.974],[2.344,.987],[2.451,.972],
-  [2.455,.947],[2.385,.919],[2.253,.899]],.013,4);
+ const lampSeamLow=.931,lampSeamHigh=.974;
+ // Round the body stamping inside each sheet and retain the exact two
+ // joining endpoints. Both openings are notches in their painted edges.
+ const lampEdge=points=>[points[0],...roundContour(points,.012,4).slice(5,-5),points.at(-1)];
+ const lampPocket=lampEdge([[fenderEnd,lampSeamLow],[2.385,.919],[2.253,.899],
+  [2.082,.916],[2.199,.974],[2.344,.987],[fenderEnd,lampSeamHigh]]);
+ const frontLampEdge=lampEdge([[noseEdgeX(lampSeamHigh),lampSeamHigh],[.840,1.012],[.799,1.013],
+  [.515,.996],[.459,.957],[.521,.926],[.579,.922],[.612,.927],[.820,.924],[noseEdgeX(lampSeamLow),lampSeamLow]]);
  const airCurtain=roundContour([[2.166,.718],[2.407,.739],[2.443,.696],[2.384,.422],
   [2.286,.357],[2.227,.383]],.015,4);
  const returnOutline=[
   ...sideY.filter(y=>y>low(fenderStart)&&y<belt(fenderStart)).reverse().map(y=>[fenderStart,y]),
   [fenderStart,low(fenderStart)],[fenderEnd,low(fenderEnd)],
-  ...samples(low(fenderEnd),belt(fenderEnd),.014,[.44,.883]).slice(1).map(y=>[fenderEnd,y]),
+  ...samples(low(fenderEnd),lampSeamLow,.014,[.44,.883]).slice(1).map(y=>[fenderEnd,y]),
+  ...lampPocket.slice(1),
+  ...samples(lampSeamHigh,belt(fenderEnd),.014).slice(1).map(y=>[fenderEnd,y]),
   ...samples(fenderStart,fenderEnd,.014).slice(0,-1).reverse().map(z=>[z,belt(z)])
  ];
  for(const s of [-1,1]){
@@ -158,20 +170,21 @@ export function urusView(spec){
   const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new T.Float32BufferAttribute(normals,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.setIndex(indices);
   mesh(g,geometry,m.paint).name='urus-continuous-door-sheet-'+(s>0?'left':'right');
   const forwardSide=(z,y,offset=0)=>sidePoint(s,z,y,offset);
-  mappedPolygon(g,m.paint,returnOutline,forwardSide,[lampPocket,airCurtain],s>0,12).name='urus-perforated-fender-return';
+  mappedPolygon(g,m.paint,returnOutline,forwardSide,[airCurtain],s>0,12).name='urus-perforated-fender-return';
   // Form the returns from the same aperture edges as the painted fender.
   // The black surfaces sit inside the body, with an open air curtain.
   for(const [name,contour,depth] of [['outboard-headlamp',lampPocket,.034],['front-air-curtain',airCurtain,.069]]){
    const inner=inset(contour,.84);
    const ccw=contour.reduce((area,p,i)=>{const q=contour[(i+1)%contour.length];return area+p[0]*q[1]-q[0]*p[1];},0)>0;
    mappedPolygon(g,dark,inner,(z,y)=>forwardSide(z,y,-depth),[],s>0,10).name='urus-'+name+'-recess';
-   for(let j=0;j<contour.length;j++)surface(g,carbon,8,5,(u,v)=>{
+   const walls=contour.length-(contour===lampPocket?1:0);
+   for(let j=0;j<walls;j++)surface(g,carbon,8,5,(u,v)=>{
     const a=contour[j],b=contour[(j+1)%contour.length],c=inner[j],d=inner[(j+1)%inner.length];
     const z=lerp(lerp(a[0],b[0],u),lerp(c[0],d[0],u),v),y=lerp(lerp(a[1],b[1],u),lerp(c[1],d[1],u),v);
     return forwardSide(z,y,-depth*v);
    },ccw?s>0:s<0).name='urus-'+name+'-return';
   }
-  mappedPolygon(g,m.lens,inset(lampPocket,.987),(z,y)=>forwardSide(z,y,.0015),[],s>0,12).name='urus-outboard-lamp-lens';
+  mappedPolygon(g,m.lens,lampPocket,(z,y)=>forwardSide(z,y,.002*(1-smooth(z,2.453,fenderEnd))),[],s>0,12).name='urus-outboard-lamp-lens';
   curve(g,drl,[[2.148,.925],[2.255,.923],[2.367,.935],[2.428,.950]].map(([z,y])=>forwardSide(z,y,-.010)),.0028);
   surface(g,carbon,45,16,(u,v)=>{const z=lerp(-2.48,-2.05,u);return sidePoint(s,z,lerp(.27,low(z)+.003,v),.001);},s>0);
   // The widened composite flares have a squared outer shoulder and a return
@@ -332,15 +345,14 @@ export function urusView(spec){
  const fasciaCrest=x=>{const a=Math.abs(x);for(let i=1;i<crestStations.length;i++)if(a<=crestStations[i][0]){const p=crestStations[i-1],q=crestStations[i];return lerp(p[1],q[1],clamp((a-p[0])/(q[0]-p[0]),0,1));}return crestStations.at(-1)[1];};
  const across=(half)=>[...half.slice(1).reverse().map(([x,y])=>[-x,y]),...half];
  const browLower=across([[0,.856],[.368,.869],[.397,.866],[.458,.816],[.482,.811],[.710,.827],[.907,.854],[.955,.883]]);
- const browOutline=[...across(crestStations),...browLower.slice().reverse()];
+ const browOutline=[...across(crestStations),...frontLampEdge,...browLower.slice().reverse(),
+  ...frontLampEdge.slice().reverse().map(([x,y])=>[-x,y])];
  const lowerOutline=[...browLower,[.977,.44],[.89,.261],[.53,.258],[0,.251],[-.53,.258],[-.89,.261],[-.977,.44]];
  const ductTop=across([[0,.848],[.368,.861],[.397,.856],[.458,.807],[.482,.803],[.710,.819],[.904,.846],[.929,.840]]);
  const ductBottom=across([[0,.275],[.452,.283],[.593,.319],[.747,.310],[.902,.337],[.945,.415],[.956,.483],[.945,.685]]);
  const intake=roundContour([...ductTop,...ductBottom.slice().reverse()],.008,2);
- const lampContour=roundContour([[.459,.957],[.515,.996],[.799,1.013],[.840,1.012],[.875,.981],[.899,.950],
-  [.866,.925],[.820,.924],[.612,.927],[.579,.922],[.521,.926]],.009,4);
- const lampHoles=[-1,1].map(s=>lampContour.map(([x,y])=>[s*x,y]));
- mappedPolygon(g,m.paint,browOutline,face,lampHoles,false,12).name='urus-perforated-front-fascia';
+ const lampHoles=[-1,1].map(s=>frontLampEdge.map(([x,y])=>[s*x,y]));
+ mappedPolygon(g,m.paint,browOutline,face,[],false,12).name='urus-perforated-front-fascia';
  mappedPolygon(g,carbon,lowerOutline,face,[intake],false,10).name='urus-lower-composite-intake-frame';
  opening(intake,face,.118,.0014,'main-intake');
  // The crossbars sit above an open molded mesh with a dark cooling pack
@@ -350,7 +362,7 @@ export function urusView(spec){
   pitch:.040,web:.0024,depth:.007,name:'urus-recessed-radiator-mesh'
  });
  view.root.userData.urusIntakeCells=lowerMesh.userData.openCells;
- for(const contour of lampHoles)opening(contour,face,.042,.002,'headlamp');
+ for(const contour of lampHoles)opening(contour,face,.042,.002,'headlamp',true);
  // The three swept grille blades sit in front of distinct cooling packs.
  for(const y0 of [.777,.695,.608])surface(g,black,72,7,(u,v)=>{
   const x=(u*2-1)*.918,y=y0+.058*smooth(Math.abs(x),.50,.94);
@@ -408,7 +420,7 @@ export function urusView(spec){
   const u=i/100,p=crown(u,.62-.13*gauss(u,.50,.072));p[1]+=.00125;return p;
  }),.00085).name='urus-leading-bonnet-shutline';
  for(const s of [-1,1]){
-  const outline=lampContour;
+  const outline=frontLampEdge;
   mappedPolygon(g,black,outline,(x,y)=>face(s*x,y,-.034),[],s<0,8).name='urus-recessed-headlamp-bucket';
   const light=([x,y])=>face(s*x,y,-.004);
   // The white guide tapers at both ends. Its fork bends up the outboard
@@ -426,8 +438,10 @@ export function urusView(spec){
    surface(g,m.headlampCore,24,8,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.009*Math.cos(a)*r,cy+.0058*Math.sin(a)*r,-.018+.0035*(1-r*r));},true);
    surface(g,m.lens,32,10,(u,v)=>{const a=u*Math.PI*2,r=v;return face(cx+.0178*Math.cos(a)*r,cy+.0085*Math.sin(a)*r,-.009+.0035*(1-r*r));},true).name='urus-convex-projector-lens';
   }
-  mappedPolygon(g,m.lens,inset(outline,.98),(x,y)=>face(s*x,y,.003+
-   .004*(1-((x-.70)/.26)**2)+.002*(1-((y-.967)/.053)**2)),[],s<0,12).name='urus-formed-clear-headlamp-cover';
+  mappedPolygon(g,m.lens,outline,(x,y)=>{
+   const crown=.003+.004*(1-((x-.70)/.26)**2)+.002*(1-((y-.967)/.053)**2);
+   return face(s*x,y,crown*smooth(noseEdgeX(y)-x,0,.036));
+  },[],s<0,12).name='urus-formed-clear-headlamp-cover';
  }
  const radarLens=mesh(g,new T.CircleGeometry(.028,32),m.lens,face(0,.796,-.008));radarLens.name='urus-grille-camera-lens';
  polygon(g,m.badge,[face(-.024,.944,.008),face(.024,.944,.008),face(.020,.908,.008),face(0,.891,.008),face(-.020,.908,.008)]);
@@ -538,5 +552,5 @@ export function urusView(spec){
  box(g,m.red,[0,1.568,-1.697],[.466,.010,.009],.002);
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
- view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:15,artPilot:5,perforatedFenderReturns:true,referenceGreenhouseStations:true,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,sweptDoorPressings:true,formedCarbonFlares:true,recessedRadiatorMesh:true,sculptedRearBumper:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
+ view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:15,artPilot:5,perforatedFenderReturns:true,wrappedHeadlamps:true,referenceGreenhouseStations:true,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,sweptDoorPressings:true,formedCarbonFlares:true,recessedRadiatorMesh:true,sculptedRearBumper:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;
 }
