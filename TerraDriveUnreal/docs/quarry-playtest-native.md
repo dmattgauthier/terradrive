@@ -49,3 +49,21 @@ The updated D: package is `quarry-playtest-pr19-review`, built from `0c11a3f79cb
 - The interface suite passed 166 checks. Both 30 FPS-cap quarry benchmarks passed their 14 driving and terrain checks. The updated build measured 24.16 FPS with a 56.30 ms 95th-percentile frame time. The previous build measured 24.39 FPS with a 53.78 ms 95th-percentile frame time under the same test settings.
 
 The updated launcher is at `Build/Windows/Start Terra Drive.cmd`. The previous package is at `Saved/PR19Review/Rollback-before-review-fixes/Windows`. The benchmark and gameplay receipts are in `Saved/PR19Review/Final`. The earlier 10-minute result above identifies the original milestone package.
+
+## Drive-local diagnostics follow-up
+
+The full Windows cook and package ran with Unreal Engine 5.8.3. UnrealBuildTool's configuration cache and UBA traces went to `Saved/BuildData/UnrealUserSettings`. AutomationTool and cook logs went to `Saved/AutomationLogs`. The editor crash-monitor log went to `D:/TerraDriveBuildDiagnostics`. The project logs and traces were confirmed on D:, and 29 identifiable historical diagnostics were moved there with verified hashes.
+
+| C: audit phase | Whole-volume events observed | Watcher overflows | Project file events |
+| --- | ---: | ---: | ---: |
+| Full cook, Windows packaging and failed-build environment check | 1,765 | 0 | 0 |
+| Traced native replay | 1,424 | 0 | 0 |
+| Normal native replay and interface checks | 5,619 | 0 | 0 |
+
+The audit used whole-volume filesystem notifications and before-and-after snapshots of the known folders. Windows kernel tracing was unavailable to this account, so the notifications have no process attribution. The cook rewrote one existing shared Unreal editor preset with identical bytes and created a temporary crash-monitor analytics record that it removed. The native runs generated Windows Prefetch activity.
+
+PR #19's five review fixes are present from `0c11a3f`. Three profile migration fixtures covered fresh and partly populated profiles, copy-failure retry, and intentional resets. Packaging verified restoration of 12 caller environment variables after success and a deliberate failure. The 184-second, 1080p replay at a 15 FPS cap passed all 22 checks. It completed the quarry, isolated the validation best, preserved the seeded personal best, produced 24,006 mixer samples per second, and dispatched the force-feedback pulse with the trigger released. Physical controller vibration was outside the automated check. The interface passed all 166 checks.
+
+The separate traced replay passed all 22 in-game checks and wrote a 353,830,185-byte `cpu.utrace` file to D:. Unreal returned its crash-reporting-thread exit code 777003 during shutdown on that run. The normal replay exited with code zero.
+
+The installed package is `drive-local-diagnostics-final` from revision `ba93ac22cc3780778ca54af4bc9e3b6147e450ec`. Its executable SHA-256 is `fd8c4a703023a59edc89fb1c942340bcf0ee802104e8865e14535787790ca04d`. The installed executable and assets matched both passing native receipts. The six player profile files retained their checksums. Audit receipts and historical diagnostics are under `Saved/DriveIsolation`.

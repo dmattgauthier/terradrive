@@ -203,6 +203,8 @@ The unused Android File Server plugin is explicitly disabled. `Tools/prepare-git
 
 After packaging, launch `Build/Windows/Start Terra Drive.cmd`. The launcher saves the player profile in the sibling `Build/PlayerData` directory. On the first launch with an older `Windows/TerraDrive/Saved` profile, it copies missing settings, records, and save files into `PlayerData/Saved`. Existing files in `PlayerData` take precedence. Keep the entire `Windows` directory together because the executable requires its staged content. Use `-ArchiveDirectory` to stage a separate candidate. For drive-local tools, logs and caches, pass `-DriveLocalData` with an engine root and archive on the same drive as the checkout. See the [quarry playtest plan](docs/quarry-playtest-plan.md) for storage and verification details.
 
+Drive-local builds store the UnrealBuildTool configuration cache and `.uba` traces under `Saved/BuildData/UnrealUserSettings`. Text build and cook logs are under `Saved/AutomationLogs`. The editor crash monitor also writes there, or to `TerraDriveBuildDiagnostics` at the project drive root when the log path contains spaces. That fallback accommodates Unreal 5.8’s handling of the crash-monitor command line. The build uses the project's `Saved/UnrealBuildTool/BuildConfiguration.xml` for project-specific settings.
+
 The command below runs the native automated driving checks and captures the regions and challenge routes.
 
 ```powershell
