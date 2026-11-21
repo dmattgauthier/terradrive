@@ -246,8 +246,14 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
   // show shallow drawn door pans, rounded shoulder breaks and turned-in end
   // corners. A single flat wall made the correctly sized chassis look long.
   const doorDraw=z=>smooth(Math.min(...[.693,-.270,-.309,-1.150].map(j=>Math.abs(z-j))),.006,.040);
+  const beltPress=(y,z)=>{
+    const doors=smooth(z,-1.96,-1.65)*(1-smooth(z,.645,.810));
+    // The EQ door press has a long lower crease and a rolled shoulder.
+    const lower=.017*Math.exp(-(((y-.808)/.044)**2))-.006*Math.exp(-(((y-.868)/.048)**2));
+    return doors*lower;
+  };
   const bodyX=(y,z)=>halfCab+doorDraw(z)*(-.013*Math.exp(-(((y-.83)/.23)**2))+.010*Math.exp(-(((y-1.238)/.065)**2))
-    -.011*(1-smooth(y,.47,.62))+(ev?.008*Math.exp(-(((y-.756)/.035)**2))*(1-smooth(z,.68,1.04)):0))
+    -.011*(1-smooth(y,.47,.62))+(ev?beltPress(y,z):0))
     -.027*(Math.abs(z)/2.30)**18;
   const jointStartZ=.737,jointEndZ=gClassCoachworkPoint(0,0,2.145)[2];
   const wingJointY=z=>lerp(1.200,1.045,clamp((gClassCoachworkPoint(0,0,z)[2]-jointStartZ)/(jointEndZ-jointStartZ),0,1));
@@ -346,22 +352,23 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
     // semicircular bicycle mudguards. EV flares have a softer rolled crown.
     for(const axle of [-1.445,1.445]){
       const outer=ev?.9655:.992;
-      const arch=(a,v)=>[axle+Math.cos(a)*(archRadius+.019+.071*v),wy+Math.sin(a)**lerp(.72,.48,v)*(archRadius+.005+.085*v)];
+      const arch=(a,v)=>[axle+Math.cos(a)*(archRadius+.019+.071*v),wy+Math.sin(a)**lerp(ev?.66:.72,ev?.42:.48,v)*(archRadius+.005+.085*v)];
+      const faceX=(a,v)=>outer-(ev?.012:.005)*(1-Math.sin(v*Math.PI))-(ev?.012:0)*(1-Math.sin(a))**3;
       // A broad outward-facing painted face, a separate upper return and a
       // dark inner wheelwell. The former single rising sheet faced inward
       // and reflected the ground across the visible flare like bare metal.
       named(surface(g,paint,64,5,(u,v)=>{
-        const a=u*Math.PI,[z,y]=arch(a,v),crown=(ev?.006:.003)*(1-Math.sin(v*Math.PI));
-        return[side*(outer-crown),y,z];
+        const a=u*Math.PI,[z,y]=arch(a,v);
+        return[side*faceX(a,v),y,z];
       },side<0),'gclass-box-shouldered-fender-'+side+'-'+axle);
-      named(surface(g,paint,64,4,(u,v)=>{const a=u*Math.PI,[z,y]=arch(a,1);return[side*lerp(bodyX(y,z),outer,v),y+.006*Math.sin(v*Math.PI),z];},side>0),'gclass-fender-upper-return-'+side+'-'+axle);
-      named(surface(g,paint,64,3,(u,v)=>{const a=u*Math.PI,[z,y]=arch(a,0);return[side*lerp(outer-.004,outer-.022,v),y-.010*v,z-Math.cos(a)*.008*v];},side>0),'gclass-folded-arch-edge-'+side+'-'+axle);
+      named(surface(g,paint,64,4,(u,v)=>{const a=u*Math.PI,[z,y]=arch(a,1);return[side*lerp(bodyX(y,z),faceX(a,1),v),y+(ev?.016:.006)*Math.sin(v*Math.PI),z];},side>0),'gclass-fender-upper-return-'+side+'-'+axle);
+      named(surface(g,paint,64,3,(u,v)=>{const a=u*Math.PI,[z,y]=arch(a,0);return[side*(faceX(a,0)-.018*v),y-.010*v,z-Math.cos(a)*.008*v];},side>0),'gclass-folded-arch-edge-'+side+'-'+axle);
       for(const dz of [-1,1])named(box(g,paint,[side*(outer-.022),.434,axle+dz*(archRadius+.070)],[.055,.086,.043],.010),'gclass-fender-tip-cap');
       // Join the new shaped opening to the circular inner wheelwell. Its
       // normals face the tire cavity, independently of the painted face.
       named(surface(g,trim,64,4,(u,v)=>{
         const a=u*Math.PI,[zo,yo]=arch(a,0),zi=axle+Math.cos(a)*(archRadius+.002),yi=wy+Math.sin(a)*(archRadius+.002);
-        return[side*lerp(.735,outer-.022,v),lerp(yi,yo-.010,v),lerp(zi,zo-Math.cos(a)*.008,v)];
+        return[side*lerp(.735,faceX(a,0)-.018,v),lerp(yi,yo-.010,v),lerp(zi,zo-Math.cos(a)*.008,v)];
       },side<0),'gclass-closed-inner-wheelwell-'+side+'-'+axle);
       if(ev&&axle<0){
         const curtain=rounded([[-.938,.614],[-.918,.632],[-.978,.799],[-1.010,.798]],.009);
@@ -411,11 +418,12 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
     const fade=smooth(z,.80,1.06)*(1-smooth(z,1.94,2.14));
     const rib=(ev?.010:.022)*Math.exp(-(((ax-.397)/(ev?.175:.078))**2))*fade;
     const drawn=ev?0:-.006*Math.exp(-((ax/.28)**4))*fade;
-    const evRise=ev?.025+.017*(1-smooth(z,1.19,2.14))+.010*Math.exp(-(((z-.86)/.19)**2)):0;
+    const evRise=ev?.027+.020*(1-smooth(z,1.19,2.14))+.012*Math.exp(-(((z-.88)/.22)**2)):0;
     const crown=hoodCentre(z)+evRise+.009*(1-across*across)+rib+drawn;
     // Roll only the outer shoulder. A broad crown keeps the EV hood smooth
     // without dropping the flank into a deep gutter alongside the centre.
-    return coachworkSourceY(lerp(crown,edge,smooth(across,ev?.77:.76,1)),z);
+    const shoulderStart=ev?lerp(.80,.68,smooth(z,1.18,2.145)):.76;
+    return coachworkSourceY(lerp(crown,edge,smooth(across,shoulderStart,1)),z);
   };
   const wingHeight=(x,z)=>{
     const edge=bodyX(wingTop(z),z),ledge=coachworkSourceY(wingJointY(z),z),ax=Math.abs(x),foldEnd=ev?.795:.787;
@@ -643,15 +651,23 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
   box(g,m.red,[0,1.896,-2.323],[.285,.018,.014],.004);
   if(ev){
     const designBoxStart=g.children.length;
-    named(box(g,black,[0,1.209,-2.369],[.752,.701,.142],.063),'g580-design-box-mount');
-    named(box(g,paint,[0,1.210,-2.372],[.782,.727,.165],.063),'g580-rear-design-box');
-    const lidOutline=rect(-.368,.368,.869,1.552,.064);
-    const lid=(x,y)=>[x,y,-2.466+.008*((x/.368)**4+((y-1.211)/.342)**4)];
-    named(mappedPolygon(g,black,lidOutline,lid,[],true,4),'g580-design-box-compound-lid');
-    const liner=rect(-.344,.344,.891,1.529,.057);
-    named(perimeter(g,metal,liner,(x,y)=>[x,y,lid(x,y)[2]-.002],.0019),'g580-design-box-bright-lid-joint');
-    badge(g,m.chrome,[0,1.220,-2.473],.104,true);
-    box(g,black,[0,1.545,-2.458],[.140,.022,.027],.007);
+    named(box(g,trim,[0,1.209,-2.356],[.609,.618,.119],.062),'g580-design-box-mount');
+    // Press photos show a deep crowned painted lower cover and a separate
+    // dark upper cap, with both narrowing into the radiused ends.
+    const sections=[[.876,.245],[.912,.322],[1.006,.361],[1.337,.371],[1.445,.357],[1.522,.308],[1.554,.241]];
+    const lidWidth=y=>station(sections,y,1);
+    const lid=(u,y)=>{const x=(2*u-1)*lidWidth(y),q=Math.abs(x)/lidWidth(y);return[x,y,-2.478+.051*q**4+.030*(Math.abs(y-1.225)/.350)**4];};
+    const breakY=1.352;
+    named(surface(g,paint,40,30,(u,v)=>lid(u,lerp(.876,breakY,v)),true),'g580-rear-design-box');
+    named(surface(g,black,40,18,(u,v)=>lid(u,lerp(breakY,1.554,v)),true),'g580-design-box-compound-lid');
+    for(const u of [0,1])named(surface(g,paint,40,7,(s,v)=>{
+      const p=lid(u,lerp(.876,1.554,s));p[0]*=1-.113*v;p[2]=lerp(p[2],-2.312,v);return p;
+    },u===0),'g580-design-box-side-return-'+u);
+    for(const y of [.876,1.554])named(surface(g,y>breakY?black:paint,32,7,(u,v)=>{
+      const p=lid(u,y);p[0]*=1-.113*v;p[2]=lerp(p[2],-2.312,v);p[1]+=(y>breakY?-.025:.025)*v*Math.sin(Math.PI*u);return p;
+    },y>breakY),'g580-design-box-end-return-'+y);
+    line(g,trim,Array.from({length:41},(_,i)=>{const p=lid(i/40,breakY);p[2]-=.0013;return p;}),.00125);
+    badge(g,m.chrome,[0,1.216,-2.482],.073,true);
     rigidRange(g,designBoxStart,[0,1.207,-2.3675],'g580-rigid-design-box-assembly');
     // Closed charging door on the rear passenger-side quarter; connector
     // internals are not exposed or represented as a permanently open flap.
@@ -696,12 +712,12 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
     instrumentDisplay(g,m.gSatin,gClassCoachworkPoint(.332,1.296,.428),[.427,.151],ev?'energy':'dials');
     instrumentDisplay(g,m.gSatin,gClassCoachworkPoint(-.132,1.296,.428),[.427,.151],'navigation');
   }
-  view.root.userData.visualModel={type:'Original photo/reference reconstruction, no imported manufacturer CAD',version:31,modelYear:2025,variant:owner,
+  view.root.userData.visualModel={type:'Original photo/reference reconstruction, no imported manufacturer CAD',version:32,modelYear:2025,variant:owner,
     selectedEquipment:ev?'20in AMG10spoke wheels, optional Black Panel/LED outline, Design Box':'Optional R20 22in AMG forged multi-spoke wheels / 295/40R22 road tires, stainless covered spare, side exhaust',
     dimensions:GCLASS_LANDMARKS,limitations:['photo-estimated panel curvature and interior','no production UV/normal bake or bespoke LOD authored here','native rendering requires integration verification']};
-  view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:31,straightPillars:true,realWindowOpenings:true,glazingReturns:true,formedBonnet:true,variantSpecificGrille:true,measuredWindowHierarchy:true,compoundWingShoulders:true,rolledBumperCorners:true,evAeroFairings:ev,
+  view.root.userData.nativeConstruction={version:3,bodySurfaceRevision:32,straightPillars:true,realWindowOpenings:true,glazingReturns:true,formedBonnet:true,variantSpecificGrille:true,measuredWindowHierarchy:true,compoundWingShoulders:true,rolledBumperCorners:true,evAeroFairings:ev,
     separateRearDesignBox:ev,coveredFactorySpare:!ev,amgSideExhaust:!ev,originalGeometry:true,importedManufacturerCAD:false};
-  view.root.userData.bodyRefinement={version:31,variant:owner,windowOpenings:9,frontLampApertures:2,exposedDoorHinges:8,continuousDoorJoints:true,seatedWingIndicators:true};
+  view.root.userData.bodyRefinement={version:32,variant:owner,windowOpenings:9,frontLampApertures:2,exposedDoorHinges:8,continuousDoorJoints:true,seatedWingIndicators:true};
   return view;
 }
 
@@ -747,6 +763,6 @@ export function refineGClass(view,spec){
     const discarded=new Set();wheel.rimSpin.traverse(o=>{if(o.geometry)discarded.add(o.geometry);});wheel.rimSpin.clear();discarded.forEach(geometry=>geometry.dispose());wheel.rimSpin.add(gClassRim(spec));
     wheel.root.userData.factoryWheelRevision=15;
   }
-  view.root.userData.nativeFidelity={version:3,bodySurfaceRevision:31,splitTireAndRim:true,factorySpokeProfile:isEV(spec)?'g580-20-10spoke':'g63-22-forged-multispoke',formedCarcass:true,beveledTread:true,coveredSpare:!isEV(spec),rearDesignBox:isEV(spec),geometryLettering:true,bodyClearcoat:true};
+  view.root.userData.nativeFidelity={version:3,bodySurfaceRevision:32,splitTireAndRim:true,factorySpokeProfile:isEV(spec)?'g580-20-10spoke':'g63-22-forged-multispoke',formedCarcass:true,beveledTread:true,coveredSpare:!isEV(spec),rearDesignBox:isEV(spec),geometryLettering:true,bodyClearcoat:true};
   return{tire:view.wheels[0].tireShape,rim:view.wheels[0].rimSpin};
 }

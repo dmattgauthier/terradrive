@@ -60,29 +60,72 @@ function clipCabAtZ(body,cut,select=()=>true,keepField=null){
  });
 }
 function wideArch(g,m,liner,side,axle,outer,name){
- // A high, almost level crown and angled legs follow the carbon moulding.
- // The fender extends into the surrounding body behind the visible edge.
- const profile=[[-.578,.607],[-.492,.902],[-.403,1.064],[-.332,1.145],[-.234,1.174],
-   [.229,1.174],[.330,1.150],[.420,1.070],[.503,.925],[.569,.602]];
+ // The 4×4² has a low, almost level opening above the 325-section tire
+ // with straight sloping legs. The outer return fades into both bumper ends.
+ const profile=[[-.578,.607],[-.492,.871],[-.403,1.007],[-.320,1.081],[-.220,1.114],
+   [.219,1.114],[.334,1.083],[.426,1.011],[.512,.869],[.569,.602]];
  const arch=(u,v)=>{
    const z=lerp(profile[0][0],profile.at(-1)[0],u);
    const end=1-smooth(Math.abs(z),.31,.55);
-   return[axle+z,station(profile,z,1)+v*(.056+.023*end),end];
+   return[axle+z,station(profile,z,1)+v*(.069+.045*end),end];
  };
- named(surface(g,m,56,4,(u,v)=>{
+ const faceX=(end,v)=>outer-.033*(1-end)-.014*(1-Math.sin(v*Math.PI));
+ named(surface(g,m,56,8,(u,v)=>{
    const [z,y,end]=arch(u,v);
-   return[side*(outer-.019*(1-end)-.007*(1-Math.sin(v*Math.PI))),y,z];
+   return[side*faceX(end,v),y,z];
  },side>0),name+'-outer-'+side+'-'+axle);
  for(const [v,material,key] of [[1,m,'crown'],[0,liner,'inner-return']]){
    named(surface(g,material,56,3,(u,w)=>{
-     const [z,y,end]=arch(u,v),lip=outer-.019*(1-end)-.007;
-     return[side*lerp(.884,lip,w),y+(v?.009:-.012)*Math.sin(w*Math.PI),z];
+     const [z,y,end]=arch(u,v),lip=faceX(end,v);
+     return[side*lerp(.884,lip,w),y+(v?.017:-.012)*Math.sin(w*Math.PI)-(v?.023*(1-w):0),z];
    },side*(v?1:-1)<0),name+'-'+key+'-'+side+'-'+axle);
  }
  for(const u of [0,1])named(surface(g,m,2,2,(v,w)=>{
    const [z,y,end]=arch(u,v);
-   return[side*lerp(.884,outer-.019*(1-end)-.007*(1-Math.sin(v*Math.PI)),w),y,z];
+   return[side*lerp(.884,faceX(end,v),w),y-.023*v*(1-w),z];
  },side*(u?1:-1)>0),name+'-closed-end-'+side+'-'+axle+'-'+u);
+}
+
+function squaredRoofSpoiler(g,carbon,trim,drl){
+ const half=.831,topY=x=>2.253-.011*(x/half)**6;
+ const leadingZ=x=>.550-.035*(x/half)**6;
+ const lowerY=x=>2.208+.009*(x/half)**6;
+ const front=(x,y)=>[x,y,leadingZ(x)+.15*(y-topY(x))];
+ const top=(u,v)=>{
+  const x=lerp(-half,half,u),z=lerp(.139+.066*(x/half)**4,leadingZ(x),v);
+  const hump=(.020+.009*Math.exp(-(((Math.abs(x)-.583)/.12)**2)))*Math.sin(Math.PI*v);
+  return[x,lerp(2.237,topY(x),v)+hump,z];
+ };
+ const underside=(u,v)=>{
+  const p=top(u,v);
+  p[1]=lerp(p[1]-.008,lowerY(p[0]),v);
+  p[2]+=.15*(p[1]-topY(p[0]))*v;
+  return p;
+ };
+ named(surface(g,carbon,48,20,top,true),'g63-squared-formed-roof-spoiler');
+ const upper=Array.from({length:65},(_,i)=>{const x=lerp(-half,half,i/64);return[x,topY(x)];});
+ const lower=upper.map(([x])=>[x,lowerY(x)]).reverse();
+ const bays=[-1,1].map(s=>Array.from({length:28},(_,i)=>{
+  const a=2*Math.PI*i/28;return[s*.574+.158*Math.sign(Math.cos(a))*Math.abs(Math.cos(a))**.43,
+    2.232+.010*Math.sign(Math.sin(a))*Math.abs(Math.sin(a))**.63];
+ }));
+ named(mappedPolygon(g,carbon,[...upper,...lower],front,bays,false,4),'g63-squared-roof-spoiler-front-return');
+ for(const [i,s]of [-1,1].entries()){
+  const opening=bays[i];
+  named(mappedPolygon(g,trim,opening,(x,y)=>{const p=front(x,y);p[2]-=.018;return p;},[],false,3),'g63-squared-roof-carbon-light-housing-'+s);
+  for(let j=0;j<8;j++){
+   const p=front(s*.574+(j-3.5)*.036,2.232);p[2]-=.011;box(g,drl,p,[.027,.008,.005]);
+  }
+  for(let j=0;j<opening.length;j++){
+   const a=opening[j],b=opening[(j+1)%opening.length];
+   surface(g,trim,2,2,(u,v)=>{const p=front(lerp(a[0],b[0],u),lerp(a[1],b[1],u));p[2]-=.018*v;return p;},true);
+  }
+  named(surface(g,carbon,24,5,(u,v)=>{
+   const edge=s===1?1:0,a=top(edge,u),b=underside(edge,u);
+   return a.map((value,i)=>lerp(value,b[i],v));
+  },s<0),'g63-squared-spoiler-end-return-'+s);
+ }
+ named(surface(g,carbon,48,20,underside),'g63-squared-roof-spoiler-underside');
 }
 
 function squaredSpare(g,m,carbon){
@@ -168,15 +211,11 @@ export function gClassSquaredView(spec){
   named(box(g,metal,[s*.985,.655,-.08],[.21,.036,2.04],.012),'g63-squared-wide-stainless-step-'+s);
   for(const z of [-.84,.66])rod(g,black,[s*.70,.62,z],[s*1.00,.62,z],.025);
   for(let i=0;i<8;i++)box(g,black,[s*(.90+i*.023),.676,-.08],[.009,.007,1.92]);
-  // Carbon roof blade with two recessed factory LED modules, not an
-  // oversized off-road rack floating above the windscreen.
-  named(box(g,c,[s*.61,2.245,.418],[.42,.041,.105],.019),'g63-squared-roof-carbon-light-housing-'+s);
-  box(g,black,[s*.61,2.244,.474],[.356,.024,.009],.006);
-  for(let i=0;i<8;i++)box(g,m.drl,[s*.61+(i-3.5)*.040,2.244,.480],[.031,.012,.004]);
  }
- view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,bodySurfaceRevision:31,factoryPortalVariant:true,raisedBodyM:.271,wideCarbonArches:true,roofLEDModules:2,coveredFactorySpare:false,exposedFactorySpare:true};
- view.root.userData.visualModel={...view.root.userData.visualModel,version:31,modelYear:2022,variant:'G63 4x4 squared',dimensions:G_VARIANTS.squared,selectedEquipment:'Factory portal stance, 325/55R22 off-road tires, boxed carbon fenders and lower carbon spare-wheel carrier'};
- view.root.userData.bodyRefinement={version:31,variant:'g63squared',factoryPortalBodyRiseM:.271,closedArchReturns:true};
+ squaredRoofSpoiler(g,c,black,m.drl);
+ view.root.userData.nativeConstruction={...view.root.userData.nativeConstruction,bodySurfaceRevision:32,factoryPortalVariant:true,raisedBodyM:.271,wideCarbonArches:true,roofLEDModules:2,coveredFactorySpare:false,exposedFactorySpare:true};
+ view.root.userData.visualModel={...view.root.userData.visualModel,version:32,modelYear:2022,variant:'G63 4x4 squared',dimensions:G_VARIANTS.squared,selectedEquipment:'Factory portal stance, 325/55R22 off-road tires, boxed carbon fenders and lower carbon spare-wheel carrier'};
+ view.root.userData.bodyRefinement={version:32,variant:'g63squared',factoryPortalBodyRiseM:.271,closedArchReturns:true};
  return view;
 }
 
@@ -289,9 +328,9 @@ export function gClassSixView(spec){
  for(const x of [-.595,.595])box(g,trim,[x,.665,-.15],[.10,.13,5.30],.010);
  for(const z of [1.60,.62,-.55,-1.55,-2.55])box(g,trim,[0,.645,z],[1.29,.080,.095],.009);
  while(view.wheels.length<6){const w=view._wheel();view.scene.add(w.root);view.wheels.push(w);}
- view.root.userData.nativeConstruction={version:4,bodySurfaceRevision:31,originalGeometry:true,importedManufacturerCAD:false,doubleCabPickup:true,closedCargoBed:true,threeAxleBody:true,frontAxleZ:2.10,middleAxleZ:-1.02,rearAxleZ:-2.12,openGlazing:true,formedBonnet:true,closedArchReturns:true,joinedTandemFenders:true,fullHeightHoop:true};
- view.root.userData.visualModel={type:'Original reference reconstruction; not OEM CAD',version:31,modelYear:2014,variant:'G63 AMG 6x6',dimensions:G_VARIANTS.six,selectedEquipment:'37in tires / 18in beadlock wheels, classic twin-blade grille, bamboo-lined open bed, joined tandem fenders and full-height stainless roll bar'};
- view.root.userData.bodyRefinement={version:31,variant:'g63six',wheelCount:6,closedDoubleCab:true,closedCargoBed:true,continuousDoorJoints:true};
+ view.root.userData.nativeConstruction={version:4,bodySurfaceRevision:32,originalGeometry:true,importedManufacturerCAD:false,doubleCabPickup:true,closedCargoBed:true,threeAxleBody:true,frontAxleZ:2.10,middleAxleZ:-1.02,rearAxleZ:-2.12,openGlazing:true,formedBonnet:true,closedArchReturns:true,joinedTandemFenders:true,fullHeightHoop:true};
+ view.root.userData.visualModel={type:'Original reference reconstruction; not OEM CAD',version:32,modelYear:2014,variant:'G63 AMG 6x6',dimensions:G_VARIANTS.six,selectedEquipment:'37in tires / 18in beadlock wheels, classic twin-blade grille, bamboo-lined open bed, joined tandem fenders and full-height stainless roll bar'};
+ view.root.userData.bodyRefinement={version:32,variant:'g63six',wheelCount:6,closedDoubleCab:true,closedCargoBed:true,continuousDoorJoints:true};
  return view;
 }
 

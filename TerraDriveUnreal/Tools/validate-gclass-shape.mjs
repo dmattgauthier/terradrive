@@ -125,8 +125,12 @@ for(const spec of [G580,standardG63]){
     check('Black Panel has four louvers and separate bright trim and light guide',
       view.body.getObjectsByProperty('name','g580-black-panel-louver').length===4&&led.material!==chrome.material,{});
     const lid=object('g580-design-box-compound-lid');
-    check('EV charging box has a crowned lid separate from its mounting box',
-      bounds(lid).getSize(new T.Vector3()).z>.007&&!!object('g580-design-box-mount'),{lidDepthM:bounds(lid).getSize(new T.Vector3()).z});
+    const shell=object('g580-rear-design-box'),shellSize=bounds(shell).getSize(new T.Vector3());
+    const lidBounds=bounds(lid);
+    check('EV charging box uses a crowned painted shell with a distinct upper cap',
+      shell.material===view.materials.paint&&lid.material===view.materials.gBlackPanel&&shellSize.x>.72&&shellSize.x<.76&&
+      shellSize.z>.050&&shellSize.y>.45&&Math.abs(bounds(shell).max.y-lidBounds.min.y)<1e-6&&!!object('g580-design-box-mount'),
+      {paintedShellM:shellSize.toArray(),lidDepthM:lidBounds.max.z-lidBounds.min.z});
   }
   if(!ev){const spare=new T.Box3().setFromObject(object('g63-covered-factory-spare')).getSize(new T.Vector3());check('round covered spare remains round after the body proportion fit',Math.abs(spare.x-spare.y)<.0001,{diametersM:[spare.x,spare.y]});}
   rows.push({vehicle:spec.id,checks:tests.length,pass:true,bonnetPeakYM:bn.max.y,sideGlassWidthsM:glass[0],tests});view.dispose();
@@ -135,6 +139,6 @@ assert.ok(rows[0].bonnetPeakYM-rows[1].bonnetPeakYM>.020,'EV raised bonnet is ph
 let minimumVerticalSlope=Infinity;
 for(let z=-2.7;z<=2.4;z+=.031)for(let y=0;y<=2.1;y+=.013){const slope=(gClassCoachworkPoint(0,y+.0001,z)[1]-gClassCoachworkPoint(0,y-.0001,z)[1])/.0002;minimumVerticalSlope=Math.min(minimumVerticalSlope,slope);}
 assert.ok(minimumVerticalSlope>.1,'reference fit does not fold any body sheet');
-const report={revision:31,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','G63 row exercises the standard donor fixture shared by the portal variants; current 4x4 squared and 6x6 geometry is checked separately in gclass-variants-validation.json.','Native rendered comparison remains required.']};
+const report={revision:32,sourceOnly:true,pass:true,checks:rows.reduce((n,r)=>n+r.checks,0)+2,minimumVerticalSlope,variants:rows,limitations:['Photo-derived panel positions; not OEM CAD.','G63 row exercises the standard donor fixture shared by the portal variants; current 4x4 squared and 6x6 geometry is checked separately in gclass-variants-validation.json.','Native rendered comparison remains required.']};
 fs.writeFileSync(new URL('../docs/gclass-shape-validation.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({pass:true,checks:report.checks,vehicles:rows.map(r=>({id:r.vehicle,checks:r.checks,glass:r.sideGlassWidthsM,bonnetPeakYM:r.bonnetPeakYM}))}));

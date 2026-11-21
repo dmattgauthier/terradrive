@@ -49,10 +49,16 @@ export function buildNativeHummer(view, geometry) {
     const rearEdge = -.980 - .154 * THREE.MathUtils.smoothstep(y, .64, 1.25);
     const rearHaunch = .021 * Math.exp(-(((z - rearEdge + .070) / .165) ** 2)) * panel;
     const frontHaunch = .016 * Math.exp(-(((z - 1.078) / .165) ** 2)) * panel;
-    const waist = -.005 * Math.exp(-(((y - .752) / .078) ** 2)) * door;
+    // The 3X SUV has broad stamped ledges above both chamfered openings.
+    // The larger rear ledge rises off the sill into the quarter, with the
+    // adjoining door skin drawn down close to the step.
+    const shoulders=Math.exp(-(((y-1.205)/.138)**2))*panel*(
+      .029*Math.exp(-(((z-rearAxle-.030)/.391)**4))+
+      .017*Math.exp(-(((z-frontAxle+.018)/.355)**4)));
+    const waist = -.020 * Math.exp(-(((y - .752) / .091) ** 2)) * door;
     const pullCups=[.008,-.909].reduce((sum,centre)=>sum+.009*Math.exp(-(((z-centre)/.115)**4+((y-1.273)/.034)**4)),0);
     return bodyWidth - .034 * (1 - t) + .020 * Math.sin(t * Math.PI) - .019 * Math.exp(-(((t - .22) / .085) ** 2))
-      - .012 * door * panel + rearHaunch + frontHaunch + waist-pullCups;
+      - .012 * door * panel + rearHaunch + frontHaunch + shoulders + waist-pullCups;
   };
   const sideColumns=220, sideRows=64;
   let sideSkin;

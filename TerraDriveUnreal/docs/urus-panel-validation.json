@@ -1,13 +1,23 @@
 {
   "kind": "source-geometry",
   "nativeAcceptance": false,
-  "revision": 14,
+  "revision": 15,
   "artPilot": 5,
   "profile": {
-    "upperBrowSetbackM": 0.15639567375183105,
-    "lowerRearTuckM": 0.24018287658691406,
+    "upperBrowSetbackM": 0.15691423416137695,
+    "lowerRearTuckM": 0.24021124839782715,
     "overallM": 5.162408351898193
   },
+  "greenhouse": {
+    "roofFrontM": 0.3,
+    "frontDoorGlazingM": 1.0141173303127289,
+    "quarterGlazingM": 0.5694218873977661,
+    "quarterTrailingM": -1.5102921724319458
+  },
+  "pocketDepthM": [
+    0.035535870429895144,
+    0.035535870429895144
+  ],
   "intakeGridProbes": 1316,
   "perRegion": [
     148,
@@ -18,30 +28,30 @@
   "bonnetGridProbes": 90,
   "bonnetTriangles": 32000,
   "bonnetVertexNormals": 16281,
-  "bonnetMinFaceNormalY": 0.9522063838694749,
-  "bonnetMinVertexNormalY": 0.9522117376327515,
+  "bonnetMinFaceNormalY": 0.9014636902877907,
+  "bonnetMinVertexNormalY": 0.9016053080558777,
   "paintedIntrusions": 0,
   "opticalDepthM": [
-    0.006472117628082419,
-    0.006470697810386117
+    0.006591051433670003,
+    0.006589351155305234
   ],
   "exhaustDepthM": [
-    0.062168334199918185,
-    0.06230894666300424,
-    0.062421832768976504,
-    0.06230466623163311
+    0.06217036316885949,
+    0.06231367529369347,
+    0.06243637606281505,
+    0.06231042120923558
   ],
   "radiatorOpenCells": 108,
   "openRadiatorProbes": 178,
   "solidRadiatorProbes": 38,
   "shoulderReliefM": [
-    0.062112424673223865,
-    0.062112424673223865
+    0.06992670282745417,
+    0.06992670282745417
   ],
   "hatchReflection": {
     "sampledTriangles": 5522,
-    "maxNormalErrorDeg": 1.8210979017743216,
-    "maxChordErrorM": 0.0005260198153500539
+    "maxNormalErrorDeg": 1.8147684104858877,
+    "maxChordErrorM": 0.0005821076761094446
   },
   "pass": true
 }

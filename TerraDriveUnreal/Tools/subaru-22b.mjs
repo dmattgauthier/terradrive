@@ -37,15 +37,18 @@ const inset=(outline,scale)=>{
 // The hood falls to the grille, and the deck remains above the front fenders.
 const beltStations=[
   [rearZ,.893],[-1.94,.938],[-1.47,.965],[-.90,.943],[-.30,.920],
-  [.45,.903],[.89,.898],[1.30,.842],[1.72,.760],[2.01,.704],[frontZ,.674]
+  [.45,.903],[.89,.898],[1.30,.829],[1.72,.749],[2.01,.682],[frontZ,.665]
 ];
-const sillStations=[[rearZ,.215],[-1.91,.199],[-1.30,.187],[.84,.179],[1.73,.174],[frontZ,.178]];
+// The molded skirts sit low between the axles. The bumper rolls up behind
+// the rear wheel and the front lip turns back toward the intake.
+const sillStations=[[rearZ,.184],[-1.91,.174],[-1.30,.160],[-.83,.142],
+  [.82,.143],[1.73,.147],[frontZ,.154]];
 const frontReturns=[
-  [.17,.080],[.212,.014],[.240,.029],[.328,.044],[.430,.029],
-  [.499,0],[.532,.006],[.550,.026],[.562,.016],[.650,.030],[.710,.063]
+  [.153,.075],[.184,.010],[.223,.006],[.269,.031],[.328,.055],[.430,.038],
+  [.499,0],[.532,.007],[.550,.028],[.562,.018],[.650,.039],[.710,.084]
 ];
 const rearReturns=[
-  [.21,.105],[.27,.044],[.36,.008],[.49,0],[.55,.014],
+  [.18,.158],[.236,.108],[.275,.058],[.36,.013],[.49,0],[.55,.014],
   [.583,.029],[.609,.012],[.69,.021],[.81,.036],[.93,.073]
 ];
 const belt=z=>station(beltStations,z,1);
@@ -64,14 +67,15 @@ function contourEnd([x,y,z]) {
 }
 
 function halfWidth(z,y) {
-  const frontFlare=gauss(z,1.27,.44);
-  const rearFlare=gauss(z,-1.29,.49);
-  const fullness=.75+.25*gauss(y,.568,.24);
+  const frontFlare=gauss(z,1.29,.408);
+  const rearFlare=gauss(z,-1.30,.472);
   const section=T.MathUtils.clamp((y-sill(z))/(sideTop(z)-sill(z)),0,1);
-  const door=T.MathUtils.smoothstep(z,-1.05,-.71)*(1-T.MathUtils.smoothstep(z,.77,1.07));
-  const pressing=.010*Math.sin(Math.PI*section)-.025*(1-section)**2;
-  const crease=-door*.007*gauss(y,.535,.017);
-  return Math.min(.8848,.807+.062*frontFlare*fullness+.068*rearFlare*fullness+
+  const door=T.MathUtils.smoothstep(z,-1.04,-.68)*(1-T.MathUtils.smoothstep(z,.72,1.10));
+  const blisterHeight=.585+.034*rearFlare;
+  const fullness=.66+.34*gauss(y,blisterHeight,.138);
+  const pressing=.012*Math.sin(Math.PI*section)-.037*(1-section)**2;
+  const crease=-door*.007*gauss(y,.535,.017)-door*.014*gauss(y,.382,.081);
+  return Math.min(.8848,.803+.083*frontFlare*fullness+.093*rearFlare*fullness+
     .020*gauss(Math.abs(z),2.05,.34)+pressing+crease);
 }
 
@@ -594,8 +598,8 @@ function addFront(g,m) {
 
 function addWing(g,m) {
   const support=roundedContour([
-    [-1.621,.939],[-2.003,.927],[-2.079,1.271],
-    [-1.854,1.281],[-1.721,1.141]
+    [-1.545,.952],[-1.685,.924],[-2.007,.926],[-2.111,1.261],
+    [-1.901,1.275],[-1.800,1.216],[-1.675,1.074]
   ],.046,8);
   const upright=(side,z,y,d=0)=>{
     const t=T.MathUtils.smoothstep(y,.931,1.27);
@@ -762,11 +766,11 @@ export function subaru22bView(spec=SUBARU_22B_SPEC) {
   ]);
   Object.assign(view.root.userData,{
     nativeConstruction:{
-      version:4,endClosureRevision:3,greenhouseClosureRevision:3,bodySurfaceRevision:2,
+      version:4,endClosureRevision:3,greenhouseClosureRevision:3,bodySurfaceRevision:3,
       automotiveFinishes:true,originalReferenceGeometry:true,realWindowApertures:true,geometryLettering:true
     },
     bodyRefinement:{
-      version:3,style:'subaru22b',
+      version:4,style:'subaru22b',
       method:'Stock photo-matched coupe profile, rounded bumper returns, split lens optics and molded wing',
       preservedHardpoints:true
     },

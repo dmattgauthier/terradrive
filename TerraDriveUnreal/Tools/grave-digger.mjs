@@ -20,42 +20,48 @@ export const GRAVE_DIGGER_LANDMARKS={
 // Black-and-green 2024 fiberglass shell. The lower rear edge follows the
 // tire cutout, while the roof rounds down and in toward the open tail.
 const roofStations=[
-  [tailZ,.823,3.033],[-2.10,.903,3.117],[-1.70,.944,3.169],
+  [tailZ,.796,3.015],[-2.10,.868,3.098],[-1.70,.937,3.161],
   [-.85,.941,3.190],[-.36,.915,3.195],[.03,.858,3.161],[roofFront,.825,3.104]
 ];
 const rockerStations=[
-  [tailZ,2.235],[-2.01,2.186],[-1.67,2.348],[-1.39,2.209],
+  [tailZ,2.311],[-2.01,2.275],[-1.70,2.413],[-1.39,2.262],
   [-1.13,1.985],[-.68,1.907],[.11,1.910],[.45,1.973],[cowlZ,2.091]
 ];
 const sideWindow=roundedContour([[-.523,2.515],[.527,2.505],[.121,2.904],[-.493,2.990]],.049,9);
 const low=z=>station(rockerStations,z,1);
-const top=z=>z<=roofFront?station(roofStations,z,2)-.157:
+const roofRoll=z=>.157+.052*(1-T.MathUtils.smoothstep(z,tailZ,-.57));
+const top=z=>z<=roofFront?station(roofStations,z,2)-roofRoll(z):
   lerp(roofStations.at(-1)[2]-.157,2.467,(z-roofFront)/(cowlZ-roofFront));
 const sideWidthStations=[...roofStations,[cowlZ,.765,2.624]];
 const width=z=>station(sideWidthStations,z,1);
 
+// The fiberglass corners fold in together above the rear axle.
+const tailTuck=(x,y,z)=>z+(1-T.MathUtils.smoothstep(z,tailZ,-1.68))*(
+  .046*(Math.abs(x)/.9)**2+.073*(1-T.MathUtils.smoothstep(y,2.26,2.66)));
 function roofPoint(u,z) {
   const a=(2*u-1)*Math.PI/2;
-  return [Math.sin(a)*width(z),station(roofStations,z,2)-.157*(1-Math.cos(a)),z];
+  const x=Math.sin(a)*width(z),y=station(roofStations,z,2)-roofRoll(z)*(1-Math.cos(a));
+  return [x,y,tailTuck(x,y,z)];
 }
 
 export function graveSidePaintBase(side,z,y) {
   const t=(y-low(z))/(top(z)-low(z));
   const bulge=.029*Math.sin(Math.PI*t)-.042*(1-t)**2;
-  return [side*(width(z)+bulge),y,z];
+  const x=side*(width(z)+bulge);
+  return [x,y,tailTuck(x,y,z)];
 }
 
 const hoodStations=[
   [cowlZ,.765,2.473,.118],[.94,.725,2.456,.158],
-  [1.45,.662,2.417,.182],[1.98,.593,2.346,.175],
-  [2.26,.532,2.266,.147],[noseZ,.492,2.142,.078]
+  [1.45,.654,2.403,.190],[1.98,.565,2.323,.196],
+  [2.26,.505,2.228,.170],[noseZ,.467,2.116,.111]
 ];
 
 export function graveHoodPaintBase(x,z) {
   const width=station(hoodStations,z,1);
   const u=x/width;
   const crown=station(hoodStations,z,3)*(1-u*u);
-  const corner=.066*u*u*T.MathUtils.smoothstep(z,1.70,noseZ);
+  const corner=.107*u*u*T.MathUtils.smoothstep(z,1.70,noseZ);
   return [x,station(hoodStations,z,2)+crown,z-corner];
 }
 
@@ -64,9 +70,9 @@ function hoodPoint(u,z) {
 }
 
 const fenderStations=[
-  [.58,.712,.871,2.422,2.154],[.92,.675,.959,2.417,2.201],
-  [1.31,.642,.987,2.425,2.244],[1.73,.595,1.000,2.411,2.226],
-  [2.12,.543,.987,2.351,2.181],[2.384,.500,.909,2.232,2.079]
+  [.58,.712,.871,2.422,2.154],[.92,.675,.951,2.409,2.195],
+  [1.31,.638,.987,2.418,2.223],[1.73,.571,1.000,2.382,2.203],
+  [2.12,.519,.968,2.318,2.157],[2.384,.476,.909,2.212,2.059]
 ];
 function fenderPoint(side,u,t) {
   const z=lerp(fenderStations[0][0],fenderStations.at(-1)[0],u);
@@ -648,8 +654,7 @@ function addShell(g,m) {
     [graveSidePaintBase(-1,tailZ,lipBottom)[0],lipBottom]
   ];
   const inner=rearOutline.map(([x,y])=>[x*.935,lerp(2.585,y,.91)]);
-  const tail=(x,y,d=0)=>[x,y,tailZ+.041*(x/.83)**2+.027*(y-2.59)**2+d];
-  const rim=(x,y,d=0)=>tail(x,y,d-.034*(x/.83)**2-.02*(y-2.59)**2);
+  const rim=(x,y,d=0)=>[x,y,tailTuck(x,y,tailZ)+d];
   panelReturn(g,m.paint,rearOutline,inner,rim,.038,true).name='grave-digger-open-tail-surround';
   panelReturn(g,m.dark,inner,inner,(x,y,d)=>rim(x,y,.038+d),.107,true).name='grave-tail-inner-return';
 
@@ -673,6 +678,12 @@ function addShell(g,m) {
   },true).name='grave-closed-cowl';
   surface(g,m.paint,64,96,(u,t)=>hoodPoint(u,lerp(cowlZ,noseZ,t)),true)
     .name='grave-digger-domed-narrow-bonnet';
+  surface(g,m.paint,64,8,(u,v)=>{
+    const p=hoodPoint(u,noseZ);
+    p[1]-=.047*Math.sin(v*Math.PI*.62);
+    p[2]-=.039*v*v;
+    return p;
+  },true).name='grave-bonnet-rolled-leading-lip';
 
   for(const side of [-1,1]) {
     surface(g,m.paint,92,32,(u,t)=>fenderPoint(side,u,t),side<0)
@@ -684,7 +695,8 @@ function addShell(g,m) {
     surface(g,m.paint,76,7,(u,t)=>{
       const p=fenderPoint(side,u,1);
       p[0]-=side*.024*t;
-      p[1]-=.031*Math.sin(t*Math.PI*.53);
+      const rollDepth=lerp(.031,.014,T.MathUtils.smoothstep(u,.62,.80));
+      p[1]-=rollDepth*Math.sin(t*Math.PI*.53);
       return p;
     },side<0).name='grave-fender-rolled-edge';
     surface(g,m.paint,30,7,(u,t)=>{
@@ -710,7 +722,7 @@ function addHeadlights(g,m) {
   });
   lens.userData.nativeRole='';
   for(const side of [-1,1]) {
-    const x=side*.849,y=2.201,z=2.345;
+    const x=side*.849,y=2.181,z=2.342;
     cylinder(g,m.dark,[x,y,z-.015],.112,.067,'z',42);
     ring(g,m.satinMetal,[x,y,z+.022],.089,.012,'z');
     ring(g,m.glossBlack,[x,y,z+.022],.079,.004,'z');
@@ -773,11 +785,11 @@ export function graveDiggerView(spec=GRAVE_DIGGER_SPEC) {
   paintRoof(g,inks);
   Object.assign(view.root.userData,{
     nativeConstruction:{
-      version:4,bodySurfaceRevision:3,paintedLivery:true,originalReferenceGeometry:true,
+      version:4,bodySurfaceRevision:4,paintedLivery:true,originalReferenceGeometry:true,
       realWindowApertures:true,exposedTubeChassis:true,geometryLettering:true
     },
     bodyRefinement:{
-      version:3,style:'monster',
+      version:4,style:'monster',
       method:'2024 photo-matched fiberglass shell, open tail and cab, tapered spaceframe and original painted details',
       preservedHardpoints:true
     },

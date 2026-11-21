@@ -24,7 +24,7 @@ export function buildCivic(view, geometry) {
     const topPoint = (x,z,offset=0) => {
       const half=interpolate(stations,z,1)-.047;
       const crown=.031*(1-(x/half)**2);
-      const deck= .010*THREE.MathUtils.smoothstep(-z,1.58,1.88)*(1-THREE.MathUtils.smoothstep(-z,2.16,2.35))*(1-(x/half)**2);
+      const deck= .018*THREE.MathUtils.smoothstep(-z,1.58,1.88)*(1-THREE.MathUtils.smoothstep(-z,2.16,2.35))*(1-(x/half)**2);
       return [x,interpolate(stations,z,2)+crown+hoodRelief(x,z)+deck+offset,z];
     };
     // Extra rows are confined to the hood's crease and rolled leading edge.
@@ -538,11 +538,20 @@ export function buildCivic(view, geometry) {
         // Deep, broad cheek undercut under the lamp and a rolled upper jaw
         // break the former flat vertical face into the real bumper volumes.
         const jaw=.010*Math.exp(-(((q.y-.643)/.029)**2))*(1-THREE.MathUtils.smoothstep(Math.abs(q.x),.53,.84));
-        q.z+=end*(jaw-.058*cheek);
+        // The Sport lower skin recedes into the underside. The outer cheek
+        // turns back sooner than the shallow center of the intake.
+        const taper=(1-THREE.MathUtils.smoothstep(q.y,.320,.610))
+          *(.024+.041*THREE.MathUtils.smoothstep(Math.abs(q.x),.41,.80));
+        q.z+=end*(jaw-.058*cheek-taper);
       }
-      if(q.z<-1.91&&q.y<.493){
-        const rear=1-THREE.MathUtils.smoothstep(q.z,-2.34,-1.91),low=1-THREE.MathUtils.smoothstep(q.y,.283,.493);
-        q.z+=.085*rear*low;q.x*=1-.022*rear*low;
+      if(q.z<-1.91&&q.y<.610){
+        const rear=1-THREE.MathUtils.smoothstep(q.z,-2.34,-1.91);
+        const valance=1-THREE.MathUtils.smoothstep(q.y,.283,.493);
+        // The painted bumper rolls around the rear quarter above the black
+        // valance, extending the tapered silhouette higher at the corners.
+        const corner=THREE.MathUtils.smoothstep(Math.abs(q.x),.46,.84)
+          *(1-THREE.MathUtils.smoothstep(q.y,.380,.610));
+        q.z+=rear*(.085*valance+.052*corner);q.x*=1-rear*(.022*valance+.018*corner);
       }
       if(q.z<-1.91&&q.y>.50&&q.y<1.02){
         const end=1-THREE.MathUtils.smoothstep(q.z,-2.32,-1.91),centre=1-THREE.MathUtils.smoothstep(Math.abs(q.x),.48,.83);

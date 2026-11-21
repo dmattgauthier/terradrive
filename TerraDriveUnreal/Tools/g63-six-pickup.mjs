@@ -1,11 +1,11 @@
 // Original 2014 six-wheeler pickup details, reconstructed from factory photos.
 // Contact-plane metres; Y up, +Z forward. Panel/bar stations are estimates.
-import {T,box,mesh,surface,line,station,lerp} from './body-surface.mjs';
+import {T,box,mesh,surface,line,station,lerp,smooth} from './body-surface.mjs';
 import {geometryText} from './vehicle-fidelity.mjs';
 import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 
 export const SIX_PICKUP=Object.freeze({
- revision:25,height:2.326,width:2.185,length:5.875,bodyRise:.281,cabRoofY:2.260,
+ revision:26,height:2.326,width:2.185,length:5.875,bodyRise:.281,cabRoofY:2.260,
  axles:Object.freeze([2.100,-1.020,-2.120]),tireRadius:.4699,rimInches:18,
  cabRearZ:-.895,bedFrontZ:-.925,bedRearZ:-2.750,bedTopY:1.515,bedFloorY:.985,
  stepRearZ:-.390,stepFrontZ:1.465,
@@ -33,11 +33,15 @@ function tube(g,m,points,r,name){
 }
 function arch(g,m,s,profile,name){
  const a=profile[0][0],b=profile.at(-1)[0],outer=SIX_PICKUP.width/2;
- const at=(u,v)=>{const z=lerp(a,b,u),y=station(profile,z,1);return[z,y+.095*v];};
- named(surface(g,m,112,4,(u,v)=>{const[z,y]=at(u,v);return[s*(outer-.012*Math.sin(v*Math.PI)),y,z];},s>0),name+'-outer-'+s);
- named(surface(g,m,112,4,(u,v)=>{const[z,y]=at(u,1);return[s*lerp(outer,.886,v),y+.005*Math.sin(v*Math.PI),z];},s>0),name+'-crown-'+s);
- named(surface(g,m,112,3,(u,v)=>{const[z,y]=at(u,0);return[s*lerp(outer,.883,v),y-.012*v,z];},s<0),name+'-inner-return-'+s);
- for(const u of [0,1])named(surface(g,m,3,4,(v,w)=>{const[z,y]=at(u,v);return[s*lerp(.883,outer,w),y,z];},s*(u?1:-1)<0),name+'-closed-end-'+s+'-'+u);
+ const at=(u,v)=>{
+  const z=lerp(a,b,u),end=1-Math.sin(Math.PI*u),top=.095+.039*end;
+  const x=outer-.033*end**2-.013*(1-Math.sin(Math.PI*v));
+  return[z,station(profile,z,1)+top*v,x,top];
+ };
+ named(surface(g,m,112,8,(u,v)=>{const[z,y,x]=at(u,v);return[s*x,y,z];},s>0),name+'-outer-'+s);
+ named(surface(g,m,112,5,(u,v)=>{const[z,y,x,top]=at(u,1);return[s*lerp(x,.886,v),y-((top-.095)*v)+.014*Math.sin(v*Math.PI),z];},s>0),name+'-crown-'+s);
+ named(surface(g,m,112,4,(u,v)=>{const[z,y,x]=at(u,0);return[s*lerp(x,.883,v),y-.012*v,z];},s<0),name+'-inner-return-'+s);
+ for(const u of [0,1])named(surface(g,m,5,5,(v,w)=>{const[z,y,x,top]=at(u,v);return[s*lerp(.886,x,w),y-v*(top-.095)*(1-w),z];},s*(u?1:-1)<0),name+'-closed-end-'+s+'-'+u);
 }
 function woodMaterial(i){
  const colors=['#d6b897','#d9be9e','#dfc5a6','#d5b393'];
@@ -58,10 +62,13 @@ export function buildSixPickup(g,m){
  for(let i=0;i<12;i++)named(box(g,wood[i%4],[-.638+i*.116,floor,(front+rear)/2],[.113,.022,front-rear-.035]),'g63-six-bamboo-floor-board-'+i);
  for(const s of [-1,1]){
   const low=z=>Math.max(.825,sixOpeningY(z)+.096);
-  named(surface(g,paint,112,7,(u,v)=>{const z=lerp(rear,front,u);return[s*.948,lerp(low(z),top,v),z];},s>0),'g63-six-scalloped-bed-side-'+s);
+  // The pickup bed has a shallow outward draw, a rolled top flange and
+  // a wrap into the tailgate. Use the same section for skin and rail.
+  const sideX=(z,t)=>.939+.019*Math.sin(Math.PI*t)-.025*(1-smooth(z,rear,rear+.24))*(.55+.45*t);
+  named(surface(g,paint,112,16,(u,v)=>{const z=lerp(rear,front,u);return[s*sideX(z,v),lerp(low(z),top,v),z];},s>0),'g63-six-scalloped-bed-side-'+s);
   named(surface(g,paint,112,7,(u,v)=>{const z=lerp(rear,front,u);return[s*.887,lerp(low(z),top,v),z];},s<0),'g63-six-double-wall-bed-inner-'+s);
-  named(surface(g,paint,112,3,(u,v)=>{const z=lerp(rear,front,u);return[s*lerp(.887,.948,v),top+.007*Math.sin(v*Math.PI),z];},s<0),'g63-six-painted-bed-rail-'+s);
-  for(const z of [front,rear])named(box(g,paint,[s*.918,(low(z)+top)/2,z],[.062,top-low(z),.025],.006),'g63-six-bed-rail-closed-end-'+s+'-'+z);
+  named(surface(g,paint,112,5,(u,v)=>{const z=lerp(rear,front,u);return[s*lerp(.887,sideX(z,1),v),top+.009*Math.sin(v*Math.PI),z];},s<0),'g63-six-painted-bed-rail-'+s);
+  for(const z of [front,rear])named(surface(g,paint,6,16,(u,v)=>[s*lerp(.887,sideX(z,v),u),lerp(low(z),top,v),z],s*(z===rear?1:-1)>0),'g63-six-bed-rail-closed-end-'+s+'-'+z);
   arch(g,carbon,s,r.frontOpening,'g63-six-carbon-front-arch');
   arch(g,carbon,s,r.rearOpening,'g63-six-carbon-tandem-arch');
   // A dark flexible liner closes the upper engine-side cavity. It remains
@@ -92,17 +99,27 @@ export function buildSixPickup(g,m){
   for(let i=0;i<4;i++){
    box(step,trim,[s*(.920+i*.027),.753,stepCenter],[.008,.005,stepLength-.130],.002);
   }
-  // The bed/cab molding now continues across the pickup side.
-  named(box(g,trim,[s*.960,1.362,(front+rear)/2],[.019,.044,front-rear-.045],.006),'g63-six-bed-protective-molding-'+s);
+  // Seat the straight pickup strip above the tandem wheel openings.
+  named(surface(g,trim,80,7,(u,v)=>{
+   const z=lerp(rear+.028,front-.018,u),y=1.435+.040*(v-.5),t=(y-low(z))/(top-low(z));
+   return[s*(sideX(z,t)+.002+.011*Math.sin(Math.PI*v)),y,z];
+  },s>0),'g63-six-bed-protective-molding-'+s);
   for(const z of [-1.85,-2.40])box(g,m.gReflector,[s*.966,1.085,z],[.010,.032,.065],.005);
  }
  tube(g,cage,[[-.765,r.hoopTopY,r.hoopTopZ],[.765,r.hoopTopY,r.hoopTopZ]],r.mainHoopRadius,'g63-six-transverse-main-hoop');
  named(box(g,paint,[0,(floor+top)/2,front-.008],[1.400,top-floor,.058],.018),'g63-six-bed-front-bulkhead');
  named(box(g,paint,[0,(1.397+top)/2,front-.008],[1.775,top-1.397,.058],.018),'g63-six-bed-front-bulkhead-shoulders');
  for(let i=0;i<6;i++)box(g,wood[i%4],[0,floor+.045+i*.075,front-.041],[1.395,.072,.014]);
- named(box(g,paint,[0,(.927+top)/2,rear-.017],[1.90,top-.927,.075],.028),'g63-six-sculpted-tailgate');
- // Horizontal tailgate stampings, fitted squarely to the actual rear sheet.
- for(const y of [1.10,1.405])line(g,paint,[[-.876,y,rear-.055],[0,y-.004,rear-.059],[.876,y,rear-.055]],.004);
+ const gateBottom=.927,gateWidth=y=>.916-.026*(1-smooth(y,gateBottom,gateBottom+.062));
+ const gate=(u,y)=>{
+  const x=lerp(-gateWidth(y),gateWidth(y),u),ends=Math.abs(x)/gateWidth(y);
+  const pressing=(.010*Math.exp(-(((y-1.103)/.027)**2))+.008*Math.exp(-(((y-1.402)/.024)**2)))*(1-ends**8);
+  return[x,y,rear-.063+.034*ends**6+.015*(1-smooth(y,gateBottom,gateBottom+.076))+pressing];
+ };
+ named(surface(g,paint,58,36,(u,v)=>gate(u,lerp(gateBottom,top,v)),true),'g63-six-sculpted-tailgate');
+ named(surface(g,paint,58,15,(u,v)=>{const y=lerp(gateBottom,top,v);return[lerp(-gateWidth(y),gateWidth(y),u),y,rear+.029];}),'g63-six-tailgate-inner-sheet');
+ for(const u of [0,1])named(surface(g,paint,28,5,(v,d)=>{const p=gate(u,lerp(gateBottom,top,v));p[2]=lerp(p[2],rear+.029,d);return p;},u===0),'g63-six-tailgate-side-return-'+u);
+ for(const y of [gateBottom,top])named(surface(g,paint,58,6,(u,v)=>{const p=gate(u,y);p[2]=lerp(p[2],rear+.029,v);return p;},y===top),'g63-six-tailgate-horizontal-return-'+y);
  for(const x of [-.72,.72])box(g,metal,[x,.944,rear-.062],[.065,.037,.021],.006);
  box(g,trim,[0,1.256,rear-.062],[.138,.094,.016],.008);
  box(g,metal,[0,1.274,rear-.072],[.103,.020,.008],.003);

@@ -68,7 +68,7 @@ export function buildSUV(view, geometry, bronco) {
       // The real outer wings rise out of a drawn wheel haunch. The former
       // sheet remained almost planar behind the separate plastic flares.
       // The broad stamped shoulder stays inside the flare's factory envelope.
-      const wing=bronco?.014:.008;
+      const wing=bronco?.023:.015;
       const haunch=wing*(Math.exp(-(((z-f)/.52)**4))+Math.exp(-(((z-r)/.51)**4)))
         *Math.exp(-(((y-(bronco?1.035:.996))/.235)**2))
         *(1-THREE.MathUtils.smoothstep(y,upper-.035,upper));
@@ -114,10 +114,11 @@ export function buildSUV(view, geometry, bronco) {
       const z = THREE.MathUtils.lerp(hoodRear, nose + .030, v), x = u * 2 - 1;
       const shoulder = Math.exp(-Math.pow((Math.abs(x) - (bronco ? .83 : .75)) / .14, 2));
       const fade=THREE.MathUtils.smoothstep(v,0,.14)*(1-THREE.MathUtils.smoothstep(v,.79,1));
-      // Bronco's broad, low central plateau and the JL's narrower bonnet
-      // shoulders are stamped into the skin, with continuous rolled returns.
-      const plateau=bronco?.020*(1-THREE.MathUtils.smoothstep(Math.abs(x),.57,.73))*fade:
-        -.010*Math.exp(-((x/.46)**6))*fade;
+      // Ford carries a wide plateau almost to the raised sight lines. The
+      // Rubicon has a narrower power dome that settles into the outer wings.
+      const a=Math.abs(x);
+      const plateau=bronco?.025*(1-THREE.MathUtils.smoothstep(a,.55,.76))*fade:
+        (.027*(1-THREE.MathUtils.smoothstep(a,.36,.61))-.006*Math.exp(-(((a-.65)/.083)**2)))*fade;
       const y = THREE.MathUtils.lerp(hood + .032, 1.218, v) + (bronco ? .013 : .037) * (1 - x * x)
         + (bronco ? .018 : .025) * shoulder * Math.sin(v * Math.PI)+plateau;
       return [x * hoodHalf(v), y, z];
