@@ -40,11 +40,6 @@ if($DriveLocalData){
         [void][IO.Directory]::CreateDirectory($path)
         $buildEnvironment[$name]=$path
     }
-    # The editor's crash monitor starts its own UE process before project
-    # settings load. It accepts the inherited development command line.
-    # Its default log otherwise goes to the Windows known folder.
-    $auxLog=Join-Path $automationLogDirectory "UnrealAuxiliary-$PID.log"
-    $buildEnvironment['UE-CmdLineArgs']='-NoTraceServer -NoAnalytics -abslog="'+$auxLog+'"'
 }
 $editorCacheArgs=@()
 $cookerOptions=@()
@@ -53,8 +48,13 @@ $uatPakArgs=@()
 $buildArgs=@()
 $uatBuildArguments='-NoUBA -MaxParallelActions=2'
 if($DriveLocalData){
-    $editorCacheArgs=@('-DDC=InstalledNoZenLocalFallback','-NoTraceServer')
-    $cookerOptions+=@('-DDC=InstalledNoZenLocalFallback','-NoTraceServer')
+    # UE 5.8 forwards the crash monitor's -abslog value without quoting it.
+    $crashLogDirectory=$automationLogDirectory
+    if($crashLogDirectory -match '\s'){$crashLogDirectory=Join-Path $drive 'TerraDriveBuildDiagnostics'}
+    [void][IO.Directory]::CreateDirectory($crashLogDirectory)
+    $crashLog=Join-Path $crashLogDirectory "CrashReportClient-$PID.log"
+    $editorCacheArgs=@('-DDC=InstalledNoZenLocalFallback','-NoTraceServer','-NotInstalledEngine',('-AbsCrashReportClientLog='+$crashLog))
+    $cookerOptions+=$editorCacheArgs
     # A relocated installed engine can carry shared PCHs with absolute paths.
     $buildArgs=@('-NoPCH',("-Log="+(Join-Path $cache 'Editor-build.log')))
     $uatBuildArguments+=' -NoPCH'
