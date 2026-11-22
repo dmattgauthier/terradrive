@@ -183,16 +183,17 @@ FUnderbodyReadback ReadUnderbody(const ATerraVehicle& Vehicle) {
         if(FMath::Abs(Axis.Y)>.90&&FMath::IsNearlyEqual(Scale.Z,.22,.02)&&Scale.X>.17)++Parts.Motors;
         if(FMath::Abs(Axis.X)>.75&&Scale.Z>.45&&Scale.X<.15)++Parts.Exhaust;
         if(Vehicle.VehicleIndex==Urus){
-            // Interrogate the actual steel cylinder's rear cap, including its
-            // transform. Each tip must terminate inside one measured oval bore.
+            // Count the four terminal caps, excluding their upstream elbows.
+            // Check depth beyond the deepest point of each sloping dark backing.
             const FVector End=Instance.TransformPosition(FVector(0,0,Axis.X<0?50.:-50.));
-            if(End.X>=-241.)continue;
+            if(End.X>=-235.)continue;
             ++Parts.RearPipeEnds;
             const bool Outer=FMath::Abs(End.Y)>72.;
-            const FVector Rim(Outer?-249.4:-252.46,Outer?79.9:64.7,Outer?-18.45:-19.04);
-            const double Depth=End.X-Rim.X;
-            if(Depth>=3.5&&Depth<=6.5&&FMath::Abs(FMath::Abs(End.Y)-Rim.Y)<1.&&
-               FMath::Abs(End.Z-Rim.Z)<1.5&&FMath::Abs(Axis.X)>.99)
+            const FVector2D BoreYZ(Outer?79.9:64.7,Outer?-18.45:-19.04);
+            const double BackingX=Outer?-244.17:-246.81;
+            const double BackingClearance=End.X-BackingX;
+            if(BackingClearance>=4.5&&BackingClearance<=8.&&FMath::Abs(FMath::Abs(End.Y)-BoreYZ.X)<1.&&
+               FMath::Abs(End.Z-BoreYZ.Y)<1.5&&FMath::Abs(Axis.X)>.99)
                 Parts.UrusSocketMask|=1<<((End.Y>0?2:0)+(Outer?1:0));
         }
     }

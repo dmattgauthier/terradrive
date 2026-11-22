@@ -233,11 +233,12 @@ void ATerraVehicle::UpdateUnderbodyDetails(const FString& Style,TerraSim::MotorL
       Pipe(SteelPipe,FVector(CatX-19.f,Y,PipeZ),FVector(MufflerX+14.f,Y,PipeZ),3.0f);
       Pipe(SteelPipe,FVector(MufflerX+14.f,Y,PipeZ),FVector(MufflerX-12.f,Y,PipeZ),6.5f);
       if(Style==TEXT("urus")){
-        // Chassis-local centres at the inboard rims of the four finished bores
-        // in the exported Performante body. Its outer finishers are swept forward.
+        // The authored dark backing slopes across each bore. Its deepest point
+        // over a 2.6 cm feed radius is X=-246.8 cm (inner) or -244.1 cm (outer).
+        // Leave room behind the entire backing so a chrome cap cannot show through.
         const FVector Split(-217.f,Side*71.f,PipeZ+11.f);
         Pipe(SteelPipe,FVector(MufflerX-12.f,Y,PipeZ),Split,3.f);
-        for(const FVector Socket:{FVector(-247.7f,Side*64.7f,-19.3f),FVector(-245.1f,Side*79.9f,-19.f)}){
+        for(const FVector Socket:{FVector(-240.4f,Side*64.7f,-19.3f),FVector(-237.3f,Side*79.9f,-19.f)}){
           const FVector Neck=Socket+FVector(10.f,0,0);
           Pipe(SteelPipe,Split,Neck,2.6f);
           Pipe(SteelPipe,Neck,Socket,2.6f);
