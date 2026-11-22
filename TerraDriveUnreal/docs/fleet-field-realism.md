@@ -43,3 +43,18 @@ The Wrangler braking replay enters each stop at 20.1 mph with 37 PSI, Stage III 
 The full-cook Windows build passed 928 native checks, including ten camera views of each vehicle, braking and tire pressure, movement, ruts, surface transitions, six-wheel operation and the quarry survey. The EarthCruiser recovered in place after both 55-degree Pine Ridge rollovers. The 50-inch Hummer cleared the Granite full-lock ledge checks at 16 PSI. All 381 imports completed. Source checks covered 845 dynamics assertions and 2,563,201 terrain-atlas samples.
 
 The Urus rear view exposed a silver pipe cap inside each dark outlet. Recessing the feeds gives at least 2.5 inches of clearance behind the sloping inner backs. Ray checks on the factory and large-tire body meshes found zero exposed samples in direct rear and both rear-quarter views. Close snow can still read as low-contrast, and some understory cards are visible up close.
+
+## Installed release
+
+The broad native run used source `56de2715f6e5ecd91411abe656b37d4df4c092a1` and executable SHA-256 `baa50460b4bfd169394bb0be932398496c6178b1688b51b9995d867b7ad03650`. The intermediate exhaust build (`aeff5d0da01b7ea3783a88a0f9f553bb01eb9eea`) passed 359 targeted native checks. Both builds and the installed release share all five cooked content containers byte for byte.
+
+Release `fleet-field-realism-3` was built from `b1a54bcaf06db8df039e8ccdb1f19d11cc2585ae`. Its executable SHA-256 is `d219b65055339a3ab3e2d22a8e2dbdd59cba6904e803ce41573eb4165600cc27`. This exact executable passed 71 checks across the underbody, ten-angle Urus capture, quarry survey and real-time quarry replay. Direct-rear and rear-quarter images confirmed that all four outlets have dark interiors. Installation preserved all six player save and settings files by SHA-256.
+
+A paired stock Urus run used the same quarry route, 1920 × 1080 resolution, Cool preset, real-time clock and 30 FPS cap. Each sample covered 30 seconds.
+
+| Build | Average FPS | Mean frame | 95th percentile | Longest frame |
+| --- | ---: | ---: | ---: | ---: |
+| Previous installed release | 29.79 | 33.57 ms | 34.20 ms | 74.89 ms |
+| Fleet realism release | 29.89 | 33.45 ms | 33.85 ms | 53.71 ms |
+
+Both averages sit near the frame cap. These two short runs measure frame pacing on this route. They do not establish uncapped throughput or performance over a long play session.
