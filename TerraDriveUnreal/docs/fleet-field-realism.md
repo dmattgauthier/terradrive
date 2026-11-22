@@ -29,6 +29,28 @@ The ground shader reads local elevation relative to its surroundings and shelter
 
 Plant patches along the main trail use mixed scans, different headings and irregular spacing. The planted verge begins at least 13.6 ft from the centerline. In a matched generator check the scanned understory fell from 6,285 instances to 4,348, while the 13.6–32.8 ft perimeter band increased from 405 to 971. All 427 solid scan placements matched the previous generator.
 
+### Material-only atlas compatibility
+
+The terrain shader treats green byte 0 as neutral landform in legacy atlases.
+The Direct3D compiler check reproduced the old crest weight of 1.007874,
+confirmed the new weight of 0, and verified the original decode for all
+255 nonzero values.
+
+Two isolated Unreal 5.8 `rebuild-ground.py` runs with `-nullrhi` completed
+successfully. Each updated seven biome materials and `Terrain_GroundBlend`,
+produced a fresh completion marker, and preserved the protected file metadata.
+Both bakes passed the transition checks across 2,563,201 texels each. The trail
+red and alpha channels and the physical coverage mask matched byte for byte.
+
+| Atlas | Baker revision | `TerrainTrail.tga` SHA-256 |
+| --- | --- | --- |
+| Legacy | `3f571161d7b8b47f9c4fa91d7601a52796385849` | `0bcb578fe947fbef47796c0971a1d3b61c7a6d4272dae52a38050d29369d55ff` |
+| Fresh | `2b6c4c00489ef0d89d7b27db65649dda36e684bc` | `6a6c994275d5a1a166fda83c9152cf35cb196d0b80baaebfb8809801882383aa` |
+
+Both runs used shader SHA-256 `d8d15d9605603604da8504289cbb666c0d898ec33c5d1923d2a88decf5e8820f`,
+editor executable SHA-256 `4dbab2739e7afef7ec96cdfe48a63211742209f9a56af0620cf228913d64fb0c`,
+and project editor module SHA-256 `13ca165e954fa54f1449c7c16f5eba2bf6c2866557f9eb0af1dc1921b643692a`.
+The packaged driving measurements below predate this material-only fix.
 
 ## Packaged driving measurements
 

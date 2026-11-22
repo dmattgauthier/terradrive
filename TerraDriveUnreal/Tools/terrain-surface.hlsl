@@ -69,7 +69,8 @@ float3 p=World*.01,n=normalize(GeoNormal);
 // One filtered atlas sample carries the actual trail lane, local landform and
 // upwind horizon. The same world mapping runs on the rigid Granite apron.
 float QuarryPath=TerrainAtlas.r;
-float landform=(TerrainAtlas.g*255-128)/127;
+// Zero green marks a legacy atlas with no landform field.
+float landform = TerrainAtlas.g == 0 ? 0 : (TerrainAtlas.g * 255 - 128) / 127;
 float hollow=max(0,landform),crest=max(0,-landform),lee=TerrainAtlas.b;
 float macro=f.noise(p.xy*.019+Biome*19);
 float mid=f.noise(p.xy*.073+37);
