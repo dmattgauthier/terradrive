@@ -97,7 +97,7 @@ try{
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=166;Mechanical=708;ElectricPressure=288;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=145;RutTransitions=64;Perimeter=5;Challenges=27;RockCrawl=22;Carcass=19;Expanded=292;Recovery=48;GraveRecovery=34;RolloverPerformance=59}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=166;Mechanical=708;ElectricPressure=288;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=145;RutTransitions=64;Perimeter=5;Challenges=27;RockCrawl=22;Carcass=21;Expanded=292;Recovery=48;GraveRecovery=34;RolloverPerformance=59}[$Mode]
  if($GraniteLedgeLocks){$taskExpected=4}
  elseif($Mode -eq 'GraniteFit'){
   $fitCount=[int]$taskResult.tests[0].value
@@ -158,7 +158,7 @@ try{
    }
   }
  }
- if($Mode -eq 'Carcass'){$taskExpectedCaptures=@('native-carcass-low.png','native-carcass-road.png','native-carcass-high.png','native-underbody-g580.png','native-underbody-g63-sixwheel.png','native-underbody-wrangler-stock.png','native-underbody-wrangler-quad-portal.png','native-underbody-wrangler-single.png')}
+ if($Mode -eq 'Carcass'){$taskExpectedCaptures=@('native-carcass-low.png','native-carcass-road.png','native-carcass-high.png','native-underbody-g580.png','native-underbody-g63-sixwheel.png','native-underbody-wrangler-stock.png','native-underbody-wrangler-quad-portal.png','native-underbody-wrangler-single.png','native-underbody-urus.png','native-underbody-urus-quad.png')}
  if($Mode -eq 'RockCrawl'){$taskExpectedCaptures=@('rock-crawl-menu.png','rock-crawl-high-open.png','rock-crawl-low-open.png','rock-crawl-low-locked.png','rock-crawl-low-open-bench.png','rock-crawl-finish.png')}
  if($Mode -eq 'Perimeter'){
   $taskExpectedCaptures=@('perimeter-finish.png')

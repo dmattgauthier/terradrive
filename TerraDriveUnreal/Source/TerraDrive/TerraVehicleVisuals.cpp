@@ -232,6 +232,18 @@ void ATerraVehicle::UpdateUnderbodyDetails(const FString& Style,TerraSim::MotorL
       Pipe(SteelPipe,FVector(CatX,Y,PipeZ),FVector(CatX-19.f,Y,PipeZ),5.2f);
       Pipe(SteelPipe,FVector(CatX-19.f,Y,PipeZ),FVector(MufflerX+14.f,Y,PipeZ),3.0f);
       Pipe(SteelPipe,FVector(MufflerX+14.f,Y,PipeZ),FVector(MufflerX-12.f,Y,PipeZ),6.5f);
+      if(Style==TEXT("urus")){
+        // Chassis-local centres at the inboard rims of the four finished bores
+        // in the exported Performante body. Its outer finishers are swept forward.
+        const FVector Split(-217.f,Side*71.f,PipeZ+11.f);
+        Pipe(SteelPipe,FVector(MufflerX-12.f,Y,PipeZ),Split,3.f);
+        for(const FVector Socket:{FVector(-247.7f,Side*64.7f,-19.3f),FVector(-245.1f,Side*79.9f,-19.f)}){
+          const FVector Neck=Socket+FVector(10.f,0,0);
+          Pipe(SteelPipe,Split,Neck,2.6f);
+          Pipe(SteelPipe,Neck,Socket,2.6f);
+        }
+        continue;
+      }
       const FVector ExitStart=SideExit?FVector(ExitX+2.f,Y,PipeZ):FVector(ExitX+15.f,Y,PipeZ+7.f);
       Pipe(SteelPipe,FVector(MufflerX-12.f,Y,PipeZ),ExitStart,3.0f);
       // The visible finishers are authored with the body. This run feeds
