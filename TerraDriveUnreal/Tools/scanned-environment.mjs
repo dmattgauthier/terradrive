@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import * as T from '../../TerraDrive-v1.13/dist/vendor/three.module.js';
+import {makePerimeterTrail} from './perimeter-trail.mjs';
 import {inQuarry} from './offroad-courses.mjs';
 export function scannedEnvironment(root,terrain,routes){
  const assets=[],placements=[];
@@ -20,22 +21,68 @@ export function scannedEnvironment(root,terrain,routes){
   for(const i of d.scenes[d.scene||0].nodes){const group=nodes[i],name='scan_'+id+'_'+i;group.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(group);group.position.y-=bounds.min.y;group.position.x-=(bounds.min.x+bounds.max.x)*.5;group.position.z-=(bounds.min.z+bounds.max.z)*.5;assets.push({name,group});placements.push({asset:name,solid:id.startsWith('rock')||id==='mountainside'||id==='boulder_01',surface:4,instances:[]});}
  }
  const hash=(i,s)=>{const v=Math.sin(i*127.1+s*311.7)*43758.5453;return v-Math.floor(v);};
+ const rocks=placements.filter(p=>p.asset.startsWith('scan_rock_moss_set_02'));
+ const sorrel=placements.filter(p=>p.asset.startsWith('scan_shrub_sorrel_01'));
+ const up=new T.Vector3(0,0,1);
+ const edges=routes.flatMap(route=>{
+  const points=[route.spawn,...route.gates].map(([x,y])=>[x/100,y/100]);
+  return points.slice(1).map(([x,y],i)=>{
+   const [ax,ay]=points[i],dx=x-ax,dy=y-ay;
+   return {ax,ay,dx,dy,l2:dx*dx+dy*dy||1};
+  });
+ });
+ const perimeter=makePerimeterTrail((x,y)=>terrain.heightAt(-y,x));
+ function clear(x,y,radius){
+  if(inQuarry(x,y)||(x>-180&&x<170&&y>145&&y<245))return false;
+  if(terrain.zones.some(zone=>Math.hypot(x-zone.spawn.z,y+zone.spawn.x)<16))return false;
+  return !edges.some(({ax,ay,dx,dy,l2})=>{
+   const t=T.MathUtils.clamp(((x-ax)*dx+(y-ay)*dy)/l2,0,1);
+   return Math.hypot(x-ax-t*dx,y-ay-t*dy)<radius;
+  });
+ }
+ function plantPatch(x,y,seed,amount){
+  const heading=hash(seed,29)*Math.PI*2;
+  for(let j=0;j<amount;j++){
+   const id=seed*11+j,theta=hash(id,7)*Math.PI*2;
+   const along=Math.cos(theta)*hash(id,8)*1.35,across=Math.sin(theta)*hash(id,9)*.65;
+   const px=x+along*Math.cos(heading)-across*Math.sin(heading);
+   const py=y+along*Math.sin(heading)+across*Math.cos(heading);
+   const ground=terrain.sample(-py,px);
+   if(!['dirt','wetland','mud'].includes(ground.surface)||ground.waterDepth>.015||ground.normal.y<.70)continue;
+   if(!clear(px,py,4.5)||(perimeter.locate(px,py)?.distance??Infinity)<4.15)continue;
+   const moist=ground.surface==='wetland'||ground.surface==='mud';
+   const height=(moist?3.4:2.4)+hash(id,15)*1.3;
+   const yaw=hash(id,16)*Math.PI*2;
+   // Leaves grow mostly upright with a mild slope bias at their rooted end.
+   const normal=new T.Vector3(ground.normal.z*.4,-ground.normal.x*.4,ground.normal.y).normalize();
+   const q=new T.Quaternion().setFromUnitVectors(up,normal).multiply(new T.Quaternion().setFromAxisAngle(up,yaw));
+   const s=[height*(.78+.32*hash(id,17)),height*(.80+.25*hash(id,18)),height];
+   const variation=hash(seed,19)*.12+hash(id,20)*.07;
+   const color=moist?[.74+variation,.88+variation*.56,.70+variation]:[.91+variation*.45,.86+variation*.45,.64+variation];
+   const plant=sorrel[Math.floor(hash(id,4)*sorrel.length)];
+   plant.instances.push({p:[px*100,py*100,ground.height*100-1],q:q.toArray(),s,color});
+  }
+ }
  for(let i=0;i<3600;i++){
   const x=(hash(i,1)*2-1)*365,z=(hash(i,2)*2-1)*365,s=terrain.sample(x,z);
-  if(!['dirt','wetland','rock','mud'].includes(s.surface)||s.waterDepth>.1||inQuarry(z,-x))continue;
-  if(z> -180&&z<170&&-x>145&&-x<245)continue; // Entire constructed park stays clear.
-  if(terrain.zones.some(q=>Math.hypot(x-q.spawn.x,z-q.spawn.z)<16))continue;
-  const nearSegment=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1)));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);};
-  if(routes.some(r=>{const ps=[r.spawn,...r.gates].map(p=>[p[0]/100,p[1]/100]);return ps.some((p,i)=>i&&nearSegment([z,-x],ps[i-1],p)<16);} ))continue;
-  const forest=hash(Math.floor(x/18)+Math.floor(z/18)*79,11),rock=s.surface==='rock'||hash(i,3)>.86;
-  if(!rock&&forest<.45)continue;
-  const options=placements.filter(p=>rock?p.asset.startsWith('scan_rock_moss_set_02'):p.asset.startsWith('scan_shrub_sorrel_01')),p=options[Math.floor(hash(i,4)*options.length)];
-  const count=rock?1:5;
-  for(let j=0;j<count;j++){
-   const scale=rock?.45+hash(i,5)*1.8:2.4+hash(i+j*19,5)*2.2,a=hash(i+j*7,6)*Math.PI*2;
-   const dx=rock?0:Math.cos(a)*hash(i+j,10)*.45,dz=rock?0:Math.sin(a)*hash(i+j,12)*.45;
-   p.instances.push({p:[(z+dz)*100,(-x-dx)*100,terrain.heightAt(x+dx,z+dz)*100-1],q:[0,0,Math.sin(a*.5),Math.cos(a*.5)],s:[scale,scale,scale],color:[1,1,1]});
+  if(!['dirt','wetland','rock','mud'].includes(s.surface)||s.waterDepth>.1)continue;
+  if(s.surface==='rock'||hash(i,3)>.86){
+   // Preserve each pre-existing solid instance and the seed order used by the boulder library.
+   if(!clear(z,-x,16))continue;
+   const scale=.45+hash(i,5)*1.8,a=hash(i,6)*Math.PI*2;
+   rocks[Math.floor(hash(i,4)*rocks.length)].instances.push({p:[z*100,-x*100,terrain.heightAt(x,z)*100-1],
+    q:[0,0,Math.sin(a*.5),Math.cos(a*.5)],s:[scale,scale,scale],color:[1,1,1]});
+  }else if(hash(Math.floor(x/18)+Math.floor(z/18)*79,11)>.45){
+   plantPatch(z,-x,i,2+Math.floor(hash(i,24)*3));
   }
+ }
+ // Move some of the old five-clone clump budget into the driver's foreground.
+ // Separate patches and change sides; don't plant parallel rows along the road.
+ for(let i=0;i<perimeter.samples.length-1;i+=4){
+  if(hash(Math.floor(i/17),33)<.38)continue;
+  const p=perimeter.samples[i],side=hash(i,34)<.5?-1:1;
+  const offset=4.8+hash(i,35)*4.2;
+  plantPatch(p.x-p.ty*side*offset,p.y+p.tx*side*offset,3600+i,3+Math.floor(hash(i,36)*3));
  }
  return {assets,placements};
 }

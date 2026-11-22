@@ -117,8 +117,12 @@ export function buildSUV(view, geometry, bronco) {
       // Ford carries a wide plateau almost to the raised sight lines. The
       // Rubicon has a narrower power dome that settles into the outer wings.
       const a=Math.abs(x);
-      const plateau=bronco?.025*(1-THREE.MathUtils.smoothstep(a,.55,.76))*fade:
-        (.027*(1-THREE.MathUtils.smoothstep(a,.36,.61))-.006*Math.exp(-(((a-.65)/.083)**2)))*fade;
+      // The JL stamping narrows toward the grille. The Bronco's wide flat
+      // center instead drops into channels inside its two fender sightlines.
+      const domeEdge=.69-.30*THREE.MathUtils.smoothstep(v,.12,.95);
+      const plateau=bronco?(.022*(1-THREE.MathUtils.smoothstep(a,.54,.72))
+        -.020*Math.exp(-(((a-.77)/.10)**2)))*fade:
+        (.037*(1-THREE.MathUtils.smoothstep(a,domeEdge-.19,domeEdge))-.008*Math.exp(-(((a-domeEdge-.066)/.080)**2)))*fade;
       const y = THREE.MathUtils.lerp(hood + .032, 1.218, v) + (bronco ? .013 : .037) * (1 - x * x)
         + (bronco ? .018 : .025) * shoulder * Math.sin(v * Math.PI)+plateau;
       return [x * hoodHalf(v), y, z];

@@ -66,6 +66,11 @@ struct TerraSurface {
 };
 TerraSurface f;
 float3 p=World*.01,n=normalize(GeoNormal);
+// One filtered atlas sample carries the actual trail lane, local landform and
+// upwind horizon. The same world mapping runs on the rigid Granite apron.
+float QuarryPath=TerrainAtlas.r;
+float landform=(TerrainAtlas.g*255-128)/127;
+float hollow=max(0,landform),crest=max(0,-landform),lee=TerrainAtlas.b;
 float macro=f.noise(p.xy*.019+Biome*19);
 float mid=f.noise(p.xy*.073+37);
 float patchDetail=f.noise(p.xy*.29);
@@ -80,40 +85,40 @@ float windward=dot(n.xy,float2(.94,.342));
 if(Biome==0){
   // The rooted meadow thins on slopes and groups around shallow drainage.
   // Small patches of exposed mineral soil remain between the turf stands.
-  b=smoothstep(.25,.68,.70*patches+.30*gritDetail)*smoothstep(.42,.86,n.z);
+  b=smoothstep(.25,.68,.70*patches+.30*gritDetail+.19*hollow-.22*crest)*smoothstep(.42,.86,n.z);
   c*=1-.42*b;
 }
 if(Biome==1){
   // A paved surface weathers through the exposed aggregate. The same quiet
   // asphalt scan still anchors the track where the binder is less worn.
-  b=smoothstep(.42,.65,patches)*.23;
+  b=smoothstep(.42,.65,patches+.15*crest-.10*hollow)*.23;
   c=0;
 }
 if(Biome==2){
-  b*=.44;
-  c*=.75;
+  b*=.44*(1-.50*hollow);
+  c*=.75*(1-.62*hollow);
 }
 if(Biome==3){
   // Wetland plants fill firmer raised hummocks; leaf litter and braided
   // damp earth show through the low, flatter patches between them.
-  b=smoothstep(.29,.70,patches+(1-flat)*.12)*smoothstep(.38,.76,n.z);
+  b=smoothstep(.29,.70,patches+(1-flat)*.12+.18*crest-.18*hollow)*smoothstep(.38,.76,n.z);
   c=smoothstep(.38,.65,grit)*(1-.62*b)*.66;
 }
 if(Biome==4){
-  b*=smoothstep(.47,.89,n.z);
+  b*=smoothstep(.47,.89,n.z)*(1-.48*crest);
   c=max(c*.8,(1-smoothstep(.34,.86,n.z))*.75);
 }
 if(Biome==5){
   // Clean wind-transported sand dominates. Coarser lag sits in quieter
   // patches and around the toes of dunes instead of blanketing the crests.
-  b=smoothstep(.38,.72,patches)*lerp(.21,.56,flat);
-  c=smoothstep(.52,.75,grit)*lerp(.08,.29,flat);
+  b=smoothstep(.38,.72,patches+.12*hollow-.17*lee)*lerp(.21,.56,flat);
+  c=smoothstep(.52,.75,grit+.11*crest-.14*lee)*lerp(.08,.29,flat);
 }
 if(Biome==6){
   // The clean snow scan dominates deeper drift faces. The road scan reads
   // as dense wind crust and melt along lower, exposed ground.
-  b=.08+smoothstep(.29,.73,patches+windward*.15)*.66;
-  c=max((1-smoothstep(.38,.76,n.z))*.74, Wetness*smoothstep(.55,.76,grit)*.23);
+  b=.08+smoothstep(.29,.73,patches+windward*.15+.22*crest-.24*lee)*.66;
+  c=max((1-smoothstep(.38,.76,n.z))*.74, Wetness*smoothstep(.55,.76,grit)*.23)*(1-.55*lee);
 }
 if(Biome==0){
   // Traffic wears the centre of the lane; grass and stones meet in a wider
@@ -151,7 +156,7 @@ float grassCover=(Biome==0||Biome==3)?b*(1-c):0;
 if(grassCover>.01){
   // Meadow reads as groups of living blades, dry growth and exposed root
   // patches instead of the same pale green photograph across every hill.
-  float dry=smoothstep(.28,.74,.55*mid+.45*gritDetail)*(Biome==3?.42:1);
+  float dry=smoothstep(.28,.74,.55*mid+.45*gritDetail+.17*crest-.19*hollow)*(Biome==3?.42:1);
   float leafLitter=smoothstep(.57,.77,.65*grit+.35*patchDetail);
   float3 growth=lerp(float3(.65,.84,.62),float3(1.19,1.04,.70),dry);
   color=lerp(color,color*growth,grassCover*.50);
@@ -178,12 +183,13 @@ float wet=smoothstep(.51,.77,patches)*Wetness;
 // wet. Connected dry clods and grass remain visible around the film.
 float film=0;
 if(Biome==2||Biome==3){
-  film=Wetness*flat*smoothstep(.40,.69,.58*patches+.42*(1-grit))*(1-grassCover*.9);
+  film=Wetness*flat*smoothstep(.37,.66,.58*patches+.42*(1-grit)+.32*hollow-.23*crest)*(1-grassCover*.9);
   wet=max(wet,film);
 }
 // The neighbouring wet cover also darkens sheltered fine soil between its
 // larger patches. Preserve dry raised grains and the original scan detail.
 if(Biome==0||Biome==5)wet=max(wet,saturate((Wetness-.34)*1.65)*(.45+.55*(1-grit)));
+if(Biome==0)wet=max(wet,hollow*Wetness*(.45+.55*(1-grit)));
 color*=lerp(1,.61,wet);
 float packed=saturate(1-Wear);
 // Detailed soil supplies signed physical height and tire tangent. Coarse
@@ -267,13 +273,16 @@ if(Biome==4){
   float seam=smoothstep(.44,.73,mineralBand);
   float exposedFace=1-smoothstep(.45,.88,n.z);
   float bedding=exposedFace*(1-smoothstep(.055,.28,seamFootprint));
-  float lichen=smoothstep(.50,.73,grit)*smoothstep(.42,.88,n.z);
+  float lichen=smoothstep(.50,.73,grit+.14*hollow-.12*crest)*smoothstep(.42,.88,n.z);
   float3 freshRock=color*float3(.79,.85,.92);
   float3 weatheredRock=color*float3(1.12,1.05,.96);
   color=lerp(freshRock,weatheredRock,smoothstep(.20,.76,patches+(1-exposedFace)*.18));
   color*=lerp(1,lerp(.75,1.18,seam),bedding*.78);
   color=lerp(color,color*float3(.73,.86,.65),lichen*.40);
-  Roughness=clamp(Roughness+lichen*.065+(seam-.5)*bedding*.16,.62,.99);
+  // Sheltered recesses retain a darker moisture stain against clean dry faces.
+  float seep=hollow*(.27+.73*exposedFace)*smoothstep(.34,.68,mid);
+  color*=lerp(float3(1,1,1),float3(.67,.71,.74),seep);
+  Roughness=clamp(Roughness-seep*.14+lichen*.065+(seam-.5)*bedding*.16,.62,.99);
   float3 seamTangent=seamAxis-n*dot(seamAxis,n);
   SurfaceNormal=normalize(n+relief*.85+seamTangent*seamSlope.x*bedding*.28);
 }
@@ -282,8 +291,8 @@ if(Biome==6){
   // at tire scale. Broken wet cover at the fringe becomes granular slush;
   // blue-grey hollows and sheltered wind ripples retain relief in bright sun.
   float granular=f.noise(p.xy*2.7+31);
-  float slush=Wetness*smoothstep(.31,.66,grit)*(.45+.55*flat)*(1-c);
-  float drift=.5+.5*sin(p.x*.36+p.y*.15+(mid-.5)*3.1);
+  float slush=Wetness*smoothstep(.31,.66,grit+.21*hollow-.14*crest)*(.45+.55*flat)*(1-c);
+  float drift=saturate(.48+.28*sin(p.x*.36+p.y*.15+(mid-.5)*3.1)+.27*lee+.15*hollow-.12*crest);
   // A wind crust shades cool in the hollows. Exposed pebbles keep their own
   // earthy color and sit in a broad, dirty melt fringe around patchy snow.
   float3 snow=lerp(ac,bc,b)*lerp(float3(.28,.36,.48),float3(.55,.58,.60),drift);
@@ -300,7 +309,7 @@ if(Biome==6){
   // only the broad drifts survive; at ground level the crust catches light.
   float phase=p.x*4.2+p.y*1.7+warp.x*4.9;
   float finePhase=p.x*18.4+p.y*6.8+warp.y*6.5;
-  float crust=smoothstep(.26,.71,patches+windward*.15);
+  float crust=smoothstep(.26,.71,patches+windward*.15+.19*crest-.24*lee);
   float2 wind=(float2(.22,.085)*cos(phase)*lerp(.52,1,crust)+float2(.16,.06)*cos(finePhase)*nearDetail*crust)*(1-packed)*(1-slush)*(1-c);
   SurfaceNormal=normalize(n+relief*lerp(1.36,.78,c)*(1-floorWear*.90)+float3(wind,0));
 }

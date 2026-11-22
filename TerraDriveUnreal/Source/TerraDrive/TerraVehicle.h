@@ -330,7 +330,7 @@ private:
         CameraPitch = -16, SoilTimer = 0, SprayBudget[MaxWheels] = {};
   float Radius = .42f, Width = .285f, Wheelbase = 3, Track = 1.63f, CG = .76f,
         FrontWeight = .53f, Spring = 32000, Damping = 3900, Rest = .41f,
-        Power = 210000;
+        Power = 210000, FullServiceBrakeNm = 0;
   float Number(const TCHAR *Name, float Default = 0) const;
   void Input(float Dt);
   void Simulate(float Dt);

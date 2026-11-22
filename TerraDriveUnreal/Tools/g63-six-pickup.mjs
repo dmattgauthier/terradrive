@@ -1,6 +1,6 @@
 // Original 2014 six-wheeler pickup details, reconstructed from factory photos.
 // Contact-plane metres; Y up, +Z forward. Panel/bar stations are estimates.
-import {T,box,mesh,surface,line,station,lerp,smooth} from './body-surface.mjs';
+import {T,box,mesh,surface,polygon,line,station,lerp,smooth} from './body-surface.mjs';
 import {geometryText} from './vehicle-fidelity.mjs';
 import {moldedOptic,opticFace} from './vehicle-optics.mjs';
 
@@ -141,7 +141,24 @@ export function buildSixPickup(g,m){
   surface(g,m.lens,22,12,(u,v)=>cover(u,v,0),true).name='g63-six-molded-clear-cover';
   const label=geometryText(g,s<0?'6X6':'G63',.13,.026,metal);label.position.set(x-s*.02,1.250,rear-.063);label.rotation.y=Math.PI;
  }
- named(box(g,paint,[0,.822,rear-.061],[2.015,.145,.174],.036),'g63-six-independent-rear-bumper');
+ // Keep the flat license landing and wrap the bumper forward beneath
+ // the rear lights, with the deeper mounting section at its center.
+ const rearBar=(u,v)=>{
+  const x=lerp(-1.0075,1.0075,u),corner=smooth(Math.abs(x),.69,1.0075);
+  const angle=2*Math.PI*v,section=t=>Math.sign(t)*Math.abs(t)**.47;
+  return[x,.821+.012*corner+(.0725-.013*corner)*section(Math.sin(angle)),
+    rear-.061+.087*corner+(.087-.020*corner)*section(Math.cos(angle))];
+ };
+ named(surface(g,paint,48,24,rearBar),'g63-six-independent-rear-bumper');
+ for(const edge of [0,1]) {
+  const outline=Array.from({length:24},(_,i)=>rearBar(edge,i/24));
+  const cap=polygon(g,paint,outline,0);
+  if(!edge){const ids=cap.geometry.index.array;
+   for(let i=0;i<ids.length;i+=3)[ids[i+1],ids[i+2]]=[ids[i+2],ids[i+1]];
+   cap.geometry.computeVertexNormals();
+  }
+  named(cap,'g63-six-bumper-end-'+edge);
+ }
  box(g,trim,[0,.838,rear-.155],[.490,.112,.012],.005);
  const plate=box(g,metal,[0,.838,rear-.164],[.405,.095,.009],.005);plate.name='g63-six-rear-license-plate';
  box(g,metal,[0,.714,rear-.057],[1.47,.090,.135],.012);

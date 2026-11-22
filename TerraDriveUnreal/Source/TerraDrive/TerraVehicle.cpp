@@ -194,6 +194,7 @@ void ATerraVehicle::SelectVehicle(int Index, bool StoreCurrentProfile) {
   TrailEquipment->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,*(TEXT("/Game/Meshes/")+Asset+TEXT("_equipment"))));
   Mass = Number(TEXT("mass"), 2100);
   Radius = Number(TEXT("tireRadius"), .42);
+  FullServiceBrakeNm=TerraSim::StockServiceBrakeTorque(Mass,Radius);
   Width = Number(TEXT("tireWidth"), .285);
   Wheelbase = Number(TEXT("wheelbase"), 3);
   Track = Number(TEXT("track"), 1.63);
@@ -650,17 +651,25 @@ void ATerraVehicle::Simulate(float Dt) {
   float Final=(ConvertedICE?ICE.FinalDrive:Number(TEXT("finalDrive"),4))*PortalReduction(),
         Low = EffectiveLowRatio();
   if(Electric){Ratio=EV.Reduction;Final=PortalReduction();Gear=0;}
-  float MeanOmega = 0;
-  for (int I=0;I<WheelCount();++I)
-    MeanOmega += FMath::Abs(WheelState[I].Omega) / WheelCount();
-  RPM = FMath::Max(Electric ? 0.f : IdleRPM,
-                   MeanOmega * Ratio * Final * Low * 60 / (2 * PI));
+  const int Count=WheelCount(),Axles=AxleCount();
+  const bool FrontDriven=DrivenWheel(0),RearDriven=DrivenWheel(2);
+  const bool BothAxlesDriven=FrontDriven&&RearDriven;
+  const float FrontShare=Number(TEXT("frontTorqueFraction"),.5f);
+  float ShaftOmega=0;
+  if(!Electric){
+    const auto Carrier=[&](int axle){return (WheelState[axle*2].Omega+WheelState[axle*2+1].Omega)*.5f;};
+    const float RearCarrier=Count==6?TerraSim::TransmissionWheelSpeed(Carrier(1),Carrier(2),
+        TerraSim::TandemMiddleShare,true,true):Carrier(1);
+    ShaftOmega=FMath::Max(0.f,Direction*TerraSim::TransmissionWheelSpeed(
+        Carrier(0),RearCarrier,FrontShare,FrontDriven,RearDriven));
+    RPM=FMath::Max(IdleRPM,ShaftOmega*Ratio*Final*Low*60/(2*PI));
+  }
   if (!Electric && !LowRange && Direction > 0) {
     float Red=RedlineRPM;
     const float RoadRPM=FMath::Abs(Speed)/FMath::Max(.1f,Radius)*Ratio*Final*Low*60/(2*PI);
     Gear=TerraSim::AutomaticGear(Gear,GearCount-1,RPM,RoadRPM,Red);
     Ratio=RatioAt(Gear);
-    RPM=FMath::Max(IdleRPM,MeanOmega*Ratio*Final*Low*60/(2*PI));
+    RPM=FMath::Max(IdleRPM,ShaftOmega*Ratio*Final*Low*60/(2*PI));
   }
   if(!Electric){
     const auto Engine=Spec->GetObjectField(TEXT("engine"));
@@ -683,11 +692,8 @@ void ATerraVehicle::Simulate(float Dt) {
       }
     }
   }
-  float TotalTorque =
-      Electric
-          ? FMath::Min(Number(TEXT("wheelTorqueNm"), 15000)*PortalReduction()*Low,
-                       Power / FMath::Max(MeanOmega, 1.f))
-          : Torque * Ratio * Final * Low * .84f * TerraSim::ConverterLaunchMultiplier(Speed);
+  // EVs compute torque and RPM per motor below.
+  float TotalTorque = Electric?0.f:Torque*Ratio*Final*Low*.84f*TerraSim::ConverterLaunchMultiplier(Speed);
   // The implicit wheel/axle limiter below supplies only the requested engine
   // torque needed to balance tire reaction at redline. A second cut based on
   // last frame's RPM made loaded locked axles alternate drive and zero torque.
@@ -705,7 +711,6 @@ void ATerraVehicle::Simulate(float Dt) {
   float TotalLoad = 0;
   ContactCount = 0;
   LastTireForceN = 0;
-  const int Count=WheelCount(),Axles=AxleCount();
   const float SteeringSpan=Axles==3?AxleOffsetM(0)-(AxleOffsetM(1)+AxleOffsetM(2))*.5f:Wheelbase;
   const float ResponseBodyMass=Chassis->GetMass();
   const FVector BodyInertia=Chassis->GetInertiaTensor()/10000,BodyCenter=Chassis->GetCenterOfMass()/100;
@@ -817,7 +822,6 @@ void ATerraVehicle::Simulate(float Dt) {
   if(Count==6){MotorOmega[2]=(Omega[2]+Omega[4])*.5f;MotorOmega[3]=(Omega[3]+Omega[5])*.5f;}
   const auto MotorDrive=TerraSim::ElectricDriveTorque(EV,MotorOmega,ElectricThrottle,Direction,Low,PortalReduction(),Environment,FourDrive);
   if(Electric){RPM=0;for(float MotorRPM:MotorDrive.MotorRPM)RPM=FMath::Max(RPM,MotorRPM);}
-  const bool BothAxlesDriven=DrivenWheel(0)&&DrivenWheel(2);
   const bool CenterCoupled=BothAxlesDriven&&(CenterLockActive()||HasRigidTransfer());
   const bool OpenCenter=BothAxlesDriven&&HasCenterLocker()&&!CenterCoupled;
   const float CenterInput=Electric?MotorDrive.Axle[0]+MotorDrive.Axle[1]:TotalTorque;
@@ -835,16 +839,15 @@ void ATerraVehicle::Simulate(float Dt) {
       TerraSim::CenterAxleCapacity(Capacities[0],Capacities[1],FrontLocked,UpgradeStage(TerraSim::Differentials)>=3),RearCapacity,
       Electric?EV.FrontShare:Number(TEXT("frontTorqueFraction"),.3f));
   for(int Axle=0;Axle<Axles;++Axle){
-    const bool Both=DrivenWheel(0)&&DrivenWheel(2);
-    const float FrontShare=Number(TEXT("frontTorqueFraction"),.5f);
+    const bool Both=BothAxlesDriven;
     if(Count==4)AxleDemand[Axle]=OpenCenter?(Axle==0?CenterSplit.Front:CenterSplit.Rear):Electric?MotorDrive.Axle[Axle]:TotalTorque*(Both?(Axle==0?FrontShare:1-FrontShare):1.f);
     else AxleDemand[Axle]=Axle==0?(OpenCenter?ThreeSplit.Front:Electric?MotorDrive.Axle[0]:TotalTorque*(Both?FrontShare:0)):
-        (OpenCenter?ThreeSplit.Rear:Electric?MotorDrive.Axle[1]:TotalTorque*(Both?1-FrontShare:1.f))*(Axle==1?4.f/7.f:3.f/7.f);
+        (OpenCenter?ThreeSplit.Rear:Electric?MotorDrive.Axle[1]:TotalTorque*(Both?1-FrontShare:1.f))*(Axle==1?TerraSim::TandemMiddleShare:1.f-TerraSim::TandemMiddleShare);
   }
   if(Count==6&&!TandemLockActive()){
     const auto Rear=TerraSim::OpenCenterTorque(AxleDemand[1]+AxleDemand[2],
         TerraSim::CenterAxleCapacity(Capacities[2],Capacities[3],RearLocked,UpgradeStage(TerraSim::Differentials)>=3),
-        TerraSim::CenterAxleCapacity(Capacities[4],Capacities[5],RearLocked,UpgradeStage(TerraSim::Differentials)>=3),4.f/7.f);
+        TerraSim::CenterAxleCapacity(Capacities[4],Capacities[5],RearLocked,UpgradeStage(TerraSim::Differentials)>=3),TerraSim::TandemMiddleShare);
     AxleDemand[1]=Rear.Front;AxleDemand[2]=Rear.Rear;
   }
   for(int Axle=0;Axle<Axles;++Axle){
@@ -864,8 +867,8 @@ void ATerraVehicle::Simulate(float Dt) {
   const float Inertia=Tracks?24.f+Tuning.RotatingMass:WheelInertia(), R=Radius;
   const float WheelRevLimit=Electric?0:RedlineRPM*2*PI/
       (60*FMath::Max(.1f,Ratio*Final*Low));
-  constexpr float FullBrakeDemandG=1.6f;
-  const float BrakeDemandG=EffectiveBrake*FullBrakeDemandG*DamageBrakeFactor();
+  const float TotalServiceTorque=EffectiveBrake*FullServiceBrakeNm*DamageBrakeFactor();
+  const float BrakeDemandG=TotalServiceTorque/(Mass*9.81f*R);
   float FrontBrakeShare=2.f/Count;
   if(BrakeDemandG>0&&!Tracks&&!LowRange&&!Overturned&&FMath::Abs(Speed)>TerraSim::BrakeBiasStartMPS){
     float GripForce=0;
@@ -873,7 +876,6 @@ void ATerraVehicle::Simulate(float Dt) {
     const float RideCG=CG+Radius-Number(TEXT("tireRadius"),.42f)+Tuning.Lift-.02f*UpgradeStage(TerraSim::Frame);
     FrontBrakeShare=TerraSim::FrontServiceBrakeShare(Speed,BrakeDemandG,GripForce/(Mass*9.81f),FrontWeight,RideCG,SteeringSpan,Count);
   }
-  const float TotalServiceTorque=BrakeDemandG*Mass*9.81f*R;
   float Stiffness[MaxWheels]={}, Drag[MaxWheels]={}, Lateral[MaxWheels]={}, LongLimit[MaxWheels]={};
   float PassiveDrag[MaxWheels]={}, BrakeDrag[MaxWheels]={}, RegenRequest[MaxWheels]={};
   for(int I=0;I<Count;++I){

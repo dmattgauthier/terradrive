@@ -49,6 +49,25 @@ const hatchNormalMaxDeg=Math.max(...hatchNormalErrors),hatchChordMaxM=Math.max(.
 assert.ok(hatchNormalErrors.length>1000&&hatchNormalMaxDeg<2&&hatchChordMaxM<.0015,
   `hatch reflection needs a smooth panel: ${hatchNormalMaxDeg} degrees, ${hatchChordMaxM} metres`);
 view.root.updateMatrixWorld(true);
+const wing=view.body.getObjectByName('urus-cambered-spoiler-upper');
+const wingPositions=wing.geometry.attributes.position;
+let centreTrailing=Infinity,tipTrailing=Infinity;
+for(let i=0;i<wingPositions.count;i++){
+ const span=Math.abs(wingPositions.getX(i)),z=wingPositions.getZ(i);
+ if(span<.025)centreTrailing=Math.min(centreTrailing,z);
+ if(span>.80)tipTrailing=Math.min(tipTrailing,z);
+}
+assert.ok(tipTrailing-centreTrailing>.09,'the ends of the roof spoiler sweep forward of the centre lip');
+const fins=view.body.children.filter(o=>o.name==='urus-spoiler-side-fin');
+assert.equal(fins.length,2);
+for(const fin of fins){
+ const {position,normal}=fin.geometry.attributes;
+ // The longitudinal midpoint lies halfway along a row of this ruled surface.
+ const rowLength=33,mid=2*rowLength+Math.floor(rowLength/2);
+ assert.ok(Math.sign(position.getX(mid))*normal.getX(mid)>.8,'the visible fin faces outwards');
+ const bounds=new T.Box3().setFromBufferAttribute(position);
+ assert.ok(bounds.max.y-bounds.min.y>.075,'the fin has a deep return under the outboard wing');
+}
 const fascia=view.body.getObjectByName('urus-perforated-front-fascia'),frame=view.body.getObjectByName('urus-lower-composite-intake-frame');
 assert.ok(fascia&&frame);
 const counts=[0,0,0,0];

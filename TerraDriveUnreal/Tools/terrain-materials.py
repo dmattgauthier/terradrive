@@ -95,7 +95,7 @@ def terrain_material(name, layers, biome, wetness, scales):
     custom.set_editor_property('code', terrain_code)
     custom.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     inputs = []
-    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','SecondaryRough','AccentRough','NormalSigns','RoughChannels','Scales','Biome','Wetness','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection','QuarryPath']:
+    for name in ['World','GeoNormal','Primary','Secondary','Accent','NormalMap','SecondaryNormal','AccentNormal','RoughMap','SecondaryRough','AccentRough','NormalSigns','RoughChannels','Scales','Biome','Wetness','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection','TerrainAtlas']:
         item = unreal.CustomInput()
         item.set_editor_property('input_name', name)
         inputs.append(item)
@@ -119,7 +119,7 @@ def terrain_material(name, layers, biome, wetness, scales):
     edit.connect_material_expressions(world,'',coordinates,'World')
     trail_sample=edit.create_material_expression(m,unreal.MaterialExpressionTextureSample,-450,-450)
     trail_sample.set_editor_property('texture',trail_mask);trail_sample.set_editor_property('sampler_type',unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
-    edit.connect_material_expressions(coordinates,'',trail_sample,'UVs');edit.connect_material_expressions(trail_sample,'R',custom,'QuarryPath')
+    edit.connect_material_expressions(coordinates,'',trail_sample,'UVs');edit.connect_material_expressions(trail_sample,'RGB',custom,'TerrainAtlas')
 
     wear=edit.create_material_expression(m,unreal.MaterialExpressionVertexColor,-600,-80)
     edit.connect_material_expressions(wear,'R',custom,'Wear')

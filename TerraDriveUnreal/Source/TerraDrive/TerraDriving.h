@@ -10,6 +10,21 @@ inline float ConverterLaunchMultiplier(float speed) {
     return 1.f+.35f*(1.f-t*t*(3.f-2.f*t));
 }
 
+// An axle carrier follows the signed mean of its half-shafts. A geared center
+// divides torque and weights shaft speeds by those same shares (power balance).
+inline float TransmissionWheelSpeed(float frontCarrier,float rearCarrier,
+    float frontShare,bool frontDriven,bool rearDriven) {
+    if(!frontDriven)return rearDriven?rearCarrier:0.f;
+    if(!rearDriven)return frontCarrier;
+    return rearCarrier+(frontCarrier-rearCarrier)*frontShare;
+}
+// Existing wheel-end brakes are calibrated on the stock chassis. Tire size,
+// portal gearing and conversion mass do not change rotor leverage or clamp force.
+inline float StockServiceBrakeTorque(float stockMassKg,float stockRadiusM) {
+    constexpr float fullPedalG=1.6f;
+    return fullPedalG*9.81f*stockMassKg*stockRadiusM;
+}
+
 // Allocate the existing brake authority using the estimated loaded axle balance.
 // The same brake torque remains available at low speed for hill holds and ledges.
 inline constexpr float BrakeBiasStartMPS=.8f;

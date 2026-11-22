@@ -5,10 +5,11 @@
 #include "TerraCenter.h"
 
 namespace TerraSim {
+inline constexpr float TandemMiddleShare=4.f/7.f;
 // The open through-drive limits the entire rear input before the front/rear
 // center differential is solved. Adding rear axle capacities instead would
 // falsely let a gripped rear axle conceal the other rear axle's wheel lift.
-inline float TandemInputCapacity(float middle,float rear,bool locked,float middleShare=4.f/7.f){
+inline float TandemInputCapacity(float middle,float rear,bool locked,float middleShare=TandemMiddleShare){
     if(locked)return std::max(0.f,middle)+std::max(0.f,rear);
     const auto split=OpenCenterTorque(std::numeric_limits<float>::max(),middle,rear,middleShare);
     return split.Front+split.Rear;

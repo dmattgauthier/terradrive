@@ -80,6 +80,18 @@ function wideArch(g,m,liner,side,axle,outer,name){
      return[side*lerp(.884,lip,w),y+(v?.017:-.012)*Math.sin(w*Math.PI)-(v?.023*(1-w):0),z];
    },side*(v?1:-1)<0),name+'-'+key+'-'+side+'-'+axle);
  }
+ // The carbon lip stops at the cab skin. Behind it the wheel tub rises
+ // inboard to leave room for the steered tire as the suspension compresses.
+ const tub=(u,v)=>{
+   const [z,y]=arch(u,0);
+   return[side*lerp(.884,.342,v),y+.064*smooth(v,0,1),z];
+ };
+ named(surface(g,liner,56,6,tub,side<0),name+'-tub-roof-'+side+'-'+axle);
+ named(surface(g,liner,56,6,(u,v)=>{
+   const [x,top,z]=tub(u,1);
+   const bottom=.578+.029*(1-smooth(Math.abs(z-axle),.22,.53));
+   return[x-side*.014*Math.sin(Math.PI*v),lerp(bottom,top,v),z];
+ },side>0),name+'-tub-inboard-wall-'+side+'-'+axle);
  for(const u of [0,1])named(surface(g,m,2,2,(v,w)=>{
    const [z,y,end]=arch(u,v);
    return[side*lerp(.884,faceX(end,v),w),y-.023*v*(1-w),z];

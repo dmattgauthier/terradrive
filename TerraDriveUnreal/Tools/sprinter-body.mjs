@@ -581,7 +581,14 @@ export function buildSprinter(view, geometry) {
     // panels. The door presses use the same negative-depth sheet construction
     // as the cargo wall, with no painted box behind either aperture.
     const rearDoorPlane=tail-.035,rearDoorGroup=new THREE.Group();rearDoorGroup.position.z=rearDoorPlane;rearDoorGroup.rotation.y=Math.PI/2;g.add(rearDoorGroup);
-    const rearX=(side,y,extra=0,x=0)=>.006*(1-(x/.94)**2)+extra;
+    // Each leaf is pressed individually. The joint and upright jambs
+    // stay fixed while the belt below the glass stands proud of the panel.
+    const rearX=(side,y,extra=0,x=0)=>{
+      const a=Math.abs(x);
+      const leaf=THREE.MathUtils.smoothstep(a,.010,.19)*(1-THREE.MathUtils.smoothstep(a,.67,.89));
+      const beltFold=.019*Math.exp(-(((y-1.32)/.080)**2));
+      return .006*(1-(x/.94)**2)+leaf*beltFold+extra;
+    };
     const doorContours=[-1,1].map(side=>roundedOutline([[side*.005,.607,0],[side*.803,.607,0],[side*.887,.920,0],[side*.903,1.355,0],[side*.892,2.247,0],[side*.860,2.337,0],[side*.767,2.369,0],[side*.005,2.383,0]],.035,10));
     const frameShape=new THREE.Shape();frameShape.moveTo(-.951,.442);frameShape.lineTo(.951,.442);
     for(let i=0;i<=36;i++){const y=THREE.MathUtils.lerp(1.295,2.273,i/36);frameShape.lineTo(sideX(1,y,0,tail),y);}
@@ -617,7 +624,7 @@ export function buildSprinter(view, geometry) {
       finish(new THREE.Mesh(sheetGeometry(shape,1,rearX,0,.055),m.paint),rearDoorGroup);
       // Mirroring a door reverses its contour winding. The recess still faces
       // the same rearward direction on both doors, including its rim normals.
-      stampedRecess(rearDoorGroup,m.paint,1,side>0?[...pressing].reverse():pressing,rearX,.009);
+      stampedRecess(rearDoorGroup,m.paint,1,side>0?[...pressing].reverse():pressing,rearX,.018);
       const rearWindow=windowXY.map(([x,y])=>[x,y,rearDoorPlane-rearX(1,y,0,x)-.003]);
       windowPanel(g,{...m,glass:m.privacyGlass||m.glass},rearWindow,.045,.082);
       // Two articulated factory-style hinge assemblies, with visible pins and

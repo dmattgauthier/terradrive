@@ -723,7 +723,17 @@ function addHeadlights(g,m) {
   lens.userData.nativeRole='';
   for(const side of [-1,1]) {
     const x=side*.849,y=2.181,z=2.342;
-    cylinder(g,m.dark,[x,y,z-.015],.112,.067,'z',42);
+    // The lamps sit in the rounded noses of the fiberglass fenders.
+    // The opening follows the sealed beam while the back grows into the
+    // broader eyebrow. Leave the bottom open behind the apron.
+    surface(g,m.paint,48,12,(u,v)=>{
+      const a=2*Math.PI*u,c=Math.cos(a),s=Math.sin(a);
+      const outer=T.MathUtils.smoothstep(v,0,.78);
+      return[x+c*lerp(.101,.129,outer)-side*.010*outer,
+        y+s*lerp(.099,.104,outer)+outer*(.010+.016*Math.max(0,s)),
+        z+.024-.144*v+.010*outer*s];
+    },true).name='grave-fiberglass-headlamp-bucket-'+side;
+    cylinder(g,m.dark,[x,y,z-.015],.102,.067,'z',42);
     ring(g,m.satinMetal,[x,y,z+.022],.089,.012,'z');
     ring(g,m.glossBlack,[x,y,z+.022],.079,.004,'z');
     // The red sealed beam has optical flutes molded into the domed face.

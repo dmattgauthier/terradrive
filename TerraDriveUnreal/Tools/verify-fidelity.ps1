@@ -97,7 +97,7 @@ try{
  if(!(Test-Path -LiteralPath $taskReport) -or (Get-Item -LiteralPath $taskReport).LastWriteTime -lt $taskStart){throw 'No fresh native result'}
  $taskResult=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json;$taskFailed=@($taskResult.tests|Where-Object {!$_.pass})
  $taskReceipt.checks=@($taskResult.tests).Count;$taskReceipt.failed=$taskFailed
- $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=166;Mechanical=708;ElectricPressure=280;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=145;RutTransitions=64;Perimeter=5;Challenges=27;RockCrawl=22;Carcass=19;Expanded=292;Recovery=48;GraveRecovery=34;RolloverPerformance=59}[$Mode]
+ $taskExpected=@{SixWheel=35;Garden=10;Art=132;UrusArt=7;Quarry=16;Interface=166;Mechanical=708;ElectricPressure=288;Rollover=685;Ruts=117;Transitions=53;Detail=15;Movement=145;RutTransitions=64;Perimeter=5;Challenges=27;RockCrawl=22;Carcass=19;Expanded=292;Recovery=48;GraveRecovery=34;RolloverPerformance=59}[$Mode]
  if($GraniteLedgeLocks){$taskExpected=4}
  elseif($Mode -eq 'GraniteFit'){
   $fitCount=[int]$taskResult.tests[0].value
