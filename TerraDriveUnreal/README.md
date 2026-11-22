@@ -1,5 +1,7 @@
 # Terra Drive native port
 
+The [fleet realism notes](docs/fleet-field-realism.md) show the exterior changes for each vehicle, braking measurements with garage upgrades and the terrain changes.
+
 **Granite fault-line crawl** is a six-gate rock ascent under **Esc → Challenges**.
 The diagonal notch has two clay-lined low corners and can unload one wheel on each axle. Engage both axle
 lockers before taking the center line, or follow the blue stakes along the
