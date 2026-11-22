@@ -386,10 +386,39 @@ function house(view){
   box(g,m.whiteShell,storageCenter,[.833,.991,.206],.023);
   trimRing(g,m.dark,round([[.100,.960],[.100,1.808],[.894,1.808],[.894,.960]],.022,4),round([[.112,.973],[.112,1.795],[.882,1.795],[.882,.973]],.020,4),(x,y)=>[x,y,storageBack],true);
   for(const x of [.17,.82])box(g,m.black,[x,1.055,storageBack-.010],[.035,.126,.018],.006);
-  const spare=mesh(g,new T.CylinderGeometry(.493,.487,.377,80),m.rubber,[-.529,1.409,L.rearZ+.1885]);spare.rotation.x=Math.PI/2;spare.name='exp98-roof-down-covered-rear-spare';
-  const cover=mesh(g,new T.CircleGeometry(.487,80),m.dark,[-.529,1.409,L.rearZ-.002]);cover.rotation.y=Math.PI;
-  for(const x of [-.754,-.309])line(g,m.rubber,[[x,1.012,L.rearZ+.006],[x,1.80,L.rearZ+.006]],.006);
-  const coverSeam=mesh(g,new T.TorusGeometry(.469,.003,6,72),m.black,[-.529,1.409,L.rearZ+.005]);coverSeam.rotation.y=Math.PI;
+  // The EXP98 brochure shows a soft cinched cover with two webbing straps.
+  // Keep the inner tire envelope, then draw the fabric around its shoulder.
+  const faceDepth=(x,y)=>{
+    const t=Math.hypot(x,y)/.442,a=Math.atan2(y,x);
+    const folds=.52*Math.sin(13*a+2*t)+.31*Math.sin(19*a-.9*t)+.17*Math.sin(7*a);
+    return .002+.018*t*t+.016*t**3*folds;
+  };
+  const sections=[[0,0],[.12,0],[.24,0],[.32,0],[.38,0],[.42,0],[.442,0],
+    [.466,.019],[.483,.049],[.490,.087],[.490,.251],[.478,.304],[.448,.343],[.407,.370],[0,.370]];
+  const radial=96,geo=new T.LatheGeometry(sections.map(([r,d])=>new T.Vector2(r,d)),radial);
+  const pos=geo.attributes.position,norm=geo.attributes.normal;
+  for(let i=0;i<pos.count;i++){
+    const [r,d]=sections[i%sections.length],x=pos.getX(i),y=-pos.getZ(i);
+    const k=Math.min(1,.442/Math.max(r,.001));
+    const gather=1-T.MathUtils.smoothstep(d,.019,.251);
+    pos.setY(i,d+gather*faceDepth(x*k,y*k));
+  }
+  geo.computeVertexNormals();
+  for(let j=0;j<sections.length;j++){
+    const end=radial*sections.length+j;
+    const n=new T.Vector3().fromBufferAttribute(norm,j).add(new T.Vector3().fromBufferAttribute(norm,end)).normalize();
+    norm.setXYZ(j,n.x,n.y,n.z);norm.setXYZ(end,n.x,n.y,n.z);
+  }
+  for(let i=0;i<=radial;i++){
+    norm.setXYZ(i*sections.length,0,-1,0);
+    norm.setXYZ((i+1)*sections.length-1,0,1,0);
+  }
+  const spare=mesh(g,geo,m.dark,[-.529,1.409,L.rearZ]);
+  spare.rotation.x=Math.PI/2;spare.name='exp98-roof-down-covered-rear-spare';
+  for(const side of [-1,1])surface(g,m.black,3,40,(u,v)=>{
+    const y=lerp(-.375,.369,v),x=side*(.194+.015*Math.sin(Math.PI*v))+(u-.5)*.028;
+    return[-.529+x,1.409+y,L.rearZ+faceDepth(x,y)-.0025];
+  },true).name='exp98-spare-cover-webbing';
   box(g,m.dark,[-.529,1.004,rear-.196],[.148,.529,.102],.015);
   for(const s of [-1,1]){
     for(const [y,height,emitter,name] of [[2.366,.081,m.reverse,'reverse'],[2.236,.085,m.red,'brake'],[2.104,.085,m.amber,'indicator']]){

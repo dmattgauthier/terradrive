@@ -463,7 +463,15 @@ export function buildNativeHummer(view, geometry) {
     for(const y of [.555,.577,.599])roundedBox(g,m.grille,side*.362,y,tail-.095,.519,.008,.012,.002);
     for(const y of [.769,1.319])roundedBox(g,m.dark,-.871,y,tail-.027,.042,.065,.050,.008);
   }
-  roundedBox(g,m.black,0,.680,tail-.016,2.039,.158,.140,.027);
+  // The rear step wraps into the quarters. Its thick corners rise below
+  // the vertical lamps and the center steps down toward the receiver.
+  geometry.sweptBumper(g,m.black,[
+    [-1.0195,.646,.779,tail+.136,tail-.016],[-.951,.624,.774,tail+.085,tail-.045],
+    [-.801,.597,.759,tail+.059,tail-.084],[-.554,.598,.745,tail+.054,tail-.090],
+    [0,.593,.737,tail+.054,tail-.092],[.554,.598,.745,tail+.054,tail-.090],
+    [.801,.597,.759,tail+.059,tail-.084],[.951,.624,.774,tail+.085,tail-.045],
+    [1.0195,.646,.779,tail+.136,tail-.016]
+  ],.54);
   roundedBox(g,m.dark,0,.555,tail-.077,.366,.156,.101,.025);
   roundedBox(g,m.chrome,0,.561,tail-.135,.097,.087,.025,.009);
   roundedBox(g,m.dark,0,.561,tail-.151,.061,.053,.012,.004);

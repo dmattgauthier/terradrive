@@ -614,12 +614,18 @@ function addWing(g,m) {
   }
   const foil=(u,t,under=false)=>{
     const x=(2*u-1)*.634;
-    const z=lerp(-1.842,-2.064,t)+.023*(1-(2*u-1)**2);
-    return [x,1.259+.023*Math.sin(t*Math.PI)-.006*(2*u-1)**2-(under?.024:0),z];
+    // The production wing has a radiused leading edge, maximum thickness
+    // ahead of mid-chord and a thin kicked-up trailing edge.
+    const angle=Math.PI*t,chord=(1-Math.cos(angle))*.5;
+    const thickness=.019*Math.sin(angle)*(1-.64*chord)+.0024*chord;
+    const z=lerp(-1.842,-2.064,chord)+.023*(1-(2*u-1)**2);
+    const camber=1.252+.010*Math.sin(angle)+.016*chord**2-.006*(2*u-1)**2;
+    return[x,camber+(under?-thickness:thickness),z];
   };
   surface(g,m.paint,66,22,foil).name='22b-adjustable-rear-wing';
   surface(g,m.paint,66,22,(u,t)=>foil(u,t,true),true);
-  for(const t of [0,1])surface(g,m.paint,66,4,(u,d)=>blend(foil(u,t),foil(u,t,true),d),t===1);
+  surface(g,m.paint,66,2,(u,d)=>blend(foil(u,1),foil(u,1,true),d));
+  for(const edge of [0,1])surface(g,m.paint,22,3,(t,d)=>blend(foil(edge,t),foil(edge,t,true),d),edge===1);
   surface(g,m.paint,56,12,(u,t)=>{
     const x=(2*u-1)*.689;
     return [x,.965+.014*Math.sin(t*Math.PI)-.012*(2*u-1)**2,lerp(-1.885,-2.035,t)];

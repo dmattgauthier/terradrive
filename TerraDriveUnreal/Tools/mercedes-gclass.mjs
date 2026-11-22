@@ -617,12 +617,22 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
     const rearBumper=(x,y)=>[x,y,-2.347+.117*(Math.abs(x)/.926)**5+
       .025*(1-smooth(y,.412,.505))];
     const fascia=rect(-.926,.926,.412,.609,.043);
-    named(mappedPolygon(g,paint,fascia,rearBumper,[],true,5),'g580-formed-rear-bumper');
+    const pocket=rect(-.288,.288,.438,.594,.016);
+    named(mappedPolygon(g,paint,fascia,rearBumper,[pocket],true,6),'g580-formed-rear-bumper');
+    const recessDepth=.042;
+    const insetFace=(x,y)=>[x*.965,lerp(y,.516,.10),-2.347+recessDepth];
+    const rim=pocket.map(([x,y])=>rearBumper(x,y)),base=pocket.map(([x,y])=>insetFace(x,y));
+    surface(g,trim,rim.length,3,(u,v)=>{
+      const i=Math.round(u*rim.length)%rim.length;
+      return rim[i].map((n,k)=>lerp(n,base[i][k],v));
+    },true).name='g580-rear-number-plate-pocket';
+    mappedPolygon(g,trim,pocket,insetFace,[],true,4);
+    named(box(g,metal,[0,.517,-2.347+recessDepth-.004],[.431,.105,.006],.004),'gclass-rear-license-recess');
     for(const side of [-1,1])named(surface(g,paint,14,8,(u,v)=>{
       const y=lerp(.445,.584,v),a=u*Math.PI*.5;
       return[side*(.902+.048*Math.sin(a)),y,rearBumper(.902,y)[2]+.156*(1-Math.cos(a))];
     },side>0),'g580-rear-bumper-wrap-'+side);
-    box(g,trim,[0,.443,-2.205],[1.780,.179,.205],.031);
+    box(g,trim,[0,.443,-2.198],[1.780,.179,.200],.031);
     box(g,trim,[0,.425,-2.346],[1.17,.058,.061],.014);
     for(const x of [-.782,-.432,.432,.782])disc(g,trim,[x,.527,rearBumper(x,.527)[2]-.002],.006,.002,16);
   }else{
@@ -644,9 +654,12 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
       {cells:13,rows:4,relief:.0006});
     const cover=opticFace([x,.770,-2.353],.280,.081,.016,.0045);
     surface(g,m.lens,24,14,(u,v)=>cover(u,v,0),true).name='gclass-curved-rear-lamp-cover';
-    moldedOptic(g,m.gReflector,'gclass-passive-bumper-reflector',
-      opticFace([side*.741,.482,-2.374],.108,.021,.004,.001),
-      {cells:14,rows:4,relief:.0009});
+    const reflector=opticFace([side*.741,ev?.550:.482,ev?-.002:-2.374],ev?.153:.108,.021,.004,.001);
+    moldedOptic(g,m.gReflector,'gclass-passive-bumper-reflector',(u,v,d)=>{
+      const p=reflector(u,v,d);
+      if(ev)p[2]+=-2.347+.117*(Math.abs(p[0])/.926)**5;
+      return p;
+    },{cells:14,rows:4,relief:.0009});
   }
   box(g,m.red,[0,1.896,-2.323],[.285,.018,.014],.004);
   if(ev){
@@ -685,7 +698,7 @@ export function buildGClass(view,spec=view.spec,classicCabin=false){
     const label=geometryText(g,'G 63',.151,.030,metal);label.position.set(-.49,1.128,-2.325);label.rotation.y=Math.PI;
     perimeter(g,trim,rect(-2.048,-1.852,.996,1.202,.024),(z,y)=>[-bodyX(y,z)-.0015,y,z],.0012);
   }
-  const rearPlate=box(g,trim,[0,.659,-2.333],[.405,.101,.014],.009);rearPlate.name='gclass-rear-license-recess';
+  if(!ev)named(box(g,trim,[0,.659,-2.333],[.405,.101,.014],.009),'gclass-rear-license-recess');
   // Five-seat cabin, square dashboard and paired screens. The original mesh
   // detail is bounded and remains independent of any browser canvas font.
   nativeInterior.call(view,{frontZ:.095,rearZ:-.954,floor:.513,dashY:1.177,dashZ:.545,width:1.48,seatY:.751,roofY:1.910,rearSeatY:.758,dashboard:false,centerConsole:true,doorCards:true});

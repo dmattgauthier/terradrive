@@ -136,6 +136,20 @@ export function inspectGVariant(view,spec,parts){
   const faceAt=x=>ray([x,2.232,2.85],[0,0,-1]).find(h=>h.object.name==='g63-squared-roof-spoiler-front-return');
   check('formed roof spoiler connects both real aperture recesses',topSize.x>1.60&&topSize.z>.39&&!!faceAt(0)&&!faceAt(.574)&&!faceAt(-.574)&&
     names.filter(n=>n.startsWith('g63-squared-roof-carbon-light-housing-')).length===2,{spoilerWidthM:topSize.x,spoilerDepthM:topSize.z});
+  for(const s of [-1,1])for(const axle of [-1.445,1.445]){
+   const wall=view.body.getObjectByName('g63-squared-carbon-extension-tub-inboard-wall-'+s+'-'+axle);
+   let screened=0;
+   for(const dz of [-.30,0,.30])for(const y of [.78,.94,1.04]){
+    if(!wall)continue;
+    const caster=new T.Raycaster(view.body.localToWorld(new T.Vector3(s*1.20,y,axle+dz)),
+      new T.Vector3(-s,0,0).transformDirection(view.body.matrixWorld),0,2);
+    const hit=caster.intersectObject(wall)[0];
+    // A backing placed on the tire's sidewall would hide the daylight
+    // as well. It must sit inboard of the swept tire and face the wheel.
+    if(hit&&s*view.body.worldToLocal(hit.point.clone()).x<.40&&s*hit.face.normal.x>.94)screened++;
+   }
+   check('4×4² dark tub screens the far side behind tire '+s+'/'+axle,screened===9,{screened});
+  }
   const frontArch=view.body.getObjectByName('g63-squared-carbon-extension-outer-1-1.445').geometry.attributes.position;
   const lipGap=Math.min(...Array.from({length:frontArch.count},(_,i)=>Math.abs(frontArch.getZ(i)-1.445)<.05?frontArch.getY(i)-2*spec.tireRadius:Infinity));
   check('4×4² fender crown follows the taller stock tire with a bounded opening',lipGap>.17&&lipGap<.22,{radialClearanceM:lipGap});

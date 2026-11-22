@@ -86,7 +86,17 @@ export function urusView(spec){
   let x=envelope*station(lowerSection,section,1)+(shoulder+heel)*doors+rearHaunch+frontFender;
   // Handle cups are pressed into the continuous door sheet. They cannot be
   // represented by a black rectangle sitting proud of an unchanged panel.
-  for(const centre of pulls){const dy=y-(belt(centre)-.077),dz=z-centre,q=Math.hypot(dy/.043,dz/.125);x-=.0045*(1-smooth(q,.20,1));}
+  for(const centre of pulls){
+   const dy=y-(belt(centre)-.077),dz=z-centre;
+   const cup=Math.hypot(dy/.046,dz/.126);
+   x-=.012*(1-smooth(cup,.12,1));
+   // Both door pressings run forward and downward out of the handle pocket.
+   // A broad draw below the fold carries the reflection into the door skin.
+   const run=clamp(dz/.43,0,1);
+   const draw=smooth(dz,-.06,.07)*(1-smooth(dz,.25,.44));
+   const fold=dy+.030+.143*run;
+   x+=draw*(.011*gauss(fold,0,.035)-.019*gauss(fold,-.056,.083));
+  }
   return x;
  };
  // The fender and fascia share this piecewise-linear corner. The lens
@@ -535,21 +545,41 @@ export function urusView(spec){
  const marque=geometryText(g,'LAMBORGHINI',.447,.022,m.chrome);
  marque.position.set(0,1.080,tail(0,1.080,.009)[2]);marque.rotation.y=Math.PI;
  for(const stroke of marque.children){const x=stroke.position.x,y=stroke.position.y+marque.position.y;stroke.position.z=marque.position.z-tail(-x,y,.009)[2];}
- // A closed cambered airfoil follows the transverse crown and rounded tips.
- // The earlier paired rectangular sheets still made a slab-shaped wing.
+ // The wing sweeps forward at each tip. Its leading edge seats between the
+ // roof rails, while its raised trailing lip clears the sloping rear window.
  const spoiler=(u,v,underside=false)=>{
-  const t=u*2-1,x=t*lerp(.763,.846,v),tip=smooth(Math.abs(t),.88,1),chord=lerp(-1.27,-1.715,v)+.028*t*t;
-  const camber=.010*Math.sin(v*Math.PI),thickness=.009+.012*Math.sin(v*Math.PI)**.62;
-  return[x,1.608-.025*v-.018*t*t+camber-(underside?thickness:0)-.004*tip*Math.sin(v*Math.PI),chord];
+  const span=2*u-1,side=Math.abs(span),camber=Math.sin(Math.PI*v);
+  const halfWidth=lerp(.737,.824,v)+.013*camber;
+  const leading=-1.185-.078*side**2,trailing=-1.714+.114*side**2;
+  const height=lerp(1.584,1.595,v)+.023*camber-.027*side**2;
+  const thickness=lerp(.013,.008,v)+.013*camber;
+  return [span*halfWidth,height-(underside?thickness:0),lerp(leading,trailing,v)];
  };
  surface(g,carbon,72,24,(u,v)=>spoiler(u,v)).name='urus-cambered-spoiler-upper';
  surface(g,carbon,72,24,(u,v)=>spoiler(u,v,true),true);
  for(const v of [0,1])surface(g,carbon,72,4,(u,w)=>{const a=spoiler(u,v),b=spoiler(u,v,true);return a.map((n,k)=>lerp(n,b[k],w));},v===0);
  for(const s of [-1,1]){
   surface(g,carbon,24,4,(v,w)=>{const a=spoiler((s+1)/2,v),b=spoiler((s+1)/2,v,true);return a.map((n,k)=>lerp(n,b[k],w));},s>0);
-  mappedPolygon(g,carbon,[[-1.40,1.549],[-1.630,1.565],[-1.704,1.501],[-1.47,1.515]],(z,y)=>[s*(.817+.047*clamp((-z-1.37)/.26,0,1)),y,z],[],s>0,8);
+  // Build both faces and the sole from the same edge curves. The inner
+  // root intersects the roof rail and the top edge joins the wing underside.
+  const fin=(v,h,inside=false)=>{
+   const top=spoiler((s+1)/2,v,true),depth=station([[0,.006],[.22,.040],[.56,.083],[.82,.066],[1,.016]],v,1);
+   return [top[0]+s*(.024*h-(inside?.013:0)),top[1]-depth*h,top[2]+.047*h*Math.sin(Math.PI*v)];
+  };
+  surface(g,carbon,32,5,(v,h)=>fin(v,h),s>0).name='urus-spoiler-side-fin';
+  surface(g,carbon,32,5,(v,h)=>fin(v,h,true),s<0);
+  for(const h of [0,1])surface(g,carbon,32,2,(v,t)=>{
+   const outer=fin(v,h),inner=fin(v,h,true);return outer.map((a,k)=>lerp(a,inner[k],t));
+  },(s>0)===(h===1));
+  for(const v of [0,1])surface(g,carbon,5,2,(h,t)=>{
+   const outer=fin(v,h),inner=fin(v,h,true);return outer.map((a,k)=>lerp(a,inner[k],t));
+  },(s>0)===(v===0));
  }
- box(g,m.red,[0,1.568,-1.697],[.466,.010,.009],.002);
+ // Recess the stop lamp into the actual trailing edge so that it follows
+ // the plan-view sweep and remains attached across its full span.
+ surface(g,m.red,40,2,(u,v)=>{
+  const p=spoiler(lerp(.356,.644,u),1);p[1]-=.001+v*.006;p[2]-=.0008;return p;
+ }).name='urus-spoiler-stop-lamp';
  box(g,rubber,[0,.227,-.10],[1.46,.035,2.73]);
  urusCabin(g,m,carbon,{sidePoint,belt});
  view.root.userData.visualModel={type:'Reference-built continuous coachwork and cabin',version:15,artPilot:5,perforatedFenderReturns:true,wrappedHeadlamps:true,referenceGreenhouseStations:true,sculptedBonnetRidges:true,sweptBonnetLeadingEdge:true,foldedRearHatch:true,sharedEndReturns:true,physicalHeightDoorGrid:true,continuousDoorSections:true,shallowHandleRecesses:true,ceramicGlazingBorders:true,recessedProjectorOptics:true,openGlazing:true,openBonnetVents:true,partitionedBonnet:true,connectedFrontIntake:true,formedPaintedChinHooks:true,recessedHatchPlate:true,airfoilSpoiler:true,camberedClosedSpoiler:true,crownedGreenhouse:true,sculptedDoorCups:true,sweptDoorPressings:true,formedCarbonFlares:true,recessedRadiatorMesh:true,sculptedRearBumper:true,openRearOpticalChamber:true,openDiffuserOutlets:true,importedManufacturerCAD:false,landmarks:URUS_BODY_LANDMARKS};return view;

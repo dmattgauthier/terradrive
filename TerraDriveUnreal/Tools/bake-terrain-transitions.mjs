@@ -3,6 +3,7 @@ import fs from 'node:fs';import path from 'node:path';import crypto from 'node:c
 import {perimeterMask,trailLookup} from './perimeter-trail.mjs';
 import {slateRimVisualCoverage} from './slate-rim-pilot.mjs';
 import {graniteApron,graniteVisualRock,quarryLaneMask} from './granite-ground.mjs';
+import {bakeLandform} from './terrain-landform.mjs';
 import {readCachedJson} from './read-cached-json.mjs';
 const root=path.resolve(import.meta.dirname,'..'),source=path.join(root,'SourceAssets'),data=path.join(root,'Content/NativeData');
 const bytes=fs.readFileSync(path.join(data,'terrain.bin')),n=bytes.readUInt32LE(4),step=bytes.readFloatLE(8),origin=bytes.readFloatLE(12),count=n*n;
@@ -19,6 +20,7 @@ const hash=crypto.createHash('sha256').update(bytes).update(fs.readFileSync(impo
  .update(fs.readFileSync(new URL('./slate-rim-pilot.mjs',import.meta.url))).update(JSON.stringify(world.slateRimPilot??null))
  .update(JSON.stringify(world.slateRimExtension??null)).update(JSON.stringify(world.slateRimWorkings??null))
  .update(fs.readFileSync(new URL('./granite-ground.mjs',import.meta.url)))
+ .update(fs.readFileSync(new URL('./terrain-landform.mjs',import.meta.url)))
  .update(fs.readFileSync(new URL('./offroad-courses.mjs',import.meta.url)))
  .update(JSON.stringify(world.quarryTrail?.samples??null)).digest('hex');
 const reportFile=path.join(root,'Saved/terrain-transitions.json');
@@ -43,7 +45,9 @@ function writeOutput(file,contents){
  fs.writeFileSync(path.join(root,file),contents);
  outputSHA256[file]=digest(contents);
 }
-const surfaces=new Uint8Array(count);for(let i=0;i<count;i++)surfaces[i]=bytes[16+i*9+8];
+const surfaces=new Uint8Array(count),heights=new Float32Array(count);
+for(let i=0;i<count;i++){heights[i]=bytes.readFloatLE(16+i*9);surfaces[i]=bytes[16+i*9+8];}
+const landform=bakeLandform(heights,n,step);
 const f=new Float64Array(n),d=new Float64Array(n),v=new Int32Array(n),z=new Float64Array(n+1);
 function line(){let k=0;v[0]=0;z[0]=-Infinity;z[1]=Infinity;
  for(let q=1;q<n;q++){let s;do{s=((f[q]+q*q)-(f[v[k]]+v[k]*v[k]))/(2*(q-v[k]));if(s<=z[k])k--;else break;}while(k>=0);if(k<0){k=0;v[0]=q;z[0]=-Infinity;z[1]=Infinity;}else{v[++k]=q;z[k]=s;z[k+1]=Infinity;}}
@@ -79,6 +83,8 @@ const trailMask=Buffer.alloc(18+count*4);trailMask[2]=2;trailMask.writeUInt16LE(
 for(let i=0;i<count;i++){
  const x=origin+Math.floor(i/n)*step,y=origin+i%n*step;
  const p=quarry(x,y),lane=perimeterMask(locate,x,y),apron=graniteApron(x,y);
+ // TGA stores BGRA. The original red lane stays independent of the landform.
+ trailMask[18+i*4]=landform.shelter[i];trailMask[18+i*4+1]=landform.position[i];
  trailMask[18+i*4+2]=Math.round(quarryLane(x,y)*255);trailMask[18+i*4+3]=255;
  if((p||apron)&&(surfaces[i]===0||surfaces[i]===4)){
   const slate=Math.round(coverage[i*7]*(p?.rock??0));

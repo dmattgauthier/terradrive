@@ -17,11 +17,12 @@ constexpr int PavementZone=1, Wrangler=0, TireStage=5, FrontRight=1;
 constexpr const TCHAR* PressureLabels[]={TEXT("low"),TEXT("road"),TEXT("high")};
 constexpr const TCHAR* PressurePictures[]={
     TEXT("native-carcass-low.png"),TEXT("native-carcass-road.png"),TEXT("native-carcass-high.png")};
-constexpr int UnderbodyVehicles[]={7,9,Wrangler,Wrangler,Wrangler};
+constexpr int Urus=5, UrusStockView=5, UrusConvertedView=6;
+constexpr int UnderbodyVehicles[]={7,9,Wrangler,Wrangler,Wrangler,Urus,Urus};
 constexpr const TCHAR* UnderbodyPictures[]={
     TEXT("native-underbody-g580.png"),TEXT("native-underbody-g63-sixwheel.png"),
     TEXT("native-underbody-wrangler-stock.png"),TEXT("native-underbody-wrangler-quad-portal.png"),
-    TEXT("native-underbody-wrangler-single.png")};
+    TEXT("native-underbody-wrangler-single.png"),TEXT("native-underbody-urus.png"),TEXT("native-underbody-urus-quad.png")};
 constexpr int UpgradedView=3, SingleMotorView=4, SingleSwap=1, QuadSwap=3, FrameStage=3, BodyStage=3, PortalStage=2;
 
 enum class Phase { Resume, Settle, HoldCapture, Airborne, Underbody, Finish };
@@ -34,6 +35,7 @@ struct FPressureSample {
 
 struct FUnderbodyReadback {
     int Motors=0, Exhaust=0, PortalCases=0, OffCenterShields=0, CenterShields=0;
+    int RearPipeEnds=0, UrusSocketMask=0;
     float RailWidth=0, FrontSkidWidth=0;
     bool Rendered=false;
 };
@@ -180,6 +182,20 @@ FUnderbodyReadback ReadUnderbody(const ATerraVehicle& Vehicle) {
         // The full motor case is transverse and thicker than the longitudinal exhaust.
         if(FMath::Abs(Axis.Y)>.90&&FMath::IsNearlyEqual(Scale.Z,.22,.02)&&Scale.X>.17)++Parts.Motors;
         if(FMath::Abs(Axis.X)>.75&&Scale.Z>.45&&Scale.X<.15)++Parts.Exhaust;
+        if(Vehicle.VehicleIndex==Urus){
+            // Count the four terminal caps, excluding their upstream elbows.
+            // Check depth beyond the deepest point of each sloping dark backing.
+            const FVector End=Instance.TransformPosition(FVector(0,0,Axis.X<0?50.:-50.));
+            if(End.X>=-235.)continue;
+            ++Parts.RearPipeEnds;
+            const bool Outer=FMath::Abs(End.Y)>72.;
+            const FVector2D BoreYZ(Outer?79.9:64.7,Outer?-18.45:-19.04);
+            const double BackingX=Outer?-244.17:-246.81;
+            const double BackingClearance=End.X-BackingX;
+            if(BackingClearance>=4.5&&BackingClearance<=8.&&FMath::Abs(FMath::Abs(End.Y)-BoreYZ.X)<1.&&
+               FMath::Abs(End.Z-BoreYZ.Y)<1.5&&FMath::Abs(Axis.X)>.99)
+                Parts.UrusSocketMask|=1<<((End.Y>0?2:0)+(Outer?1:0));
+        }
     }
     const float CaseHeight=Vehicle.PortalLift()+.11f;
     for(int Index=0;Index<GearBoxes.GetInstanceCount();++Index){
@@ -202,6 +218,8 @@ void StartUnderbody(ATerraVehicle& Vehicle) {
         Vehicle.SetUpgrade(TerraSim::Frame,FrameStage,false);
         Vehicle.SetUpgrade(TerraSim::Body,BodyStage,false);
         Vehicle.SetUpgrade(TerraSim::Portals,PortalStage,false);
+    }else if(Run.UnderbodyView==UrusConvertedView){
+        Vehicle.SetUpgrade(TerraSim::EVSwap,QuadSwap,false);
     }else if(Run.UnderbodyView==SingleMotorView){
         Vehicle.SetUpgrade(TerraSim::EVSwap,SingleSwap,false);
     }
@@ -321,6 +339,12 @@ bool Tick(ATerraVehicle* Vehicle,float Delta,
                 Check(TEXT("single-motor Wrangler has two battery shields outside its driveshaft tunnel"),
                     V.ElectricLayout()==TerraSim::MotorLayout::Single&&Parts.OffCenterShields==2&&
                     Parts.CenterShields==0&&Parts.Exhaust==0&&Parts.Rendered,Parts.OffCenterShields);
+            }else if(Run.UnderbodyView==UrusStockView){
+                Check(TEXT("Urus V8 feeds the four recessed diffuser outlets with no additional exposed tailpipes"),
+                    !V.IsElectric()&&Parts.Rendered&&Parts.RearPipeEnds==4&&Parts.UrusSocketMask==15,Parts.RearPipeEnds);
+            }else if(Run.UnderbodyView==UrusConvertedView){
+                Check(TEXT("quad-converted Urus replaces the exhaust feeds with four motor cases"),
+                    V.IsElectric()&&Parts.Rendered&&Parts.Motors==4&&Parts.Exhaust==0&&Parts.RearPipeEnds==0,Parts.Motors);
             }else Run.StockWrangler=Parts;
             Capture(UnderbodyPictures[Run.UnderbodyView]);
             Run.Advance(Phase::Finish);

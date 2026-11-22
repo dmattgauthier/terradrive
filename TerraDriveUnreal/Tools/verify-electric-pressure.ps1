@@ -141,12 +141,12 @@ foreach($taskFilename in $taskNames){
     if($taskHash -ne $taskCopied -or $taskWidth -ne 1600 -or $taskHeight -ne 900){throw ('Capture hash or dimensions differ from the native request: '+$taskFilename)}
     $taskCaptures+=@([pscustomobject]@{filename=$taskFilename;path=$taskDestination;isolatedPath=$taskImage;SHA256=$taskHash;width=$taskWidth;height=$taskHeight})
 }
-$taskPassed=!$taskError -and $taskExit -eq 0 -and $taskFreshReport -and $taskFreshLog -and $taskTests.Count -eq 279 -and $taskUnique -eq 279 -and
+$taskPassed=!$taskError -and $taskExit -eq 0 -and $taskFreshReport -and $taskFreshLog -and $taskTests.Count -eq 288 -and $taskUnique -eq 288 -and
     $taskFailures.Count -eq 0 -and $taskErrors.Count -eq 0 -and $taskMissing.Count -eq 0 -and $taskCaptures.Count -eq 36 -and $taskSettingsUnchanged -and $taskExeUnchanged
 $taskRecord=[ordered]@{
     version=1;suite='electric-pressure';passed=$taskPassed;startedAt=$taskStartedAt.ToString('o');completedAt=[DateTime]::UtcNow.ToString('o')
     executable=$taskExe;executableSHA256=$taskExeHash;executableUnchanged=$taskExeUnchanged;processExitCode=$taskExit
-    expectedChecks=279;actualChecks=$taskTests.Count;uniqueChecks=$taskUnique;failures=$taskFailures.Count;renderErrors=$taskErrors.Count
+    expectedChecks=288;actualChecks=$taskTests.Count;uniqueChecks=$taskUnique;failures=$taskFailures.Count;renderErrors=$taskErrors.Count
     expectedCaptures=36;captures=$taskCaptures;missingCaptures=$taskMissing
     report=$taskReport;freshReport=$taskFreshReport;log=$taskLog;freshLog=$taskFreshLog;startupReady=$taskReady
     timeoutSeconds=$TimeoutSeconds;startupTimeoutSeconds=$StartupTimeoutSeconds;frameLimit=20;temperatureCutoffC=77

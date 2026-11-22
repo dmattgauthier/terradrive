@@ -5,6 +5,7 @@
 #include "../Source/TerraDrive/TerraContact.h"
 #include "../Source/TerraDrive/TerraUnits.h"
 #include "../Source/TerraDrive/TerraDriving.h"
+#include "../Source/TerraDrive/TerraTandem.h"
 #include "../Source/TerraDrive/TerraSoilVariation.h"
 #include <array>
 #include <cstdlib>
@@ -15,6 +16,24 @@
 static int count=0;
 void check(bool value,const char* name){++count;if(!value){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+    {
+        using TerraSim::TransmissionWheelSpeed;
+        for(float sign:{-1.f,1.f}){
+            const float front=(sign*28+sign*12)*.5f,rear=(sign*16+sign*4)*.5f;
+            check(TransmissionWheelSpeed(front,rear,.4f,true,false)==sign*20,"FWD carrier speed excludes the free rear wheels");
+            check(TransmissionWheelSpeed(front,rear,.4f,false,true)==sign*10,"RWD carrier speed excludes the free front wheels");
+            check(TransmissionWheelSpeed(front,rear,.4f,true,true)==sign*14,"asymmetric center speed agrees with shaft power at a 40:60 split");
+            const float tandem=TransmissionWheelSpeed(sign*18,sign*4,TerraSim::TandemMiddleShare,true,true);
+            check(std::abs(TransmissionWheelSpeed(front,tandem,.3f,true,true)-sign*14.4f)<.0001f,"six-wheel through-drive combines both rear carriers at the installed split");
+        }
+        const float opposedCarrier=(22.f-22.f)*.5f;
+        check(TransmissionWheelSpeed(90,opposedCarrier,.5f,false,true)==0,"opposite half-shaft motion with a stationary carrier cannot rev the engine");
+        const float rotorNm=TerraSim::StockServiceBrakeTorque(2100,.42f);
+        check(std::abs(rotorNm/(2100*.42f*9.81f)-1.6f)<.00001f,"stock friction brakes preserve original pedal calibration");
+        const float stockForce=rotorNm/.42f,largeForce=rotorNm/.635f;
+        check(std::abs(largeForce/stockForce-.42f/.635f)<.00001f,"same caliper torque loses leverage at a 50 inch tire");
+        check(std::abs((stockForce/2570)/(stockForce/2100)-2100.f/2570.f)<.00001f,"the same wheel-end hardware decelerates a heavier conversion less at equal pedal pressure");
+    }
     {
         const TerraSim::TreadPoint Ledge[]={{-30,-10,-115},{17,0,-72},{35,10,-115}};
         TerraSim::TreadContact Contact;

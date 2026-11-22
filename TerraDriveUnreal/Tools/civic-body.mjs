@@ -455,7 +455,15 @@ export function buildCivic(view, geometry) {
     for(let i=1;i<=8;i++){const a=i/8*Math.PI/2;rearOuter.push([-(.821+.047*Math.sin(a)),rearShoulder+.047*Math.cos(a)]);}
     for(let i=11;i>=1;i--){const h=i/12;rearOuter.push([-(.868-.018*(1-h)+.022*Math.sin(h*Math.PI)),THREE.MathUtils.lerp(.277,rearShoulder,h)]);}
     const plateWell=roundedOutline([[-.410,.747,tail],[-.325,.575,tail],[.325,.575,tail],[.410,.747,tail]],.022);
-    const rearBumperDepth=(x,y)=>.029*Math.exp(-(((y-.431)/.139)**2))*(1-THREE.MathUtils.smoothstep(Math.abs(x),.755,.868));
+    const rearBumperDepth=(x,y)=>{
+      // The bumper shoulder sweeps upward to the outboard lamp. It catches
+      // light above the recessed reflector and folds under on the return.
+      const side=THREE.MathUtils.smoothstep(Math.abs(x),.32,.72);
+      const crest=.475+.066*side;
+      const folded=.036*Math.exp(-(((y-crest)/.104)**2))
+        -.014*side*Math.exp(-(((y-crest+.112)/.057)**2));
+      return folded*(1-THREE.MathUtils.smoothstep(Math.abs(x),.755,.868));
+    };
     const rearFacePoint=(x,y)=>[x,y,tail-rearBumperDepth(x,y)];
     for(const side of [-1,1]){
       const outline=roundedOutline([[side*.6435,.4445,0],[side*.8325,.4445,0],[side*.8325,.4675,0],[side*.6435,.4675,0]],.006);

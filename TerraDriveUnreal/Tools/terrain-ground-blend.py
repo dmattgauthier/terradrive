@@ -9,7 +9,7 @@ dest='/Game/Materials/Terrain_GroundBlend';m=lib.load_asset(dest) if lib.does_as
 if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
     edit.delete_all_material_expressions(m);m.set_editor_property('two_sided',True);m.set_editor_property('tangent_space_normal',False);m.set_editor_property('blend_mode',unreal.BlendMode.BLEND_OPAQUE)
     pins=['Primary','NormalMap','RoughMap','Secondary','SecondaryNormal','SecondaryRough','Accent','AccentNormal','AccentRough']
-    params=','.join('Texture2D '+p for p in pins)+',SamplerState Shared,float3 World,float3 GeoNormal,float QuarryPath,float Wear,float LooseSoil,float SoilDisplacement,float Churn,float2 TireDirection,float3 Scales,float3 NormalSigns,float3 RoughChannels,float Biome,float Wetness,out float Roughness,out float3 SurfaceNormal'
+    params=','.join('Texture2D '+p for p in pins)+',SamplerState Shared,float3 World,float3 GeoNormal,float3 TerrainAtlas,float Wear,float LooseSoil,float SoilDisplacement,float Churn,float2 TireDirection,float3 Scales,float3 NormalSigns,float3 RoughChannels,float Biome,float Wetness,out float Roughness,out float3 SurfaceNormal'
     for p in pins:body=body.replace(p+'Sampler','Shared')
     library=prefix+'\nfloat3 evaluate('+params+'){\n'+body+'\n}\n};\nTerraSurface f;\n'
     textures={};calls=[]
@@ -29,12 +29,12 @@ if lib.get_metadata_tag(m,'TerraGroundBlendSignature')!=signature:
         if biome==5:wet_arg='max(.08,saturate(naturalWet*2)*.65)'
         # Match Material Shared:Wrap, including World-group anisotropic filtering.
         # The global trilinear sampler blurs scan detail at grazing angles.
-        args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','quarryPath','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
+        args+=['View.MaterialTextureBilinearWrapedSampler','World','GeoNormal','terrainAtlas','Wear','LooseSoil','SoilDisplacement','Churn','TireDirection',vector(scales),vector([x['normalY'] for x in layers]),vector([x['roughG'] for x in layers]),str(biome),wet_arg,'rr','nn']
         calls.append('[branch] if(w[%d]>.0005){float rr;float3 nn;float3 cc=f.evaluate(%s);color+=cc*w[%d];rough+=rr*w[%d];normal+=nn*w[%d];}'%(biome,','.join(args),biome,biome,biome))
     code=library+'''float2 uv=(World.yx*.01+400.0)/800.5+(.25/800.5);
 float4 a=Texture2DSample(BlendA,GlobalTrilinearClampedSampler,uv);
 float4 b=Texture2DSample(BlendB,GlobalTrilinearClampedSampler,uv);
-float quarryPath=Texture2DSample(TrailMask,GlobalTrilinearClampedSampler,uv).r;
+float3 terrainAtlas=Texture2DSample(TrailMask,GlobalTrilinearClampedSampler,uv).rgb;
 // Imported rigid trial meshes have no soil vertex stream. Their material
 // instance supplies neutral undeformed data while sharing the exact atlas,
 // scan layers, world coordinates and edge normals of the surrounding ground.

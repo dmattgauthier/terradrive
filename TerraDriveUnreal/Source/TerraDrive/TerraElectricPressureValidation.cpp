@@ -28,7 +28,7 @@ namespace TerraElectricPressureValidation {
 namespace {
 constexpr int SaveCount=ATerraVehicle::VehicleCount;
 constexpr int Count=9,MatrixTrials=Count*4,AirBegin=MatrixTrials;
-constexpr int DriveBegin=AirBegin+3,BrakeBegin=DriveBegin+12,SteerBegin=BrakeBegin+2,SoilBegin=SteerBegin+2,UIBegin=SoilBegin+2,TrialCount=UIBegin+3;
+constexpr int DriveBegin=AirBegin+3,BrakeBegin=DriveBegin+12,HardwareBrakeBegin=BrakeBegin+2,SteerBegin=HardwareBrakeBegin+3,SoilBegin=SteerBegin+2,UIBegin=SoilBegin+2,TrialCount=UIBegin+3;
 constexpr float SoilWindowStartM=4,SoilWindowEndM=8,SoilFinishM=10.5f,SoilEntryMPS=2.5f;
 constexpr float RoadRearCM=650,RoadForwardCM=6500,RoadHalfWidthCM=650;
 struct FSoilPoint {
@@ -48,6 +48,7 @@ struct FState {
   float OriginalThrottle=0,OriginalSteer=0,OriginalBrake=0,Time=0,PeakSpeed=0,PeakDrive=0,PeakRegen=0,WheelDifference=0,LoadedFraction=0;
   float InitialPSI=35,PatchSum=0,LoadSum=0,MaxDepth=0,StartYaw=0,BrakeDistance[2]={},BrakeTime[2]={},SteerYaw[2]={},SteerLateral[2]={},SoilPatch[2]={},SoilDepth[2]={};
   float StockMass[Count]={},StockPower[Count]={};
+  float HardwareStopM[3]={},HardwareEntryMPS=0;
   TArray<FSoilPoint> SoilPath[2];
   float SoilMeanLoad[2]={},SoilMeanSpeed[2]={},SoilMeanSink[2]={},SoilMass[2]={},SoilEntry[2]={};
   float SoilPsi[2]={},SoilWidth[2]={},SoilRadius[2]={};
@@ -370,7 +371,7 @@ bool SoilProfile(ATerraVehicle* V,int Trial,float& Coverage,int& Samples){
 }
 void Record(ATerraVehicle* V){
   ++State.Frames;State.Finite&=!V->GetActorLocation().ContainsNaN()&&FMath::IsFinite(V->Speed)&&FMath::IsFinite(V->LastRegenPowerW);
-  if(State.Trial>=DriveBegin&&State.Trial<BrakeBegin){
+  if((State.Trial>=DriveBegin&&State.Trial<BrakeBegin)||(State.Trial>=HardwareBrakeBegin&&State.Trial<SteerBegin)){
     // The whole coachwork must remain inside the searched road corridor for
     // acceleration, coasting AND braking. A chassis centre alone can still
     // carry a turning nose into scenery just beyond the clear strip.
@@ -539,6 +540,54 @@ void Drive(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,
   }else if(State.Phase==5&&State.Time>.3f){Capture(*FString::Printf(TEXT("native-electric-drive-v%d-stage%d.png"),Index,Swap));Phase(6);}
   else if(State.Phase==6&&State.Time>.3f)Next();
 }
+// A partial pedal keeps these runs below the adhesion/ABS ceiling, exposing
+// wheel-end leverage. All three use the same suspension, pressure and lane.
+void HardwareBraking(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check){
+  const int Trial=State.Trial-HardwareBrakeBegin;
+  const bool Large=Trial==1,ElectricSwap=Trial==2;
+  const FString Label=Large?TEXT("50-inch Wrangler"):ElectricSwap?TEXT("quad-converted Wrangler"):TEXT("stock-tire Wrangler");
+  constexpr float EntrySpeed=9.f,Pedal=.22f;
+  const float Placard=Metadata(V,0,TEXT("stockPSIFront"));
+  if(State.Phase==0){
+    Configure(V,0,ElectricSwap?3:0,Placard);
+    V->SetUpgrade(TerraSim::Suspension,3,false);
+    if(Large)V->SetUpgrade(TerraSim::TireSize,V->UpgradeMaxStage(TerraSim::TireSize),false);
+    // The two ICE runs use 2H so the anti-lock controller is available in all three.
+    if(!ElectricSwap)V->FourDrive=false;
+    V->BatterySOC=1.f; // Full pack prevents regeneration from assisting the friction-brake comparison.
+    Park(V,false);return;
+  }
+  if(State.Phase==1&&State.Time>1.8f){
+    const bool Entry=RoadEntry(V);
+    const float ExpectedSize=Large?50.f:Metadata(V,0,TEXT("tireRadius"))/.0127f;
+    if(Entry)RollingStart(V,EntrySpeed);
+    State.HardwareEntryMPS=V->Chassis->GetPhysicsLinearVelocity().Size()/100;
+    Check(Label+TEXT(" starts the hardware comparison on matched pavement with the selected fit"),
+      Entry&&V->ContactCount==4&&FMath::IsNearlyEqual(V->TireDiameter(),ExpectedSize,.03f)&&
+      V->IsElectric()==ElectricSwap&&FMath::IsNearlyEqual(V->Pressure,Placard,.05f)&&
+      FMath::IsNearlyEqual(State.HardwareEntryMPS,EntrySpeed,.01f),V->TireDiameter());
+    V->TestBrake=Pedal;Phase(2);return;
+  }
+  if(State.Phase!=2)return;
+  Record(V);
+  // Wait for the pawn to sample the imposed starting velocity, even if its
+  // tick follows the validation actor this frame.
+  if(State.Time<8&&(State.PeakSpeed<EntrySpeed*.90f||FMath::Abs(V->Speed)>=.12f))return;
+  const float Distance=FVector::Dist2D(State.Start,V->GetActorLocation())/100;
+  State.HardwareStopM[Trial]=Distance;
+  Check(Label+TEXT(" stops under the same partial friction-brake pedal within the clear road"),
+    State.FixtureValid&&State.Finite&&State.DriveCorridor&&State.MovingFrames>=8&&State.LoadedFrames>=8&&
+    State.PeakSpeed>EntrySpeed*.90f&&FMath::Abs(V->Speed)<.2f&&V->ObjectBodyHits==0&&
+    State.PeakRegen<1.f&&FMath::IsNearlyEqual(V->Brake,Pedal,.001f)&&Distance>3&&Distance<RoadForwardCM/100,Distance/.3048f);
+  if(Trial){
+    const float Ratio=Distance/FMath::Max(.01f,State.HardwareStopM[0]);
+    Check(Label+TEXT(" needs more distance than the matched stock fit at equal pedal pressure"),
+      Ratio>(Large?1.16f:1.06f)&&Ratio<2.f,Ratio);
+  }
+  UE_LOG(LogTemp,Display,TEXT("TERRA_BRAKE_HARDWARE trial=%d inches=%.3f massKg=%.3f entryMPS=%.3f pedal=%.2f stopM=%.3f regenW=%.3f"),
+    Trial,V->TireDiameter(),V->Mass,State.HardwareEntryMPS,Pedal,Distance,State.PeakRegen);
+  Next();
+}
 void Braking(ATerraVehicle* V,TFunctionRef<void(const FString&,bool,float)> Check,TFunctionRef<void(const TCHAR*)> Capture){
   const int Trial=State.Trial-BrakeBegin;const FString Label=Trial?TEXT("aired-down road tires "):TEXT("placard road tires ");
   if(State.Phase==0){Configure(V,2,0,Metadata(V,2,TEXT("stockPSI"),33)*(Trial?.5f:1.f));Park(V,false);return;}
@@ -705,7 +754,8 @@ bool Tick(ATerraVehicle* V,float Dt,TFunctionRef<void(const FString&,bool,float)
   if(State.Trial<AirBegin)Matrix(V,Check,Capture);
   else if(State.Trial<DriveBegin)Air(V,Check,Capture);
   else if(State.Trial<BrakeBegin)Drive(V,Check,Capture);
-  else if(State.Trial<SteerBegin)Braking(V,Check,Capture);
+  else if(State.Trial<HardwareBrakeBegin)Braking(V,Check,Capture);
+  else if(State.Trial<SteerBegin)HardwareBraking(V,Check);
   else if(State.Trial<SoilBegin)Steering(V,Check,Capture);
   else if(State.Trial<UIBegin)Soil(V,Check,Capture);
   else UpgradeUI(V,Check,Capture);
